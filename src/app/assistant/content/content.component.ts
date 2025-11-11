@@ -143,11 +143,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   }
 
-
   listClick(evt: any) {
     this.currentSelect = evt;
     if (evt['nodeType'] != 'leaf') {
-      this.storeApi()
       return;
     }
 
