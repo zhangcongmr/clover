@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, viewChild } from '@angular/core';
+import { AfterViewInit, Component, NgZone, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, viewChild } from '@angular/core';
 import { AppEventType, CoreService, EventItem } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -17,16 +17,13 @@ import { ApiTreeNodeType } from '../../shared/model';
   selector: 'div[ast-project]',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
-  host: {
-    '(mouseup)': 'dragEnd($event)',
-    '(mousemove)': 'ewResize($event)'
-  },
   standalone: true,
   imports: [FormsModule, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
   private coreService = inject(CoreService);
   readonly sideOpen = input<boolean>(true);
+private ngZone = inject(NgZone);
 
   readonly addProjectComponent = viewChild(AddProjectComponent);
 
@@ -44,7 +41,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   constructor() {
     super();
     afterNextRender(() => {
-      this.initData();
+      this.ngZone.run(() => {
+        this.initData();
+      });
     });
   }
 

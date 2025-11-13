@@ -556,9 +556,9 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   }
 
   private addAuthHeader(apiInfo: any, headers: any) {
-    const env = CoreService.getCurrentEnv();
+    const env = CoreService.isBrowserEnvironment();
     if (apiInfo.auth.authType == "Basic Auth" && apiInfo.auth != null) {
-      if (env == "browser") {
+      if (env) {
         const credentials = btoa(`${apiInfo.auth.username}:${apiInfo.auth.passWord}`); // btoa 是浏览器内置的 Base64 编码函数
         headers['Authorization'] = `Basic ${credentials}`;
       } else {

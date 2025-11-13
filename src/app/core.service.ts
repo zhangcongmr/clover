@@ -952,13 +952,13 @@ export class CoreService {
     return total;
   }
 
-  static getCurrentEnv() {
+  static isBrowserEnvironment() {
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      return 'browser'; // 浏览器环境
+      return true; // 浏览器环境
     } else if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-      return 'node';    // Node.js 环境
+      return false;    // Node.js 环境
     } else {
-      return 'unknown';
+      return false;
     }
   }
 
