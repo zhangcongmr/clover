@@ -13,70 +13,80 @@
 </div>
 <div style="position: relative;display: flex;width: calc(100vw - 32px);height: 100%;">
   @if (sideOpen()) {
-  <div style="width:25%;background-color: #F2F2F2;display: flex;flex-direction: column;" [style.width]="leftWidth * 100 + '%'">
-    <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
-      <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
-        <!-- <div data-layer="ProjectName" class="Projectname codigma-projectname">ProjectName</div> -->
-        <div data-layer="ProjectName" class="Projectname codigma-projectname"></div>
-      </div>
-      <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
-        <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" class="btn-svg FileaddBtn">
-          <svg class="icon" width="20" height="20">
-            <use href="assets/lib/svg_merged.svg#icon-add-file"></use>
-          </svg>
+    <div style="width:25%;background-color: #F2F2F2;display: flex;flex-direction: column;" [style.width]="leftWidth * 100 + '%'">
+      @if(currentSidebarTab()==1) {
+        <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
+          <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
+            <!-- <div data-layer="ProjectName" class="Projectname codigma-projectname">ProjectName</div> -->
+            <div data-layer="ProjectName" class="Projectname codigma-projectname"></div>
+          </div>
+          <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
+            <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" class="btn-svg FileaddBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="assets/lib/svg_merged.svg#icon-add-file"></use>
+              </svg>
+            </div>
+            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" class="btn-svg FolderaddBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="assets/lib/svg_merged.svg#icon-add-folder"></use>
+              </svg>
+            </div>
+            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" class="btn-svg ImportBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="assets/lib/svg_merged.svg#icon-import-btn"></use>
+              </svg>
+            </div>
+            <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="assets/lib/svg_merged.svg#icon-location"></use>
+              </svg>
+            </div> -->
+            <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" class="btn-svg CollapseBtn">
+              <svg class="icon" width="19" height="21">
+                <use href="assets/lib/svg_merged.svg#icon-collapse"></use>
+              </svg>
+            </div>
+            <div data-svg-wrapper="" data-layer="more-btn" (click)="MoreBtn($event)" class="btn-svg MoreBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="assets/lib/svg_merged.svg#icon-more"></use>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" class="btn-svg FolderaddBtn">
-          <svg class="icon" width="20" height="20">
-            <use href="assets/lib/svg_merged.svg#icon-add-folder"></use>
-          </svg>
-        </div>
-        <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" class="btn-svg ImportBtn">
-          <svg class="icon" width="20" height="20">
-            <use href="assets/lib/svg_merged.svg#icon-import-btn"></use>
-          </svg>
-        </div>
-        <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
-          <svg class="icon" width="20" height="20">
-            <use href="assets/lib/svg_merged.svg#icon-location"></use>
-          </svg>
-        </div> -->
-        <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" class="btn-svg CollapseBtn">
-          <svg class="icon" width="19" height="21">
-            <use href="assets/lib/svg_merged.svg#icon-collapse"></use>
-          </svg>
-        </div>
-        <div data-svg-wrapper="" data-layer="more-btn" (click)="MoreBtn($event)" class="btn-svg MoreBtn">
-          <svg class="icon" width="20" height="20">
-            <use href="assets/lib/svg_merged.svg#icon-more"></use>
-          </svg>
-        </div>
-      </div>
-    </div>
-    @if(currentSidebarTab()==1) {
-       <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" style="flex: 1 1 0;overflow: auto;"></div>
-    } @else if(currentSidebarTab()==2) {
-
-    }
-    <app-add-project (apiInfoSelected)="apiSelected($event)" />
-  </div>
-  }
-
-  <div style="border-top: 1px solid lightgray;" [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'">
-    @if (openedList.length>0) {
-    <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)">
-      @for (openedTab of openedList; track openedTab.id) {
-      <div ast-tab [id]="openedTab.id" [label]="openedTab.tabLabel" [saved]="openedTab['saved']"
-        [isActivated]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
-        (onClickTab)="onClickTab($event)">
-        @if (openedTab['type']==null) {
-        <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
-        }
-        @if (openedTab['type']=='marked') {
-        <markdown [textInfo]="openedTab" (saved)="saveText($event)"></markdown>
-        }
-      </div>
+        <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" style="flex: 1 1 0;overflow: auto;"></div>
+        <app-add-project (apiInfoSelected)="apiSelected($event)" />
+      } @else if(currentSidebarTab()==2) {
+        <div>Search:</div>
+      } @else if(currentSidebarTab()==3) {
+      } @else if(currentSidebarTab()==4) {
+      } @else if(currentSidebarTab()==5) {
       }
     </div>
+  }
+
+  <div [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'" style="display: flex;flex-direction: column;">
+    @if(currentSidebarTab()==1) {
+      @if (openedList.length>0) {
+        <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)">
+          @for (openedTab of openedList; track openedTab.id) {
+          <div ast-tab [id]="openedTab.id" [label]="openedTab.tabLabel" [saved]="openedTab['saved']"
+            [isActivated]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
+            (onClickTab)="onClickTab($event)">
+            @if (openedTab['type']==null) {
+            <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
+            }
+            @if (openedTab['type']=='marked') {
+            <markdown [textInfo]="openedTab" (saved)="saveText($event)"></markdown>
+            }
+          </div>
+          }
+        </div>
+      }
+    } @else if(currentSidebarTab()==2) {
+    } @else if(currentSidebarTab()==3) {
+    } @else if(currentSidebarTab()==4) {
+      <app-api-explorer [currentSidebarTab]="4" style="overflow: auto;"></app-api-explorer>
+    } @else if(currentSidebarTab()==5) {
     }
   </div>
 </div>

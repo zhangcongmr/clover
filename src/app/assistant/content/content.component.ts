@@ -12,13 +12,14 @@ import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { ApiTreeNodeType } from '../../shared/model';
+import { ExplorerComponent } from '../../explorer/explorer.component';
 
 @Component({
-  selector: 'div[ast-project]',
+  selector: 'div[ast-content]',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
-  imports: [FormsModule, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent]
+  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
   private coreService = inject(CoreService);

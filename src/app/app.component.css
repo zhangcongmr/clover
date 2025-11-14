@@ -55,7 +55,6 @@
       display: inline-flex;
       flex: 1 1 0;
       justify-content: flex-start;
-      overflow: hidden;
     }
 
     .codigma-left-side-area {

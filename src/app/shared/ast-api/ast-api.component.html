@@ -6,7 +6,7 @@
   <button id="sendRequestBtn" (click)="sendRequest()">Send</button>
 </div>
 <div
-  style="position: relative;text-align:left; margin-top: 0.5rem;border: 1px solid #dee2e6;background-color: white;
+  style="position: relative;text-align:left; margin-top: 0.5rem;background-color: white;
         border-top-left-radius: 0.25rem;border-top-right-radius: 0.25rem;display: flex;flex-direction: column;flex: 1 1 0;">
 
   <!-- 垂直拖动条 -->
@@ -310,7 +310,7 @@
     </div>
   </div>
   <div id="resp_section_{{apiInfo.id}}" class="flat-form"
-    style="position: relative;height: 40%;border: 0.8px solid rgb(240, 240, 240);border-radius:0;display: inline-flex;flex-direction: column;"
+    style="position: relative;height: 40%;border-top: 0.8px solid rgb(240, 240, 240);border-bottom: 0.8px solid rgb(240, 240, 240);border-radius:0;display: inline-flex;flex-direction: column;"
     [style.height]="(1 - dragHeight) * 100 + '%'">
     <div style="position: absolute;width: 100%;height: 100%;display: none;background-color: #ffffff;opacity: 0.8;"
       [style.display]="ifSendingRequest?'block':'none'">

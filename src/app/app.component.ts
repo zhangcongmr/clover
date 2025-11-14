@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { AfterViewInit, Component, OnInit, ViewContainerRef, afterNextRender, inject } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService, EventItem, AppEventType } from './core.service';
-import { ExplorerComponent } from './explorer/explorer.component';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
 import { ContentComponent } from './assistant/content/content.component';
@@ -12,7 +11,7 @@ import { ContentComponent } from './assistant/content/content.component';
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    imports: [AstTabGroupComponent, AstTabComponent, ExplorerComponent, ContentComponent]
+    imports: [AstTabGroupComponent, AstTabComponent, ContentComponent]
 })
 export class AppComponent implements OnInit, AfterViewInit {
   private coreService = inject(CoreService);

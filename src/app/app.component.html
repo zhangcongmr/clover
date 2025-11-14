@@ -41,14 +41,15 @@
         </svg>
       </div>
     </div>
-    @if(currentSidebarTab==1) {
-      <div [sideOpen]="currentSideBarStatus" ast-project></div>
+    <div [sideOpen]="currentSideBarStatus" [currentSidebarTab]="currentSidebarTab" ast-content></div>
+    <!-- @if(currentSidebarTab==1) {
+      <div [sideOpen]="currentSideBarStatus" [currentSidebarTab]="currentSidebarTab" ast-content></div>
     } @else if(currentSidebarTab==2) {
     } @else if(currentSidebarTab==3) {
     } @else if(currentSidebarTab==4) {
       <app-api-explorer [currentSidebarTab]="4" style="overflow: auto;"></app-api-explorer>
     } @else if(currentSidebarTab==5) {
-    }
+    } -->
   </div>
   <div data-layer="overview-longstrip" class="OverviewLongstrip codigma-overview-longstrip">
     <div data-layer="filetype-cnr" class="FiletypeCnr codigma-methodtype">
