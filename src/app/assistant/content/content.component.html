@@ -65,7 +65,7 @@
   }
 
   <div [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'" style="display: flex;flex-direction: column;">
-    @if(currentSidebarTab()==1) {
+    @if(currentSidebarTab()==1 || currentSidebarTab()==2) {
       @if (openedList.length>0) {
         <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)">
           @for (openedTab of openedList; track openedTab.id) {
@@ -82,7 +82,6 @@
           }
         </div>
       }
-    } @else if(currentSidebarTab()==2) {
     } @else if(currentSidebarTab()==3) {
     } @else if(currentSidebarTab()==4) {
       <app-api-explorer [currentSidebarTab]="4" style="overflow: auto;"></app-api-explorer>
