@@ -26,6 +26,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 private ngZone = inject(NgZone);
 
   readonly addProjectComponent = viewChild(AddProjectComponent);
+  readonly currentSidebarTab = input<number>(1);
 
   /***aside */
   serverList: Array<any> = [];
@@ -161,6 +162,7 @@ private ngZone = inject(NgZone);
       this.openedList.push(evt);
     }
     this.storeApi()
+    this.storeOpenedList()
   }
 
   apiSelected(evt: any) {
@@ -199,6 +201,17 @@ private ngZone = inject(NgZone);
     // await file('/dir/file.txt').remove();
   }
 
+  async storeOpenedList() {
+    // --------- Create / Write ---------
+    // await dir('/test-dir').create(); // create a directory
+    await write('/dir/file_openedList.txt', JSON.stringify(this.openedList));
+    // await write('/dir/api.txt', this.dataList); // empty file
+    // --------- Remove ---------
+    // await dir('/test-dir').remove();
+
+    // await file('/dir/file.txt').remove();
+  }
+
   async initData() {
     const readDataListText = await file('/dir/file.txt').text();
     // console.log("readDataListText: " + readDataListText)
@@ -206,6 +219,10 @@ private ngZone = inject(NgZone);
       this.dataList = JSON.parse(readDataListText);
     }
 
+    const openedListText = await file('/dir/file_openedList.txt').text();
+    if (openedListText) {
+      this.openedList = JSON.parse(openedListText);
+    }
   }
 
   groupBy(dataList: Array<any>, key: string) {
@@ -311,6 +328,7 @@ private ngZone = inject(NgZone);
     } else {
       this.openedList[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
     }
+    this.storeOpenedList()
   }
 
   onClickTab(evt: any) {
@@ -321,11 +339,13 @@ private ngZone = inject(NgZone);
         this.openedList[index]["isActive"] = false
       }
     }
+    this.storeOpenedList()
   }
 
   onAddNewTab(evt: any) {
     this.openedList.forEach(ele => ele.isActive = false);
     this.openedList.push(this.createNewApi())
+    this.storeOpenedList()
   }
 
   createNewApi() {

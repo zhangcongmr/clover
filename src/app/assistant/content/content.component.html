@@ -52,7 +52,11 @@
         </div>
       </div>
     </div>
-    <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" style="flex: 1 1 0;overflow: auto;"></div>
+    @if(currentSidebarTab()==1) {
+       <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" style="flex: 1 1 0;overflow: auto;"></div>
+    } @else if(currentSidebarTab()==2) {
+
+    }
     <app-add-project (apiInfoSelected)="apiSelected($event)" />
   </div>
   }
