@@ -350,8 +350,9 @@
     </div>
   </div>
 } @else {
-  <div style="cursor: pointer;height: 1.5rem;line-height: 1.5rem;display: flex;justify-content: center;" (click)="apiBackFn()">
-    <div style="background-color: lightgray;width: 4rem;text-align: center;">Back</div>
+  <div style="cursor: pointer;height: 1.5rem;line-height: 1.5rem;display: flex;justify-content: center;gap: 3px;">
+    <div style="background-color: lightgray;width: 4rem;text-align: center;" (click)="apiBackFn()">Back</div>
+    <div style="background-color: lightgray;width: 4rem;text-align: center;" (click)="apiSaveFn()">Save</div>
   </div>
   <div #editApiSourceCodeContainer style="overflow: hidden;height: 100%;"></div>
 }
