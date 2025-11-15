@@ -1,10 +1,9 @@
-import { AfterViewChecked, AfterViewInit, Component, OnInit, inject, input, output, viewChild } from '@angular/core';
-import { CoreService } from '../core.service';
-import { PrivacyErrorDialogComponent } from '../shared/privacy-error-dialog/privacy-error-dialog.component';
-import { AstTableComponent } from '../shared/ast-table/ast-table.component';
-import { AstTabComponent } from '../shared/ast-tab/ast-tab.component';
-import { AstTabGroupComponent } from '../shared/ast-tab/ast-tab-group/ast-tab-group.component';
-import { ServerTreeComponent } from '../shared/server-tree/server.tree.component';
+import { AfterViewChecked, AfterViewInit, Component, OnInit, inject, input, output } from '@angular/core';
+import { ServerTreeComponent } from '../server-tree/server.tree.component';
+import { AstTableComponent } from '../ast-table/ast-table.component';
+import { PrivacyErrorDialogComponent } from '../privacy-error-dialog/privacy-error-dialog.component';
+import { CoreService } from '../../core.service';
+
 @Component({
   selector: 'app-api-explorer',
   templateUrl: './explorer.component.html',

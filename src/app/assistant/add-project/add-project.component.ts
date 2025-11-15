@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { ServerTreeComponent } from '../../shared/server-tree/server.tree.component';
 import { FileInputComponent } from '../../shared/file-input/file-input.component';
-import { ExplorerComponent } from '../../explorer/explorer.component';
+import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 
 @Component({
     selector: 'app-add-project',

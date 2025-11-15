@@ -12,7 +12,7 @@ import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { ApiTreeNodeType } from '../../shared/model';
-import { ExplorerComponent } from '../../explorer/explorer.component';
+import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 
 @Component({
   selector: 'div[ast-content]',
