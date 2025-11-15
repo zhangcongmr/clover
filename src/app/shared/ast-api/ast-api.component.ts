@@ -25,6 +25,7 @@ import {json} from "@codemirror/lang-json"
 export class AstApiComponent implements OnInit, AfterViewInit {
   private coreService = inject(CoreService);
   reqEditorContainerView = viewChild<ElementRef<HTMLButtonElement>>('reqEditorContainer');
+  editApiSourceCodeContainerView = viewChild<ElementRef<HTMLButtonElement>>('editApiSourceCodeContainer');
   @Input() apiInfo: any;
   readonly saved = output();
 
@@ -90,7 +91,8 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   requestDuration: string = "0";
   // 创建一个新的 AbortController 实例  
   controller: AbortController | undefined;
-
+  
+  editApiSourceCodeEnable = false;
 
   /**
    * 标志API内容是否发生了改变， 用于保存时做判断
@@ -754,5 +756,39 @@ export class AstApiComponent implements OnInit, AfterViewInit {
       return;
     }
     this.ifChangedFlag = ifChangedFlag;
+  }
+
+  editApiSourceCodeFn() {
+    this.editApiSourceCodeEnable = true;
+    setTimeout(() => {
+      const domView = this.editApiSourceCodeContainerView();
+      let doc = JSON.stringify(this.apiInfo, null, 4)
+      if (domView) {
+        this.editorView = new EditorView({
+          doc: doc,
+          parent: domView.nativeElement,
+          extensions: [basicSetup, json(),
+            EditorView.theme({
+              '&': {
+                height: '100%',
+                minHeight: '0',
+                fontFamily: 'Consolas',
+                border: 'none', // 移除边框
+                outline: 'none', // 可选：移除聚焦时的 outline
+                boxShadow: 'none',
+              },
+              '.cm-scroller': {
+                height: '100%',
+                overflow: 'auto',
+              },
+            })
+          ],
+        });
+      }
+    }, 0)
+  }
+
+  apiBackFn(){
+    this.editApiSourceCodeEnable = false;
   }
 }
