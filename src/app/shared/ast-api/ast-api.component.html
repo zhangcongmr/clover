@@ -11,7 +11,7 @@
       <!-- <div data-layer="Edit" class="Edit codigma-edit">Edit</div> -->
     </div>
   </div>
-  <div style="display: flex;flex-wrap: nowrap;">
+  <div style="display: flex;flex-wrap: nowrap;margin-top: 0.5rem;">
     <ast-select [data]="methodOptions" [inputValue]="apiInfo.method.toUpperCase()" (selected)="methodChange($event)" [readonly]="true"></ast-select>
     <input type="text" name="uri" [(ngModel)]="apiInfo.url"
       style=" flex-grow: 1;display: inline;border-top-left-radius: 0;border-bottom-left-radius: 0;"
@@ -350,9 +350,9 @@
     </div>
   </div>
 } @else {
-  <div style="cursor: pointer;height: 1.5rem;line-height: 1.5rem;display: flex;justify-content: center;gap: 3px;">
+  <!-- <div style="cursor: pointer;height: 1.5rem;line-height: 1.5rem;display: flex;justify-content: center;gap: 3px;">
     <div style="background-color: lightgray;width: 4rem;text-align: center;" (click)="apiBackFn()">Back</div>
     <div style="background-color: lightgray;width: 4rem;text-align: center;" (click)="apiSaveFn()">Save</div>
-  </div>
+  </div> -->
   <div #editApiSourceCodeContainer style="overflow: hidden;height: 100%;"></div>
 }
