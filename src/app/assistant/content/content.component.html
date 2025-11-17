@@ -57,6 +57,8 @@
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
       } @else if(currentSidebarTab()==2) {
         <div>Search:</div>
+        <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
+        <div>{{searchResults}}</div>
       } @else if(currentSidebarTab()==3) {
       } @else if(currentSidebarTab()==4) {
       } @else if(currentSidebarTab()==5) {

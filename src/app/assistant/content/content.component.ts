@@ -39,6 +39,8 @@ private ngZone = inject(NgZone);
 
   addMarkFile = false;
   newFileName: string = '';
+  searchKeyword = ''
+  searchResults = ''
 
   constructor() {
     super();
@@ -404,6 +406,17 @@ private ngZone = inject(NgZone);
       this.openedList.push(markedTextInfo)
       this.addMarkFile = false;
     }
+  }
+
+  searchText() {
+    const results = CoreService.fullTextSearch(JSON.stringify(this.createNewApi(), null, 4), this.searchKeyword)
+    let rest = []
+    for (let index = 0; index < results.length; index++) {
+      const element = results[index];
+      rest.push(JSON.stringify(element))
+    }
+    this.searchResults = JSON.stringify(rest)
+
   }
 
   private uuid(): string {

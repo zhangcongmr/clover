@@ -962,6 +962,32 @@ export class CoreService {
     }
   }
 
+  static fullTextSearch(text: string, keyword: string) {
+    if (!keyword.trim()) return [];
+
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    const results = [];
+    const lines = text.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const matches = [...line.matchAll(regex)];
+      if (matches.length > 0) {
+        results.push({
+          lineNumber: i + 1,
+          content: line,
+          matches: matches.map(m => ({
+            start: m.index,
+            end: m.index + m[0].length,
+            text: m[0]
+          }))
+        });
+      }
+    }
+
+    return results;
+  }
 
 
   private uuid(): string {
