@@ -712,7 +712,10 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   topSectionHeight: number = 0;
   bottomSectionHeight: number = 0;
 
-  dragStart(evt: any) {
+  dragStart(evt: any, currentCursorType: string = 'ns') {
+    evt.target.parentElement.style.zIndex = 90;
+    document.body.style.cursor = currentCursorType.toLowerCase() + '-resize'; // 更改光标样式
+
     const currentTarget = evt.currentTarget;
     const parentParent = currentTarget.parentElement.parentElement.childNodes;
     this.topSectionHeight = parentParent[1].clientHeight
@@ -726,6 +729,8 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     // initialX = currentX;  
     // initialY = currentY;  
     this.active = false;
+    evt.target.parentElement.style.zIndex = "";
+    document.body.style.cursor = 'default'; // 恢复默认光标
   }
 
   nsResize(evt: any) {

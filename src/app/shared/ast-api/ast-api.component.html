@@ -25,7 +25,7 @@
     <!-- 垂直拖动条 -->
     <div style="position: absolute;width: 100%;height: 100%;">
       <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;" [style.top]="dragHeight * 100 + '%'"
-        (mousedown)="dragStart($event)"></div>
+        (mousedown)="dragStart($event, 'ns')"></div>
     </div>
 
     <div id="req_section_{{apiInfo.id}}" class="flat-form" style="position: relative;height: 60%;background-color: white;"

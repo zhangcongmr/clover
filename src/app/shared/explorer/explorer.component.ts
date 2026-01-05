@@ -8,10 +8,6 @@ import { CoreService } from '../../core.service';
   selector: 'app-api-explorer',
   templateUrl: './explorer.component.html',
   styleUrls: ['./explorer.component.css'],
-  host: {
-    '(mouseup)': 'dragEnd($event)',
-    '(mousemove)': 'ewResize($event)'
-  },
   standalone: true,
   imports: [ServerTreeComponent, AstTableComponent, PrivacyErrorDialogComponent]
 })
@@ -86,29 +82,6 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   ngAfterViewInit(): void {
 
-  }
-
-  active = false;
-  dragStart(evt: any) {
-    // initialX = e.clientX - xOffset;  
-    // initialY = e.clientY - yOffset;  
-    evt.preventDefault()
-    this.active = true;
-  }
-
-  dragEnd(evt: any) {
-    // initialX = currentX;  
-    // initialY = currentY;  
-    this.active = false;
-  }
-
-  ewResize(evt: any) {
-    if (this.active) {
-      evt.preventDefault()
-      // const sideWith = evt.clientX * 100 / window.innerWidth;
-      // this.dragSideWidth = sideWith + "%";
-      // this.dragSideRigthWidth = (100 - sideWith) + "%"
-    }
   }
 
   serviceApis(evt: any) {

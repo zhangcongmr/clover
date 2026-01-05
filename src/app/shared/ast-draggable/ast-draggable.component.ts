@@ -14,10 +14,13 @@ export class AstDraggableComponent {
 
   leftWidth: number = 0.25; // 左侧宽度百分比
   active = false;
-  dragStart(evt: any) {
+
+  dragStart(evt: any, currentCursorType: string = 'ew') {
     // initialX = e.clientX - xOffset;  
     // initialY = e.clientY - yOffset;  
     evt.preventDefault()
+    evt.target.parentElement.style.zIndex = 90;
+    document.body.style.cursor = currentCursorType.toLowerCase() + '-resize'; // 更改光标样式
     this.active = true;
   }
 
@@ -25,6 +28,8 @@ export class AstDraggableComponent {
     // initialX = currentX;  
     // initialY = currentY;  
     this.active = false;
+    evt.target.parentElement.style.zIndex = "";
+    document.body.style.cursor = 'default'; // 恢复默认光标
   }
 
   ewResize(evt: any) {
