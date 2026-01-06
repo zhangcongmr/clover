@@ -13,13 +13,14 @@ import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { ApiTreeNodeType } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
+import { ShareOnComponent } from '../share-on/share-on.component';
 
 @Component({
   selector: 'div[ast-content]',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
-  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent]
+  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
   private coreService = inject(CoreService);
@@ -281,6 +282,8 @@ private ngZone = inject(NgZone);
   public afterCloseTab(val: any) {
   }
 
+  shareOnVisible = false;
+  shareData: any = {};
   menuItemAction(evt: any) {
     if(evt == 'Rename') {
       this.storeApi()
@@ -295,6 +298,10 @@ private ngZone = inject(NgZone);
       } else {
         this.FolderaddBtn(null)
       }
+    }
+    if (evt.action == 'Share') {
+      this.shareOnVisible = true;
+      this.shareData = evt.target;
     }
     this.closeMenu();
   }

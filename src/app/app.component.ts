@@ -22,7 +22,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   assistantAppTabId: any;
   textArr: Array<String> = []
 
-  mainTitle = "Project"
+  mainTitle = "My Project"
   lastSelectedSidebarTab: number = 1;
   currentSidebarTab: number = 1;
   currentSideBarStatus = true
@@ -177,7 +177,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.lastSelectedSidebarTab = currentSidebarTab;
       switch (currentSidebarTab) {
         case 1:
-          this.mainTitle = "Project"
+          this.mainTitle = "My Project"
           break;
         case 2:
           this.mainTitle = "Search"
@@ -186,14 +186,14 @@ export class AppComponent implements OnInit, AfterViewInit {
           this.mainTitle = "Plugins"
           break;
         case 4:
-          this.mainTitle = "API Ecosystem"
+          this.mainTitle = "API Community"
           break;
         case 5:
           this.mainTitle = "Settings"
           break;
       }
     }
-    //如果是API Ecosystem，则默认关闭侧边栏
+    //如果是API Community，则默认关闭侧边栏
     if (currentSidebarTab == 4) {
       this.currentSideBarStatus = false;
     }

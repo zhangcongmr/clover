@@ -10,7 +10,7 @@
     transform: translate(-50%, -50%); */
     width: 75%;
     height: 36rem;
-    min-height: 36rem;
+    /* min-height: 36rem; */
     pointer-events: none;
     /* 关键：允许鼠标事件穿透到下层元素 */
     /* 背景颜色 */
@@ -30,7 +30,7 @@
 
 .close-button {
     position: absolute;
-    top: 0.2rem;
+    /* top: 0.1rem; */
     right: 0.2rem;
     font-size: 1.5rem;
     color: #aaa;

@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
@@ -177,6 +177,19 @@ export class CoreService {
     } else {
       return this.http.get(url) as Observable<Object>;
     }
+  }
+
+  postData(url: string, data: any) {
+    this.http.post(url, data).subscribe((res: any) => {
+      switch (res.type) {
+        case HttpEventType.UploadProgress:
+          console.log('Uploaded ' + res.loaded + ' out of ' + res.total + ' bytes');
+          break;
+        case HttpEventType.Response:
+          console.log('Finished uploading!');
+          break;
+      }
+    });
   }
 
   async setServerToStorage(data: any) {
@@ -645,10 +658,18 @@ export class CoreService {
     }
   }
 
-  private base() {
-    let x = "18";
-    let cal = "";
-    return x;
+  public reset(data: Array<any>, deepIn?: boolean) {
+    for (let index = 0; index < data.length; index++) {
+      const dataItem = data[index];
+      delete dataItem['isActive'];
+      delete dataItem['isExpanded'];
+      delete dataItem['saved'];
+      if (deepIn == null || deepIn) { //递归重置子节点
+        if (dataItem.children && dataItem.children.length) {
+          this.reset(dataItem.children)
+        }
+      }
+    }
   }
 
   public parseOpenApiSpec(rawSpecDef: any, currentServer?: any, serviceName?: string) {

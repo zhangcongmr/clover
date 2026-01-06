@@ -24,7 +24,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     { key: "serviceName", title: "ServiceName" }
   ];
 
-  data = [];
+  data: any = [];
   rawSpecDef: any;
   rawSpecBriefDefs = []
 
@@ -101,8 +101,13 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
           return;
         }
         me.rawSpecDef = JSON.parse(rawData.profile);
-        me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
-        me.importOut.emit(me.data);
+        if(me.rawSpecDef['dataType'] == 'projectType') {
+          me.data = me.rawSpecDef['children'] || [];
+          me.importOut.emit(me.data);
+        } else {
+          me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
+          me.importOut.emit(me.data);
+        }
       },
       (reason: any) => {
       });

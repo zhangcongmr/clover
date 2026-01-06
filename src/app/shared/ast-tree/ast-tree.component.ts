@@ -11,7 +11,7 @@ import { ApiTreeNodeType } from '../model';
   styleUrls: ['./ast-tree.component.css'],
   standalone: true,
   host: {
-    '(contextmenu)': 'showContextMenu($event, null)'
+    '(contextmenu)': 'showContextMenu($event, null)' // 监听组件根元素的右键菜单事件
   },
   imports: [FormsModule]
 })
@@ -31,6 +31,7 @@ private ngZone = inject(NgZone);
 
   menuId: string = ''
   showMenuStyle: string = '';
+  showShareButton = false;
 
   dataBackUp: Array<any> = [];
   searchValue: string = ""
@@ -170,16 +171,22 @@ private ngZone = inject(NgZone);
     };
     if(item) {
       if (item['nodeType'] == 'leaf') {
+        this.showShareButton = false;
         const dataId = item['parentItem']['id'];
         const filterData = this.data().filter(dataval => dataval.id == dataId);
         if (filterData.length > 0) {
+          // right click on child item
           this.currentContextMenuEvt['item'] = filterData[0];
           this.currentContextMenuEvt['childItem'] = item;
         }
       } else {
+        // right click on parent item
+        this.showShareButton = true;
         this.currentContextMenuEvt['item'] = item;
       }
     } else {
+      // right click on empty area
+      this.showShareButton = false;
       this.currentContextMenuEvt['empty'] = true;
     }
   }
@@ -248,6 +255,13 @@ private ngZone = inject(NgZone);
             action: action,
             target: 'empty'
           })
+      }
+    } else if (action == 'Share') {
+      if (current.item && !current.childItem) {
+        this.menuItemAction.emit({
+          action: action,
+          target: current.item
+        })
       }
     }
     this.closeMenu();

@@ -10,6 +10,7 @@ import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges,
 export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
   visible = input(false);
   readonly title = input("");
+  readonly modalSize = input<"small" | "medium" | "large" | "">("");
   readonly close = output<any>();
   modalRef = viewChild<ElementRef>('modal');
   readonly visibleChange = output<any>();
@@ -35,6 +36,16 @@ export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
         setTimeout(() => {
           const modalRef = this.modalRef();
           if(modalRef) {
+            if (this.modalSize() === 'small') {
+              modalRef.nativeElement.style.width = '400px';
+              modalRef.nativeElement.style.height = '200px';
+            } else if (this.modalSize() === 'medium') {
+              modalRef.nativeElement.style.width = '600px';
+              modalRef.nativeElement.style.height = '300px';
+            } else if (this.modalSize() === 'large') {
+              modalRef.nativeElement.style.width = '800px';
+              modalRef.nativeElement.style.height = '400px';
+            }
             this.centerInViewport(modalRef.nativeElement)
           }
         }, 0);
