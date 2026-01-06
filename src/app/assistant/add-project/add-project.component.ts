@@ -23,7 +23,6 @@ export class AddProjectComponent implements OnInit {
 
   visible!: boolean;
   importType = '1';  // 1 - From API Definition  2 - From API Community  3 - From Local
-  showPreviewOrCode = true;
   sourceCodeText = '';
   importFromApiDefUrl = ""
 
@@ -40,7 +39,6 @@ export class AddProjectComponent implements OnInit {
   currentServer: any = {};
   selectedApiInfos: Array<any> = [];
   showServerInfo = false;
-  subPanelType = 1;
 
   ngOnInit() {
   }
@@ -54,7 +52,6 @@ export class AddProjectComponent implements OnInit {
     this.selectedApiInfos = [];
     this.visible = false;
     this.importType = '1';
-    this.subPanelType = 1;
   }
 
   beforeClose = () => {
@@ -94,10 +91,6 @@ export class AddProjectComponent implements OnInit {
     this.showServerInfo = false;
   }
 
-  rawApiData(evt: any) {
-    this.sourceCodeText = JSON.stringify(evt, null, 2);
-  }
-
   apiCheckedFun(evt: any) {
     // this.selectedApiInfos = evt;
   }
@@ -111,16 +104,6 @@ export class AddProjectComponent implements OnInit {
     this.data = [];
     this.selectedApiInfos = [];
     this.sourceCodeText = '';
-    this.showPreviewOrCode = true;
-    this.subPanelType = 1;
-  }
-
-  backFn() {
-    this.subPanelType = 1;
-  }
-
-  showPreviewOrCodeFn(flag: boolean) {
-    this.showPreviewOrCode = flag;
   }
 
   fileContentChangedFn(evt: any) {
@@ -155,11 +138,5 @@ export class AddProjectComponent implements OnInit {
 
   importOutFromLocal() {
     this.confirmSelected(this.data)
-  }
-
-  viewApi(evt: any) {
-    this.subPanelType = 2;
-    this.data = evt.data;
-    this.sourceCodeText = JSON.stringify(evt.rawSpecDef, null, 2);
   }
 }

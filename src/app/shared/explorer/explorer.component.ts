@@ -103,15 +103,15 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
         me.rawSpecDef = JSON.parse(rawData.profile);
         if(me.rawSpecDef['dataType'] == 'projectType') {
           me.data = me.rawSpecDef['children'] || [];
-          me.importOut.emit(me.data);
         } else {
           me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
-          me.importOut.emit(me.data);
         }
+        me.importOut.emit(me.data);
       },
       (reason: any) => {
       });
   }
+
 
   view(rawSpecBrief: any) {
     let me = this;
@@ -122,8 +122,12 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
           return;
         }
         me.rawSpecDef = JSON.parse(rawData.profile);
-        me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
-        me.viewOut.emit({
+        if(me.rawSpecDef['dataType'] == 'projectType') {
+          me.data = me.rawSpecDef['children'] || [];
+        } else {
+          me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
+        }
+        me.viewApi({
           data: me.data,
           rawSpecDef: me.rawSpecDef
         });
@@ -131,4 +135,22 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
       (reason: any) => {
       });
   }
+
+  showPreviewOrCode = true;
+  sourceCodeText = '';
+  subPanelType = 1;
+  viewApi(evt: any) {
+    this.subPanelType = 2;
+    this.data = evt.data;
+    this.sourceCodeText = JSON.stringify(evt.rawSpecDef, null, 2);
+  }
+
+  showPreviewOrCodeFn(flag: boolean) {
+    this.showPreviewOrCode = flag;
+  }
+
+  backFn() {
+    this.subPanelType = 1;
+  }
+
 }
