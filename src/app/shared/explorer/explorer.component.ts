@@ -94,7 +94,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   importFromApiDef(rawSpecBrief: any) {
     let me = this;
-    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/userModel/" + rawSpecBrief.id, false).subscribe(
+    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id, false).subscribe(
       (rawData: any) => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
@@ -115,7 +115,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   view(rawSpecBrief: any) {
     let me = this;
-    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/userModel/" + rawSpecBrief.id, false).subscribe(
+    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id, false).subscribe(
       (rawData: any) => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
