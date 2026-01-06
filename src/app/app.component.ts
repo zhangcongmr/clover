@@ -193,5 +193,9 @@ export class AppComponent implements OnInit, AfterViewInit {
           break;
       }
     }
+    //如果是API Ecosystem，则默认关闭侧边栏
+    if (currentSidebarTab == 4) {
+      this.currentSideBarStatus = false;
+    }
   }
 }
