@@ -30,3 +30,23 @@ img, svg {
 .btn-text {
     cursor: pointer;
 }
+
+
+.codigma-menu-every-item {
+    align-items: center;
+    /* 垂直居中 */
+    color: black;
+    display: flex;
+    font-size: 16px;
+    font-weight: 400;
+    height: 36px;
+    justify-content: start;
+    padding-left: 20px;
+    /* 替代空 span 做缩进 */
+    word-wrap: break-word;
+    cursor: pointer;
+}
+
+.codigma-menu-every-item:hover {
+    background-color: lightblue;
+}

@@ -2,6 +2,7 @@ import { AfterViewInit, Component, ElementRef, NgZone, OnChanges, OnInit, QueryL
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiTreeNodeType } from '../model';
+import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
 
 
@@ -13,7 +14,7 @@ import { ApiTreeNodeType } from '../model';
   host: {
     '(contextmenu)': 'showContextMenu($event, null)' // 监听组件根元素的右键菜单事件
   },
-  imports: [FormsModule]
+  imports: [FormsModule, AstMenuComponent]
 })
 export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   data = model<Array<ApiTreeNodeType>>([])
@@ -159,7 +160,7 @@ private ngZone = inject(NgZone);
     evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
 
     this.menuId = this.uuid()
-    // 显示自定义菜单并定位
+    // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
     let horizontalComputed = (window.innerWidth - evt.clientX) > 336 ? "left:" + (evt.clientX + 10) : "right:" + (window.innerWidth - evt.clientX + 10);
     let verticalComputed = (window.innerHeight - evt.clientY) > 3*36 ? "top:" + evt.clientY : "bottom:" + (window.innerHeight - evt.clientY);
     this.showMenuStyle = horizontalComputed + 'px;' + verticalComputed + 'px;' + "display:block;"

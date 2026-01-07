@@ -5,13 +5,14 @@ import { AuthorizeComponent } from '../authorize/authorize.component';
 import { ServerManagerComponent } from '../server-manager/server-manager.component';
 import { ServiceManagerComponent } from '../service-manager/service-manager.component';
 import { FormsModule } from '@angular/forms';
+import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
 @Component({
     selector: 'server-tree',
     templateUrl: './server.tree.component.html',
     styleUrls: ['./server.tree.component.css'],
     standalone: true,
-    imports: [AstTreeComponent, FormsModule,  AuthorizeComponent, ServerManagerComponent, ServiceManagerComponent]
+    imports: [AstMenuComponent,AstTreeComponent, FormsModule,  AuthorizeComponent, ServerManagerComponent, ServiceManagerComponent]
 })
 export class ServerTreeComponent implements OnInit, AfterViewInit {
   readonly serverManagerComponent = viewChild(ServerManagerComponent);
@@ -30,6 +31,8 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   authorizeBtnLabel: string = "授权";
   exitAuthorizeLabel: string = "退出";
   shouldAuthorize = false;
+
+  menuInitiator: any;
 
   ngOnInit() {
     this.init()
@@ -173,11 +176,6 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
     }
   }
 
-  before() {
-    this.blurSwitch = true;
-    this.isOpen = false;
-  }
-
   confirmAuthorize(server: any) {
     if (!server.data.userName || !server.data.passwd) {
       return;
@@ -198,7 +196,6 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
 
   clearAuthorize(server: any) {
     this.before()
-    let me = this;
     this.coreService.clearAuthorize(server.value, (result: number) => {
       if (result == 0) {
       }
@@ -208,11 +205,16 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
     });
   }
 
+  before() {
+    this.blurSwitch = true;
+    this.isOpen = false;
+  }
+
   clickMoreBtn(evt: any) {
-    let me = this;
-      if (!me.isOpen) {
-        me.isOpen = !me.isOpen;
-      }
+    if (!this.isOpen) {
+      this.isOpen = !this.isOpen;
+      this.menuInitiator = evt.target.getBoundingClientRect();
+    }
   }
 
   blurMoreBtn(evt: any) {
@@ -222,11 +224,11 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
       }
   }
 
-  mouseenterMoreBtn(evt: any) {
+  mouseentermenu(evt: any) {
     this.blurSwitch = false;
   }
 
-  mouseleaveMoreBtn(evt: any) {
+  mouseleavemenu(evt: any) {
     this.blurSwitch = true;
   }
 
