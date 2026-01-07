@@ -15,6 +15,7 @@
       background: var(--ast-header-1, #F3F3F8);
       display: inline-flex;
       justify-content: flex-start;
+      padding-right: 20px
     }
 
     .codigma-left-app-header {
