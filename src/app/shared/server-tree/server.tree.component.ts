@@ -12,7 +12,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
     templateUrl: './server.tree.component.html',
     styleUrls: ['./server.tree.component.css'],
     standalone: true,
-    imports: [AstMenuComponent,AstTreeComponent, FormsModule,  AuthorizeComponent, ServerManagerComponent, ServiceManagerComponent]
+    imports: [AstMenuComponent, AstTreeComponent, FormsModule,  AuthorizeComponent, ServerManagerComponent, ServiceManagerComponent]
 })
 export class ServerTreeComponent implements OnInit, AfterViewInit {
   readonly serverManagerComponent = viewChild(ServerManagerComponent);
@@ -26,12 +26,12 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   serverList: Array<any> = [];
   currentServer: any = {};
 
-  blurSwitch = true;
-  isOpen = false;
   authorizeBtnLabel: string = "授权";
   exitAuthorizeLabel: string = "退出";
   shouldAuthorize = false;
 
+  blurSwitch = true;
+  isOpen = false;
   menuInitiator: any;
 
   ngOnInit() {

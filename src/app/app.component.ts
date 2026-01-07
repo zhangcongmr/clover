@@ -5,13 +5,14 @@ import { ConfigService, CoreService, EventItem, AppEventType } from './core.serv
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
 import { ContentComponent } from './assistant/content/content.component';
+import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    imports: [AstTabGroupComponent, AstTabComponent, ContentComponent]
+    imports: [AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent]
 })
 export class AppComponent implements OnInit, AfterViewInit {
   private coreService = inject(CoreService);
@@ -26,6 +27,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   lastSelectedSidebarTab: number = 1;
   currentSidebarTab: number = 1;
   currentSideBarStatus = true
+
+  blurSwitch = true;
+  isOpen = false;
+  menuInitiator: any;
 
   constructor() {
     let me = this;
@@ -198,4 +203,33 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.currentSideBarStatus = false;
     }
   }
+
+
+  before() {
+    this.blurSwitch = true;
+    this.isOpen = false;
+  }
+
+  clickMoreBtn(evt: any) {
+    if (!this.isOpen) {
+      this.isOpen = !this.isOpen;
+      this.menuInitiator = evt.target.getBoundingClientRect();
+    }
+  }
+
+  blurMoreBtn(evt: any) {
+    let me = this;
+      if (me.blurSwitch) {
+        me.isOpen = false;
+      }
+  }
+
+  mouseentermenu(evt: any) {
+    this.blurSwitch = false;
+  }
+
+  mouseleavemenu(evt: any) {
+    this.blurSwitch = true;
+  }
+
 }

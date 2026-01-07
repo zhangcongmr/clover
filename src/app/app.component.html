@@ -4,15 +4,29 @@
       <div data-layer="Project" class="Project codigma-project">{{mainTitle}}</div>
     </div>
     <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
-      <div data-svg-wrapper="" data-layer="user-btn" class="btn-svg UserBtn">
+      <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn" (click)="clickMoreBtn($event)"
+      (blur)="blurMoreBtn($event)">
         <svg class="icon" width="24" height="24">
           <use href="assets/lib/svg_merged.svg#icon-user-btn"></use>
         </svg>
       </div>
-      <div data-svg-wrapper="" data-layer="settings-btn" class="btn-svg SettingsBtn" (click)="toggleSideBarTab(5)">
+      <!-- <div data-svg-wrapper="" data-layer="settings-btn" class="btn-svg SettingsBtn" (click)="toggleSideBarTab(5)">
         <svg class="icon" width="24" height="24">
           <use href="assets/lib/svg_merged.svg#icon-settings"></use>
         </svg>
+      </div> -->
+      <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
+          class="more-btn-dropdown-content codigma-right-menu">
+        <div data-layer="User Center" class="UserCenter codigma-menu-every-item"><span>User Center</span></div>
+        <div data-layer="Settings" class="Settings codigma-menu-every-item"  (click)="toggleSideBarTab(5)">
+          <span>Settings</span>
+        </div>
+        <div data-layer="Login" class="Login codigma-menu-every-item">
+          <span>Login</span>
+        </div>
+        <div data-layer="Logout" class="Logout codigma-menu-every-item">
+          <span>Logout</span>
+        </div>
       </div>
     </div>
   </div>
