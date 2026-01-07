@@ -1,5 +1,5 @@
 @if(editApiSourceCodeEnable == false) {
-  <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
+  <!-- <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
     <div data-layer="edit-btn" class="EditBtn codigma-edit-btn" (click)="editApiSourceCodeFn()">
       <div data-svg-wrapper="" data-layer="Frame" class="Frame">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -8,9 +8,9 @@
             fill="#787777"></path>
         </svg>
       </div>
-      <!-- <div data-layer="Edit" class="Edit codigma-edit">Edit</div> -->
+      <div data-layer="Edit" class="Edit codigma-edit">Edit</div>
     </div>
-  </div>
+  </div> -->
   <div style="display: flex;flex-wrap: nowrap;margin-top: 0.5rem;">
     <ast-select [data]="methodOptions" [inputValue]="apiInfo.method.toUpperCase()" (selected)="methodChange($event)" [readonly]="true"></ast-select>
     <input type="text" name="uri" [(ngModel)]="apiInfo.url"
@@ -355,6 +355,7 @@
       <div style="width: 4rem;text-align: center;display: inline-block;" (click)="apiBackFn()">Back</div>
       <div style="width: 4rem;text-align: center;display: inline-block;" (click)="apiSaveFn()">Save</div>
     </div>
+    <div class="esc-hint" [style.display]="showEscHint ? 'block' : 'none'">Press the ESC key to exit</div>
   </div>
   <div #editApiSourceCodeContainer style="overflow: hidden;height: 100%;"></div>
 }

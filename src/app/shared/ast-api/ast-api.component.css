@@ -349,3 +349,21 @@ table tr:hover {
     height: 2rem;
     justify-content: center
 }
+
+/* 提示条样式 */
+.esc-hint {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: rgba(173, 171, 171, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    /* 避免遮挡点击 */
+    opacity: 1;
+    z-index: 100;
+}

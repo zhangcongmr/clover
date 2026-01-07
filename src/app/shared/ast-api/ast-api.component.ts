@@ -18,6 +18,7 @@ import {json} from "@codemirror/lang-json"
     '(mousemove)': 'nsResize($event)',
     '[tabIndex]': '-1',
     '(keydown)': 'saveApi($event)',
+    '(dblclick)': 'editApiSourceCodeFn()'
   },
   standalone: true,
   imports: [FormsModule, AstSelectComponent, AstTabGroupComponent, AstTabComponent]
@@ -754,6 +755,17 @@ export class AstApiComponent implements OnInit, AfterViewInit {
         this.ifChangedFlag = false;
       }
     }
+    // 检查是否按下 ESC 键
+    if (evt.key === 'Escape') {
+      const target: any = evt.target;
+
+      // 判断目标是否是我们关心的可编辑元素
+      if (target.matches('input[type="text"], textarea, [contenteditable="true"]')) {
+        // 阻止默认行为（可选）
+        evt.preventDefault();
+        this.apiBackFn();
+      }
+    }
   }
 
   setEditStatus(evt: KeyboardEvent, ifChangedFlag: boolean) {
@@ -765,7 +777,8 @@ export class AstApiComponent implements OnInit, AfterViewInit {
 
   editApiSourceCodeFn() {
     this.editApiSourceCodeEnable = true;
-    setTimeout(() => {
+    // 替代 setTimeout. 确保在下一次渲染周期后执行代码  setTimeout虽然也可以，但存在潜在的未渲染完成时就执行的可能。requestAnimationFrame比setTimeout更可靠。
+    requestAnimationFrame(() => {
       const domView = this.editApiSourceCodeContainerView();
       let doc = JSON.stringify(this.apiInfo, null, 4)
       if (domView) {
@@ -789,11 +802,41 @@ export class AstApiComponent implements OnInit, AfterViewInit {
             })
           ],
         });
+        // 👇 关键：主动聚焦，显示光标
+        this.editorView.focus();
+        this.createEscHint(); // 创建并显示提示
       }
-    }, 0)
+    })
   }
 
-  apiBackFn(){
+  removeTimer: any = null;      // 自动移除的定时器
+  showEscHint: boolean = true;
+  // 创建并显示提示
+  createEscHint() {
+    // 如果已有提示，先清理（防重复）
+    this.removeEscHint();
+    this.showEscHint = true;
+
+    let me =this;
+    // 启动 1 秒后自动移除
+    this.removeTimer = setTimeout(() => {
+      me.showEscHint = false;
+    }, 3000);
+  }
+
+  // 立即移除提示（包括清除定时器）
+  removeEscHint() {
+    if (this.removeTimer) {
+      clearTimeout(this.removeTimer);
+      this.removeTimer = null;
+    }
+    this.showEscHint = false;
+  }
+
+  apiBackFn() {
+    //组件销毁,防止内存泄漏。
+    this.editorView.destroy()
+    this.removeEscHint(); // 立即移除提示（包括清除定时器）
     this.editApiSourceCodeEnable = false;
   }
 
