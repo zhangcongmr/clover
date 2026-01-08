@@ -198,7 +198,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         case 5:
           this.mainTitle = "Settings"
           break;
-        case 5:
+        case 6:
           this.mainTitle = "User Center"
           break;
       }
