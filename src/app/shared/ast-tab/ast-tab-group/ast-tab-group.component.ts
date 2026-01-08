@@ -13,11 +13,12 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   @ContentChildren(AstTabComponent) topLevelTabs!: QueryList<AstTabComponent>;
   readonly showAddTab = input<boolean>(false);
   readonly closable = input(true);
-  readonly tabType = input<any>({ 'size': 'large', 'tabType': 'bilateral' });//size: large | normal | small
+  readonly tabType = input<{ size?: 'large' | 'normal' | 'small';
+                             type?: 'bilateral' | 'bottom' | 'borderless';
+                           }>({});// tab 样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
 
   ulStyle: string = "height: 2rem;"
-  liStyle: string = "height: 2rem;line-height: 2rem;"
 
   tabMap: Map<string, boolean> = new Map();
   private _subscription = new Subscription();
@@ -26,8 +27,17 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes["tabType"]) {
-      this.ulStyle = this.tabType()['size'] == 'large' ? 'height: 3rem' : 'height: 2rem';
-      this.liStyle = this.tabType()['size'] == 'large' ? 'height: 3rem;line-height: 3rem;' : 'height: 2rem;line-height: 2rem;';
+      if (this.tabType == null) {
+        this.ulStyle = 'height: 2rem';
+        return;
+      } else {
+        const tabType = this.tabType();
+        if (tabType && tabType['size'] == 'large') {
+          this.ulStyle = 'height: 3rem';
+        } else {
+          this.ulStyle = 'height: 2rem';
+        }
+      }
     }
   }
 
@@ -133,9 +143,12 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   computeTabClass(tab: AstTabComponent, tabType: any) {
-    if (tabType['tabType'] == 'bilateral') {
+    if(tabType == null || tabType['type'] == null) {
+      return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';
+    }
+    if (tabType['type'] == 'bilateral') {
       return tab['isActivated'] ? 'bilateral-border-tab' : 'bottom-border-tab';
-    } else if (tabType['tabType'] == 'bottom') {
+    } else if (tabType['type'] == 'bottom') {
       return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';
     } else {
       return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';

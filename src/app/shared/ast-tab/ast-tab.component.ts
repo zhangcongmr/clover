@@ -23,7 +23,7 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
   closable?: boolean;
   dotOrClose?:boolean;//When the tab is not saved, true: dot, false: close button
 
-  activeClass = "bottom-border-tab";//default class is bottom-border-tab
+  activeClass: string = "";
 
   previousEle: any;
 

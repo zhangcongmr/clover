@@ -30,7 +30,7 @@
 
     <div id="req_section_{{apiInfo.id}}" class="flat-form" style="position: relative;height: 60%;background-color: white;"
       [style.height]="dragHeight * 100 + '%'">
-      <div ast-tab-group [closable]="false" [tabType]="{'globalType':'bottom','tabType':'bottom','size':'small'}">
+      <div ast-tab-group [closable]="false">
         <div ast-tab [label]="'Parameters'" [id]="'request_parameters'" [minWidth]="'122px'" role="tabpanel"
           aria-hidden="false" [isActivated]="true" (onClickTab)="onParamsClickTab($event)">
           @if(rawQueryOrPathParasCount>0 || apiInfo.customQueryparameters.length>0) {
