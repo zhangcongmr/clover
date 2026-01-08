@@ -1,7 +1,8 @@
-<div data-layer="app-ui-01" class="AppUi01 codigma-app-ui-01">
+<div data-layer="app-ui" class="AppUi codigma-app-ui">
   <div data-layer="app-header" class="AppHeader codigma-app-header">
     <div data-layer="left-app-header" class="LeftAppHeader codigma-left-app-header">
-      <div data-layer="Project" class="Project codigma-project">{{mainTitle}}</div>
+      <div data-layer="app-header-item" class="header-item">{{mainTitle}}</div>
+      <!-- <div data-layer="app-header-item" class="header-item">{{mainTitle}}</div> -->
     </div>
     <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
       <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn" (click)="clickMoreBtn($event)"
@@ -10,11 +11,6 @@
           <use href="assets/lib/svg_merged.svg#icon-user-btn"></use>
         </svg>
       </div>
-      <!-- <div data-svg-wrapper="" data-layer="settings-btn" class="btn-svg SettingsBtn" (click)="toggleSideBarTab(5)">
-        <svg class="icon" width="24" height="24">
-          <use href="assets/lib/svg_merged.svg#icon-settings"></use>
-        </svg>
-      </div> -->
       <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
           class="more-btn-dropdown-content codigma-right-menu">
         <div data-layer="User Center" class="UserCenter codigma-menu-every-item"  (click)="toggleSideBarTab(6)"><span>User Center</span></div>
