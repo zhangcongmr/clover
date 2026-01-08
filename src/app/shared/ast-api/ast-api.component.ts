@@ -255,6 +255,8 @@ export class AstApiComponent implements OnInit, AfterViewInit {
             '.cm-scroller': {
               height: '100%',
               overflow: 'auto',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#ccc transparent',
             },
           })
         ],
@@ -785,7 +787,7 @@ export class AstApiComponent implements OnInit, AfterViewInit {
         this.editorView = new EditorView({
           doc: doc,
           parent: domView.nativeElement,
-          extensions: [basicSetup, json(),
+          extensions: [basicSetup, json(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
             EditorView.theme({
               '&': {
                 height: '100%',
@@ -798,6 +800,8 @@ export class AstApiComponent implements OnInit, AfterViewInit {
               '.cm-scroller': {
                 height: '100%',
                 overflow: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#ccc transparent',
               },
             })
           ],
