@@ -198,6 +198,9 @@ export class AppComponent implements OnInit, AfterViewInit {
         case 5:
           this.mainTitle = "Settings"
           break;
+        case 5:
+          this.mainTitle = "User Center"
+          break;
       }
     }
     //如果是API Community，则默认关闭侧边栏
