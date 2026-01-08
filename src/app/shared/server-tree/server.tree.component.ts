@@ -132,7 +132,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   addServerDlg() {
-    this.before()
+    this.closeMenu()
     const serverManagerComp = this.serverManagerComponent()
     if(serverManagerComp) {
       serverManagerComp.type = ConfigService.addServer;
@@ -141,7 +141,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   deleteServerDlg() {
-    this.before()
+    this.closeMenu()
     const serverManagerComp = this.serverManagerComponent()
     if(serverManagerComp) {
       serverManagerComp.type = ConfigService.deleteServer;
@@ -150,7 +150,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   addServiceDlg() {
-    this.before()
+    this.closeMenu()
     const serviceManagerComp = this.serviceManagerComponent()
     if(serviceManagerComp) {
       serviceManagerComp.type = ConfigService.addService;
@@ -159,7 +159,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   deleteServiceDlg() {
-    this.before()
+    this.closeMenu()
     const serviceManagerComp = this.serviceManagerComponent()
     if(serviceManagerComp) {
       serviceManagerComp.type = ConfigService.deleteService;
@@ -168,7 +168,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   resetServiceDlg() {
-    this.before()
+    this.closeMenu()
     const serviceManagerComp = this.serviceManagerComponent()
     if(serviceManagerComp) {
       serviceManagerComp.type = ConfigService.resetService;
@@ -195,7 +195,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   clearAuthorize(server: any) {
-    this.before()
+    this.closeMenu()
     this.coreService.clearAuthorize(server.value, (result: number) => {
       if (result == 0) {
       }
@@ -205,7 +205,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  before() {
+  closeMenu() {
     this.blurSwitch = true;
     this.isOpen = false;
   }

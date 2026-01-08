@@ -17,7 +17,7 @@
       </div> -->
       <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
           class="more-btn-dropdown-content codigma-right-menu">
-        <div data-layer="User Center" class="UserCenter codigma-menu-every-item"><span>User Center</span></div>
+        <div data-layer="User Center" class="UserCenter codigma-menu-every-item"  (click)="toggleSideBarTab(6)"><span>User Center</span></div>
         <div data-layer="Settings" class="Settings codigma-menu-every-item"  (click)="toggleSideBarTab(5)">
           <span>Settings</span>
         </div>
@@ -30,6 +30,11 @@
       </div>
     </div>
   </div>
+  @if(currentSidebarTab==5) {
+    <app-settings></app-settings>
+  } @else if(currentSidebarTab==6) {
+    <div user-center></div>
+  } @else {
   <div data-layer="app-body" class="AppBody codigma-app-body">
     <div data-layer="left-side-area" class="LeftSideArea codigma-left-side-area">
       <div data-layer="up-btnlist" class="UpBtnlist codigma-up-btnlist">
@@ -82,4 +87,5 @@
       <div data-layer="0" class="codigma-projectname">0</div>
     </div>
   </div>
+  }
 </div>

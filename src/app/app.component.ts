@@ -6,13 +6,15 @@ import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
 import { ContentComponent } from './assistant/content/content.component';
 import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
+import { SettingsComponent } from './assistant/settings/settings.component';
+import { UserCenterComponent } from './assistant/user-center/user-center.component';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    imports: [AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent]
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent]
 })
 export class AppComponent implements OnInit, AfterViewInit {
   private coreService = inject(CoreService);
@@ -202,10 +204,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (currentSidebarTab == 4) {
       this.currentSideBarStatus = false;
     }
+    if(currentSidebarTab == 5 || currentSidebarTab == 6) {
+      this.closeMenu();
+    }
   }
 
 
-  before() {
+  closeMenu() {
     this.blurSwitch = true;
     this.isOpen = false;
   }

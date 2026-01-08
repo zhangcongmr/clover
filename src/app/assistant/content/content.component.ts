@@ -74,15 +74,6 @@ private ngZone = inject(NgZone);
     })
   }
 
-
-  closeMenu() {
-    const customMenu: any = document.getElementById('customMenu')
-    if (customMenu) {
-      customMenu.style.display = 'none';
-    }
-
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
   }
 
@@ -303,7 +294,6 @@ private ngZone = inject(NgZone);
       this.shareOnVisible = true;
       this.shareData = evt.target;
     }
-    this.closeMenu();
   }
 
   ngAfterViewInit(): void {
