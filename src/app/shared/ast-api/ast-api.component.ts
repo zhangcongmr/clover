@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild, afterNextRender, inject, output, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, inject, output, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
@@ -86,10 +86,13 @@ export class AstApiComponent implements OnInit, AfterViewInit {
 
   gotResponse = false;
 
-  responseJsoneditor: any;
-
   ifSendingRequest = false;
   requestDuration: string = "0";
+  response: {
+        status?: number | string;
+        statusText?: string;
+        body?: string;//响应体统一转换成字符串
+  } = {};
   // 创建一个新的 AbortController 实例  
   controller: AbortController | undefined;
   
@@ -465,22 +468,22 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     })
       .then(response => {
         if (!response.ok) {
-          apiInfo.response = {
+          this.response = {
             status: response.status,
-            statusText: response.statusText
+            statusText: response.statusText,
+            body: ""
           }
 
           const endTime = Date.now(); // 即使在错误的情况下也记录结束时间  
           this.requestDuration = this.formatDuration(endTime - startTime);
           this.ifSendingRequest = false;
-          this.responseJsoneditor.value = "";
           throw new Error('Network response was not ok.');
         }
         const endTime = Date.now(); // 记录结束时间  
         this.requestDuration = this.formatDuration(endTime - startTime);   // 计算耗时  
 
         this.ifSendingRequest = false;
-        apiInfo.response = {
+        this.response = {
           status: response.status,
           statusText: response.statusText
         }
@@ -497,13 +500,11 @@ export class AstApiComponent implements OnInit, AfterViewInit {
         if (typeof data === 'object') {
           // 假设 data 是 JSON 对象，你可以在这里处理它  
           console.log('Received JSON:', data);
-          if (this.responseJsoneditor) {
-            this.responseJsoneditor.value = JSON.stringify(data, null, 4)
-          }
+          this.response.body = JSON.stringify(data, null, 4);
         } else {
           // 假设 data 是文本字符串，你可以在这里处理它  
           console.log('Received text:', data);
-          this.responseJsoneditor.value = data;
+          this.response.body = data;
         }
       })
       .catch(error => {
@@ -645,7 +646,6 @@ export class AstApiComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.coreService.apiViewLoadedSubject.next(this.apiInfo);
-    this.responseJsoneditor = document.getElementById("responseJsoneditor_" + this.apiInfo.id);
     // this.initializeMonacoEditor();
   }
 

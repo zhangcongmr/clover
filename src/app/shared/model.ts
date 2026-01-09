@@ -64,7 +64,11 @@ export interface ApiTreeNodeType {
     produces?: Array<any>;
     currentConsume?: string;
     requestBody?: any; //适用于openapi 3.0
-    response?: any;
+    response?: {
+        status?: number | string;
+        statusText?: string;
+        body?: string;//响应体统一转换成字符串
+    };
     parameterHasBody?: boolean;
     parameterHasFormDataVer2?: boolean; //区分openapi 2.0
     isActive?: boolean;
