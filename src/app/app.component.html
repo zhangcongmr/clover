@@ -7,7 +7,7 @@
       @if (openedList.length>0) {
         @for (openedTab of openedList; track openedTab.id) {
           <div ast-tab [label]="openedTab.title"
-            [id]="openedTab.id"
+            [id]="openedTab.id"  [minWidth]="'150px'"
             role="tabpanel" aria-hidden="false" [isActivated]="openedTab.isActive" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTab($event)"
             (onClickTab)="onClickTab($event)">
           </div>
