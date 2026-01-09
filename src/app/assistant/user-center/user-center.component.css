@@ -1,3 +1,10 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    overflow-y: auto;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -5,10 +12,6 @@
     font-family: 'Arial', sans-serif;
 }
 
-body {
-    background-color: #f5f5f5;
-    color: #333;
-}
 
 /* 头部导航 */
 .header {
