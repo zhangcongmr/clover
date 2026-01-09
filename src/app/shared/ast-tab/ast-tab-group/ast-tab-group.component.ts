@@ -106,6 +106,11 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
 
   private updateTabsClass() {
+    const hasActivatedTab = this.topLevelTabs.some(tab => tab.isActivated);
+    if(!hasActivatedTab && this.topLevelTabs.length > 0) {
+      // If no tab is activated, activate the first one by default
+      this.topLevelTabs.first.isActivated = true;
+    }
     this.topLevelTabs.forEach(tab => {
       tab.activeClass = this.computeTabClass(tab, this.tabType());
     });
