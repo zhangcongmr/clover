@@ -111,21 +111,22 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     });
   }
 
-  iconCloseClick(evt: any, iconName: any) {
+  iconCloseClick(evt: any, tab: any) {
+    evt.stopPropagation(); // 阻止事件冒泡
     if (this.topLevelTabs.length > 0) {
       const tabs: any = this.topLevelTabs;
-      let isFirst = tabs.get(0).id == evt.id;
-      let isLast = tabs.get(tabs.length - 1).id == evt.id;
+      let isFirst = tabs.get(0).id == tab.id;
+      let isLast = tabs.get(tabs.length - 1).id == tab.id;
 
       const toClosedTab = {
-        label: evt.label,
-        id: evt.id,
-        isActivated: evt.isActivated,
+        label: tab.label,
+        id: tab.id,
+        isActivated: tab.isActivated,
         isFirst: isFirst,
         isLast: isLast
       };
 
-      evt.onCloseTab.emit(toClosedTab);
+      tab.onCloseTab.emit(toClosedTab);
     }
   }
 
