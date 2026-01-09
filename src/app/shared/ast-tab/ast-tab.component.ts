@@ -14,7 +14,7 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() id = "";
   @Input() isActivated = false;
   @Input() minWidth = ''
-  readonly saved = input(false);
+  readonly saved = input<boolean | undefined>();
   readonly onCloseTab = output<any>();
   readonly onClickTab = output<any>();
   // 输出事件，通知外部 isActivated 发生了变化

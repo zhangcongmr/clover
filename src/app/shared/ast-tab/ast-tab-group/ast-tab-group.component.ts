@@ -14,9 +14,13 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly showAddTab = input<boolean>(false);
   readonly closable = input(true);
   readonly tabType = input<{ size?: 'large' | 'normal' | 'small';
+                             height?: string;
                              type?: 'bilateral' | 'bottom' | 'borderless';
+                             backgroundColor?: string;
                            }>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
+
+  readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
 
   ulStyle: string = "height: 2rem;"
 
@@ -36,6 +40,12 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
           this.ulStyle = 'height: 3rem';
         } else {
           this.ulStyle = 'height: 2rem';
+        }
+        if (tabType && tabType['height']) {
+          this.ulStyle = 'height: ' + tabType['height'];
+        }
+        if (tabType && tabType['backgroundColor']) {
+          this.ulStyle += '; background-color: ' + tabType['backgroundColor'];
         }
       }
     }

@@ -8,7 +8,7 @@
       <div data-layer="padding_left_space" class="padding_left_space"></div>
       <div class="codigma-project">{{tab['label']()}}</div>
       @if (closable()&&(tab.closable==null||tab.closable==true)) {
-        @if(!tab['saved']()) {
+        @if(tab['saved']()==false) {
           <div data-svg-wrapper="" data-layer="close-btn" class="CloseBtn tab-close-cnr" (click)="iconCloseClick(tab, 'x')"
             (mouseenter)="whenMouseEnterTabCloseCnr(tab)" (mouseleave)="whenMouseLeaveTabCloseCnr(tab)">
             <!-- <img
@@ -45,5 +45,4 @@
   </div>
 </div>
 
-
-<ng-content></ng-content>
+  <ng-content></ng-content>

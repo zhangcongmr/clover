@@ -309,6 +309,7 @@ private ngZone = inject(NgZone);
 
   onCloseTab(evt: any) {
     let currentIndex = 0;
+    let currentActived = evt.isActivated;
     for (let index = 0; index < this.openedList.length; index++) {
       if (this.openedList[index].id == evt.id) {
         currentIndex = index;
@@ -317,17 +318,20 @@ private ngZone = inject(NgZone);
         break;
       }
     }
-    if (evt.isFirst) {
-      if (this.openedList.length >= 1) {
-        this.openedList[0]["isActive"] = true;
+    if(currentActived) { //关闭的tab是激活状态，则需要激活其他tab
+      if (evt.isFirst) {
+        if (this.openedList.length >= 1) {
+          this.openedList[0]["isActive"] = true;
+        }
+      } else if (evt.isLast) {
+        if (this.openedList.length >= 1) {
+          this.openedList[this.openedList.length - 1]["isActive"] = true;
+        }
+      } else {
+        this.openedList[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
       }
-    } else if (evt.isLast) {
-      if (this.openedList.length >= 1) {
-        this.openedList[this.openedList.length - 1]["isActive"] = true;
-      }
-    } else {
-      this.openedList[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
     }
+
     this.storeOpenedList()
   }
 
