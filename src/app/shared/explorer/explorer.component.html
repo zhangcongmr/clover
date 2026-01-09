@@ -83,8 +83,7 @@
     <ast-table [columns]="columns" [data]="data" [headerSticky]="true" style="overflow-y: auto;width: 100%;"
       [showCheckBox]="false" [style.display]="showPreviewOrCode?'flex':'none'"
       (selected)="apiCheckedFun($event)"></ast-table>
-    <pre
-      style="flex: 1 1 0;overflow-y: auto;white-space: pre-wrap;border: 1px solid gainsboro;width: 100%;overflow-wrap: break-word;word-break: break-word;"
-      [style.display]="!showPreviewOrCode?'flex':'none'">{{sourceCodeText}}</pre>
+    <div #apiSourceCodeContainer [style.display]="!showPreviewOrCode?'flex':'none'"
+     style="flex: 1 1 0;overflow: hidden;border: 1px solid gainsboro;width: 100%;"></div>
   </div>
 }

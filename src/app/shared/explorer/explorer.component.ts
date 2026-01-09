@@ -1,8 +1,10 @@
-import { AfterViewChecked, AfterViewInit, Component, OnInit, inject, input, output } from '@angular/core';
+import { AfterViewChecked, AfterViewInit, Component, ElementRef, OnInit, inject, input, output, viewChild } from '@angular/core';
 import { ServerTreeComponent } from '../server-tree/server.tree.component';
 import { AstTableComponent } from '../ast-table/ast-table.component';
 import { PrivacyErrorDialogComponent } from '../privacy-error-dialog/privacy-error-dialog.component';
 import { CoreService } from '../../core.service';
+import { basicSetup, EditorView } from 'codemirror';
+import { json } from '@codemirror/lang-json';
 
 @Component({
   selector: 'app-api-explorer',
@@ -16,6 +18,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   readonly importOut = output<Array<any>>();
   readonly viewOut = output<any>();
   readonly currentSidebarTab = input<number>(1);
+  apiSourceCodeContainerView = viewChild<ElementRef<HTMLButtonElement>>('apiSourceCodeContainer');
 
   columns = [
     { key: "method", title: "Method" },
@@ -45,6 +48,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   useNew = true;
   currentUi = "Switch to old interface"
+  apiSourceView!: EditorView;
 
   constructor() {
   }
@@ -143,10 +147,48 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     this.subPanelType = 2;
     this.data = evt.data;
     this.sourceCodeText = JSON.stringify(evt.rawSpecDef, null, 2);
+    if(!this.showPreviewOrCode) {
+      this.showPreviewOrCodeFn(this.showPreviewOrCode);
+    }
   }
 
   showPreviewOrCodeFn(flag: boolean) {
     this.showPreviewOrCode = flag;
+    if(!flag) {
+      if(this.apiSourceView) {
+        //初始化之前先组件销毁,防止内存泄漏。
+        this.apiSourceView.destroy()
+      }
+      // 替代 setTimeout. 确保在下一次渲染周期后执行代码  setTimeout虽然也可以，但存在潜在的未渲染完成时就执行的可能。requestAnimationFrame比setTimeout更可靠。
+      requestAnimationFrame(() => {
+        const domView = this.apiSourceCodeContainerView();
+        if (domView) {
+          this.apiSourceView = new EditorView({
+            doc: this.sourceCodeText,
+            parent: domView.nativeElement,
+            extensions: [basicSetup, json(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
+              EditorView.theme({
+                '&': {
+                  height: '100%',
+                  width: '100%',
+                  minHeight: '0',
+                  fontFamily: 'Consolas',
+                  border: 'none', // 移除边框
+                  outline: 'none', // 可选：移除聚焦时的 outline
+                  boxShadow: 'none',
+                },
+                '.cm-scroller': {
+                  height: '100%',
+                  overflow: 'auto',
+                  // scrollbarWidth: 'thin',
+                  scrollbarColor: '#ccc transparent',
+                },
+              })
+            ],
+          });
+        }
+      })
+    }
   }
 
   backFn() {
