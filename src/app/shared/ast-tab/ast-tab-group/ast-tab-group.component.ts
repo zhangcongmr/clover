@@ -15,7 +15,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly closable = input(true);
   readonly tabType = input<{ size?: 'large' | 'normal' | 'small';
                              type?: 'bilateral' | 'bottom' | 'borderless';
-                           }>({});// tab 样式类型 如果不填写，会默认初始化为 bottom 类型
+                           }>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
 
   ulStyle: string = "height: 2rem;"
@@ -45,13 +45,13 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   ngAfterViewInit(): void {
-    document.addEventListener('keydown', (event) => {
-      const keyName = event.key;
+    // document.addEventListener('keydown', (event) => {
+    //   const keyName = event.key;
 
-      if (keyName === 'Control') {
-        return;
-      }
-    }, false);
+    //   if (keyName === 'Control') {
+    //     return;
+    //   }
+    // }, false);
   }
 
   ngAfterContentInit() {
