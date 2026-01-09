@@ -67,7 +67,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ngAfterContentInit() {
     //topLevelTabs.changes 不会在初始化时触发，只在内容后续发生变化时发出事件。因此首次处理应在这ngAfterContentInit 中进行
     // 初始设置
-    this.updateTabsClass();
+    this.updateTabsClass(true);
 
     // 监听投影内容变化（如 tab 被添加/移除）
     this._subscription.add(
@@ -105,12 +105,15 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
 
-  private updateTabsClass() {
-    const hasActivatedTab = this.topLevelTabs.some(tab => tab.isActivated);
-    if(!hasActivatedTab && this.topLevelTabs.length > 0) {
-      // If no tab is activated, activate the first one by default
-      this.topLevelTabs.first.isActivated = true;
+  private updateTabsClass(firstTime?: boolean) {
+    if (firstTime) {
+      // 首次调用时，确保至少有一个 tab 被激活
+      const hasActivatedTab = this.topLevelTabs.some(tab => tab.isActivated);
+      if (!hasActivatedTab && this.topLevelTabs.length > 0) {
+        this.topLevelTabs.first.isActivated = true;
+      }
     }
+
     this.topLevelTabs.forEach(tab => {
       tab.activeClass = this.computeTabClass(tab, this.tabType());
     });

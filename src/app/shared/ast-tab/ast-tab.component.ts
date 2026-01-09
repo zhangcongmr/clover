@@ -14,13 +14,14 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() id = "";
   @Input() isActivated = false;
   @Input() minWidth = ''
+  @Input() closable?: boolean;
   readonly saved = input<boolean | undefined>();
   readonly onCloseTab = output<any>();
   readonly onClickTab = output<any>();
   // 输出事件，通知外部 isActivated 发生了变化
   @Output() isActivatedChange = new EventEmitter<boolean>();
 
-  closable?: boolean;
+
   dotOrClose?:boolean;//When the tab is not saved, true: dot, false: close button
 
   activeClass: string = "";
