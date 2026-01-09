@@ -19,19 +19,19 @@
     <!-- 左侧边栏 -->
     <div class="sidebar">
         <div class="user-info">
-            <div class="avatar">🐻</div>
-            <div class="username">AS773223423</div>
-            <div class="phone">139****5635</div>
-            <button class="checkin-btn" onclick="checkin()">签到</button>
+            <div class="avatar">{{ userInfo.avatar }}</div>
+            <div class="username">{{ userInfo.username }}</div>
+            <div class="phone">{{ userInfo.phone }}</div>
+            <button class="checkin-btn" (click)="checkin()">签到</button>
         </div>
         <ul class="menu">
-            <li><a href="#">首页</a></li>
-            <li><a href="#">我的内容</a></li>
-            <li><a href="#">我的积分</a></li>
-            <li><a href="#">我的优惠券</a></li>
-            <li><a href="#">我的购物卡</a></li>
-            <li><a href="#">设备管理</a></li>
-            <li><a href="#">账号安全</a></li>
+            <li><a href="#">{{ menuItems[0].label }}</a></li>
+            <li><a href="#">{{ menuItems[1].label }}</a></li>
+            <li><a href="#">{{ menuItems[2].label }}</a></li>
+            <li><a href="#">{{ menuItems[3].label }}</a></li>
+            <li><a href="#">{{ menuItems[4].label }}</a></li>
+            <li><a href="#">{{ menuItems[5].label }}</a></li>
+            <li><a href="#">{{ menuItems[6].label }}</a></li>
         </ul>
     </div>
 
@@ -40,15 +40,15 @@
         <!-- 数据概览 -->
         <div class="stats">
             <div class="stat-item">
-                <div class="stat-value">0</div>
+                <div class="stat-value">{{ statistics.points }}</div>
                 <div class="stat-label">我的积分</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">0</div>
+                <div class="stat-value">{{ statistics.coupons }}</div>
                 <div class="stat-label">我的优惠券</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">¥0</div>
+                <div class="stat-value">¥{{ statistics.shoppingCards }}</div>
                 <div class="stat-label">回收代金券</div>
             </div>
         </div>
@@ -92,43 +92,43 @@
             <div class="section-title">为你推荐</div>
             <div class="recommendation-list">
                 <div class="product-item">
-                    <div class="product-image">📱</div>
+                    <div class="product-image">{{ products[0].image }}</div>
                     <div class="product-info">
-                        <div class="product-name">旗舰1</div>
-                        <div class="product-desc">骁龙8 Gen3 5G手机</div>
-                        <div class="product-price">¥5999</div>
+                        <div class="product-name">{{ products[0].name }}</div>
+                        <div class="product-desc">{{ products[0].desc }}</div>
+                        <div class="product-price">{{ products[0].price }}</div>
                     </div>
                 </div>
                 <div class="product-item">
-                    <div class="product-image">📱</div>
+                    <div class="product-image">{{ products[1].image }}</div>
                     <div class="product-info">
-                        <div class="product-name">旗舰2</div>
-                        <div class="product-desc">第三代骁龙8 8G+256G</div>
-                        <div class="product-price">¥2099</div>
+                        <div class="product-name">{{ products[1].name }}</div>
+                        <div class="product-desc">{{ products[1].desc }}</div>
+                        <div class="product-price">{{ products[1].price }}</div>
                     </div>
                 </div>
                 <div class="product-item">
-                    <div class="product-image">💻</div>
+                    <div class="product-image">{{ products[2].image }}</div>
                     <div class="product-info">
-                        <div class="product-name">普通3</div>
-                        <div class="product-desc">省芯超A 大内存</div>
-                        <div class="product-price">¥1899</div>
+                        <div class="product-name">{{ products[2].name }}</div>
+                        <div class="product-desc">{{ products[2].desc }}</div>
+                        <div class="product-price">{{ products[2].price }}</div>
                     </div>
                 </div>
                 <div class="product-item">
-                    <div class="product-image">📱</div>
+                    <div class="product-image">{{ products[3].image }}</div>
                     <div class="product-info">
-                        <div class="product-name">家庭1</div>
-                        <div class="product-desc">性能旗舰新选择</div>
-                        <div class="product-price">¥3199</div>
+                        <div class="product-name">{{ products[3].name }}</div>
+                        <div class="product-desc">{{ products[3].desc }}</div>
+                        <div class="product-price">{{ products[3].price }}</div>
                     </div>
                 </div>
                 <div class="product-item">
-                    <div class="product-image">💻</div>
+                    <div class="product-image">{{ products[4].image }}</div>
                     <div class="product-info">
-                        <div class="product-name">企业1</div>
-                        <div class="product-desc">骁龙8 Gen3 8G+128G</div>
-                        <div class="product-price">¥2699</div>
+                        <div class="product-name">{{ products[4].name }}</div>
+                        <div class="product-desc">{{ products[4].desc }}</div>
+                        <div class="product-price">{{ products[4].price }}</div>
                     </div>
                 </div>
             </div>
