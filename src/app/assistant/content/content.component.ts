@@ -313,7 +313,7 @@ private ngZone = inject(NgZone);
     for (let index = 0; index < this.openedList.length; index++) {
       if (this.openedList[index].id == evt.id) {
         currentIndex = index;
-        this.openedList[currentIndex]["isActive"] = false;
+        this.openedList[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
         this.openedList.splice(index, 1);
         break;
       }

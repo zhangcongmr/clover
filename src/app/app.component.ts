@@ -34,6 +34,15 @@ export class AppComponent implements OnInit, AfterViewInit {
   isOpen = false;
   menuInitiator: any;
 
+  openedList: Array<any> = [
+    {
+      id: 'my-project',
+      title: 'My Project',
+      isActive: true,
+      isClosable: false,
+    }
+  ];
+
   constructor() {
     let me = this;
     afterNextRender(() => {
@@ -149,7 +158,69 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onCloseTab(evt: any) {
+    let currentIndex = 0;
+    let currentActived = evt.isActivated;
+    for (let index = 0; index < this.openedList.length; index++) {
+      if (this.openedList[index].id == evt.id) {
+        currentIndex = index;
+        this.openedList[currentIndex]["isActive"] = false;
+        this.openedList.splice(index, 1);
+        break;
+      }
+    }
+    if(currentActived) { //关闭的tab是激活状态，则需要激活其他tab
+      if (evt.isFirst) {
+        if (this.openedList.length >= 1) {
+          this.openedList[0]["isActive"] = true;
+          this.activeMainPanel(this.openedList[0]);
+        }
+      } else if (evt.isLast) {
+        if (this.openedList.length >= 1) {
+          this.openedList[this.openedList.length - 1]["isActive"] = true;
+          this.activeMainPanel(this.openedList[this.openedList.length - 1]);
+        }
+      } else {
+        this.openedList[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
+        this.activeMainPanel(this.openedList[currentIndex]);
+      }
+    }
+  }
 
+  onClickTab(evt: any) {
+    for (let index = 0; index < this.openedList.length; index++) {
+      if (this.openedList[index].id == evt.id) {
+        this.openedList[index]["isActive"] = true
+      } else {
+        this.openedList[index]["isActive"] = false
+      }
+    }
+
+    this.activeMainPanel(evt);
+  }
+
+  /**
+   * 激活主面板对应的侧边栏tab
+   * @param evt 
+   */
+  private activeMainPanel(evt: any) {
+    const id = evt.id;
+    switch (id) {
+      case 'my-project':
+        this.mainTitle = "My Project";
+        this.currentSidebarTab = 1;
+        this.lastSelectedSidebarTab = this.currentSidebarTab;
+        break;
+      case 'settings':
+        this.mainTitle = "Settings";
+        this.currentSidebarTab = 5;
+        this.lastSelectedSidebarTab = this.currentSidebarTab;
+        break;
+      case 'user-center':
+        this.mainTitle = "User Center";
+        this.currentSidebarTab = 6;
+        this.lastSelectedSidebarTab = this.currentSidebarTab;
+        break;
+    }
   }
 
   onAssistantClickTab(evt: any) {
@@ -197,9 +268,43 @@ export class AppComponent implements OnInit, AfterViewInit {
           break;
         case 5:
           this.mainTitle = "Settings"
+          const settingBar: any = {
+            id: 'settings',
+            title: 'Settings',
+            component: SettingsComponent
+          };
+          let oldSettingTab = false;
+          for (const item of this.openedList) {
+            delete item["isActive"];
+            if (item.id == settingBar.id) {
+              item["isActive"] = true;
+              oldSettingTab = true;
+            }
+          }
+          if (!oldSettingTab) {
+            settingBar["isActive"] = true
+            this.openedList.push(settingBar);
+          }
           break;
         case 6:
           this.mainTitle = "User Center"
+          const userCenterBar: any = {
+            id: 'user-center',
+            title: 'User Center',
+            component: UserCenterComponent
+          };
+          let oldTab = false;
+          for (const item of this.openedList) {
+            delete item["isActive"];
+            if (item.id == userCenterBar.id) {
+              item["isActive"] = true;
+              oldTab = true;
+            }
+          }
+          if (!oldTab) {
+            userCenterBar["isActive"] = true
+            this.openedList.push(userCenterBar);
+          }
           break;
       }
     }
