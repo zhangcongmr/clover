@@ -45,6 +45,6 @@
   </div>
 </div>
 
-@if(!tabsOnlyMode) {
+@if(!tabsOnlyMode) { <!-- 如果不是只显示tab栏模式，则显示内容区  采用angular非正规做法，angular官方其实不推荐这样使用 参见https://angular.cn/guide/components/content-projection -->
   <ng-content></ng-content>
 }
