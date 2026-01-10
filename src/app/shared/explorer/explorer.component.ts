@@ -193,6 +193,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   backFn() {
     this.subPanelType = 1;
+    this.showPreviewOrCode = true;
   }
 
 }
