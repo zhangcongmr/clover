@@ -1,4 +1,4 @@
-import { AfterViewChecked, AfterViewInit, Component, ElementRef, OnInit, inject, input, output, viewChild } from '@angular/core';
+import { AfterViewChecked, AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, OnInit, inject, input, output, viewChild } from '@angular/core';
 import { ServerTreeComponent } from '../server-tree/server.tree.component';
 import { AstTableComponent } from '../ast-table/ast-table.component';
 import { PrivacyErrorDialogComponent } from '../privacy-error-dialog/privacy-error-dialog.component';
@@ -11,6 +11,7 @@ import { json } from '@codemirror/lang-json';
   templateUrl: './explorer.component.html',
   styleUrls: ['./explorer.component.css'],
   standalone: true,
+   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [ServerTreeComponent, AstTableComponent, PrivacyErrorDialogComponent]
 })
 export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewInit {
@@ -49,23 +50,25 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   useNew = true;
   currentUi = "Switch to old interface"
   apiSourceView!: EditorView;
+  baseHref = ''
 
   constructor() {
   }
 
   ngOnInit() {
+    this.baseHref = document.querySelector('base')?.getAttribute('href') || '/';
     let me = this;
-    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/allBriefs", false).subscribe(
-      (rawData: any) => {
-        me.coreService.choosingApiLoading = false;
-        if (!rawData) {
-          return;
-        }
-        me.rawSpecBriefDefs = rawData;
-        // me.data = this.coreService.parseOpenApiSpec(rawData);
-      },
-      (reason: any) => {
-      });
+    // this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/allBriefs", false).subscribe(
+    //   (rawData: any) => {
+    //     me.coreService.choosingApiLoading = false;
+    //     if (!rawData) {
+    //       return;
+    //     }
+    //     me.rawSpecBriefDefs = rawData;
+    //     // me.data = this.coreService.parseOpenApiSpec(rawData);
+    //   },
+    //   (reason: any) => {
+    //   });
   }
 
   ngAfterViewChecked(): void {
@@ -94,6 +97,13 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   apiCheckedFun(evt: any) {
     // this.selectedApiInfos = evt;
+  }
+
+  onWidgetAction(event: Event) {
+    if ('detail' in event) {
+      const customEvent = event as CustomEvent<{ message: string }>;
+      console.log(customEvent.detail);
+    }
   }
 
   importFromApiDef(rawSpecBrief: any) {

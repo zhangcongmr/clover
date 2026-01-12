@@ -1,0 +1,41 @@
+<!-- div style="position: relative;display: flex;height: calc(100vh - 3rem - 1px);">
+  <div style="width:25%;overflow-y: auto;background-color: #F2F2F2;" [style.width]="dragSideWidth">
+    <server-tree (dataOutput)="serviceApis($event)"></server-tree>
+  </div>
+  <ast-table [columns]="columns" [data]="data" [headerSticky]="true" (selected)="apiCheckedFun($event)"
+    style="width: 75%;overflow-y: auto;"></ast-table>
+</div>
+<app-privacy-error-dialog /> -->
+@if(subPanelType === 1) {
+  <react-widget style="flex: 1 1 0;" [attr.base-href]="baseHref" (widgetAction)="onWidgetAction($event)"></react-widget>
+  @if(currentSidebarTab()!=4) {
+    <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
+      <div data-layer="desc" class="Desc codigma-desc">Import from API Community</div>
+    </div>
+  }
+} @else if(subPanelType === 2) {
+  <div data-layer="api-content" class="ApiContent codigma-api-content">
+    <div data-layer="overview-type" class="OverviewType codigma-overview-type">
+      <div data-svg-wrapper="" data-layer="back" class="back" (click)="backFn()">
+        <svg class="icon" width="24" height="24">
+          <use href="assets/lib/svg_merged.svg#icon-back"></use>
+        </svg>
+      </div>
+      <div data-svg-wrapper="" data-layer="preview" class="preview" (click)="showPreviewOrCodeFn(true)">
+        <svg class="icon" width="24" height="24">
+          <use href="assets/lib/svg_merged.svg#icon-preview"></use>
+        </svg>
+      </div>
+      <div data-svg-wrapper="" data-layer="view-source" class="ViewSource" (click)="showPreviewOrCodeFn(false)">
+        <svg class="icon" width="24" height="24">
+          <use href="assets/lib/svg_merged.svg#icon-view-code"></use>
+        </svg>
+      </div>
+    </div>
+    <ast-table [columns]="columns" [data]="data" [headerSticky]="true" style="overflow-y: auto;width: 100%;"
+      [showCheckBox]="false" [style.display]="showPreviewOrCode?'flex':'none'"
+      (selected)="apiCheckedFun($event)"></ast-table>
+    <div #apiSourceCodeContainer [style.display]="!showPreviewOrCode?'flex':'none'"
+     style="flex: 1 1 0;overflow: hidden;border: 1px solid gainsboro;width: 100%;"></div>
+  </div>
+}

@@ -1,7 +1,5 @@
 :host {
     width: 100%;
-
-    align-items: flex-start;
     align-self: stretch;
     background: white;
     display: flex;
@@ -9,8 +7,6 @@
     flex: 1 1 0;
     gap: 10px;
     justify-content: flex-start;
-    padding-bottom: 20px;
-    padding-top: 40px;
 }
 
 .split-line:hover {
