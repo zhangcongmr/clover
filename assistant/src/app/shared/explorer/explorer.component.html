@@ -7,7 +7,7 @@
 </div>
 <app-privacy-error-dialog /> -->
 @if(subPanelType === 1) {
-  <react-widget style="flex: 1 1 0;" [attr.base-href]="baseHref" (widgetAction)="onWidgetAction($event)"></react-widget>
+  <community-widget style="flex: 1 1 0;" [attr.base-href]="baseHref" (widgetAction)="onWidgetAction($event)"></community-widget>
   @if(currentSidebarTab()!=4) {
     <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
       <div data-layer="desc" class="Desc codigma-desc">Import from API Community</div>

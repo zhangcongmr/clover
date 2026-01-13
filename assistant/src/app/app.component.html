@@ -77,21 +77,25 @@
       } -->
     </div>
     <div data-layer="overview-longstrip" class="OverviewLongstrip codigma-overview-longstrip">
-      <div data-layer="filetype-cnr" class="FiletypeCnr codigma-methodtype">
-        <div data-layer="File type" class="FileType codigma-projectname">File type</div>
-      </div>
-      <div data-layer="just-fill-cnr" class="JustFillCnr codigma-responsebody"></div>
-      <div data-layer="status-cnr" class="StatusCnr codigma-methodtype">
-        <div data-layer="Status" class="Status codigma-projectname">Status</div>
-      </div>
-      <div data-layer="notification-cnr" class="NotificationCnr codigma-notification-cnr">
-        <div data-svg-wrapper="" data-layer="notification" class="Notification">
-          <svg class="icon" width="23" height="24">
-            <use href="assets/lib/svg_merged.svg#icon-notification"></use>
-          </svg>
+      @if(currentSidebarTab!=4) {
+        <div data-layer="filetype-cnr" class="FiletypeCnr codigma-methodtype">
+          <div data-layer="File type" class="FileType codigma-projectname">File type</div>
         </div>
-        <div data-layer="0" class="codigma-projectname">0</div>
-      </div>
+        <div data-layer="just-fill-cnr" class="JustFillCnr codigma-responsebody"></div>
+        <div data-layer="status-cnr" class="StatusCnr codigma-methodtype">
+          <div data-layer="Status" class="Status codigma-projectname">Status</div>
+        </div>
+        <div data-layer="notification-cnr" class="NotificationCnr codigma-notification-cnr">
+          <div data-svg-wrapper="" data-layer="notification" class="Notification">
+            <svg class="icon" width="23" height="24">
+              <use href="assets/lib/svg_merged.svg#icon-notification"></use>
+            </svg>
+          </div>
+          <div data-layer="0" class="codigma-projectname">0</div>
+        </div>
+      } @else {
+        <div data-layer="just-fill-cnr" class="JustFillCnr codigma-responsebody"></div>
+      }
     </div>
   }
 </div>
