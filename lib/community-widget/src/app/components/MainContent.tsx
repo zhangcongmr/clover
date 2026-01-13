@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ProjectCard } from './ProjectCard';
 
 const recommendedProjects = [
@@ -37,6 +38,28 @@ const recommendedProjects = [
 ];
 
 export function MainContent() {
+  // ✅ 将 fetch 放入 useEffect
+  const [rawSpecBriefDefs, setRawSpecBriefDefs] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("https://127.0.0.1:8980/user/allBriefs");
+        if (!response.ok) {
+          throw new Error('Network response was not ok.');
+        }
+        const rawData = await response.json();
+        if (rawData) {
+          setRawSpecBriefDefs(rawData);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    };
+
+    fetchData();
+  }, []); // 👈 空依赖数组：只在组件挂载时执行一次
+
+
   return (
     <div className="flex-1 bg-gray-50 p-6 overflow-y-auto">
       <div className="max-w-4xl">
@@ -48,7 +71,7 @@ export function MainContent() {
         </div>
 
         <div className="space-y-4">
-          {recommendedProjects.map((project, index) => (
+          {rawSpecBriefDefs.map((project, index) => (
             <ProjectCard key={index} project={project} />
           ))}
         </div>

@@ -6,8 +6,8 @@ interface ProjectCardProps {
     name: string;
     starred: boolean;
     description: string;
-    language: string;
-    languageColor: string;
+    specType: string;
+    specColor: string;
     category: string;
     timeAgo: string;
     stars: string;
@@ -38,8 +38,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
           
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: project.languageColor }}></span>
-              <span>{project.language}</span>
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: project.specColor }}></span>
+              <span>{project.specType}</span>
             </div>
             <div className="flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

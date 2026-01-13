@@ -16,28 +16,6 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
 
   let data: any = [];
   const [rawSpecDef, setRawSpecDef] = useState({});
-  const [rawSpecBriefDefs, setRawSpecBriefDefs] = useState([]);
-
-   // ✅ 将 fetch 放入 useEffect
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("https://127.0.0.1:8980/user/allBriefs");
-        if (!response.ok) {
-          throw new Error('Network response was not ok.');
-        }
-        const rawData = await response.json();
-        if (rawData) {
-          setRawSpecBriefDefs(rawData);
-        }
-      } catch (error) {
-        console.error('Fetch error:', error);
-      }
-    };
-
-    fetchData();
-  }, []); // 👈 空依赖数组：只在组件挂载时执行一次
-
 
   const importFromApiDef = (rawSpecBrief: any) => {
     fetch("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).then(
