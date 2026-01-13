@@ -53,7 +53,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <CategorySidebar />
-        <MainContent />
+        <MainContent onAction={onAction} />
         <TrendingProjects />
       </div>
     </div>

@@ -1,4 +1,6 @@
 import { Star, GitFork, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { coreService } from '../core.service';
 
 interface ProjectCardProps {
   project: {
@@ -12,9 +14,43 @@ interface ProjectCardProps {
     timeAgo: string;
     stars: string;
   };
+  onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onAction }: ProjectCardProps) {
+  let data: any = [];
+  const [rawSpecDef, setRawSpecDef] = useState({});
+
+  const importFromApiDef = (rawSpecBrief: any) => {
+    fetch("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).then(
+      (response: any) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok.');
+        }
+        return response.json()
+      }).then(rawData => {
+        if (!rawData) {
+          return;
+        }
+        const parseOpenApiSpec = JSON.parse(rawData.profile);
+        setRawSpecDef(parseOpenApiSpec);
+        if(parseOpenApiSpec['dataType'] == 'projectType') {
+          data = parseOpenApiSpec['children'] || [];
+        } else {
+          data = coreService.parseOpenApiSpec(parseOpenApiSpec);
+        }
+
+        // 调用从 Web Component 传入的回调
+        if (onAction) {
+          onAction(data);
+        }
+    });
+  }
+
+
+  const view = (rawSpecBrief: any) => {
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3">
@@ -24,7 +60,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer">
+            <h4 className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer" onClick={()=> importFromApiDef(project)}>
               {project.name}
             </h4>
             {project.starred && (

@@ -1,14 +1,14 @@
 import { Cpu, Layers, Code, Cpu as AiIcon, Factory, Link, Wallet, AppWindow } from 'lucide-react';
 
 const categories = [
-  { name: 'New Tech', icon: Cpu, active: false },
-  { name: 'OpenHarmony', icon: Layers, active: true },
-  { name: 'Development Lib', icon: Code, active: false },
-  { name: 'AI/ML', icon: AiIcon, active: false },
-  { name: 'Industrial', icon: Factory, active: false },
-  { name: 'Blockchain', icon: Link, active: false },
-  { name: 'Wechat Projects', icon: Wallet, active: false },
-  { name: 'Enterprise App', icon: AppWindow, active: false },
+  { name: 'REST API', icon: Cpu, active: false },
+  { name: 'WEBSOCKET', icon: Layers, active: true },
+  { name: 'MQ', icon: Code, active: false },
+  { name: 'TCP', icon: AiIcon, active: false },
+  { name: 'FTP', icon: Factory, active: false },
+  { name: 'SSH', icon: Link, active: false },
+  { name: 'AI', icon: Wallet, active: false },
+  { name: 'MCP', icon: AppWindow, active: false },
 ];
 
 export function CategorySidebar() {

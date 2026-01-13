@@ -37,7 +37,7 @@ const recommendedProjects = [
   }
 ];
 
-export function MainContent() {
+export function MainContent( { onAction }: { onAction?: (data: any) => void } ) {
   // ✅ 将 fetch 放入 useEffect
   const [rawSpecBriefDefs, setRawSpecBriefDefs] = useState([]);
   useEffect(() => {
@@ -72,7 +72,7 @@ export function MainContent() {
 
         <div className="space-y-4">
           {rawSpecBriefDefs.map((project, index) => (
-            <ProjectCard key={index} project={project} />
+            <ProjectCard key={index} project={project} onAction={onAction} />
           ))}
         </div>
       </div>
