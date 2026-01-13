@@ -78,3 +78,16 @@ export interface ApiTreeNodeType {
     auth?: any;
     rename?: boolean
 }
+
+export interface ApiInfoModel {
+  id?: string;
+  name?: string;
+  avatar?: string;
+  username?: string | null;
+  starred?: boolean;
+  specType?: string;
+  category?: string;
+  timeAgo?: string;
+  stars?: string;
+  profile?: any; // 或者如果 profile 应该是对象，可改为 Record<string, any> 或具体接口
+}

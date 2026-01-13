@@ -1,6 +1,7 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { CoreService } from '../../core.service';
+import { ApiInfoModel } from '../../shared/model';
 
 @Component({
   selector: 'share-on',
@@ -11,7 +12,7 @@ import { CoreService } from '../../core.service';
 })
 export class ShareOnComponent {
   @Input() visible = false;
-  @Input() data: any;
+  @Input() data: ApiInfoModel = {};
   @Output() close = new EventEmitter<void>();
   @Output() share = new EventEmitter<void>();
 
@@ -25,14 +26,18 @@ export class ShareOnComponent {
   }
 
   confirmShare(): void {
-    this.data['dataType'] = "projectType"
-    this.data['info'] = this.data['info'] || {};
-    this.data['info']['title'] = this.data.label || "Untitled API";
-    this.data['openapi'] = "3.0.0";
-    this.data['info']['description'] = "Shared from API Assistant";
-    this.coreService.reset([this.data], true);  
-    this.coreService.postData(this.serverDataUrl, JSON.stringify(this.data));
-    this.share.emit();
-    this.onClose();
+    if(this.data && this.data.profile) {
+      this.data.profile['dataType'] = "projectType"
+      this.data.profile['info'] = this.data.profile['info'] || {};
+      this.data.profile['info']['title'] = this.data.profile.label || "Untitled API";
+      this.data.profile['openapi'] = "3.0.0";
+      this.data.profile['info']['description'] = "Shared from API Assistant";
+      this.coreService.reset([this.data.profile], true);
+
+      this.data.profile = JSON.stringify(this.data.profile);
+      this.coreService.postData(this.serverDataUrl, this.data);
+      this.share.emit();
+      this.onClose();
+    }
   }
 }

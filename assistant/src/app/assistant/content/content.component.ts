@@ -11,7 +11,7 @@ import { file, write } from 'opfs-tools';
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { ApiTreeNodeType } from '../../shared/model';
+import { ApiInfoModel, ApiTreeNodeType } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 
@@ -273,8 +273,8 @@ private ngZone = inject(NgZone);
   public afterCloseTab(val: any) {
   }
 
-  shareOnVisible = false;
-  shareData: any = {};
+  shareOnMenuVisible = false;
+  shareData: ApiInfoModel = {};
   menuItemAction(evt: any) {
     if(evt == 'Rename') {
       this.storeApi()
@@ -291,8 +291,8 @@ private ngZone = inject(NgZone);
       }
     }
     if (evt.action == 'Share') {
-      this.shareOnVisible = true;
-      this.shareData = evt.target;
+      this.shareOnMenuVisible = true;
+      this.shareData.profile = evt.target;
     }
   }
 

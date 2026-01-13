@@ -55,7 +55,7 @@
         </div>
         <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
-        <share-on [visible]="shareOnVisible" (close)="shareOnVisible = false" [data]="shareData"></share-on>
+        <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
       } @else if(currentSidebarTab()==2) {
         <div>Search:</div>
         <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
