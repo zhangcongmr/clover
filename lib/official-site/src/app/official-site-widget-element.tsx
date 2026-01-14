@@ -83,6 +83,6 @@ class ReactWidgetElement extends HTMLElement {
 }
 
 // 确保只注册一次
-if (!customElements.get('community-widget')) {
-  customElements.define('community-widget', ReactWidgetElement);
+if (!customElements.get('official-site-widget')) {
+  customElements.define('official-site-widget', ReactWidgetElement);
 }
