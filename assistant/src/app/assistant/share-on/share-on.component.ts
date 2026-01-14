@@ -27,6 +27,11 @@ export class ShareOnComponent {
 
   confirmShare(): void {
     if(this.data && this.data.profile) {
+      this.data.name = this.data.profile.label || "Untitled API"
+      this.data.createtime = new Date().toISOString();
+      this.data.updatetime = new Date().toISOString();
+
+
       this.data.profile['dataType'] = "projectType"
       this.data.profile['info'] = this.data.profile['info'] || {};
       this.data.profile['info']['title'] = this.data.profile.label || "Untitled API";

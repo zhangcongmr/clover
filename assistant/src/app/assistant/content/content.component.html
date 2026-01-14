@@ -90,7 +90,7 @@
       }
     } @else if(currentSidebarTab()==3) {
     } @else if(currentSidebarTab()==4) {
-      <app-api-explorer [currentSidebarTab]="4" style="overflow: auto;"></app-api-explorer>
+      <app-api-explorer [currentSidebarTab]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
     } @else if(currentSidebarTab()==5) {
     }
   </div>

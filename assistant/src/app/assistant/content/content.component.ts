@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, NgZone, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, viewChild } from '@angular/core';
+import { AfterViewInit, Component, NgZone, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, model, viewChild } from '@angular/core';
 import { AppEventType, CoreService, EventItem } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -24,11 +24,11 @@ import { ShareOnComponent } from '../share-on/share-on.component';
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
   private coreService = inject(CoreService);
-  readonly sideOpen = input<boolean>(true);
+  readonly sideOpen = model<boolean>(true);
 private ngZone = inject(NgZone);
 
   readonly addProjectComponent = viewChild(AddProjectComponent);
-  readonly currentSidebarTab = input<number>(1);
+  readonly currentSidebarTab = model<number>(1);
 
   /***aside */
   serverList: Array<any> = [];
@@ -182,6 +182,8 @@ private ngZone = inject(NgZone);
     this.dataList = this.dataList.concat(datas);
 
     this.storeApi()
+    this.currentSidebarTab.set(1);
+    this.sideOpen.set(true);
   }
 
   async storeApi() {
@@ -258,6 +260,12 @@ private ngZone = inject(NgZone);
     this.dataList.push(data)
 
     this.storeApi()
+  }
+
+  onViewOut(evt: any) {
+    this.dataList.push(...evt);
+    this.storeApi()
+    this.currentSidebarTab.set(1);
   }
 
   openAddDlg() {

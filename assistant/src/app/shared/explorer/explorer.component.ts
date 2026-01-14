@@ -103,6 +103,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     if ('detail' in event) {
       const customEvent = event as CustomEvent<{ message: string }>;
       console.log(customEvent.detail);
+      this.viewOut.emit(customEvent.detail);
     }
   }
 

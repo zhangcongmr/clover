@@ -87,7 +87,8 @@ export interface ApiInfoModel {
   starred?: boolean;
   specType?: string;
   category?: string;
-  timeAgo?: string;
+  createtime?: string;
+  updatetime?: string;
   stars?: string;
   profile?: any; // 或者如果 profile 应该是对象，可改为 Record<string, any> 或具体接口
 }

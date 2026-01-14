@@ -58,6 +58,13 @@ private ngZone = inject(NgZone);
           me.closeMenu();
         });
       });
+      document.addEventListener('keydown', (event) => {
+        const keyName = event.key;
+
+        if (keyName === 'Delete') {
+          return;
+        }
+      }, false);
     });
   }
 
