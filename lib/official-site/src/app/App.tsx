@@ -7,7 +7,15 @@ import { PlatformSection } from '@/app/components/PlatformSection';
 import { CTASection } from '@/app/components/CTASection';
 import { Footer } from '@/app/components/Footer';
 
-export default function App() {
+interface MyReactComponentProps {
+  baseHref?: string
+  onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
+}
+
+export default function App({baseHref, onAction} : MyReactComponentProps) {
+  baseHref = baseHref == null?"" : baseHref;
+  baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
