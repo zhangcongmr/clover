@@ -10,6 +10,26 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  define: {
+    // 👇 关键：将 process.env.NODE_ENV 替换为字符串字面量
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+  },
+  build: {
+    sourcemap: 'inline',  //生成内联 source map 以便调试
+    // outDir: 'dist', // 默认输出到本项目
+    lib: {
+      entry: 'src/app/home-widget-element.tsx',
+      name: 'HomeWidget',
+      fileName: 'home-widget',
+      formats: ['iife'] // 或 'umd'
+    },
+    rollupOptions: {
+      external: [], // 所有依赖都打包进去（推荐）
+      output: {
+        globals: {} // 因为不 external，所以无需 globals
+      }
+    }
+  },
   resolve: {
     alias: {
       // Alias @ to the src directory
