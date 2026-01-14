@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ProjectCard } from './ProjectCard';
+import { coreService } from '../core.service';
 
 const recommendedProjects = [
   {
@@ -48,6 +49,9 @@ export function MainContent( { onAction }: { onAction?: (data: any) => void } ) 
           throw new Error('Network response was not ok.');
         }
         const rawData = await response.json();
+        for (let item of rawData) {
+          item.timeAgo = coreService.timeAgoIntl(item.updatetime);
+        }
         if (rawData) {
           setRawSpecBriefDefs(rawData);
         }
