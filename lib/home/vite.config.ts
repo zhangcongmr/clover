@@ -42,9 +42,9 @@ if (buildMode === 'app') {
       sourcemap: 'inline',
       outDir: 'dist-lib',
       lib: {
-        entry: 'src/app/home-site-widget-element.tsx',
+        entry: 'src/app/home-widget-element.tsx',
         name: 'HomeWidget',
-        fileName: 'home-site-widget',
+        fileName: 'home-widget',
         formats: ['iife'],
       },
       rollupOptions: {
