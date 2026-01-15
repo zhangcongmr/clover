@@ -12,7 +12,15 @@ import {
 } from '@/app/components/ui/select';
 import { ChevronRight } from 'lucide-react';
 
-export default function App() {
+interface MyReactComponentProps {
+  baseHref?: string
+  onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
+}
+
+export default function App({baseHref, onAction} : MyReactComponentProps) {
+  baseHref = baseHref == null?"" : baseHref;
+  baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');

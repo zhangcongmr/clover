@@ -3,17 +3,60 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-  plugins: [
-    // The React and Tailwind plugins are both required for Make, even if
-    // Tailwind is not being actively used – do not remove them
-    react(),
-    tailwindcss(),
-  ],
-  resolve: {
-    alias: {
-      // Alias @ to the src directory
-      '@': path.resolve(__dirname, './src'),
-    },
+const buildMode = process.env.BUILD_MODE || 'lib'
+
+const commonPlugins = [react(), tailwindcss()]
+
+const commonResolve = {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
   },
-})
+}
+
+const commonDefine = {
+  'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+}
+
+let config
+
+if (buildMode === 'app') {
+  config = defineConfig({
+    plugins: commonPlugins,
+    define: commonDefine,
+    resolve: commonResolve,
+    build: {
+      sourcemap: true,
+      outDir: 'dist-app',
+    },
+    // server: {
+    //   port: 3000,
+    //   open: true,
+    // },
+  })
+} else if (buildMode === 'lib') {
+  config = defineConfig({
+    plugins: commonPlugins,
+    define: commonDefine,
+    resolve: commonResolve,
+    build: {
+      sourcemap: 'inline',
+      outDir: 'dist-lib',
+      lib: {
+        entry: 'src/app/signup-widget-element.tsx',
+        name: 'signupWidget',
+        fileName: 'signup-widget',
+        formats: ['iife'],
+      },
+      rollupOptions: {
+        external: [],
+        output: {
+          globals: {},
+        },
+      },
+    },
+  })
+} else {
+  throw new Error(`Unknown BUILD_MODE: ${buildMode}. Use 'app' or 'lib'.`)
+}
+
+export default config
