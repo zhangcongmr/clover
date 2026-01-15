@@ -3,7 +3,15 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 
-export default function App() {
+interface MyReactComponentProps {
+  baseHref?: string
+  onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
+}
+
+export default function App({baseHref, onAction} : MyReactComponentProps) {
+  baseHref = baseHref == null?"" : baseHref;
+  baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
