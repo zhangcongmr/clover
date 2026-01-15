@@ -18,7 +18,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   coreService = inject(CoreService);
   readonly importOut = output<Array<any>>();
   readonly viewOut = output<any>();
-  readonly currentSidebarTab = input<number>(1);
+  readonly currentDisplayViewId = input<number>(1);
   apiSourceCodeContainerView = viewChild<ElementRef<HTMLButtonElement>>('apiSourceCodeContainer');
 
   columns = [

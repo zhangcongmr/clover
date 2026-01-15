@@ -14,7 +14,7 @@
 <div style="position: relative;display: flex;width: calc(100vw - 32px);height: 100%;">
   @if (sideOpen()) {
     <div style="width:25%;background-color: #F2F2F2;display: flex;flex-direction: column;" [style.width]="leftWidth * 100 + '%'">
-      @if(currentSidebarTab()==1) {
+      @if(currentDisplayViewId()==1) {
         <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
           <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
             <!-- <div data-layer="ProjectName" class="Projectname codigma-projectname">ProjectName</div> -->
@@ -56,22 +56,22 @@
         <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
         <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
-      } @else if(currentSidebarTab()==2) {
+      } @else if(currentDisplayViewId()==2) {
         <div>Search:</div>
         <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
         <div>{{searchResults}}</div>
-      } @else if(currentSidebarTab()==3) {
+      } @else if(currentDisplayViewId()==3) {
         The function is under development.
-      } @else if(currentSidebarTab()==4) {
+      } @else if(currentDisplayViewId()==4) {
         The function is under development.
-      } @else if(currentSidebarTab()==5) {
+      } @else if(currentDisplayViewId()==5) {
         The function is under development.
       }
     </div>
   }
 
   <div [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'" style="display: flex;flex-direction: column;">
-    @if(currentSidebarTab()==1 || currentSidebarTab()==2) {
+    @if(currentDisplayViewId()==1 || currentDisplayViewId()==2) {
       @if (openedList.length>0) {
         <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)"  [tabType]="{'type':'bilateral'}">
           @for (openedTab of openedList; track openedTab.id) {
@@ -88,10 +88,10 @@
           }
         </div>
       }
-    } @else if(currentSidebarTab()==3) {
-    } @else if(currentSidebarTab()==4) {
-      <app-api-explorer [currentSidebarTab]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
-    } @else if(currentSidebarTab()==5) {
+    } @else if(currentDisplayViewId()==3) {
+    } @else if(currentDisplayViewId()==4) {
+      <app-api-explorer [currentDisplayViewId]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
+    } @else if(currentDisplayViewId()==5) {
     }
   </div>
 </div>

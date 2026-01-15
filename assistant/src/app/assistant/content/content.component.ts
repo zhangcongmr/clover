@@ -28,7 +28,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 private ngZone = inject(NgZone);
 
   readonly addProjectComponent = viewChild(AddProjectComponent);
-  readonly currentSidebarTab = model<number>(1);
+  readonly currentDisplayViewId = model<number>(1);
 
   /***aside */
   serverList: Array<any> = [];
@@ -182,7 +182,7 @@ private ngZone = inject(NgZone);
     this.dataList = this.dataList.concat(datas);
 
     this.storeApi()
-    this.currentSidebarTab.set(1);
+    this.currentDisplayViewId.set(1);
     this.sideOpen.set(true);
   }
 
@@ -265,7 +265,7 @@ private ngZone = inject(NgZone);
   onViewOut(evt: any) {
     this.dataList.push(...evt);
     this.storeApi()
-    this.currentSidebarTab.set(1);
+    this.currentDisplayViewId.set(1);
   }
 
   openAddDlg() {

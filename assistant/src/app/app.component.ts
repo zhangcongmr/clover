@@ -26,9 +26,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   textArr: Array<String> = []
 
   mainTitle = "My Project"
-  lastSelectedSidebarTab: number = 1;
-  currentSidebarTab: number = 1;
-  currentSideBarStatus = true
+  lastSelectedDisplayViewId: number = 1;
+  currentDisplayViewId: number = 1;
+  sideOpen = true
 
   blurSwitch = true;
   isOpen = false;
@@ -207,18 +207,18 @@ export class AppComponent implements OnInit, AfterViewInit {
     switch (id) {
       case 'my-project':
         this.mainTitle = "My Project";
-        this.currentSidebarTab = 1;
-        this.lastSelectedSidebarTab = this.currentSidebarTab;
+        this.currentDisplayViewId = 1;
+        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
       case 'settings':
         this.mainTitle = "Settings";
-        this.currentSidebarTab = 5;
-        this.lastSelectedSidebarTab = this.currentSidebarTab;
+        this.currentDisplayViewId = 5;
+        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
       case 'user-center':
         this.mainTitle = "User Center";
-        this.currentSidebarTab = 6;
-        this.lastSelectedSidebarTab = this.currentSidebarTab;
+        this.currentDisplayViewId = 6;
+        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
     }
   }
@@ -242,18 +242,18 @@ export class AppComponent implements OnInit, AfterViewInit {
     await 1;
   }
 
-  toggleSideBarTab(currentSidebarTab: number) {
-    if (currentSidebarTab == this.lastSelectedSidebarTab) {
-      if (!this.currentSideBarStatus) {
-        this.currentSideBarStatus = true;
+  toggleDisplayViewId(currentDisplayViewId: number) {
+    if (currentDisplayViewId == this.lastSelectedDisplayViewId) {
+      if (!this.sideOpen) {
+        this.sideOpen = true;
       } else {
-        this.currentSideBarStatus = false;
+        this.sideOpen = false;
       }
     } else {
-      this.currentSidebarTab = currentSidebarTab;
-      this.currentSideBarStatus = true;
-      this.lastSelectedSidebarTab = currentSidebarTab;
-      switch (currentSidebarTab) {
+      this.currentDisplayViewId = currentDisplayViewId;
+      this.sideOpen = true;
+      this.lastSelectedDisplayViewId = currentDisplayViewId;
+      switch (currentDisplayViewId) {
         case 1:
           this.mainTitle = "My Project"
           break;
@@ -309,10 +309,10 @@ export class AppComponent implements OnInit, AfterViewInit {
       }
     }
     //如果是API Community，则默认关闭侧边栏
-    if (currentSidebarTab == 4) {
-      this.currentSideBarStatus = false;
+    if (currentDisplayViewId == 4) {
+      this.sideOpen = false;
     }
-    if(currentSidebarTab == 5 || currentSidebarTab == 6) {
+    if(currentDisplayViewId == 5 || currentDisplayViewId == 6) {
       this.closeMenu();
     }
   }
