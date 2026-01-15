@@ -25,7 +25,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   assistantAppTabId: any;
   textArr: Array<String> = []
 
-  mainTitle = "My Project"
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   sideOpen = true
@@ -36,7 +35,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   openedList: Array<any> = [
     {
-      id: 'my-project',
+      id: 'welcome',
       title: 'My Project',
       isActive: true,
       isClosable: false,
@@ -205,18 +204,16 @@ export class AppComponent implements OnInit, AfterViewInit {
   private activeMainPanel(evt: any) {
     const id = evt.id;
     switch (id) {
-      case 'my-project':
-        this.mainTitle = "My Project";
+      case 'welcome':
+        this.openedList[0]["title"] = "My Project";
         this.currentDisplayViewId = 1;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
       case 'settings':
-        this.mainTitle = "Settings";
         this.currentDisplayViewId = 5;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
       case 'user-center':
-        this.mainTitle = "User Center";
         this.currentDisplayViewId = 6;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
@@ -255,19 +252,18 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.lastSelectedDisplayViewId = currentDisplayViewId;
       switch (currentDisplayViewId) {
         case 1:
-          this.mainTitle = "My Project"
+          this.openedList[0]["title"] = "My Project";
           break;
         case 2:
-          this.mainTitle = "Search"
+          this.openedList[0]["title"] = "Search";
           break;
         case 3:
-          this.mainTitle = "Plugins"
+          this.openedList[0]["title"] = "Plugins";
           break;
         case 4:
-          this.mainTitle = "API Community"
+          this.openedList[0]["title"] = "API Community";
           break;
         case 5:
-          this.mainTitle = "Settings"
           const settingBar: any = {
             id: 'settings',
             title: 'Settings',
@@ -287,7 +283,6 @@ export class AppComponent implements OnInit, AfterViewInit {
           }
           break;
         case 6:
-          this.mainTitle = "User Center"
           const userCenterBar: any = {
             id: 'user-center',
             title: 'User Center',

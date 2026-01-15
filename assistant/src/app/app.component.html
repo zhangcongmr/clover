@@ -1,8 +1,5 @@
 <div data-layer="app-ui" class="AppUi codigma-app-ui">
   <div data-layer="app-header" class="AppHeader codigma-app-header">
-    <!-- <div data-layer="left-app-header" class="LeftAppHeader codigma-left-app-header">
-      <div data-layer="app-header-item" class="header-item">{{mainTitle}}</div>
-    </div> -->
     <div ast-tab-group [tabsOnlyMode]="true"  [tabType]="{'type':'bilateral', 'height':'42px'}">
       @if (openedList.length>0) {
         @for (openedTab of openedList; track openedTab.id) {
