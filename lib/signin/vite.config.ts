@@ -17,6 +17,17 @@ const commonDefine = {
   'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
 }
 
+const server = {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        // 可选：重写路径（如果后端没有 /api 前缀）
+        // rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+}
+
 let config
 
 if (buildMode === 'app') {
@@ -29,10 +40,7 @@ if (buildMode === 'app') {
       sourcemap: true,
       outDir: 'dist-app',
     },
-    // server: {
-    //   port: 3000,
-    //   open: true,
-    // },
+    server: server,
   })
 } else if (buildMode === 'lib') {
   config = defineConfig({
@@ -55,6 +63,7 @@ if (buildMode === 'app') {
         },
       },
     },
+    server: server,
   })
 } else {
   throw new Error(`Unknown BUILD_MODE: ${buildMode}. Use 'app' or 'lib'.`)

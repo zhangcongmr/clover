@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
@@ -9,15 +9,57 @@ interface MyReactComponentProps {
 }
 
 export default function App({baseHref, onAction} : MyReactComponentProps) {
-  baseHref = baseHref == null?"" : baseHref;
+  baseHref = baseHref == null ? "" : baseHref;
   baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('user@example.com');
+  const [password, setPassword] = useState('password123');
 
-  const handleSignIn = (e: React.FormEvent) => {
+  // 在 React 组件中
+  useEffect(() => {
+    const fetchCsrf = async () => {
+      const result = await fetch('/api/csrf', { credentials: 'include' }); // 触发 Set-Cookie: XSRF-TOKEN
+    };
+    fetchCsrf();
+  }, []);
+
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sign in clicked');
+
+    // 从 Cookie 中读取 XSRF-TOKEN（Spring 默认写入此 Cookie）
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1];
+
+    try {
+      const response = await fetch(`${baseHref}/api/auth/signin`, {
+        method: 'POST',
+        credentials: 'include', // 携带 Cookie
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-XSRF-TOKEN': csrfToken || '', // 关键：放入请求头
+         },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Sign in successful', data);
+        if (onAction) onAction(data);
+      } else {
+        console.error('Sign in failed:', data.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    window.location.href = `${baseHref}/api/auth/google`;
+  };
+
+  const handleAppleSignIn = () => {
+    window.location.href = `${baseHref}/api/auth/apple`;
   };
 
   return (
@@ -105,6 +147,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
         <div className="space-y-3 mb-4">
           <Button
             variant="outline"
+            onClick={handleGoogleSignIn}
             className="w-full border border-[#d0d7de] bg-white hover:bg-[#f6f8fa] text-[#24292f] py-1.5 rounded-md flex items-center justify-center gap-2"
           >
             <svg
@@ -135,6 +178,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
 
           <Button
             variant="outline"
+            onClick={handleAppleSignIn}
             className="w-full border border-[#d0d7de] bg-white hover:bg-[#f6f8fa] text-[#24292f] py-1.5 rounded-md flex items-center justify-center gap-2"
           >
             <svg
@@ -166,30 +210,6 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
           </a>
         </p>
       </div>
-
-      {/* Footer */}
-      <footer className="mt-auto py-8">
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-[#0969da]">
-          <a href="#" className="hover:underline">
-            Terms
-          </a>
-          <a href="#" className="hover:underline">
-            Privacy
-          </a>
-          <a href="#" className="hover:underline">
-            Docs
-          </a>
-          <a href="#" className="hover:underline">
-            Contact Assistant Support
-          </a>
-          <a href="#" className="hover:underline">
-            Manage cookies
-          </a>
-          <a href="#" className="hover:underline">
-            Do not share my personal information
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }

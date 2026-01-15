@@ -31,8 +31,13 @@ export function Header() {
               <Search className="w-5 h-5 text-gray-600" />
             </button>
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" className="text-sm">Sign In</Button>
-              <Button className="text-sm bg-[#FF6C37] hover:bg-[#FF5722]">Sign Up for Free</Button>
+              {/* <Button variant="ghost" className="text-sm">Sign In</Button> */}
+              <Button asChild variant="ghost" className="text-sm">
+                <a href="/signin/">Sign In</a>
+              </Button>
+              <Button asChild className="text-sm bg-[#FF6C37] hover:bg-[#FF5722]">
+                <a href="/signup/">Sign Up for Free</a>
+              </Button>
             </div>
             <button className="lg:hidden p-2">
               <Menu className="w-6 h-6" />
