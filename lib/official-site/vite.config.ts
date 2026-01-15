@@ -21,6 +21,7 @@ let config
 
 if (buildMode === 'app') {
   config = defineConfig({
+    base: './',
     plugins: commonPlugins,
     define: commonDefine,
     resolve: commonResolve,

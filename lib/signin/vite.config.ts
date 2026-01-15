@@ -21,6 +21,7 @@ let config
 
 if (buildMode === 'app') {
   config = defineConfig({
+    base: './', //Added base configuration  确保编译后index.html中资源引用为 <script src="./assets/script.js"></script>， 而不是<script src="/assets/script.js"></script>
     plugins: commonPlugins,
     define: commonDefine,
     resolve: commonResolve,
