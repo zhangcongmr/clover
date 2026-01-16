@@ -12,12 +12,11 @@
       }
     </div>
     <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
-      <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn  tooltip-container" data-tooltip-placement="vertical"  (click)="clickMoreBtn($event)"
+      <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn " data-tooltip-placement="vertical"  (click)="clickMoreBtn($event)"
       (blur)="blurMoreBtn($event)">
         <svg class="icon" width="24" height="24">
           <use href="assets/lib/svg_merged.svg#icon-user-btn"></use>
         </svg>
-        <span class="tooltip-bubble">User Menu</span>
       </div>
       <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
           class="more-btn-dropdown-content codigma-right-menu">
@@ -42,29 +41,25 @@
     <div data-layer="app-body" class="AppBody codigma-app-body">
       <div data-layer="left-side-area" class="LeftSideArea codigma-left-side-area">
         <div data-layer="up-btnlist" class="UpBtnlist codigma-up-btnlist">
-          <div data-svg-wrapper="" data-layer="project-folder-btn" data-tooltip-placement="horizontal" class="btn-svg ProjectFolderBtn tooltip-container" (click)="toggleDisplayViewId(1)">
+          <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" (click)="toggleDisplayViewId(1)">
             <svg class="icon" width="26" height="24">
               <use href="assets/lib/svg_merged.svg#icon-folder"></use>
             </svg>
-            <span class="tooltip-bubble">File Explorer</span>
           </div>
-          <div data-svg-wrapper="" data-layer="search-btn" data-tooltip-placement="horizontal" class="btn-svg SearchBtn tooltip-container" (click)="toggleDisplayViewId(2)">
+          <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" (click)="toggleDisplayViewId(2)">
             <svg class="icon" width="26" height="25">
               <use href="assets/lib/svg_merged.svg#icon-search"></use>
             </svg>
-            <span class="tooltip-bubble">Search</span>
           </div>
-          <div data-svg-wrapper="" data-layer="plugins-btn" data-tooltip-placement="horizontal" class="btn-svg PluginsBtn tooltip-container" (click)="toggleDisplayViewId(3)">
+          <div data-svg-wrapper="" data-layer="plugins-btn" class="btn-svg PluginsBtn" (click)="toggleDisplayViewId(3)">
             <svg class="icon" width="25" height="25">
               <use href="assets/lib/svg_merged.svg#icon-plugin-btn"></use>
             </svg>
-            <span class="tooltip-bubble">Plugins</span>
           </div>
-          <div data-svg-wrapper="" data-layer="network-manage" data-tooltip-placement="horizontal" class="btn-svg NetworkManage tooltip-container" (click)="toggleDisplayViewId(4)">
+          <div data-svg-wrapper="" data-layer="network-manage" class="btn-svg NetworkManage" (click)="toggleDisplayViewId(4)">
             <svg class="icon" width="25" height="25">
               <use href="assets/lib/svg_merged.svg#icon-network-manage-btn"></use>
             </svg>
-            <span class="tooltip-bubble">API Explorer</span>
           </div>
         </div>
       </div>
