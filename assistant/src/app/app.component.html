@@ -12,7 +12,7 @@
       }
     </div>
     <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
-      <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn " data-tooltip-placement="vertical"  (click)="clickMoreBtn($event)"
+      <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn " title="User Center"  (click)="clickMoreBtn($event)"
       (blur)="blurMoreBtn($event)">
         <svg class="icon" width="24" height="24">
           <use href="assets/lib/svg_merged.svg#icon-user-btn"></use>
@@ -41,22 +41,22 @@
     <div data-layer="app-body" class="AppBody codigma-app-body">
       <div data-layer="left-side-area" class="LeftSideArea codigma-left-side-area">
         <div data-layer="up-btnlist" class="UpBtnlist codigma-up-btnlist">
-          <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" (click)="toggleDisplayViewId(1)">
+          <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleDisplayViewId(1)">
             <svg class="icon" width="26" height="24">
               <use href="assets/lib/svg_merged.svg#icon-folder"></use>
             </svg>
           </div>
-          <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" (click)="toggleDisplayViewId(2)">
+          <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
             <svg class="icon" width="26" height="25">
               <use href="assets/lib/svg_merged.svg#icon-search"></use>
             </svg>
           </div>
-          <div data-svg-wrapper="" data-layer="plugins-btn" class="btn-svg PluginsBtn" (click)="toggleDisplayViewId(3)">
+          <div data-svg-wrapper="" data-layer="plugins-btn" class="btn-svg PluginsBtn" title="Plugins" (click)="toggleDisplayViewId(3)">
             <svg class="icon" width="25" height="25">
               <use href="assets/lib/svg_merged.svg#icon-plugin-btn"></use>
             </svg>
           </div>
-          <div data-svg-wrapper="" data-layer="network-manage" class="btn-svg NetworkManage" (click)="toggleDisplayViewId(4)">
+          <div data-svg-wrapper="" data-layer="network-manage" class="btn-svg NetworkManage" title="API Explorer" (click)="toggleDisplayViewId(4)">
             <svg class="icon" width="25" height="25">
               <use href="assets/lib/svg_merged.svg#icon-network-manage-btn"></use>
             </svg>
