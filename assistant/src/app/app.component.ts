@@ -35,8 +35,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   openedList: Array<any> = [
     {
-      id: 'welcome',
-      title: 'My Project',
+      id: 'editor',
+      title: 'Editor',
       isActive: true,
       isClosable: false,
     }
@@ -204,8 +204,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   private activeMainPanel(evt: any) {
     const id = evt.id;
     switch (id) {
-      case 'welcome':
-        this.openedList[0]["title"] = "My Project";
+      case 'editor':
         this.currentDisplayViewId = 1;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
@@ -252,16 +251,12 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.lastSelectedDisplayViewId = currentDisplayViewId;
       switch (currentDisplayViewId) {
         case 1:
-          this.openedList[0]["title"] = "My Project";
           break;
         case 2:
-          this.openedList[0]["title"] = "Search";
           break;
         case 3:
-          this.openedList[0]["title"] = "Plugins";
           break;
         case 4:
-          this.openedList[0]["title"] = "API Community";
           break;
         case 5:
           const settingBar: any = {

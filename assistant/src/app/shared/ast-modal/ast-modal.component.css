@@ -31,16 +31,19 @@
 .close-button {
     position: absolute;
     /* top: 0.1rem; */
-    right: 0.2rem;
+    right: 0;
     font-size: 1.5rem;
     color: #aaa;
     cursor: pointer;
     border: none;
     background: none;
+    width: 2rem;
+    text-align: center;
 }
 
 .close-button:hover {
-    color: #666;
+    color: white;
+    background-color: red;
 }
 
 .codigma-ast-modal {
@@ -52,7 +55,6 @@
     background-color: #fefefe;
     pointer-events: auto;
     /* 关键：对话框内部可以响应鼠标事件 */
-    padding: 0 10px 0px 10px;
     max-height: 100%;
     /* 阴影效果 */
     height: 100%;
@@ -65,7 +67,6 @@
     display: inline-flex;
     height: 30px;
     justify-content: space-between;
-    padding: 5px 10px 5px 20px;
     cursor: move;
     /* 显示可拖动光标 */
     user-select: none;
@@ -76,7 +77,8 @@
     color: black;
     font-size: 20px;
     font-weight: 400;
-    word-wrap: break-word
+    word-wrap: break-word;
+    padding-left: 10px;
 }
 
 ast-modal .codigma-ast-modal-body {

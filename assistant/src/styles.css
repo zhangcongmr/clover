@@ -73,3 +73,7 @@ img, svg {
   background: #ccc transparent;
   border-radius: 4px;
 }
+
+.tooltip-bubble {
+  display: none;
+}

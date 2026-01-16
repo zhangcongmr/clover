@@ -21,35 +21,40 @@
             <div data-layer="ProjectName" class="Projectname codigma-projectname"></div>
           </div>
           <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
-            <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" class="btn-svg FileaddBtn">
+            <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" data-tooltip-placement="vertical" class="btn-svg FileaddBtn tooltip-container">
               <svg class="icon" width="20" height="20">
                 <use href="assets/lib/svg_merged.svg#icon-add-file"></use>
               </svg>
+              <span class="tooltip-bubble">Add File</span>
             </div>
-            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" class="btn-svg FolderaddBtn">
+            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" data-tooltip-placement="vertical" class="btn-svg FolderaddBtn tooltip-container">
               <svg class="icon" width="20" height="20">
                 <use href="assets/lib/svg_merged.svg#icon-add-folder"></use>
               </svg>
+              <span class="tooltip-bubble">Add Folder</span>
             </div>
-            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" class="btn-svg ImportBtn">
+            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" data-tooltip-placement="vertical" class="btn-svg ImportBtn tooltip-container">
               <svg class="icon" width="20" height="20">
                 <use href="assets/lib/svg_merged.svg#icon-import-btn"></use>
               </svg>
+              <span class="tooltip-bubble">Import Project</span>
             </div>
             <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
               <svg class="icon" width="20" height="20">
                 <use href="assets/lib/svg_merged.svg#icon-location"></use>
               </svg>
             </div> -->
-            <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" class="btn-svg CollapseBtn">
+            <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" data-tooltip-placement="vertical" class="btn-svg CollapseBtn tooltip-container">
               <svg class="icon" width="19" height="21">
                 <use href="assets/lib/svg_merged.svg#icon-collapse"></use>
               </svg>
+              <span class="tooltip-bubble">Collapse All</span>
             </div>
-            <div data-svg-wrapper="" data-layer="more-btn" (click)="MoreBtn($event)" class="btn-svg MoreBtn">
+            <div data-svg-wrapper="" data-layer="more-btn" (click)="MoreBtn($event)" data-tooltip-placement="vertical" class="btn-svg MoreBtn tooltip-container">
               <svg class="icon" width="20" height="20">
                 <use href="assets/lib/svg_merged.svg#icon-more"></use>
               </svg>
+              <span class="tooltip-bubble">More Options</span>
             </div>
           </div>
         </div>
@@ -57,11 +62,16 @@
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
         <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
       } @else if(currentDisplayViewId()==2) {
-        <div>Search:</div>
+        <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
+          <div>Search:</div>
+        </div>
         <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
         <div>{{searchResults}}</div>
       } @else if(currentDisplayViewId()==3) {
-        The function is under development.
+        <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
+          <div>Plugins:</div>
+        </div>
+        <div>The function is under development.</div>
       }
     </div>
   }
