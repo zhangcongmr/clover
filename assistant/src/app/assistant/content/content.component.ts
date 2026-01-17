@@ -144,20 +144,25 @@ private ngZone = inject(NgZone);
       return;
     }
 
+    this.openTab(evt);
+    this.storeApi()
+    this.storeOpenedList()
+  }
+
+
+  public openTab(targetTab: any) {
     let oldTab = false;
     for (const item of this.openedList) {
       delete item["isActive"];
-      if (item.id == evt.id) {
+      if (item.id == targetTab.id) {
         item["isActive"] = true;
         oldTab = true;
       }
     }
     if (!oldTab) {
-      evt["isActive"] = true
-      this.openedList.push(evt);
+      targetTab["isActive"] = true;
+      this.openedList.push(targetTab);
     }
-    this.storeApi()
-    this.storeOpenedList()
   }
 
   apiSelected(evt: any) {

@@ -46,6 +46,8 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
       if (response.ok) {
         console.log('Sign in successful', data);
         if (onAction) onAction(data);
+        // 登录成功后跳转到指定页面
+        window.location.href = '/home/';
       } else {
         console.error('Sign in failed:', data.message || 'Unknown error');
       }

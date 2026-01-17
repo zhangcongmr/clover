@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, OnInit, ViewContainerRef, afterNextRender, inject } from '@angular/core';
+import { AfterViewInit, Component, OnInit, afterNextRender, inject, viewChild } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService, EventItem, AppEventType } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -18,7 +18,7 @@ import { UserCenterComponent } from './assistant/user-center/user-center.compone
 })
 export class AppComponent implements OnInit, AfterViewInit {
   private coreService = inject(CoreService);
-  viewContainerRef = inject(ViewContainerRef);
+  contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
 
   title = 'assistant';
@@ -246,9 +246,12 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.sideOpen = false;
       }
     } else {
-      this.currentDisplayViewId = currentDisplayViewId;
-      this.sideOpen = true;
-      this.lastSelectedDisplayViewId = currentDisplayViewId;
+      if(currentDisplayViewId != 4) {
+        this.currentDisplayViewId = currentDisplayViewId;
+        this.sideOpen = true;
+        this.lastSelectedDisplayViewId = currentDisplayViewId;
+      }
+
       switch (currentDisplayViewId) {
         case 1:
           break;
@@ -257,56 +260,51 @@ export class AppComponent implements OnInit, AfterViewInit {
         case 3:
           break;
         case 4:
+          const contentComp = this.contentComp();
+          if(contentComp) {
+            contentComp.openTab({
+              id: 'api-community',
+              type: 'api-community',
+              tabLabel: 'API Community'
+            });
+          }
           break;
         case 5:
           const settingBar: any = {
             id: 'settings',
-            title: 'Settings',
-            component: SettingsComponent
+            title: 'Settings'
           };
-          let oldSettingTab = false;
-          for (const item of this.openedList) {
-            delete item["isActive"];
-            if (item.id == settingBar.id) {
-              item["isActive"] = true;
-              oldSettingTab = true;
-            }
-          }
-          if (!oldSettingTab) {
-            settingBar["isActive"] = true
-            this.openedList.push(settingBar);
-          }
+          this.openTab(settingBar);
           break;
         case 6:
           const userCenterBar: any = {
             id: 'user-center',
-            title: 'User Center',
-            component: UserCenterComponent
+            title: 'User Center'
           };
-          let oldTab = false;
-          for (const item of this.openedList) {
-            delete item["isActive"];
-            if (item.id == userCenterBar.id) {
-              item["isActive"] = true;
-              oldTab = true;
-            }
-          }
-          if (!oldTab) {
-            userCenterBar["isActive"] = true
-            this.openedList.push(userCenterBar);
-          }
+          this.openTab(userCenterBar);
           break;
       }
-    }
-    //如果是API Community，则默认关闭侧边栏
-    if (currentDisplayViewId == 4) {
-      this.sideOpen = false;
     }
     if(currentDisplayViewId == 5 || currentDisplayViewId == 6) {
       this.closeMenu();
     }
   }
 
+
+  private openTab(targetTab: any) {
+    let oldTab = false;
+    for (const item of this.openedList) {
+      delete item["isActive"];
+      if (item.id == targetTab.id) {
+        item["isActive"] = true;
+        oldTab = true;
+      }
+    }
+    if (!oldTab) {
+      targetTab["isActive"] = true;
+      this.openedList.push(targetTab);
+    }
+  }
 
   closeMenu() {
     this.blurSwitch = true;

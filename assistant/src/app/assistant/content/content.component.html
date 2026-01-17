@@ -72,26 +72,24 @@
   }
 
   <div [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'" style="display: flex;flex-direction: column;">
-    @if(currentDisplayViewId()==1 || currentDisplayViewId()==2) {
-      @if (openedList.length>0) {
-        <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)"  [tabType]="{'type':'bilateral'}">
-          @for (openedTab of openedList; track openedTab.id) {
-          <div ast-tab [id]="openedTab.id" [label]="openedTab.tabLabel" [saved]="openedTab['saved']"
-            [isActivated]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
-            (onClickTab)="onClickTab($event)">
-            @if (openedTab['type']==null) {
-            <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
-            }
-            @if (openedTab['type']=='marked') {
-            <markdown [textInfo]="openedTab" (saved)="saveText($event)"></markdown>
-            }
-          </div>
+    @if (openedList.length>0) {
+      <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)"  [tabType]="{'type':'bilateral'}">
+        @for (openedTab of openedList; track openedTab.id) {
+        <div ast-tab [id]="openedTab.id" [label]="openedTab.tabLabel" [saved]="openedTab['saved']"
+          [isActivated]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
+          (onClickTab)="onClickTab($event)">
+          @if (openedTab['type']==null) {
+          <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
+          }
+          @if (openedTab['type']=='marked') {
+          <markdown [textInfo]="openedTab" (saved)="saveText($event)"></markdown>
+          }
+          @if (openedTab['type']=='api-community') {
+            <app-api-explorer [currentDisplayViewId]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
           }
         </div>
-      }
-    } @else if(currentDisplayViewId()==3) {
-    } @else if(currentDisplayViewId()==4) {
-      <app-api-explorer [currentDisplayViewId]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
+        }
+      </div>
     }
   </div>
 </div>
