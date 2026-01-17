@@ -96,7 +96,6 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     );
 
     const sub = tabEvents$.subscribe(() => {
-      console.log('某个 tab 的 isActivated 发生变化');
       this.updateTabsClass();
     });
 
