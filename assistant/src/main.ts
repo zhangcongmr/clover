@@ -1,4 +1,4 @@
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { enableProdMode, importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
 
 import { environment } from './environments/environment';
 import { AppComponent } from './app/app.component';
@@ -13,6 +13,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
     providers: [
+        provideZonelessChangeDetection(),
         importProvidersFrom(BrowserModule, FormsModule, ReactiveFormsModule),
         provideAnimations(),
         provideHttpClient(withInterceptorsFromDi()), provideClientHydration(withEventReplay())
