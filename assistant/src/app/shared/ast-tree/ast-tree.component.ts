@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, NgZone, OnChanges, OnInit, QueryList, SimpleChanges, ViewChildren, afterNextRender, inject, input, model, output } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, QueryList, SimpleChanges, ViewChildren, afterNextRender, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiTreeNodeType } from '../model';
@@ -28,10 +28,9 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   readonly nodeClick = output();
   readonly menuItemAction = output<any>();
-private ngZone = inject(NgZone);
 
-  menuId: string = ''
-  showMenuStyle: string = '';
+  menuId = signal('')
+  showMenuStyle = signal('');
   showShareButton = false;
 
   dataBackUp: Array<any> = [];
@@ -43,20 +42,16 @@ private ngZone = inject(NgZone);
     afterNextRender(() => {
       // 监听文档点击事件以关闭菜单（如果点击不在菜单上）  
       document.addEventListener('click', function (e: any) {
-        me.ngZone.run(() => {
-          if (me.menuId != '') {
-            if (!e.target.matches('#' + me.menuId + " *")) {
-              me.closeMenu();
-            }
+        if (me.menuId() != '') {
+          if (!e.target.matches('#' + me.menuId() + " *")) {
+            me.closeMenu();
           }
-        });
+        }
       });
       // 浏览器窗口之外点击鼠标，浏览器内部右键菜单响应关闭事件  
       window.addEventListener('blur', function (e) {
-        me.ngZone.run(() => {
-          e.preventDefault()
-          me.closeMenu();
-        });
+        e.preventDefault()
+        me.closeMenu();
       });
       document.addEventListener('keydown', (event) => {
         const keyName = event.key;
@@ -166,11 +161,11 @@ private ngZone = inject(NgZone);
     evt.preventDefault(); // 阻止默认右键菜单
     evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
 
-    this.menuId = this.uuid()
+    this.menuId.set(this.uuid())
     // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
     let horizontalComputed = (window.innerWidth - evt.clientX) > 336 ? "left:" + (evt.clientX + 10) : "right:" + (window.innerWidth - evt.clientX + 10);
     let verticalComputed = (window.innerHeight - evt.clientY) > 3*36 ? "top:" + evt.clientY : "bottom:" + (window.innerHeight - evt.clientY);
-    this.showMenuStyle = horizontalComputed + 'px;' + verticalComputed + 'px;' + "display:block;"
+    this.showMenuStyle.set(horizontalComputed + 'px;' + verticalComputed + 'px;' + "display:block;")
 
     this.currentContextMenuEvt = {
       currentTargetEvt: evt.currentTarget,
@@ -276,8 +271,8 @@ private ngZone = inject(NgZone);
   }
 
   closeMenu() {
-    this.showMenuStyle = "display:none;"
-    this.menuId = ""
+    this.showMenuStyle.set("display:none;")
+    this.menuId.set('')
   }
 
   outOfRename(childItem: any, evt?: any) {

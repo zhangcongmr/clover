@@ -67,7 +67,7 @@
 }
 
 @if(dataType() != 'subData') {
-  <div ast-menu  id="{{menuId}}" [style]="showMenuStyle" class="more-btn-dropdown-content codigma-right-menu">
+  <div ast-menu  id="{{menuId()}}" [style]="showMenuStyle()" class="more-btn-dropdown-content codigma-right-menu">
     <div data-layer="New" class="New codigma-menu-every-item" (click)="menuSelectAction('New')"><span>New</span></div>
     <div data-layer="Delete" class="Delete codigma-menu-every-item" (click)="menuSelectAction('Delete')"><span>Delete</span></div>
     <div data-layer="Rename" class="Rename codigma-menu-every-item" (click)="menuSelectAction('Rename')"><span>Rename</span></div>

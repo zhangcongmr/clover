@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, NgZone, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, model, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, model, signal, viewChild } from '@angular/core';
 import { AppEventType, CoreService, EventItem } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -25,7 +25,6 @@ import { ShareOnComponent } from '../share-on/share-on.component';
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
   private coreService = inject(CoreService);
   readonly sideOpen = model<boolean>(true);
-private ngZone = inject(NgZone);
 
   readonly addProjectComponent = viewChild(AddProjectComponent);
   readonly currentDisplayViewId = model<number>(1);
