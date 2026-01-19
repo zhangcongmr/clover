@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, NgZone, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, model, viewChild } from '@angular/core';
+import { AfterViewInit, Component, NgZone, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, model, signal, viewChild } from '@angular/core';
 import { AppEventType, CoreService, EventItem } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -32,10 +32,10 @@ private ngZone = inject(NgZone);
 
   /***aside */
   serverList: Array<any> = [];
-  dataList: Array<ApiTreeNodeType> = [];
+  dataList= signal<Array<ApiTreeNodeType>>([]);
   /***aside */
 
-  openedList: Array<any> = [];
+  openedList = signal<Array<any>>([]);
   currentSelect: any;
 
   addMarkFile = false;
@@ -46,9 +46,7 @@ private ngZone = inject(NgZone);
   constructor() {
     super();
     afterNextRender(() => {
-      this.ngZone.run(() => {
         this.initData();
-      });
     });
   }
 
@@ -63,10 +61,11 @@ private ngZone = inject(NgZone);
     this.coreService.tabChangeSubject.subscribe((data: EventItem) => {
       if (data.eventType == AppEventType.USER_CONTENT_TAB) {
         const tabId = data.data.tab.id;
-        for (const item of this.openedList) {
+        const openeds = this.openedList()
+        for (const item of openeds) {
           delete item["isActive"];
         }
-        const result: any = this.openedList.filter(val => val.id == tabId.replace("tab_", ""));
+        const result: any = openeds.filter(val => val.id == tabId.replace("tab_", ""));
         if (result.length > 0) {
           result[0]["isActive"] = true
         }
@@ -97,16 +96,18 @@ private ngZone = inject(NgZone);
         this.currentSelect.children.splice(0, 0, newApi);
       } else if (this.currentSelect.nodeType == 'leaf') {
         const dataId = this.currentSelect['parentItem']['id'];
-        const currentIndex = this.dataList.findIndex(dataval => dataval.id == dataId);
-        if (currentIndex > -1) {
-          const newApi = this.createNewApi();
-          newApi['rename'] = true;
-          newApi['parentItem'] = this.currentSelect['parentItem'];
-          if (!newApi['nodeType']) {
-            newApi['nodeType'] = 'leaf';
+        const datas = this.dataList();
+        if(datas) {
+          const currentIndex = datas.findIndex(dataval => dataval.id == dataId);
+          if (currentIndex > -1) {
+            const newApi = this.createNewApi();
+            newApi['rename'] = true;
+            newApi['parentItem'] = this.currentSelect['parentItem'];
+            if (!newApi['nodeType']) {
+              newApi['nodeType'] = 'leaf';
+            }
+            datas[currentIndex].children?.splice(0, 0, newApi);
           }
-          this.dataList[currentIndex].children?.splice(0, 0, newApi);
-
         }
       }
     }
@@ -120,7 +121,10 @@ private ngZone = inject(NgZone);
       nodeType: "root",
       children: []
     }
-    this.dataList = this.dataList.concat([folder])
+    this.dataList.update(value => [
+      ...value,
+      folder
+    ])
   }
   importBtn(evt: any) {
     this.openAddDlg();
@@ -132,7 +136,9 @@ private ngZone = inject(NgZone);
     
   }
   CollapseBtn(evt: any) {
-    this.dataList.forEach(ele => ele.isExpanded = false);
+    const datas = this.dataList();
+    datas.forEach(ele => ele.isExpanded = false);
+    this.dataList.update(value => [...datas])
   }
   MoreBtn(evt: any) {
 
@@ -152,7 +158,8 @@ private ngZone = inject(NgZone);
 
   public openTab(targetTab: any) {
     let oldTab = false;
-    for (const item of this.openedList) {
+    const datas = this.openedList()
+    for (const item of datas) {
       delete item["isActive"];
       if (item.id == targetTab.id) {
         item["isActive"] = true;
@@ -161,7 +168,7 @@ private ngZone = inject(NgZone);
     }
     if (!oldTab) {
       targetTab["isActive"] = true;
-      this.openedList.push(targetTab);
+      datas.push(targetTab);
     }
   }
 
@@ -184,8 +191,7 @@ private ngZone = inject(NgZone);
         datas.push(data)
       }
     }
-    this.dataList = this.dataList.concat(datas);
-
+    this.dataList.update(value => value.concat(datas))
     this.storeApi()
     this.currentDisplayViewId.set(1);
     this.sideOpen.set(true);
@@ -195,7 +201,7 @@ private ngZone = inject(NgZone);
     // --------- Create / Write ---------
     // await dir('/test-dir').create(); // create a directory
 
-    await write('/dir/file.txt', JSON.stringify(this.dataList));
+    await write('/dir/file.txt', JSON.stringify(this.dataList()));
     // await write('/dir/api.txt', this.dataList); // empty file
     // --------- Remove ---------
     // await dir('/test-dir').remove();
@@ -206,7 +212,7 @@ private ngZone = inject(NgZone);
   async storeOpenedList() {
     // --------- Create / Write ---------
     // await dir('/test-dir').create(); // create a directory
-    await write('/dir/file_openedList.txt', JSON.stringify(this.openedList));
+    await write('/dir/file_openedList.txt', JSON.stringify(this.openedList()));
     // await write('/dir/api.txt', this.dataList); // empty file
     // --------- Remove ---------
     // await dir('/test-dir').remove();
@@ -218,17 +224,16 @@ private ngZone = inject(NgZone);
     const readDataListText = await file('/dir/file.txt').text();
     // console.log("readDataListText: " + readDataListText)
     if (readDataListText) {
-      this.dataList = JSON.parse(readDataListText);
+      this.dataList.set(JSON.parse(readDataListText));
     }
 
     const openedListText = await file('/dir/file_openedList.txt').text();
     if (openedListText) {
-      this.openedList = JSON.parse(openedListText);
+      this.openedList.set(JSON.parse(openedListText));
     }
   }
 
   groupBy(dataList: Array<any>, key: string) {
-    let me = this;
     return dataList.reduce((result, currentValue) => {
       const value = currentValue[key];
       // 如果 key 值不存在于 result 中，则添加一个新数组  
@@ -250,7 +255,7 @@ private ngZone = inject(NgZone);
       children: [evt],
       isExpanded: true
     }
-    this.dataList.push(data)
+    this.dataList().push(data)
 
     this.storeApi()
   }
@@ -262,13 +267,13 @@ private ngZone = inject(NgZone);
       children: [evt],
       isExpanded: true
     }
-    this.dataList.push(data)
+    this.dataList().push(data)
 
     this.storeApi()
   }
 
   onViewOut(evt: any) {
-    this.dataList.push(...evt);
+    this.dataList().push(...evt);
     this.storeApi()
     this.currentDisplayViewId.set(1);
   }
@@ -323,25 +328,26 @@ private ngZone = inject(NgZone);
   onCloseTab(evt: any) {
     let currentIndex = 0;
     let currentActived = evt.isActivated;
-    for (let index = 0; index < this.openedList.length; index++) {
-      if (this.openedList[index].id == evt.id) {
+    const datas = this.openedList()
+    for (let index = 0; index < datas.length; index++) {
+      if (datas[index].id == evt.id) {
         currentIndex = index;
-        this.openedList[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
-        this.openedList.splice(index, 1);
+        datas[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
+        datas.splice(index, 1);
         break;
       }
     }
     if(currentActived) { //关闭的tab是激活状态，则需要激活其他tab
       if (evt.isFirst) {
-        if (this.openedList.length >= 1) {
-          this.openedList[0]["isActive"] = true;
+        if (datas.length >= 1) {
+          datas[0]["isActive"] = true;
         }
       } else if (evt.isLast) {
-        if (this.openedList.length >= 1) {
-          this.openedList[this.openedList.length - 1]["isActive"] = true;
+        if (datas.length >= 1) {
+          datas[datas.length - 1]["isActive"] = true;
         }
       } else {
-        this.openedList[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
+        datas[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
       }
     }
 
@@ -349,19 +355,21 @@ private ngZone = inject(NgZone);
   }
 
   onClickTab(evt: any) {
-    for (let index = 0; index < this.openedList.length; index++) {
-      if (this.openedList[index].id == evt.id) {
-        this.openedList[index]["isActive"] = true
+    const datas = this.openedList()
+    for (let index = 0; index < datas.length; index++) {
+      if (datas[index].id == evt.id) {
+        datas[index]["isActive"] = true
       } else {
-        this.openedList[index]["isActive"] = false
+        datas[index]["isActive"] = false
       }
     }
     this.storeOpenedList()
   }
 
   onAddNewTab(evt: any) {
-    this.openedList.forEach(ele => ele.isActive = false);
-    this.openedList.push(this.createNewApi())
+    const datas = this.openedList()
+    datas.forEach(ele => ele.isActive = false);
+    datas.push(this.createNewApi())
     this.storeOpenedList()
   }
 
@@ -416,8 +424,9 @@ private ngZone = inject(NgZone);
         symbolColor: "green",
         isActive: true,
       }
-      this.openedList.forEach(ele => ele.isActive = false);
-      this.openedList.push(markedTextInfo)
+      const datas = this.openedList()
+      datas.forEach(ele => ele.isActive = false);
+      datas.push(markedTextInfo)
       this.addMarkFile = false;
     }
   }
