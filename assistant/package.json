@@ -26,11 +26,9 @@
     "asn1js": "^3.0.5",
     "codemirror": "^6.0.2",
     "express": "^5.1.0",
-    "jsoneditor": "^9.7.4",
     "marked": "^14.1.2",
     "opfs-tools": "^0.6.1",
     "rxjs": "~7.8.0",
-    "swagger-client": "^3.18.4",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
