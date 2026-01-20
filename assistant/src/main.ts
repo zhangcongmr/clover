@@ -3,7 +3,6 @@ import { enableProdMode, importProvidersFrom, provideZonelessChangeDetection } f
 import { environment } from './environments/environment';
 import { AppComponent } from './app/app.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { BrowserModule, bootstrapApplication, provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
 
@@ -15,7 +14,6 @@ bootstrapApplication(AppComponent, {
     providers: [
         provideZonelessChangeDetection(),
         importProvidersFrom(BrowserModule, FormsModule, ReactiveFormsModule),
-        provideAnimations(),
         provideHttpClient(withInterceptorsFromDi()), provideClientHydration(withEventReplay())
     ]
 })
