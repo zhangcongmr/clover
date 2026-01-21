@@ -14,14 +14,14 @@
             <!-- <img
               [attr.src]="(tab.dotOrClose || tab.dotOrClose == null || tab.dotOrClose == undefined) ? 'assets/imgs/red-dot.svg' : 'assets/imgs/close-icon.svg'"> -->
             <svg class="icon" width="18" height="18">
-              <use [attr.href]="(tab.dotOrClose || tab.dotOrClose == null || tab.dotOrClose == undefined) ? 'assets/lib/svg_merged.svg#icon-red-dot' : 'assets/lib/svg_merged.svg#icon-close-icon'"></use>
+              <use [attr.href]="(tab.dotOrClose || tab.dotOrClose == null || tab.dotOrClose == undefined) ? '#icon-red-dot' : '#icon-close-icon'"></use>
             </svg>
           </div>
         } @else {
           <div data-svg-wrapper="" data-layer="close-btn" class="CloseBtn tab-close" (click)="iconCloseClick($event, tab)">
             <!-- <img src="assets/imgs/close-icon.svg"> -->
             <svg class="icon" width="18" height="18">
-              <use href="assets/lib/svg_merged.svg#icon-close-icon"></use>
+              <use href="#icon-close-icon"></use>
             </svg>
           </div>
         }

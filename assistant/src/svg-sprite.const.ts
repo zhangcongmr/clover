@@ -1,3 +1,7 @@
+/**
+ * SVG Sprite 统一在ts文件中定义，方便读取
+ */
+export const SVG_SPRITE_CONTENT = `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: none;">
 <defs>
 
@@ -83,3 +87,19 @@
         <path d="M3.46114 11.9535L8.15771 7.33067L6.95543 6.10896L1 11.9707L6.96343 17.6804L8.14914 16.4421L3.46114 11.9535ZM15.2857 7.33067L16.488 6.10896L22.4434 11.9707L16.48 17.6804L15.2943 16.4421L19.9823 11.9535L15.2857 7.33067ZM12.6377 5.31067L9.09143 18.2347L10.7446 18.6884L14.2909 5.76495L12.6377 5.31124V5.31067Z" fill="#787777"></path>
    </symbol>
 </svg>
+`.trim();
+
+
+// svg-injector.ts
+let hasInjected = false;
+
+export function injectSvgSprite() {
+  if (hasInjected || typeof document === 'undefined') return;
+
+  const container = document.createElement('div');
+  container.innerHTML = SVG_SPRITE_CONTENT;
+  container.style.display = 'none';
+  document.body.appendChild(container);
+
+  hasInjected = true;
+}

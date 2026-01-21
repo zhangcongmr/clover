@@ -15,7 +15,6 @@ import { MyConfigService } from './my-config.service';
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    // encapsulation: ViewEncapsulation.ShadowDom,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent]
 })
 export class AppComponent implements OnInit, AfterViewInit {

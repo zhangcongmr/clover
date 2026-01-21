@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "moduleResolution": "node", //不设置为node会报错：Cannot find module 'undici-types'. Did you mean to set the 'moduleResolution' option to 'nodenext', or to add aliases to the 'paths' option?
+    "target": "ES2020",
+    "module": "ES2020",          // 👈 关键：输出 ESM
+    "esModuleInterop": false,    // ESM 不需要 interop
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": false,
+    // 👇 确保动态 import 不被转换
+    // "allowSyntheticDefaultImports": false,
+  },
+  "include": [
+    "src/index.ts"
+  ]
+}
