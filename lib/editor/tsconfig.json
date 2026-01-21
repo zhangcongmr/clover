@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+     "jsx": "preserve"
+  },
+  "include": [
+    "src/**/*",
+    "src/types.d.ts"
+  ]
+}
