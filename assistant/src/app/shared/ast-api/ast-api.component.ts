@@ -18,7 +18,7 @@ import {json} from "@codemirror/lang-json"
     '(mousemove)': 'nsResize($event)',
     '[tabIndex]': '-1',
     '(keydown)': 'saveApi($event)',
-    '(dblclick)': 'editApiSourceCodeFn()'
+    '(dblclick)': 'editApiSourceCodeFn($event)'
   },
   standalone: true,
   imports: [FormsModule, AstSelectComponent, AstTabGroupComponent, AstTabComponent]
@@ -777,7 +777,9 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     this.ifChangedFlag = ifChangedFlag;
   }
 
-  editApiSourceCodeFn() {
+  editApiSourceCodeFn(evt: any) {
+    // 阻止默认行为（可选）
+    evt.preventDefault();
     this.editApiSourceCodeEnable = true;
     // 替代 setTimeout. 确保在下一次渲染周期后执行代码  setTimeout虽然也可以，但存在潜在的未渲染完成时就执行的可能。requestAnimationFrame比setTimeout更可靠。
     requestAnimationFrame(() => {
