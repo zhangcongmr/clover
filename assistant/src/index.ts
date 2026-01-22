@@ -11,10 +11,28 @@ const appendInlineStyle = (text: string) => {
   document.head.appendChild(styleEl);
 };
 
+const createAppRoot = (domId: string) => {
+  if(!domId || domId.trim() == "") {
+    console.error("Cannot find dom id to create the editor.Please make sure dom id exist.")
+    return;
+  }
 
-export const loadAstApp = () => {
+  const container = document.createElement('app-root');
+  container.style.display = 'block';
+  container.style.height = '100vh';
+
+  const parent = document.getElementById(domId);
+  if(parent) {
+    parent.appendChild(container);
+  }
+}
+
+export const loadAstApp = (domId: string) => {
   // 使用
   appendInlineStyle(GLOBAL_STYLES);
+
+  // 创建根元素
+  createAppRoot(domId);
 
   // @ts-ignore: js is generated in dist/
   import('./assistant-common/browser/scripts.js');
