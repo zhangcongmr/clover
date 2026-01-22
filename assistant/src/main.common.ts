@@ -6,9 +6,15 @@ import { BrowserModule, bootstrapApplication, provideClientHydration, withEventR
 import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
+import { loadCommunityWidget } from '@assistant/community-widget';
 
 //svg sprite 注入到 DOM
 injectSvgSprite();
+
+loadCommunityWidget().then(() => {
+  console.log('Community widget loaded!');
+  // 此时 IIFE 已执行，可能已自动挂载到页面
+});
 
 // 👇 新增：定义启动函数
 export function startAngularApp(config?: { apiUrl?: string; timeout?: number }) {

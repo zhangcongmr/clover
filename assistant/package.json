@@ -38,7 +38,8 @@
     "marked": "^14.1.2",
     "opfs-tools": "^0.6.1",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "@assistant/community-widget": "^0.0.1"
   },
   "devDependencies": {
     "@angular/build": "^20.3.7",
