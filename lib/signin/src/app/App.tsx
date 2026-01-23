@@ -67,7 +67,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-[340px]">
-        {/* Assistant Logo */}
+        {/* Luxio Logo */}
         <div className="flex justify-center mb-6">
           <svg
             height="48"
@@ -83,7 +83,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
 
         {/* Sign in heading */}
         <h1 className="text-2xl text-center mb-4 text-[#24292f]">
-          Sign in to Assistant
+          Sign in to Luxio
         </h1>
 
         {/* Sign in form */}
@@ -198,7 +198,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
 
         {/* Create account link */}
         <p className="text-center text-sm text-[#24292f] mb-4">
-          New to Assistant?{' '}
+          New to Luxio?{' '}
           <a href="#" className="text-[#0969da] hover:underline">
             Create an account
           </a>

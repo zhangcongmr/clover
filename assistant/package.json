@@ -1,5 +1,5 @@
 {
-  "name": "assistant",
+  "name": "luxio",
   "version": "1.0.0",
   "type": "module",
   "exports": {
@@ -16,7 +16,7 @@
     "build:common": "node scripts/inline-styles.mjs && ng build --configuration=common && tsc -p tsconfig.declaration.json",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:assistant": "node dist/assistant/server/server.mjs"
+    "serve:ssr:luxio": "node dist/luxio/server/server.mjs"
   },
   "private": true,
   "dependencies": {
@@ -39,7 +39,7 @@
     "opfs-tools": "^0.6.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "@assistant/community-widget": "^0.0.1"
+    "@luxio/community-widget": "^0.0.1"
   },
   "devDependencies": {
     "@angular/build": "^20.3.7",

@@ -12,7 +12,7 @@ export function Header() {
               <div className="w-8 h-8 rounded-full bg-[#FF6C37] flex items-center justify-center">
                 <div className="w-5 h-5 rounded-full border-2 border-white"></div>
               </div>
-              <span className="font-semibold text-lg">Assistant</span>
+              <span className="font-semibold text-lg">Luxio</span>
             </div>
             
             {/* Navigation */}

@@ -29,7 +29,7 @@ export class WebllmComponent implements OnInit {
     );
 
     const messages: any = [
-      { role: "system", content: "You are a helpful AI assistant." },
+      { role: "system", content: "You are a helpful AI luxio." },
       { role: "user", content: "Hello!" },
     ]
     

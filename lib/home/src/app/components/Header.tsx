@@ -8,7 +8,7 @@ export function Header() {
         <div className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center">
           <span className="text-white font-bold text-sm">A</span>
         </div>
-        <span className="font-semibold text-xl">Assistant</span>
+        <span className="font-semibold text-xl">Luxio</span>
       </div>
 
       {/* Navigation */}
@@ -23,10 +23,10 @@ export function Header() {
           Education
         </a>
         <a href="#" className="text-sm text-gray-700 hover:text-gray-900">
-          Assistant Premium
+          Luxio Premium
         </a>
         <a href="#" className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1">
-          Assistant AI
+          Luxio AI
           <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1 rounded">
             AI
           </span>

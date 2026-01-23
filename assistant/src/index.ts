@@ -35,9 +35,9 @@ export const loadAstApp = (domId: string) => {
   createAppRoot(domId);
 
   // @ts-ignore: js is generated in dist/
-  import('./assistant-common/browser/scripts.js');
+  import('./luxio-common/browser/scripts.js');
   // @ts-ignore: js is generated in dist/
-  return import('./assistant-common/browser/main.js')
+  return import('./luxio-common/browser/main.js')
     .then(m => {
       return m.startAngularApp
     })

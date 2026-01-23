@@ -4,10 +4,10 @@ import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService, EventItem, AppEventType } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
-import { ContentComponent } from './assistant/content/content.component';
+import { ContentComponent } from './luxio/content/content.component';
 import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
-import { SettingsComponent } from './assistant/settings/settings.component';
-import { UserCenterComponent } from './assistant/user-center/user-center.component';
+import { SettingsComponent } from './luxio/settings/settings.component';
+import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { MyConfigService } from './my-config.service';
 
 @Component({
@@ -23,8 +23,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   http = inject(HttpClient);
   myConfigService = inject(MyConfigService)
 
-  title = 'assistant';
-  assistantAppTabId: any;
+  title = 'luxio';
+  luxioAppTabId: any;
   textArr: Array<String> = []
 
   lastSelectedDisplayViewId: number = 1;
@@ -50,18 +50,18 @@ export class AppComponent implements OnInit, AfterViewInit {
       if (chrome && chrome.tabs) {
         chrome.tabs.getCurrent((val: any) => {
           console.log("current tab id is:" + val.id);
-          this.assistantAppTabId = val.id;
-          chrome.storage.local.get(ConfigService.assistantAppTabIdList, (result: any) => {
-            const assistantAppTabIdList = result[ConfigService.assistantAppTabIdList];
-            if (!assistantAppTabIdList) {
-              chrome.storage.local.set({ [ConfigService.assistantAppTabIdList]: [val.id] }, function () {
+          this.luxioAppTabId = val.id;
+          chrome.storage.local.get(ConfigService.luxioAppTabIdList, (result: any) => {
+            const luxioAppTabIdList = result[ConfigService.luxioAppTabIdList];
+            if (!luxioAppTabIdList) {
+              chrome.storage.local.set({ [ConfigService.luxioAppTabIdList]: [val.id] }, function () {
                 // let us know it worked
                 console.log("V3 Test: initialized test click counter to 0");
               });
             } else {
-              if (assistantAppTabIdList.length >= 0 && !assistantAppTabIdList.includes(val.id)) {
-                assistantAppTabIdList.push(val.id);
-                chrome.storage.local.set({ [ConfigService.assistantAppTabIdList]: assistantAppTabIdList }, function () {
+              if (luxioAppTabIdList.length >= 0 && !luxioAppTabIdList.includes(val.id)) {
+                luxioAppTabIdList.push(val.id);
+                chrome.storage.local.set({ [ConfigService.luxioAppTabIdList]: luxioAppTabIdList }, function () {
                   // let us know it worked
                   console.log("V3 Test: initialized test click counter to 0");
                 });
@@ -223,7 +223,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onAssistantClickTab(evt: any) {
+  onLuxioClickTab(evt: any) {
     if (evt.index == 0) {
       const eventItem: EventItem = new EventItem();
       eventItem.eventType = AppEventType.APP_API_EXPLORER_TAB;

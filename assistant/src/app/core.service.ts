@@ -1043,7 +1043,7 @@ export class ConfigService {
   static dialogServerManagerId = "dialog_server_manager_id"
   static dialogServiceManagerId = "dialog_service_manager_id"
 
-  static assistantAppTabIdList = "assistantAppTabIdList";
+  static luxioAppTabIdList = "luxioAppTabIdList";
   static privacyErrorDialogFlag = "privacyErrorDialogFlag";
   static ipAndPort = "ipAndPort";
   //微服务的列表是否发生了变更，如果发生变更则取值为modified， 如果还是初始的微服务列表则为raw

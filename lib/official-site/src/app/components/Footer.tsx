@@ -28,7 +28,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-full bg-[#FF6C37] flex items-center justify-center">
                 <div className="w-5 h-5 rounded-full border-2 border-white"></div>
               </div>
-              <span className="font-semibold text-lg">Assistant</span>
+              <span className="font-semibold text-lg">Luxio</span>
             </div>
             <p className="text-sm text-gray-400 mb-4">
               The Collaboration Platform for API Development
@@ -63,7 +63,7 @@ export function Footer() {
         <div className="pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-400">
-              © 2026 Assistant, Inc. All rights reserved.
+              © 2026 Luxio, Inc. All rights reserved.
             </p>
             <div className="flex gap-6">
               <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">

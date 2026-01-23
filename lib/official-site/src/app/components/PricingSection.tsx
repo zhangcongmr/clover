@@ -8,7 +8,7 @@ export function PricingSection() {
       price: '$0',
       description: 'For individuals learning about APIs',
       features: [
-        'Access to Assistant API Platform',
+        'Access to Luxio API Platform',
         'Public workspaces',
         'Collaboration tools',
         '3 team members',

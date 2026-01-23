@@ -15,11 +15,11 @@ if(chrome && chrome.webRequest) {
 
 
     chrome.webRequest.onBeforeRequest.addListener(data => {
-        // chrome.storage.local.get("assistantAppTabIdList", result => {
-        //     if (data.tabId == result["assistantAppTabIdList"]) {
+        // chrome.storage.local.get("luxioAppTabIdList", result => {
+        //     if (data.tabId == result["luxioAppTabIdList"]) {
         //         if (data.url.includes("/apijson/")) {
         //             console.log("update tabs--------------")
-        //             // chrome.tabs.update(Number(result["assistantAppTabIdList"]), {
+        //             // chrome.tabs.update(Number(result["luxioAppTabIdList"]), {
         //             //     url: data.initiator + "/index.html"
         //             // });
         //         }
@@ -93,10 +93,10 @@ if(chrome && chrome.webRequest) {
     }, { urls: ["<all_urls>"] }, ["requestBody"]);
 
     chrome.webRequest.onErrorOccurred.addListener(data => {
-        chrome.storage.local.get("assistantAppTabIdList", result => {
-            const assistantAppTabIdList = result["assistantAppTabIdList"];
-            if (assistantAppTabIdList && assistantAppTabIdList.length > 0) {
-                if (assistantAppTabIdList.includes(data.tabId)) {
+        chrome.storage.local.get("luxioAppTabIdList", result => {
+            const luxioAppTabIdList = result["luxioAppTabIdList"];
+            if (luxioAppTabIdList && luxioAppTabIdList.length > 0) {
+                if (luxioAppTabIdList.includes(data.tabId)) {
                     if (data.url.includes("chrome-extension") && data.type == chrome.webRequest.ResourceType.MAIN_FRAME) {
                         chrome.tabs.update(Number(data.tabId), {
                             url: data.initiator + "/index.html"
@@ -120,17 +120,17 @@ if(chrome && chrome.storage) {
 
     // const panelLeft = (screen.availWidth - panelWidth) * 0.5;
     // const panelTop = (screen.availHeight - panelHeight) * 0.5;
-    chrome.storage.local.get("assistantMenusIdCreatedStatus", result => {
-        const assistantMenusIdCreatedStatus = result['assistantMenusIdCreatedStatus'];
-        if(!assistantMenusIdCreatedStatus || assistantMenusIdCreatedStatus == 0) {
+    chrome.storage.local.get("luxioMenusIdCreatedStatus", result => {
+        const luxioMenusIdCreatedStatus = result['luxioMenusIdCreatedStatus'];
+        if(!luxioMenusIdCreatedStatus || luxioMenusIdCreatedStatus == 0) {
             chrome.contextMenus.create({
-                id: "assistant_menus_id",
+                id: "luxio_menus_id",
                 title: 'Trans', // %s表示选中的文字
                 contexts: ['page'], // 只有当选中文字时才会出现此右键菜单
                 documentUrlPatterns: ["http://*/*", "https://*/*", "file://*"]
             });
-            chrome.storage.local.set({"assistantMenusIdCreatedStatus": 1}, ()=> {
-                console.log("assistant_menus_id has been created.");
+            chrome.storage.local.set({"luxioMenusIdCreatedStatus": 1}, ()=> {
+                console.log("luxio_menus_id has been created.");
             });
         }
     });
@@ -140,15 +140,15 @@ if(chrome && chrome.storage) {
 if(chrome && chrome.tabs) {
 
     chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-        chrome.storage.local.get("assistantAppTabIdList", (result) => {
+        chrome.storage.local.get("luxioAppTabIdList", (result) => {
             if (result) {
-                const assistantAppTabIdList = result["assistantAppTabIdList"];
-                if (assistantAppTabIdList.length == 1 && assistantAppTabIdList[0] == tabId) {
+                const luxioAppTabIdList = result["luxioAppTabIdList"];
+                if (luxioAppTabIdList.length == 1 && luxioAppTabIdList[0] == tabId) {
                     clearAllAuthorize();
                 }
-                if (assistantAppTabIdList.length >= 0 && assistantAppTabIdList.includes(tabId)) {
-                    const results = assistantAppTabIdList.filter((id) => Number(id) !== Number(tabId));
-                    chrome.storage.local.set({ "assistantAppTabIdList": results }, function () {
+                if (luxioAppTabIdList.length >= 0 && luxioAppTabIdList.includes(tabId)) {
+                    const results = luxioAppTabIdList.filter((id) => Number(id) !== Number(tabId));
+                    chrome.storage.local.set({ "luxioAppTabIdList": results }, function () {
                         // let us know it worked
                         console.log("V3 Test: initialized test click counter to 0");
                     });
@@ -161,7 +161,7 @@ if(chrome && chrome.tabs) {
 
 if(chrome && chrome.contextMenus) {
     chrome.contextMenus.onClicked.addListener(event => {
-        if (event.menuItemId == "assistant_menus_id") {
+        if (event.menuItemId == "luxio_menus_id") {
             chrome.windows.create({
                 url: chrome.runtime.getURL('index.html'),
                 type: "panel"

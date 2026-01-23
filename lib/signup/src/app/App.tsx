@@ -45,7 +45,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
 
         {/* Main Form */}
         <div className="space-y-6">
-          <h1 className="text-[28px] font-medium text-gray-900 mb-6">Sign up for Assistant</h1>
+          <h1 className="text-[28px] font-medium text-gray-900 mb-6">Sign up for Luxio</h1>
 
           {/* OAuth Buttons */}
           <div className="space-y-3">
@@ -208,9 +208,9 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
               <a href="#" className="text-blue-600 hover:underline">
                 Terms of Service
               </a>
-              . For more information about Assistant's privacy practices, see the{' '}
+              . For more information about Luxio's privacy practices, see the{' '}
               <a href="#" className="text-blue-600 hover:underline">
-                Assistant Privacy Statement
+                Luxio Privacy Statement
               </a>
               . We'll occasionally send you account-related emails.
             </p>

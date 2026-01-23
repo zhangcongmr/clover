@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { loadAstApp } from 'assistant';
+import Example from './example.mdx'
+import { loadAstApp } from 'luxio';
 
 // 防止重复加载
 let angularLoaded = false;
@@ -31,6 +32,7 @@ export default function App() {
       {/* <app-root style={{ height: '100vh', display: 'block' }}></app-root> */}
       <div id="coderEditor"></div>
       {/* <p>Back to React</p> */}
+      <Example />
     </div>
   );
 }

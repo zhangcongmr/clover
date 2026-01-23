@@ -6,7 +6,7 @@ import { BrowserModule, bootstrapApplication, provideClientHydration, withEventR
 import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
-import { loadCommunityWidget } from '@assistant/community-widget';
+import { loadCommunityWidget } from '@luxio/community-widget';
 
 //svg sprite 注入到 DOM
 injectSvgSprite();

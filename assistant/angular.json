@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "assistant": {
+    "luxio": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/assistant",
+            "outputPath": "dist/luxio",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -81,7 +81,7 @@
             },
             "common": {
               "browser": "src/main.common.ts",
-              "outputPath": "dist/assistant-common",
+              "outputPath": "dist/luxio-common",
               "optimization": false,
               "outputHashing": "none",
               "sourceMap": false,
@@ -136,10 +136,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "assistant:build:production"
+              "buildTarget": "luxio:build:production"
             },
             "development": {
-              "buildTarget": "assistant:build:development"
+              "buildTarget": "luxio:build:development"
             }
           },
           "defaultConfiguration": "development"
