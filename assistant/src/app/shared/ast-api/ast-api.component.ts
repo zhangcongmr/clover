@@ -1,13 +1,13 @@
-import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, inject, output, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, output, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { FormsModule } from '@angular/forms';
 import { AstSelectComponent } from '../ast-select/ast-select.component';
-import {basicSetup} from "codemirror"
-import {EditorView} from "@codemirror/view"
-import {json} from "@codemirror/lang-json"
+import { basicSetup } from "codemirror";
+import { EditorView } from "@codemirror/view";
+import { json } from "@codemirror/lang-json";
 
 @Component({
   selector: 'ast-api',
@@ -24,7 +24,6 @@ import {json} from "@codemirror/lang-json"
   imports: [FormsModule, AstSelectComponent, AstTabGroupComponent, AstTabComponent]
 })
 export class AstApiComponent implements OnInit, AfterViewInit {
-  private coreService = inject(CoreService);
   reqEditorContainerView = viewChild<ElementRef<HTMLButtonElement>>('reqEditorContainer');
   editApiSourceCodeContainerView = viewChild<ElementRef<HTMLButtonElement>>('editApiSourceCodeContainer');
   @Input() apiInfo: any;
@@ -645,7 +644,6 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.coreService.apiViewLoadedSubject.next(this.apiInfo);
     // this.initializeMonacoEditor();
   }
 

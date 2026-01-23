@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, Injector, OnInit, ViewEncapsulation, afterNextRender, inject, viewChild } from '@angular/core';
+import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, viewChild } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
-import { ConfigService, CoreService, EventItem, AppEventType } from './core.service';
+import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
 import { ContentComponent } from './luxio/content/content.component';
@@ -152,14 +152,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     let vi = new Uint8Array(num.toBER());
   }
 
-  selectedTabChange(evt: any) {
-    if (evt.index == 0) {
-      const eventItem: EventItem = new EventItem();
-      eventItem.eventType = AppEventType.APP_API_EXPLORER_TAB;
-      this.coreService.tabChangeSubject.next(eventItem);
-    }
-  }
-
   onCloseTab(evt: any) {
     let currentIndex = 0;
     let currentActived = evt.isActivated;
@@ -220,14 +212,6 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.currentDisplayViewId = 6;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
-    }
-  }
-
-  onLuxioClickTab(evt: any) {
-    if (evt.index == 0) {
-      const eventItem: EventItem = new EventItem();
-      eventItem.eventType = AppEventType.APP_API_EXPLORER_TAB;
-      this.coreService.tabChangeSubject.next(eventItem);
     }
   }
 

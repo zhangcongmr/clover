@@ -2,7 +2,7 @@ import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
-import { ServiceRouteInfo, BaseModel, ServerAndServiceInfo, ApiTreeNodeType } from './shared/model';
+import { ServiceRouteInfo, ApiTreeNodeType } from './shared/model';
 
 @Injectable({
   providedIn: 'root'
@@ -10,8 +10,6 @@ import { ServiceRouteInfo, BaseModel, ServerAndServiceInfo, ApiTreeNodeType } fr
 export class CoreService {
   private http = inject(HttpClient);
 
-  public apiViewLoadedSubject = new Subject();
-  public tabChangeSubject = new Subject<EventItem>();
   // public publishSpecDefSubject = new Subject();
   public forcePrivacyVisitSubject = new Subject();
 
@@ -364,37 +362,6 @@ export class CoreService {
         }
       }
     }
-  }
-
-  setTabHandler(newTab: any, newPanel: any) {
-    let me = this;
-    newTab.addEventListener('click', function () {
-      const tabs = document.querySelectorAll('.info-box li a');
-      const panels = document.querySelectorAll('.info-box article');
-
-      for (let index = 0; index < tabs.length; index++) {
-        if (tabs[index].getAttribute('class')) {
-          tabs[index].removeAttribute('class');
-        }
-      }
-      newTab.setAttribute('class', 'active');
-
-      for (let index = 0; index < panels.length; index++) {
-        if (panels[index].getAttribute('class')) {
-          panels[index].removeAttribute('class');
-        }
-      }
-      newPanel.setAttribute('class', 'active-panel');
-
-      const eventItem: EventItem = new EventItem();
-      eventItem.eventType = AppEventType.USER_CONTENT_TAB;
-      eventItem.data = {
-        tab: newTab,
-        panel: newPanel
-      }
-
-      me.tabChangeSubject.next(eventItem);
-    });
   }
 
   async doAuthorize(authorizeUrl: string, data: { userName: string; passwd: string; }, callback: (result: number) => void) {

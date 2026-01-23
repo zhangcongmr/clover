@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, model, signal, viewChild } from '@angular/core';
-import { AppEventType, CoreService, EventItem } from '../../core.service';
+import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, model, signal, viewChild } from '@angular/core';
+import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
 import { MarkdownComponent } from '../../shared/markdown/markdown.component';
@@ -23,7 +23,6 @@ import { ShareOnComponent } from '../share-on/share-on.component';
   imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
-  private coreService = inject(CoreService);
   readonly sideOpen = model<boolean>(true);
 
   readonly addProjectComponent = viewChild(AddProjectComponent);
@@ -50,26 +49,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   ngOnInit() {
-    this.coreService.apiViewLoadedSubject.subscribe((data: any) => {
-      const tab = document.getElementById('tab_' + data.id);
-      const panel = document.getElementById('article_' + data.id);
-
-      // this.coreService.setTabHandler(tab, panel);
-    });
-
-    this.coreService.tabChangeSubject.subscribe((data: EventItem) => {
-      if (data.eventType == AppEventType.USER_CONTENT_TAB) {
-        const tabId = data.data.tab.id;
-        const openeds = this.openedList()
-        for (const item of openeds) {
-          delete item["isActive"];
-        }
-        const result: any = openeds.filter(val => val.id == tabId.replace("tab_", ""));
-        if (result.length > 0) {
-          result[0]["isActive"] = true
-        }
-      }
-    })
   }
 
   ngOnChanges(changes: SimpleChanges): void {
