@@ -23,7 +23,7 @@ export class AddProjectComponent implements OnInit {
 
   visible!: boolean;
   importType = '1';  // 1 - From API Definition  2 - From API Community  3 - From Local
-  sourceCodeText = '';
+  sourceCodeText: any;
   importFromApiDefUrl = ""
 
   data = [];
@@ -108,7 +108,7 @@ export class AddProjectComponent implements OnInit {
 
   fileContentChangedFn(evt: any) {
     const json = JSON.parse(evt);
-    this.sourceCodeText = JSON.stringify(json, null, 2);
+    this.sourceCodeText = json;
     this.data = this.coreService.parseOpenApiSpec(json);
   }
 
@@ -124,19 +124,26 @@ export class AddProjectComponent implements OnInit {
         if (!rawData) {
           return;
         }
-
         me.data = this.coreService.parseOpenApiSpec(rawData);
-        me.confirmSelected(me.data)
+        me.confirmSelected({
+          sourceCodeText: rawData,
+          apiData: me.data
+        })
       },
       (reason: any) => {
       });
   }
 
   importOutFromEcosystem(evt: any) {
-    this.confirmSelected(evt)
+    this.confirmSelected({
+      apiData: evt
+    })
   }
 
   importOutFromLocal() {
-    this.confirmSelected(this.data)
+    this.confirmSelected({
+      sourceCodeText: this.sourceCodeText,
+      apiData: this.data
+    })
   }
 }

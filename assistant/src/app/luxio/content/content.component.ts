@@ -151,8 +151,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   apiSelected(evt: any) {
-    evt.map((val: any) => val['saved'] = true);
-    const result = this.groupBy(evt, "folder");
+    const apiData = evt.apiData;
+    apiData.map((val: any) => val['saved'] = true);
+    const result = this.groupBy(apiData, "folder");
     let datas: Array<any> = []
     for (const key in result) {
       if (Object.prototype.hasOwnProperty.call(result, key)) {
