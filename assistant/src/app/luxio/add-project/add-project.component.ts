@@ -118,7 +118,7 @@ export class AddProjectComponent implements OnInit {
 
   importFromApiDef(evt: any) {
     let me = this;
-    this.coreService.fetchApiFromServer(this.importFromApiDefUrl, false).subscribe(
+    this.coreService.getData(this.importFromApiDefUrl).subscribe(
       (rawData: any) => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
@@ -129,8 +129,6 @@ export class AddProjectComponent implements OnInit {
           sourceCodeText: rawData,
           apiData: me.data
         })
-      },
-      (reason: any) => {
       });
   }
 

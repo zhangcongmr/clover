@@ -48,7 +48,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   }
 
   listClick(evt: any) {
-    if(evt['nodeType']!='leaf') {
+    if (evt['nodeType'] != 'leaf') {
       this.setService(evt);
       this.currentServer = evt;
       this.checkIfShouldAuthorize();
@@ -63,8 +63,8 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
     // this.currentServer.serviceRoute = evt;
     let specUrl = me.getSpecUrlByServerAndServiceInfo(evt);
     me.coreService.choosingApiLoading = true;
-    this.coreService.fetchApiFromServer(specUrl, false).subscribe(
-      (rawData: any) => {
+    this.coreService.getData(specUrl).subscribe({
+      next: (rawData: any) => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
           return;
@@ -77,7 +77,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
         me.dataOutput.emit(me.data);
         me.rawDataOutput.emit(rawData);
       },
-      (reason: any) => {
+      error: (reason: any) => {
         me.coreService.choosingApiLoading = false;
         if (reason.status == 0) {
           if (specUrl.startsWith("https://")) {
@@ -93,7 +93,8 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
             }
           });
         }
-      });
+      }
+    });
   }
 
   private async checkIfShouldAuthorize() {

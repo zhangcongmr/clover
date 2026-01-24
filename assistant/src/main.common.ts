@@ -3,7 +3,7 @@ import { importProvidersFrom, provideZonelessChangeDetection } from '@angular/co
 import { AppComponent } from './app/app.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication, provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
+import { withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/common/http';
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@luxio/community-widget';
@@ -30,7 +30,7 @@ export function startAngularApp(doc?: string | any | (() => string | DocModel)) 
       provideMyConfig(defaultConfig),
       provideZonelessChangeDetection(),
       importProvidersFrom(BrowserModule, FormsModule, ReactiveFormsModule),
-      provideHttpClient(withInterceptorsFromDi()),
+      provideHttpClient(withFetch(), withInterceptorsFromDi()),
       provideClientHydration(withEventReplay())
     ]
   }).catch(err => {

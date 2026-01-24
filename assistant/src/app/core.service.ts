@@ -168,13 +168,8 @@ export class CoreService {
     return serviceList;
   }
 
-  fetchApiFromServer(url: string, doParse: boolean) {
-    if (doParse) {
-      const promise = new SwaggerClient(url)
-      return promise;
-    } else {
-      return this.http.get(url) as Observable<Object>;
-    }
+  getData(url: string) {
+    return this.http.get<any>(url);
   }
 
   postData(url: string, data: any) {

@@ -108,7 +108,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   importFromApiDef(rawSpecBrief: any) {
     let me = this;
-    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id, false).subscribe(
+    this.coreService.getData("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
       (rawData: any) => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
@@ -121,16 +121,14 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
           me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
         }
         me.importOut.emit(me.data);
-      },
-      (reason: any) => {
       });
   }
 
 
   view(rawSpecBrief: any) {
     let me = this;
-    this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id, false).subscribe(
-      (rawData: any) => {
+    this.coreService.getData("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
+      rawData => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
           return;
@@ -145,8 +143,6 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
           data: me.data,
           rawSpecDef: me.rawSpecDef
         });
-      },
-      (reason: any) => {
       });
   }
 
