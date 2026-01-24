@@ -2,6 +2,7 @@
  * 当本项目导出为依赖时, 需要添加此index.ts文件，方便第三方应用加载内部js脚本
  * inlined-styles.ts需要在运行npm run build:common才会生成
  */
+import { DocModel } from './app/shared/model';
 import { GLOBAL_STYLES } from './inlined-styles';
 
 const appendInlineStyle = (text: string) => {
@@ -27,7 +28,7 @@ const createAppRoot = (domId: string) => {
   }
 }
 
-export const loadAstApp = (domId: string) => {
+export const Luxio = (domId: string, doc?: string | any | (() => string | DocModel)) => {
   // 使用
   appendInlineStyle(GLOBAL_STYLES);
 
@@ -39,7 +40,7 @@ export const loadAstApp = (domId: string) => {
   // @ts-ignore: js is generated in dist/
   return import('./luxio-common/browser/main.js')
     .then(m => {
-      return m.startAngularApp
+      return m.startAngularApp(doc);
     })
     .catch(err => {
       console.error('Cannot import ', err);

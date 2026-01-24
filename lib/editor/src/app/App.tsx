@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import Example from './example.mdx'
-import { loadAstApp } from 'luxio';
+import { Luxio } from 'luxio';
+import { dataJson } from './PandaDoc Public API';
 
 // 防止重复加载
 let angularLoaded = false;
@@ -13,8 +14,7 @@ export default function App() {
 
     angularLoaded = true;
 
-    loadAstApp("coderEditor")
-      .then(start => start({ apiUrl: '...' }))
+    Luxio("coderEditor", dataJson)
       .catch(err => {
         console.error('Angular failed to start', err);
         angularLoaded = false; // 可选：允许重试
@@ -32,7 +32,7 @@ export default function App() {
       {/* <app-root style={{ height: '100vh', display: 'block' }}></app-root> */}
       <div id="coderEditor"></div>
       {/* <p>Back to React</p> */}
-      <Example />
+      {/* <Example /> */}
     </div>
   );
 }

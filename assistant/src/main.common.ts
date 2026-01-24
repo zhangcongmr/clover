@@ -7,6 +7,7 @@ import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http'
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@luxio/community-widget';
+import { DocModel } from './app/shared/model';
 
 //svg sprite 注入到 DOM
 injectSvgSprite();
@@ -17,11 +18,9 @@ loadCommunityWidget().then(() => {
 });
 
 // 👇 新增：定义启动函数
-export function startAngularApp(config?: { apiUrl?: string; timeout?: number }) {
+export function startAngularApp(doc?: string | any | (() => string | DocModel)) {
   const defaultConfig = {
-    apiUrl: 'https://api.example.com',
-    timeout: 5000,
-    ...config
+    doc: doc
   };
 
   // console.log(environment)

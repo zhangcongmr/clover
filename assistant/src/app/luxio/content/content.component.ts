@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, model, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, model, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -14,6 +14,7 @@ import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.
 import { ApiInfoModel, ApiTreeNodeType } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
+import { MyConfigService } from '../../my-config.service';
 
 @Component({
   selector: 'div[ast-content]',
@@ -24,9 +25,10 @@ import { ShareOnComponent } from '../share-on/share-on.component';
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
   readonly sideOpen = model<boolean>(true);
-
   readonly addProjectComponent = viewChild(AddProjectComponent);
   readonly currentDisplayViewId = model<number>(1);
+  private myConfigService = inject(MyConfigService)
+  private coreService = inject(CoreService);
 
   /***aside */
   serverList: Array<any> = [];
@@ -43,18 +45,58 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   constructor() {
     super();
-    afterNextRender(() => {
-        this.initData();
-    });
+    // afterNextRender(() => {
+    //     this.initData();
+    // });
   }
 
   ngOnInit() {
+    const doc = this.myConfigService.getDoc();
+    if(doc  == null || doc === undefined) {
+      return;
+    }
+    if(typeof doc === 'string' && doc.length > 0) {
+      const json = JSON.parse(doc);
+      let datas: Array<any> = this.groupData(this.coreService.parseOpenApiSpec(json));
+      this.dataList.set(datas);
+    } else if(typeof doc === 'object') {
+      let datas: Array<any> = this.groupData(this.coreService.parseOpenApiSpec(doc));
+      this.dataList.set(datas);
+    } else if(typeof doc === 'function') {
+      const result = doc();
+      if(this.isPromiseLike(result)) {
+        (result as Promise<string | any>).then((res: string | any) => {
+          if(typeof res === 'string' && res.length > 0) {
+            const json = JSON.parse(res);
+            this.dataList.set(this.coreService.parseOpenApiSpec(json));
+          } else if(typeof res === 'object') {
+            this.dataList.set(res.dataList);
+            this.openedList.set(res.openedList);
+          }
+        });
+      } else {
+        if(typeof result === 'string' && result.length > 0) {
+          const json = JSON.parse(result);
+          this.dataList.set(this.coreService.parseOpenApiSpec(json));
+        } else if(typeof result === 'object') {
+          this.dataList.set(result.dataList);
+          this.openedList.set(result.openedList);
+        }
+      }
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
   }
 
-
+  isPromiseLike(obj: any): boolean {
+    return (
+      obj !== null &&
+      obj !== undefined &&
+      typeof obj.then === 'function' &&
+      typeof obj.catch === 'function' // 可选，用于区分标准 Promise
+    );
+  }
 
   FileaddBtn(evt: any) {
     if (this.currentSelect) {
@@ -152,24 +194,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   apiSelected(evt: any) {
     const apiData = evt.apiData;
-    apiData.map((val: any) => val['saved'] = true);
-    const result = this.groupBy(apiData, "folder");
-    let datas: Array<any> = []
-    for (const key in result) {
-      if (Object.prototype.hasOwnProperty.call(result, key)) {
-        const element: Array<ApiTreeNodeType> = result[key];
-        const data: ApiTreeNodeType = {
-          id: this.uuid(),
-          label: key,
-          children: element,
-          isExpanded: element.length > 0,
-          nodeType: 'root',
-          servers: element.length > 0 ? (element[0]['folderInfo'] != null ? element[0]['folderInfo']['servers'] : []) : [],
-          isNewData: true
-        }
-        datas.push(data)
-      }
-    }
+    let datas: Array<any> = this.groupData(apiData);
     this.dataList.update(value => value.concat(datas))
     this.storeApi()
     this.currentDisplayViewId.set(1);
@@ -210,6 +235,28 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (openedListText) {
       this.openedList.set(JSON.parse(openedListText));
     }
+  }
+
+  private groupData(apiData: any) {
+    apiData.map((val: any) => val['saved'] = true);
+    const result = this.groupBy(apiData, "folder");
+    let datas: Array<any> = [];
+    for (const key in result) {
+      if (Object.prototype.hasOwnProperty.call(result, key)) {
+        const element: Array<ApiTreeNodeType> = result[key];
+        const data: ApiTreeNodeType = {
+          id: this.uuid(),
+          label: key,
+          children: element,
+          isExpanded: element.length > 0,
+          nodeType: 'root',
+          servers: element.length > 0 ? (element[0]['folderInfo'] != null ? element[0]['folderInfo']['servers'] : []) : [],
+          isNewData: true
+        };
+        datas.push(data);
+      }
+    }
+    return datas;
   }
 
   groupBy(dataList: Array<any>, key: string) {

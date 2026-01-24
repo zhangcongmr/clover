@@ -8,7 +8,6 @@ import { ContentComponent } from './luxio/content/content.component';
 import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
 import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
-import { MyConfigService } from './my-config.service';
 
 @Component({
     selector: 'app-root',
@@ -21,7 +20,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   private coreService = inject(CoreService);
   contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
-  myConfigService = inject(MyConfigService)
 
   title = 'luxio';
   luxioAppTabId: any;
@@ -81,7 +79,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     let judeType = this.coreService instanceof CoreService;
-    const aiUrl = this.myConfigService.getApiUrl()
     console.log("--++++++----")
   }
 

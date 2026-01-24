@@ -92,3 +92,8 @@ export interface ApiInfoModel {
   stars?: string;
   profile?: any; // 或者如果 profile 应该是对象，可改为 Record<string, any> 或具体接口
 }
+
+export interface DocModel {
+    dataList?: Array<any>;
+    openedList?: Array<any>;
+}
