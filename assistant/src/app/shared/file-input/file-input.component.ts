@@ -8,7 +8,7 @@ import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, afterNe
     standalone: true
 })
 export class FileInputComponent implements OnInit, OnChanges {
-    readonly fileContentChanged = output<string | ArrayBuffer | null | undefined>();
+    readonly fileContentChanged = output<{fileName: string, content: string | ArrayBuffer | null | undefined}>();
     readonly clearSelectd = output<void>();
 
     fileNameDisplay: string = 'No file selected';
@@ -77,7 +77,7 @@ export class FileInputComponent implements OnInit, OnChanges {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target?.result;
-                this.fileContentChanged.emit(content);
+                this.fileContentChanged.emit({fileName: file.name, content: content});
             };
             reader.readAsText(file);
             this.isFileSelected = true;

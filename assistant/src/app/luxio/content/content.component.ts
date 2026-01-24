@@ -193,8 +193,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   apiSelected(evt: any) {
+    const fileName = evt.fileName;
     const apiData = evt.apiData;
-    let datas: Array<any> = this.groupData(apiData);
+    let datas: Array<any> = this.groupData(apiData, fileName);
     this.dataList.update(value => value.concat(datas))
     this.storeApi()
     this.currentDisplayViewId.set(1);
@@ -237,25 +238,19 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  private groupData(apiData: any) {
+  private groupData(apiData: any, fileName: string = "Default.json") {
     apiData.map((val: any) => val['saved'] = true);
-    const result = this.groupBy(apiData, "folder");
     let datas: Array<any> = [];
-    for (const key in result) {
-      if (Object.prototype.hasOwnProperty.call(result, key)) {
-        const element: Array<ApiTreeNodeType> = result[key];
-        const data: ApiTreeNodeType = {
-          id: this.uuid(),
-          label: key,
-          children: element,
-          isExpanded: element.length > 0,
-          nodeType: 'root',
-          servers: element.length > 0 ? (element[0]['folderInfo'] != null ? element[0]['folderInfo']['servers'] : []) : [],
-          isNewData: true
-        };
-        datas.push(data);
-      }
-    }
+    const data: ApiTreeNodeType = {
+      id: this.uuid(),
+      label: fileName,
+      children: apiData,
+      isExpanded: apiData.length > 0,
+      nodeType: 'root',
+      servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
+      isNewData: true
+    };
+    datas.push(data);
     return datas;
   }
 

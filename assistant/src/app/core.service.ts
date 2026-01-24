@@ -1,6 +1,6 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
 import { ServiceRouteInfo, ApiTreeNodeType } from './shared/model';
 
@@ -636,8 +636,6 @@ export class CoreService {
 
   public parseOpenApiSpec(rawSpecDef: any, currentServer?: any, serviceName?: string) {
     let apiInfos: any = [];
-    const currentTimeStamp = new Date().toISOString();
-    const folder = (rawSpecDef?.info?.title ?? 'API collection') + " - " + currentTimeStamp;
     const paths = rawSpecDef.paths;
     for (const pathKey in paths) {
       if (Object.prototype.hasOwnProperty.call(paths, pathKey)) {
@@ -654,7 +652,6 @@ export class CoreService {
 
               const apiInfo: ApiTreeNodeType = {
                 id: this.uuid(),
-                folder: folder,
                 folderInfo: {
                   servers: rawSpecDef.servers ? rawSpecDef.servers : [],
                 },

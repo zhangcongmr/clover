@@ -23,6 +23,7 @@ export class AddProjectComponent implements OnInit {
 
   visible!: boolean;
   importType = '1';  // 1 - From API Definition  2 - From API Community  3 - From Local
+  fileName: string = '';
   sourceCodeText: any;
   importFromApiDefUrl = ""
 
@@ -104,11 +105,13 @@ export class AddProjectComponent implements OnInit {
     this.data = [];
     this.selectedApiInfos = [];
     this.sourceCodeText = '';
+    this.fileName = '';
   }
 
   fileContentChangedFn(evt: any) {
-    const json = JSON.parse(evt);
+    const json = JSON.parse(evt.content);
     this.sourceCodeText = json;
+    this.fileName = evt.fileName;
     this.data = this.coreService.parseOpenApiSpec(json);
   }
 
@@ -140,6 +143,7 @@ export class AddProjectComponent implements OnInit {
 
   importOutFromLocal() {
     this.confirmSelected({
+      fileName: this.fileName,
       sourceCodeText: this.sourceCodeText,
       apiData: this.data
     })
