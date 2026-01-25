@@ -27,9 +27,55 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
   const [country, setCountry] = useState('Hong Kong');
   const [receiveUpdates, setReceiveUpdates] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', { email, password, username, country, receiveUpdates });
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    // 基本前端校验（可选）
+    if (!email || !password || !username) {
+      setError('请填写所有必填字段');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${baseHref}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          // 注意：当前后端只接受 username/email/password
+          // country 和 receiveUpdates 暂不发送（除非你扩展后端）
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess(true);
+        // 可选：自动跳转到登录页
+        // setTimeout(() => navigate('/login'), 2000);
+      } else {
+        // 后端返回错误（如用户名已存在）
+        setError(data.message || '注册失败，请稍后重试');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('网络错误，请确保后端服务正在运行');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,7 +84,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
         {/* Header */}
         <div className="text-right mb-8">
           <span className="text-sm text-gray-600">Already have an account? </span>
-          <a href="#" className="text-sm text-blue-600 hover:underline">
+          <a href="/signin" className="text-sm text-blue-600 hover:underline">
             Sign in →
           </a>
         </div>
@@ -193,12 +239,19 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
               </div>
             </div>
 
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {success && <p style={{ color: 'green' }}>✅ 注册成功！请登录。</p>}
+
             {/* Submit Button */}
             <Button
               type="submit"
               className="w-full bg-[#2da44e] hover:bg-[#2c974b] text-white py-2.5 rounded-md font-medium flex items-center justify-center gap-1 transition-colors"
+              disabled={loading}
+              style={{
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
             >
-              Create account
+              {loading ? 'Creating account...' : 'Create account'}
               <ChevronRight className="w-4 h-4" />
             </Button>
 

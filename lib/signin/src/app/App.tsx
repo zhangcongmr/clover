@@ -12,8 +12,9 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
   baseHref = baseHref == null ? "" : baseHref;
   baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
 
-  const [username, setUsername] = useState('user@example.com');
+  const [loginId, setLoginId] = useState('user@example.com'); // 用户输入 username 或 email
   const [password, setPassword] = useState('password123');
+  const [error, setError] = useState('');
 
   // 在 React 组件中
   useEffect(() => {
@@ -26,6 +27,13 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setError(null);
+
+    // 基本前端校验（可选）
+    if (!loginId || !password) {
+      setError('请填写所有必填字段');
+      return;
+    }
     // 从 Cookie 中读取 XSRF-TOKEN（Spring 默认写入此 Cookie）
     const csrfToken = document.cookie
       .split('; ')
@@ -40,7 +48,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
           'Content-Type': 'application/json',
           'X-XSRF-TOKEN': csrfToken || '', // 关键：放入请求头
          },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ loginId, password }),
       });
       const data = await response.json();
       if (response.ok) {
@@ -50,6 +58,8 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
         window.location.href = '/home/';
       } else {
         console.error('Sign in failed:', data.message || 'Unknown error');
+        // 后端返回错误信息
+        setError(data.message);
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -99,8 +109,8 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
               <Input
                 id="username"
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 className="w-full px-3 py-1.5 border border-[#d0d7de] rounded-md bg-white text-[#24292f] focus:border-[#0969da] focus:ring-2 focus:ring-[#0969da]/20"
               />
             </div>
@@ -125,7 +135,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
                 className="w-full px-3 py-1.5 border border-[#d0d7de] rounded-md bg-white text-[#24292f] focus:border-[#0969da] focus:ring-2 focus:ring-[#0969da]/20"
               />
             </div>
-
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <Button
               type="submit"
               className="w-full bg-[#1a7f37] hover:bg-[#1a7f37]/90 text-white py-1.5 rounded-md border border-[#1f883d]/40"
