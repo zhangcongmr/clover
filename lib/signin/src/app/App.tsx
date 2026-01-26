@@ -12,8 +12,8 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
   baseHref = baseHref == null ? "" : baseHref;
   baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
 
-  const [loginId, setLoginId] = useState('user@example.com'); // 用户输入 username 或 email
-  const [password, setPassword] = useState('password123');
+  const [loginId, setLoginId] = useState(''); // 用户输入 username 或 email
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   // 在 React 组件中
@@ -121,7 +121,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
                   Password
                 </Label>
                 <a
-                  href="#"
+                  href="/forgotpassword"
                   className="text-sm text-[#0969da] hover:underline"
                 >
                   Forgot password?
