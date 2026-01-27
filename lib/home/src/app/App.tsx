@@ -15,6 +15,36 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = () => {
+    // 默认保存当前页面路径（去掉域名）
+    const from = "/home";
+    // 存入 sessionStorage（关闭标签页失效，比 localStorage 更安全）
+    sessionStorage.setItem('redirect_after_login', from);
+
+    // 跳转到登录页
+    window.location.href = '/signin';
+  };
+
+  const handleLogout = async () => {
+    setIsAuthenticated(false);
+    // Clear any stored user data
+    localStorage.clear();
+    sessionStorage.clear();
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include' // 确保发送 Cookie
+      });
+
+      // 清除前端状态（如 Zustand / Redux / Context）
+      // clearAuthState();
+
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -24,6 +54,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
         });
         const userData = await response.json();
         setUser(userData);
+        setIsAuthenticated(true);
       } catch (err) {
         console.error('获取用户信息失败:', err);
         // 可跳转到登录页
@@ -42,7 +73,11 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
   return (
     <div className="size-full flex flex-col bg-white">
-      <Header />
+      <Header
+        isAuthenticated={isAuthenticated} 
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+      />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <EventsFeed />

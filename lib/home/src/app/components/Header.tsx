@@ -1,28 +1,16 @@
-import { Search, Bell, HelpCircle, ChevronDown, User, Settings, Star, FileText, LogOut } from "lucide-react";
+import { Search, Bell, HelpCircle, ChevronDown, User, Settings, Star, FileText, LogOut, LogIn } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 
-export function Header() {
+interface HeaderProps {
+  isAuthenticated: boolean;
+  onLogin: () => void;
+  onLogout: () => void;
+}
+
+export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
   const handleSignOut = async () => {
-    // Clear any stored user data
-    localStorage.clear();
-    sessionStorage.clear();
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include' // 确保发送 Cookie
-      });
-
-      // 清除前端状态（如 Zustand / Redux / Context）
-      // clearAuthState();
-
-      // 跳转到登录页
-      window.location.href = '/signin'; // 或使用 navigate('/signin')
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // 即使失败也跳转（Cookie 已由后端清除）
-      window.location.href = '/signin';
-    }
+    onLogout();
   };
 
   const handleMyProfile = () => {
@@ -113,62 +101,83 @@ export function Header() {
         </button>
 
         {/* User avatar with dropdown */}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <button className="flex items-center gap-1 hover:opacity-80">
-              <div className="w-7 h-7 rounded-full overflow-hidden bg-pink-200">
-                <img
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
-                  alt="User"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <ChevronDown className="w-3 h-3 text-gray-600" />
-            </button>
-          </DropdownMenu.Trigger>
+        {/* Conditional rendering: Login button or User avatar with dropdown */}
+        {!isAuthenticated ? (
+          <button 
+            onClick={onLogin}
+            className="flex items-center gap-2 px-4 py-1.5 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Login</span>
+          </button>
+        ) : (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="flex items-center gap-1 hover:opacity-80">
+                <div className="w-7 h-7 rounded-full overflow-hidden bg-pink-200">
+                  <img
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+                    alt="User"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <ChevronDown className="w-3 h-3 text-gray-600" />
+              </button>
+            </DropdownMenu.Trigger>
 
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              className="min-w-[200px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
-              sideOffset={5}
-              align="end"
-            >
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
-              onSelect={handleMyProfile}>
-                <User className="w-4 h-4" />
-                <span>My Profile</span>
-              </DropdownMenu.Item>
-              
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
-              onSelect={handleMyStars}>
-                <Star className="w-4 h-4" />
-                <span>My Stars</span>
-              </DropdownMenu.Item>
-
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
-              onSelect={handleMyGists}>
-                <FileText className="w-4 h-4" />
-                <span>My Gists</span>
-              </DropdownMenu.Item>
-              
-              <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
-              
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
-              onSelect={handleSettings}>
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
-              </DropdownMenu.Item>
-              
-              <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
-              
-              <DropdownMenu.Item className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded cursor-pointer outline-none"
-              onSelect={handleSignOut}>
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                className="min-w-[200px] bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50"
+                sideOffset={5}
+                align="end"
+              >
+                <DropdownMenu.Item 
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
+                  onSelect={handleMyProfile}
+                >
+                  <User className="w-4 h-4" />
+                  <span>My Profile</span>
+                </DropdownMenu.Item>
+                
+                <DropdownMenu.Item 
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
+                  onSelect={handleMyStars}
+                >
+                  <Star className="w-4 h-4" />
+                  <span>My Stars</span>
+                </DropdownMenu.Item>
+                
+                <DropdownMenu.Item 
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
+                  onSelect={handleMyGists}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>My Gists</span>
+                </DropdownMenu.Item>
+                
+                <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
+                
+                <DropdownMenu.Item 
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
+                  onSelect={handleSettings}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </DropdownMenu.Item>
+                
+                <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
+                
+                <DropdownMenu.Item 
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded cursor-pointer outline-none"
+                  onSelect={handleSignOut}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        )}
       </div>
     </header>
   );

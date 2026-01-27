@@ -54,8 +54,21 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
       if (response.ok) {
         console.log('Sign in successful', data);
         if (onAction) onAction(data);
-        // 登录成功后跳转到指定页面
-        window.location.href = '/home/';
+
+        // 2. 获取保存的跳转地址
+        const redirectUrl = sessionStorage.getItem('redirect_after_login');
+
+        // 3. 清除记录（防止重复使用）
+        sessionStorage.removeItem('redirect_after_login');
+
+        if(redirectUrl) {
+          // 4. 跳转
+          window.location.href = redirectUrl;
+        } else {
+          // 默认登录成功后跳转到指定页面
+          window.location.href = '/home/';
+        }
+
       } else {
         console.error('Sign in failed:', data.message || 'Unknown error');
         // 后端返回错误信息

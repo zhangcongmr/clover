@@ -17,7 +17,7 @@ import { UserCenterComponent } from './luxio/user-center/user-center.component';
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent]
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  private coreService = inject(CoreService);
+  protected coreService = inject(CoreService);
   contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
 
@@ -80,6 +80,23 @@ export class AppComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     let judeType = this.coreService instanceof CoreService;
     console.log("--++++++----")
+
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`/api/auth/profile`, {
+          credentials: 'include', // 携带 Cookie
+        });
+        this.coreService.userData = await response.json();
+        this.coreService.isAuthenticated = true;
+      } catch (err) {
+        this.coreService.isAuthenticated = false;
+        console.error('获取用户信息失败:', err);
+        // // 可跳转到登录页
+        // window.location.href = '/signin';
+      }
+    };
+
+    fetchProfile();
   }
 
   async fileVist() {
@@ -306,9 +323,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   blurMoreBtn(evt: any) {
     let me = this;
-      if (me.blurSwitch) {
-        me.isOpen = false;
-      }
+    if (me.blurSwitch) {
+      me.isOpen = false;
+    }
   }
 
   mouseentermenu(evt: any) {
@@ -319,4 +336,39 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.blurSwitch = true;
   }
 
+  redirectToLogin(targetUrl?: string) {
+    // 默认保存当前页面路径（去掉域名）
+    const from = targetUrl || window.location.pathname + window.location.search;
+
+    // 存入 sessionStorage（关闭标签页失效，比 localStorage 更安全）
+    sessionStorage.setItem('redirect_after_login', from);
+
+    // 跳转到登录页
+    window.location.href = '/signin';
+  }
+
+  async handleSignOut() {
+    // Clear any stored user data
+    localStorage.clear();
+    sessionStorage.clear();
+    this.closeMenu();
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include' // 确保发送 Cookie
+      });
+
+      // 清除前端状态（如 Zustand / Redux / Context）
+      // clearAuthState();
+
+      // 跳转到登录页
+      // window.location.href = '/signin'; // 或使用 navigate('/signin')
+      this.coreService.isAuthenticated = false;
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // 即使失败也跳转（Cookie 已由后端清除）
+      window.location.href = '/signin';
+      this.coreService.isAuthenticated = false;
+    }
+  };
 }

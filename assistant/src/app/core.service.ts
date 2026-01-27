@@ -47,6 +47,8 @@ export class CoreService {
   serverList: Array<any> = [];
   currentServerIndex = 0;
   currentServer: any;
+  isAuthenticated = false;
+  userData: any;
 
   initApiUI(spec: any, elementId: string) {
     const selectedServerAndServiceInfo = {

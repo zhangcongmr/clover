@@ -12,28 +12,41 @@
       }
     </div>
     <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
-      <div class="header-item">
+      <div class="header-item hover:opacity-80">
         <a href="/official-site/" target="_blank">Home</a>
       </div>
-      <div data-svg-wrapper=""  tabindex="0" data-layer="user-btn" class="btn-svg UserBtn " title="User Center"  (click)="clickMoreBtn($event)"
-      (blur)="blurMoreBtn($event)">
-        <svg class="icon" width="24" height="24">
-          <use href="#icon-user-btn"></use>
-        </svg>
-      </div>
-      <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
-          class="more-btn-dropdown-content codigma-right-menu">
-        <div data-layer="User Center" class="UserCenter codigma-menu-every-item"  (click)="toggleDisplayViewId(6)"><span>User Center</span></div>
-        <div data-layer="Settings" class="Settings codigma-menu-every-item"  (click)="toggleDisplayViewId(5)">
-          <span>Settings</span>
+      @if(!coreService.isAuthenticated) {
+        <div class="header-item hover:opacity-80">
+          <a href="/signin" target="_blank" (click)="redirectToLogin('/assistant')">SignIn</a>
         </div>
-        <div data-layer="Login" class="Login codigma-menu-every-item">
-          <span>Login</span>
+      } @else {
+        <!-- <div class="header-item hover:opacity-80">
+          <a href="/dashboard/" target="_blank">Dashboard</a>
+        </div> -->
+        <div class="flex items-center gap-1 hover:opacity-80" tabindex="0" id="radix-:r0:" aria-haspopup="menu"
+          aria-expanded="true" data-state="open" aria-controls="radix-:r1:" (click)="clickMoreBtn($event)"
+          (blur)="blurMoreBtn($event)">
+          <div class="w-7 h-7 rounded-full overflow-hidden bg-pink-200"><img
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&amp;h=100&amp;fit=crop" alt="User"
+              class="w-full h-full object-cover"></div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="lucide lucide-chevron-down w-3 h-3 text-gray-600">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
         </div>
-        <div data-layer="Logout" class="Logout codigma-menu-every-item">
-          <span>Logout</span>
+      }
+      @if(coreService.isAuthenticated) {
+        <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
+            class="more-btn-dropdown-content codigma-right-menu">
+          <div data-layer="User Center" class="UserCenter codigma-menu-every-item"  (click)="toggleDisplayViewId(6)"><span>User Center</span></div>
+          <div data-layer="Settings" class="Settings codigma-menu-every-item"  (click)="toggleDisplayViewId(5)">
+            <span>Settings</span>
+          </div>
+          <div data-layer="Logout" class="Logout codigma-menu-every-item" (click)="handleSignOut()">
+            <span>Logout</span>
+          </div>
         </div>
-      </div>
+      }
     </div>
   </div>
   @if(currentDisplayViewId==5) {
