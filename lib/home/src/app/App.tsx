@@ -9,11 +9,11 @@ interface MyReactComponentProps {
   onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
 }
 
-export default function App({baseHref, onAction} : MyReactComponentProps) {
-  baseHref = baseHref == null?"" : baseHref;
+export default function App({ baseHref, onAction }: MyReactComponentProps) {
+  baseHref = baseHref == null ? "" : baseHref;
   baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
 
-const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
