@@ -84,7 +84,7 @@
               "outputPath": "dist/luxio-common",
               "optimization": false,
               "outputHashing": "none",
-              "sourceMap": false,
+              "sourceMap": true,
               "namedChunks": false,
               "extractLicenses": true,
               "assets": [
