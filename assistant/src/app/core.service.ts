@@ -2,7 +2,7 @@ import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
-import { ServiceRouteInfo, ApiTreeNodeType } from './shared/model';
+import { ServiceRouteInfo, ApiTreeNodeType, UserInfo } from './shared/model';
 
 @Injectable({
   providedIn: 'root'
@@ -48,7 +48,7 @@ export class CoreService {
   currentServerIndex = 0;
   currentServer: any;
   isAuthenticated = false;
-  userData: any;
+  userData: UserInfo | undefined;
 
   initApiUI(spec: any, elementId: string) {
     const selectedServerAndServiceInfo = {

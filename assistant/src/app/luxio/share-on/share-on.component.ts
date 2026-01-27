@@ -30,6 +30,7 @@ export class ShareOnComponent {
       this.data.name = this.data.profile.label || "Untitled API"
       this.data.createtime = new Date().toISOString();
       this.data.updatetime = new Date().toISOString();
+      this.data.username = this.coreService.userData?.username || "Anonymous";
 
 
       this.data.profile['dataType'] = "projectType"

@@ -79,6 +79,21 @@ export interface ApiTreeNodeType {
     rename?: boolean
 }
 
+export interface UserInfo {
+  id: string;
+  username?: string | null;
+  password?: string | null;
+  grant_type?: string | null;
+  points?: number | null;
+  coupons?: number | null;
+  shoppingcards?: number | null;
+  avatar?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  createtime?: string | null;
+  updatetime?: string | null;
+}
+
 export interface ApiInfoModel {
   id?: string;
   name?: string;
