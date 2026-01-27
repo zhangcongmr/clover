@@ -252,6 +252,7 @@ export class AppComponent implements OnInit, AfterViewInit {
               type: 'api-community',
               tabLabel: 'API Community'
             });
+            contentComp.storeOpenedList();
           }
           break;
         case 5:

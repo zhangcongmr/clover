@@ -178,8 +178,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   public openTab(targetTab: any) {
     let oldTab = false;
-    const datas = this.openedList()
-    for (const item of datas) {
+    const openeds = this.openedList()
+    for (const item of openeds) {
       delete item["isActive"];
       if (item.id == targetTab.id) {
         item["isActive"] = true;
@@ -188,7 +188,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     if (!oldTab) {
       targetTab["isActive"] = true;
-      datas.push(targetTab);
+      openeds.push(targetTab);
     }
   }
 
