@@ -70,8 +70,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             const json = JSON.parse(res);
             this.dataList.set(this.coreService.parseOpenApiSpec(json));
           } else if(typeof res === 'object') {
-            this.dataList.set(res.dataList);
-            this.openedList.set(res.openedList);
+            this.dataList.set(res.dataList || []);
+            this.openedList.set(res.openedList || []);
           }
         });
       } else {
@@ -79,8 +79,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           const json = JSON.parse(result);
           this.dataList.set(this.coreService.parseOpenApiSpec(json));
         } else if(typeof result === 'object') {
-          this.dataList.set(result.dataList);
-          this.openedList.set(result.openedList);
+          this.dataList.set(result.dataList || []);
+          this.openedList.set(result.openedList || []);
         }
       }
     }
