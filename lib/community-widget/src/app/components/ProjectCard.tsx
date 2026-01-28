@@ -4,6 +4,7 @@ import { coreService } from '../core.service';
 
 interface ProjectCardProps {
   project: {
+    id: string;
     avatar: string;
     name: string;
     starred: boolean;
@@ -19,34 +20,6 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onAction }: ProjectCardProps) {
   let data: any = [];
-  const [rawSpecDef, setRawSpecDef] = useState({});
-
-  const importFromApiDef = (rawSpecBrief: any) => {
-    fetch("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).then(
-      (response: any) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok.');
-        }
-        return response.json()
-      }).then(rawData => {
-        if (!rawData) {
-          return;
-        }
-        const parseOpenApiSpec = JSON.parse(rawData.profile);
-        setRawSpecDef(parseOpenApiSpec);
-        if(parseOpenApiSpec['dataType'] == 'projectType') {
-          data = parseOpenApiSpec['children'] || [];
-        } else {
-          data = coreService.parseOpenApiSpec(parseOpenApiSpec);
-        }
-
-        // 调用从 Web Component 传入的回调
-        if (onAction) {
-          onAction(data);
-        }
-    });
-  }
-
 
   const view = (rawSpecBrief: any) => {
   }
@@ -60,8 +33,8 @@ export function ProjectCard({ project, onAction }: ProjectCardProps) {
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer" onClick={()=> importFromApiDef(project)}>
-              {project.name}
+            <h4 className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer">
+              <a href={"editor/" + project.id} target="_blank">{project.name}</a>
             </h4>
             {project.starred && (
               <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
