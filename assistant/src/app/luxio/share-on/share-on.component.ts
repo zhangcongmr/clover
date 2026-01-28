@@ -33,7 +33,7 @@ export class ShareOnComponent {
       this.data.username = this.coreService.userData?.username || "Anonymous";
 
 
-      this.data.profile['dataType'] = "projectType"
+      this.data.profile['dataType'] = "LUXIO_COLLECTION"
       this.data.profile['info'] = this.data.profile['info'] || {};
       this.data.profile['info']['title'] = this.data.profile.label || "Untitled API";
       this.data.profile['openapi'] = "3.0.0";

@@ -115,7 +115,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
           return;
         }
         me.rawSpecDef = JSON.parse(rawData.profile);
-        if(me.rawSpecDef['dataType'] == 'projectType') {
+        if(me.rawSpecDef['dataType'] == 'LUXIO_COLLECTION') {
           me.data = me.rawSpecDef['children'] || [];
         } else {
           me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
@@ -134,7 +134,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
           return;
         }
         me.rawSpecDef = JSON.parse(rawData.profile);
-        if(me.rawSpecDef['dataType'] == 'projectType') {
+        if(me.rawSpecDef['dataType'] == 'LUXIO_COLLECTION') {
           me.data = me.rawSpecDef['children'] || [];
         } else {
           me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);

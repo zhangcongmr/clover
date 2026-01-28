@@ -1,28 +1,44 @@
 import { useEffect } from 'react';
-import Example from './example.mdx'
+import { BrowserRouter, Routes, Route, useParams } from "react-router";
 import { Luxio } from 'luxio';
-import { dataJson } from './PandaDoc Public API';
 
 // 防止重复加载
 let angularLoaded = false;
 
-export default function App() {
+function HomePage() {
+  let params = useParams();
+
+  const openApiDef = (rawSpecBrief: any) => {
+    fetch("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).then(
+      (response: any) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok.');
+        }
+        return response.json()
+      }).then(rawData => {
+        const parseOpenApiSpec = JSON.parse(rawData?.profile);
+        Luxio("coderEditor", parseOpenApiSpec)
+          .catch(err => {
+            console.error('Angular failed to start', err);
+            angularLoaded = false; // 可选：允许重试
+          });
+      });
+  }
 
   useEffect(() => {
     if (angularLoaded) return;
 
-
     angularLoaded = true;
-
-    Luxio("coderEditor", dataJson)
-      .catch(err => {
-        console.error('Angular failed to start', err);
-        angularLoaded = false; // 可选：允许重试
-      });
-
-    return () => {
-      // 可选：清理逻辑（通常不需要移除 script）
-    };
+    console.log('Loading Angular app with ID:', params);
+    if (params && params.id) {
+      openApiDef({ id: params.id });
+    } else {
+      Luxio("coderEditor")
+        .catch(err => {
+          console.error('Angular failed to start', err);
+          angularLoaded = false; // 可选：允许重试
+        });
+    }
   }, []);
 
   return (
@@ -34,5 +50,22 @@ export default function App() {
       {/* <p>Back to React</p> */}
       {/* <Example /> */}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* 首页 */}
+        <Route path="editor" element={<HomePage />} />
+
+        {/* 动态路由：匹配 /view/任意ID */}
+        <Route path="editor/:id" element={<HomePage />} />
+
+        {/* 可选：404 页面 */}
+        {/* <Route path="*" element={<HomePage />} /> */}
+      </Routes>
+    </BrowserRouter>
   );
 }
