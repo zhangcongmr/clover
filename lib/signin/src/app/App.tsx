@@ -219,7 +219,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
         {/* Create account link */}
         <p className="text-center text-sm text-[#24292f] mb-4">
           New to Luxio?{' '}
-          <a href="#" className="text-[#0969da] hover:underline">
+          <a href="/signup" className="text-[#0969da] hover:underline">
             Create an account
           </a>
           .
