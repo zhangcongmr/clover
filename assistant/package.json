@@ -4,11 +4,11 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/luxio-common/index.js",
+      "require": "./dist/luxio-common/index.cjs"
     }
   },
-  "types": "./dist/index.d.ts",
+  "types": "./dist/luxio-common/index.d.ts",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host=0.0.0.0 --ssl",

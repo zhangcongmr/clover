@@ -36,9 +36,9 @@ export const Luxio = (domId: string, doc?: string | any | (() => string | DocMod
   createAppRoot(domId);
 
   // @ts-ignore: js is generated in dist/
-  import('./luxio-common/browser/scripts.js');
+  import('./browser/scripts.js');
   // @ts-ignore: js is generated in dist/
-  return import('./luxio-common/browser/main.js')
+  return import('./browser/main.js')
     .then(m => {
       return m.startAngularApp(doc);
     })
