@@ -1,3 +1,4 @@
+import { set } from "date-fns";
 import {
   LayoutDashboard,
   FolderGit2,
@@ -12,8 +13,24 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+interface ApiBriefDocument {
+  id?: string;
+  avatar?: string | null;
+  username?: string;
+  name?: string;
+  starred?: boolean;
+  type?: string; // e.g. "3.1.0"
+  description?: string;
+  specType?: string | null;
+  specColor?: string | null;
+  category?: string | null;
+  createtime?: string;
+  updatetime?: string;
+  stars?: number | null;
+}
+
 export function Sidebar() {
-  const [repositories, setRepositories] = useState<string[]>([]);
+  const [repositories, setRepositories] = useState<ApiBriefDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,22 +49,9 @@ export function Sidebar() {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        const data = await response.json();
-        
-        // Extract repository names from the response
-        // Adjust this based on the actual API response structure
-        if (Array.isArray(data)) {
-          const repoNames = data.map((repo: any) => repo.fullName || repo.name || repo);
-          setRepositories(repoNames);
-        } else if (data.repositories && Array.isArray(data.repositories)) {
-          const repoNames = data.repositories.map((repo: any) => repo.fullName || repo.name || repo);
-          setRepositories(repoNames);
-        } else {
-          // Fallback if structure is different
-          setRepositories([]);
-        }
-        
+
+        const data: Array<ApiBriefDocument> = await response.json();
+        setRepositories(data);        
         setError(null);
       } catch (err) {
         console.error('Error fetching repositories:', err);
@@ -111,11 +115,12 @@ export function Sidebar() {
                 {repositories.slice(0, 5).map((repo, index) => (
                   <a
                     key={index}
-                    href="#"
+                    href={"/editor/" + repo.id}
+                    target="_blank"
                     className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 py-1"
                   >
                     <FolderGit2 className="w-3.5 h-3.5" />
-                    {repo}
+                    {repo.name || "Unnamed Repo"}
                   </a>
                 ))}
                 {repositories.length > 5 && (
