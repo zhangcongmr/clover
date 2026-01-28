@@ -57,10 +57,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     if(typeof doc === 'string' && doc.length > 0) {
       const json = JSON.parse(doc);
-      let datas: Array<any> = this.groupData(this.coreService.parseOpenApiSpec(json));
+      let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
       this.dataList.set(datas);
     } else if(typeof doc === 'object') {
-      let datas: Array<any> = this.groupData(this.coreService.parseOpenApiSpec(doc));
+      let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(doc), JSON.stringify(doc), this.myConfigService.getFileName());
       this.dataList.set(datas);
     } else if(typeof doc === 'function') {
       const result = doc();
@@ -195,7 +195,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   apiSelected(evt: any) {
     const fileName = evt.fileName;
     const apiData = evt.apiData;
-    let datas: Array<any> = this.groupData(apiData, fileName);
+    let datas: Array<any> = this.addRoot(apiData, evt.sourceCodeText, fileName);
     this.dataList.update(value => value.concat(datas))
     this.storeApi()
     this.currentDisplayViewId.set(1);
@@ -238,7 +238,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  private groupData(apiData: any, fileName: string = "Default.json") {
+  private addRoot(apiData: any, sourceCodeText: string, fileName: string = "Default.json") {
     apiData.map((val: any) => val['saved'] = true);
     let datas: Array<any> = [];
     const data: ApiTreeNodeType = {
@@ -248,6 +248,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       isExpanded: apiData.length > 0,
       nodeType: 'root',
       servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
+      sourceCodeText: sourceCodeText,
       isNewData: true
     };
     datas.push(data);

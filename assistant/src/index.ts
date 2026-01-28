@@ -28,7 +28,7 @@ const createAppRoot = (domId: string) => {
   }
 }
 
-export const Luxio = (domId: string, doc?: string | any | (() => string | DocModel)) => {
+export const Luxio = (domId: string, doc?: string | any | (() => string | DocModel), fileName?: string) => {
   // 使用
   appendInlineStyle(GLOBAL_STYLES);
 
@@ -40,7 +40,7 @@ export const Luxio = (domId: string, doc?: string | any | (() => string | DocMod
   // @ts-ignore: js is generated in dist/
   return import('./browser/main.js')
     .then(m => {
-      return m.startAngularApp(doc);
+      return m.startAngularApp(doc, fileName);
     })
     .catch(err => {
       console.error('Cannot import ', err);

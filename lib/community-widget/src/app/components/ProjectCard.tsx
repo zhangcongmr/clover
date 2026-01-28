@@ -34,7 +34,7 @@ export function ProjectCard({ project, onAction }: ProjectCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h4 className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer">
-              <a href={"editor/" + project.id} target="_blank">{project.name}</a>
+              <a href={"/editor/" + project.id} target="_blank">{project.name}</a>
             </h4>
             {project.starred && (
               <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />

@@ -31,16 +31,8 @@ export class ShareOnComponent {
       this.data.createtime = new Date().toISOString();
       this.data.updatetime = new Date().toISOString();
       this.data.username = this.coreService.userData?.username || "Anonymous";
+      this.data.profile = this.data.profile.sourceCodeText || "";
 
-
-      this.data.profile['dataType'] = "LUXIO_COLLECTION"
-      this.data.profile['info'] = this.data.profile['info'] || {};
-      this.data.profile['info']['title'] = this.data.profile.label || "Untitled API";
-      this.data.profile['openapi'] = "3.0.0";
-      this.data.profile['info']['description'] = "Shared from API Luxio";
-      this.coreService.reset([this.data.profile], true);
-
-      this.data.profile = JSON.stringify(this.data.profile);
       this.coreService.postData(this.serverDataUrl, this.data);
       this.share.emit();
       this.onClose();

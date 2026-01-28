@@ -75,6 +75,7 @@ export interface ApiTreeNodeType {
     custom?: boolean;
     customQueryparameters?: Array<any>;
     customHeaderparameters?: Array<any>;
+    sourceCodeText?: string;
     auth?: any;
     rename?: boolean
 }

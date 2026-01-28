@@ -18,9 +18,10 @@ loadCommunityWidget().then(() => {
 });
 
 // 👇 新增：定义启动函数
-export function startAngularApp(doc?: string | any | (() => string | DocModel)) {
+export function startAngularApp(doc?: string | any | (() => string | DocModel), fileName?: string) {
   const defaultConfig = {
-    doc: doc
+    doc: doc,
+    fileName: fileName
   };
 
   // console.log(environment)

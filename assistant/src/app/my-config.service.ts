@@ -7,6 +7,7 @@ export interface MyConfig {
   apiUrl?: string;
   timeout?: number;
   doc?: string | any | (() => string | DocModel);
+  fileName?: string;
 }
 
 @Injectable({
@@ -25,6 +26,10 @@ export class MyConfigService {
 
   getDoc(): string | any | (() => string | DocModel) | undefined {
     return this.config.doc;
+  }
+
+  getFileName(): string | undefined {
+    return this.config.fileName;
   }
 
 }

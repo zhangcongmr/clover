@@ -17,7 +17,7 @@ function HomePage() {
         return response.json()
       }).then(rawData => {
         const parseOpenApiSpec = JSON.parse(rawData?.profile);
-        Luxio("coderEditor", parseOpenApiSpec)
+        Luxio("coderEditor", parseOpenApiSpec, rawData?.name)
           .catch(err => {
             console.error('Angular failed to start', err);
             angularLoaded = false; // 可选：允许重试
