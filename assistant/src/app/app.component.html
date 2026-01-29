@@ -15,7 +15,7 @@
       <div class="header-item hover:opacity-80">
         <a href="/official-site/" target="_blank">Home</a>
       </div>
-      @if(!coreService.isAuthenticated) {
+      @if(!coreService.isAuthenticated()) {
         <div class="header-item hover:opacity-80">
           <a href="/signin" target="_blank" (click)="redirectToLogin('/assistant')">SignIn</a>
         </div>
@@ -35,7 +35,7 @@
           </svg>
         </div>
       }
-      @if(coreService.isAuthenticated) {
+      @if(coreService.isAuthenticated()) {
         <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
             class="more-btn-dropdown-content codigma-right-menu">
           <div data-layer="User Center" class="UserCenter codigma-menu-every-item"  (click)="toggleDisplayViewId(6)"><span>User Center</span></div>

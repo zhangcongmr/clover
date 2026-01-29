@@ -1,5 +1,5 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
 import { ServiceRouteInfo, ApiTreeNodeType, UserInfo } from './shared/model';
@@ -47,7 +47,7 @@ export class CoreService {
   serverList: Array<any> = [];
   currentServerIndex = 0;
   currentServer: any;
-  isAuthenticated = false;
+  isAuthenticated = signal(false);
   userData: UserInfo | undefined;
 
   initApiUI(spec: any, elementId: string) {

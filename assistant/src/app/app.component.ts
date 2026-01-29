@@ -87,9 +87,9 @@ export class AppComponent implements OnInit, AfterViewInit {
           credentials: 'include', // 携带 Cookie
         });
         this.coreService.userData = await response.json();
-        this.coreService.isAuthenticated = true;
+        this.coreService.isAuthenticated.set(true);
       } catch (err) {
-        this.coreService.isAuthenticated = false;
+        this.coreService.isAuthenticated.set(false);
         console.error('获取用户信息失败:', err);
         // // 可跳转到登录页
         // window.location.href = '/signin';
@@ -363,12 +363,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 
       // 跳转到登录页
       // window.location.href = '/signin'; // 或使用 navigate('/signin')
-      this.coreService.isAuthenticated = false;
+      this.coreService.isAuthenticated.set(false);
     } catch (error) {
       console.error('Logout failed:', error);
       // 即使失败也跳转（Cookie 已由后端清除）
       window.location.href = '/signin';
-      this.coreService.isAuthenticated = false;
+      this.coreService.isAuthenticated.set(false);
     }
   };
 }
