@@ -28,19 +28,22 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
   };
 
   const handleLogout = async () => {
-    setIsAuthenticated(false);
-    // Clear any stored user data
-    localStorage.clear();
-    sessionStorage.clear();
     try {
-      await fetch('/api/auth/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include' // 确保发送 Cookie
       });
+      const data = await response.json();
+      if(response.ok) {
+        setIsAuthenticated(false);
+        // Clear any stored user data
+        localStorage.clear();
+        sessionStorage.clear();
 
-      // 清除前端状态（如 Zustand / Redux / Context）
-      // clearAuthState();
-
+        // 清除前端状态（如 Zustand / Redux / Context）
+        // clearAuthState();
+        window.location.href = '/official-site';
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     }
