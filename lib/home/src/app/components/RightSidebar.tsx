@@ -5,31 +5,31 @@ export function RightSidebar() {
     {
       username: "suns769675",
       description: "no introduction",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
+      avatar: "/static/images/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
       initial: "S",
     },
     {
       username: "老花生",
       description: "一只是送生老鸭汤老",
-      avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop",
+      avatar: "/static/images/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop",
       initial: "老",
     },
     {
       username: "Hccake",
       description: "no introduction",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+      avatar: "/static/images/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
       initial: "H",
     },
     {
       username: "心莫離",
       description: "no introduction",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+      avatar: "/static/images/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
       initial: "心",
     },
     {
       username: "quick123official",
       description: "no introduction",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+      avatar: "/static/images/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
       initial: "Q",
     },
   ];

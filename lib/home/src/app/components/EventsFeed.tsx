@@ -56,7 +56,7 @@ export function EventsFeed() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-pink-200 flex-shrink-0">
                   <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+                    src="/static/images/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
                     alt={event.user}
                     className="w-full h-full object-cover"
                   />
