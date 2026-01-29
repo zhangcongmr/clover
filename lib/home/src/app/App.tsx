@@ -13,8 +13,10 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
   baseHref = baseHref == null ? "" : baseHref;
   baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
 
+  const isSignInPage = window.location.pathname === '/signin';
+
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isSignInPage);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleLogin = () => {
@@ -50,6 +52,11 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
   };
 
   useEffect(() => {
+    // 如果是 /signin 路径，直接停止认证逻辑
+    if (isSignInPage) {
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         const response = await fetch(`${baseHref}/api/auth/profile`, {
@@ -68,7 +75,18 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
     };
 
     fetchProfile();
-  }, []);
+  }, [isSignInPage]);
+
+  // 如果是登录页，显示提示
+  if (isSignInPage) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h2>Please login</h2>
+        <p>The login service is temporarily unavailable. Please contact the administrator.</p>
+        {/* 或放一个静态表单（提交到后端） */}
+      </div>
+    );
+  }
 
   if (loading) return <div>加载中...</div>;
   if (!user) return null;
