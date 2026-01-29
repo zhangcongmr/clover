@@ -226,11 +226,11 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
         </p>
 
         {/* Passkey link */}
-        <p className="text-center text-sm mb-8">
+        {/* <p className="text-center text-sm mb-8">
           <a href="#" className="text-[#0969da] hover:underline">
             Sign in with a passkey
           </a>
-        </p>
+        </p> */}
       </div>
     </div>
   );
