@@ -116,7 +116,7 @@ export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
               <button className="flex items-center gap-1 hover:opacity-80">
                 <div className="w-7 h-7 rounded-full overflow-hidden bg-pink-200">
                   <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+                    src="/static/images/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
                     alt="User"
                     className="w-full h-full object-cover"
                   />
