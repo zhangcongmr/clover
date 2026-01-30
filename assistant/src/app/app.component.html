@@ -13,7 +13,7 @@
     </div>
     <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
       <div class="header-item hover:opacity-80">
-        <a href="/official-site/" target="_blank">Home</a>
+        <a [href]="coreService.isAuthenticated() ? '/home' : '/official-site'" target="_blank">Home</a>
       </div>
       @if(!coreService.isAuthenticated()) {
         <div class="header-item hover:opacity-80">
