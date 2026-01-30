@@ -21,7 +21,7 @@ export function Repositories() {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://127.0.0.1:8980/user/briefsByUserName?userName=Jack Mordan');
+        const response = await fetch('/user/briefsByUserName?userName=Jack Mordan');
         
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {

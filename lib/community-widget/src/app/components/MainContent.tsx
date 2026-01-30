@@ -44,7 +44,7 @@ export function MainContent( { onAction }: { onAction?: (data: any) => void } ) 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://127.0.0.1:8980/user/allBriefs");
+        const response = await fetch("/user/allBriefs");
         if (!response.ok) {
           throw new Error('Network response was not ok.');
         }

@@ -7,8 +7,7 @@
     "build:lib": "cross-env BUILD_MODE=lib vite build",
     "build:app": "cross-env BUILD_MODE=app vite build",
     "build": "npm run build:lib && npm run build:app",
-    "dev": "cross-env BUILD_MODE=app vite",
-    "postbuild": "node scripts/copy-to-external.js"
+    "dev": "cross-env BUILD_MODE=app vite"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

@@ -21,7 +21,7 @@ const commonDefine = {
 const server = {
     https: true,
     proxy: {
-      '/api': {
+      '/api/auth': {
         target: 'https://localhost:8080',
         changeOrigin: true,
         secure: false, // 👈 关键：禁用证书验证（仅开发用！）
