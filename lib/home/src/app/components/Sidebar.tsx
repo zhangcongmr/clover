@@ -78,7 +78,7 @@ export function Sidebar() {
         {/* Dashboard */}
         <div className="mb-4">
           <a
-            href="#"
+            href="/home"
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
           >
             <LayoutDashboard className="w-4 h-4" />
