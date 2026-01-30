@@ -1,0 +1,39 @@
+{
+  "name": "@luxio/common",
+  "version": "1.0.0",
+  "description": "A minimal, pure TypeScript library ready to be published as an npm package.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "echo \"No tests configured yet.\" && exit 0",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "typescript",
+    "library",
+    "npm"
+  ],
+  "author": "Your Name <you@example.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.19",
+    "tsup": "^8.3.5",
+    "typescript": "~5.9.3"
+  }
+}
