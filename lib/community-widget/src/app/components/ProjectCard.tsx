@@ -1,20 +1,10 @@
 import { Star, GitFork, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { coreService } from '../core.service';
+import { ApiBriefDocument } from "@luxio/common";
 
 interface ProjectCardProps {
-  project: {
-    id: string;
-    avatar: string;
-    name: string;
-    starred: boolean;
-    description: string;
-    specType: string;
-    specColor: string;
-    category: string;
-    timeAgo: string;
-    stars: string;
-  };
+  project: ApiBriefDocument;
   onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
 }
 

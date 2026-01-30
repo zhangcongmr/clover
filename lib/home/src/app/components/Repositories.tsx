@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Eye, Star, GitFork, Search as SearchIcon, ChevronDown } from "lucide-react";
+import { ApiBriefDocument } from "@luxio/common";
 
 interface Repository {
   name: string;
@@ -12,7 +13,7 @@ interface Repository {
 }
 
 export function Repositories() {
-  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [repositories, setRepositories] = useState<ApiBriefDocument[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -32,9 +33,9 @@ export function Repositories() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
+        const data: Array<ApiBriefDocument> = await response.json();
         // Process data here when API is available
-        setRepositories([]);
+        setRepositories(data);
       } catch (err) {
         console.error('Error fetching repositories:', err);
         // Use mock data

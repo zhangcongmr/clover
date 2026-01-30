@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ProjectCard } from './ProjectCard';
 import { coreService } from '../core.service';
+import { ApiBriefDocument } from '@luxio/common';
 
 const recommendedProjects = [
   {
@@ -40,7 +41,7 @@ const recommendedProjects = [
 
 export function MainContent( { onAction }: { onAction?: (data: any) => void } ) {
   // ✅ 将 fetch 放入 useEffect
-  const [rawSpecBriefDefs, setRawSpecBriefDefs] = useState([]);
+  const [rawSpecBriefDefs, setRawSpecBriefDefs] = useState<ApiBriefDocument[]>([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -48,7 +49,7 @@ export function MainContent( { onAction }: { onAction?: (data: any) => void } ) 
         if (!response.ok) {
           throw new Error('Network response was not ok.');
         }
-        const rawData = await response.json();
+        const rawData: Array<ApiBriefDocument> = await response.json();
         for (let item of rawData) {
           item.timeAgo = coreService.timeAgoIntl(item.updatetime);
         }
