@@ -1,8 +1,10 @@
-import { Header } from "@/app/components/Header";
-import { Sidebar } from "@/app/components/Sidebar";
-import { EventsFeed } from "@/app/components/EventsFeed";
-import { RightSidebar } from "@/app/components/RightSidebar";
 import { useEffect, useState } from "react";
+import { EventsFeed } from "@/app/components/EventsFeed";
+import { Header } from "@/app/components/Header";
+import { Repositories } from "@/app/components/Repositories";
+import { RightSidebar } from "@/app/components/RightSidebar";
+import { Sidebar } from "@/app/components/Sidebar";
+
 
 interface MyReactComponentProps {
   baseHref?: string
@@ -18,6 +20,15 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(!isSignInPage);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentView, setCurrentView] = useState<"dashboard" | "repositories">("dashboard");
+
+  const handleNavigateToRepositories = () => {
+    setCurrentView("repositories");
+  };
+
+  const handleNavigateToDashboard = () => {
+    setCurrentView("dashboard");
+  };
 
   const handleLogin = () => {
     // 默认保存当前页面路径（去掉域名）
@@ -94,15 +105,25 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
   return (
     <div className="size-full flex flex-col bg-white">
-      <Header
+      <Header 
         isAuthenticated={isAuthenticated} 
         onLogin={handleLogin}
         onLogout={handleLogout}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <EventsFeed />
-        <RightSidebar />
+        <Sidebar 
+          onNavigateToRepositories={handleNavigateToRepositories}
+          onNavigateToDashboard={handleNavigateToDashboard}
+          currentView={currentView}
+        />
+        {currentView === "dashboard" ? (
+          <>
+            <EventsFeed />
+            <RightSidebar />
+          </>
+        ) : (
+          <Repositories />
+        )}
       </div>
     </div>
   );

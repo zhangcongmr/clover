@@ -13,6 +13,17 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+interface Repository {
+  name: string;
+  fullName?: string;
+}
+
+interface SidebarProps {
+  onNavigateToRepositories: () => void;
+  onNavigateToDashboard: () => void;
+  currentView: "dashboard" | "repositories";
+}
+
 interface ApiBriefDocument {
   id?: string;
   avatar?: string | null;
@@ -29,7 +40,7 @@ interface ApiBriefDocument {
   stars?: number | null;
 }
 
-export function Sidebar() {
+export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, currentView }: SidebarProps) {
   const [repositories, setRepositories] = useState<ApiBriefDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,8 +89,16 @@ export function Sidebar() {
         {/* Dashboard */}
         <div className="mb-4">
           <a
-            href="/home"
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
+            href="#"
+            className={`flex items-center gap-2 text-sm py-1 ${
+              currentView === "dashboard"
+                ? "text-red-600 font-medium"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigateToDashboard();
+            }}
           >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
@@ -91,7 +110,15 @@ export function Sidebar() {
           <div className="flex items-center justify-between mb-2">
             <a
               href="#"
-              className="flex items-center gap-2 text-sm text-gray-900 py-1"
+              className={`flex items-center gap-2 text-sm py-1 ${
+                currentView === "repositories"
+                  ? "text-red-600 font-medium"
+                  : "text-gray-900 hover:text-red-600"
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigateToRepositories();
+              }}
             >
               <FolderGit2 className="w-4 h-4" />
               Repositories
