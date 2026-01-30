@@ -63,7 +63,7 @@ export class UserCenterComponent implements OnInit{
   ngOnInit() {
     // 初始化逻辑可以放在这里
     // 例如，从服务器获取用户数据等 curl https://127.0.0.1:8980/user/info/1234
-    fetch('https://127.0.0.1:8980/user/info/1234')
+    fetch('/user/info/1234')
       .then(response => response.json())
       .then(data => {
         this.userInfo = data;

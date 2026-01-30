@@ -18,7 +18,7 @@ export class ShareOnComponent {
 
   private coreService = inject(CoreService);
 
-  private serverDataUrl = 'https://127.0.0.1:8980/user/save'
+  private serverDataUrl = '/user/save'
 
   onClose(): void {
     this.visible = false;

@@ -58,7 +58,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   ngOnInit() {
     this.baseHref = document.querySelector('base')?.getAttribute('href') || '/';
     let me = this;
-    // this.coreService.fetchApiFromServer("https://127.0.0.1:8980/user/allBriefs", false).subscribe(
+    // this.coreService.fetchApiFromServer("/user/allBriefs", false).subscribe(
     //   (rawData: any) => {
     //     me.coreService.choosingApiLoading = false;
     //     if (!rawData) {
@@ -108,7 +108,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   importFromApiDef(rawSpecBrief: any) {
     let me = this;
-    this.coreService.getData("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
+    this.coreService.getData("/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
       (rawData: any) => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {
@@ -127,7 +127,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   view(rawSpecBrief: any) {
     let me = this;
-    this.coreService.getData("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
+    this.coreService.getData("/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
       rawData => {
         me.coreService.choosingApiLoading = false;
         if (!rawData) {

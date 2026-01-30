@@ -9,7 +9,7 @@ function HomePage() {
   let params = useParams();
 
   const openApiDef = (rawSpecBrief: any) => {
-    fetch("https://127.0.0.1:8980/user/apiInfoModel/" + rawSpecBrief.id).then(
+    fetch("/user/apiInfoModel/" + rawSpecBrief.id).then(
       (response: any) => {
         if (!response.ok) {
           throw new Error('Network response was not ok.');
