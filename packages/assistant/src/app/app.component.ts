@@ -267,7 +267,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             contentComp.openTab({
               id: 'api-community',
               type: 'api-community',
-              tabLabel: 'API Community'
+              tabLabel: 'Community'
             });
             contentComp.storeOpenedList();
           }

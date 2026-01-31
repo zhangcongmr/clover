@@ -22,7 +22,7 @@ export class AddProjectComponent implements OnInit {
   readonly apiInfoSelected = output<Array<any>>();
 
   visible!: boolean;
-  importType = '1';  // 1 - From API Definition  2 - From API Community  3 - From Local
+  importType = '1';  // 1 - From API Definition  2 - From Community  3 - From Local
   fileName: string = '';
   sourceCodeText: string = '';
   importFromApiDefUrl = ""
