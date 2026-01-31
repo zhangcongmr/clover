@@ -6,7 +6,7 @@
   "scripts": {
     "build:lib": "cross-env BUILD_MODE=lib vite build",
     "build:app": "cross-env BUILD_MODE=app vite build",
-    "build": "npm run build:lib && npm run build:app",
+    "build": "pnpm run build:lib && pnpm run build:app",
     "dev": "cross-env BUILD_MODE=app vite"
   },
   "dependencies": {

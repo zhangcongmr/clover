@@ -2,7 +2,7 @@
   "name": "luxio-monorepo",
   "private": true,
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "node scripts/build-with-timer.mjs",
     "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test"
   },
