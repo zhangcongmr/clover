@@ -54,7 +54,7 @@ export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
       {/* Navigation */}
       <nav className="flex items-center gap-6 flex-1">
         <a href="/community-widget" className="text-sm text-gray-700 hover:text-gray-900">
-          Explore
+          Community
         </a>
         <a href="/enterprises" className="text-sm text-gray-700 hover:text-gray-900">
           Enterprises
