@@ -119,7 +119,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
         {currentView === "dashboard" ? (
           <>
             <EventsFeed />
-            <RightSidebar />
+            {/* <RightSidebar /> */}
           </>
         ) : (
           <Repositories />

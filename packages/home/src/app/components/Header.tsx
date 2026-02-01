@@ -56,7 +56,7 @@ export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
         <a href="/community-widget" className="text-sm text-gray-700 hover:text-gray-900">
           Community
         </a>
-        <a href="/enterprises" className="text-sm text-gray-700 hover:text-gray-900">
+        {/* <a href="/enterprises" className="text-sm text-gray-700 hover:text-gray-900">
           Enterprises
         </a>
         <a href="/education" className="text-sm text-gray-700 hover:text-gray-900">
@@ -64,7 +64,7 @@ export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
         </a>
         <a href="/luxio-premium" className="text-sm text-gray-700 hover:text-gray-900">
           Luxio Premium
-        </a>
+        </a> */}
         <a href="/luxio-ai" className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1">
           Luxio AI
           <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1 rounded">
@@ -74,10 +74,10 @@ export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
         <a href="/ai-teammates" className="text-sm text-gray-700 hover:text-gray-900">
           AI Teammates
         </a>
-        <button className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1">
+        {/* <button className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1">
           My
           <ChevronDown className="w-3 h-3" />
-        </button>
+        </button> */}
       </nav>
 
       {/* Right section */}
