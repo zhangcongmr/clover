@@ -113,7 +113,7 @@ export function Repositories() {
       </div>
 
       {/* Enterprise message */}
-      <div className="border-b border-gray-200 px-6 py-3 bg-gray-50">
+      {/* <div className="border-b border-gray-200 px-6 py-3 bg-gray-50">
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-600">
             To view enterprise's Projects, please select the enterprise you want to enter.
@@ -123,7 +123,7 @@ export function Repositories() {
             <ChevronDown className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Tabs */}
       <div className="border-b border-gray-200">

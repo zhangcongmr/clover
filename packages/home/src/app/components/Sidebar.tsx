@@ -146,7 +146,7 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
         </div>
 
         {/* Pull Request */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <a
             href="#"
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
@@ -154,10 +154,10 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
             <GitPullRequest className="w-4 h-4" />
             Pull Request
           </a>
-        </div>
+        </div> */}
 
         {/* Issues */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <a
             href="#"
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
@@ -165,10 +165,10 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
             <AlertCircle className="w-4 h-4" />
             Issues
           </a>
-        </div>
+        </div> */}
 
         {/* Gists */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <a
             href="#"
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
@@ -177,10 +177,10 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
             Gists
             <span className="text-xs text-gray-500">2</span>
           </a>
-        </div>
+        </div> */}
 
         {/* My collections */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <a
             href="#"
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
@@ -189,10 +189,10 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
             My collections
             <span className="text-xs text-gray-500">1</span>
           </a>
-        </div>
+        </div> */}
 
         {/* My enterprise */}
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <a
             href="#"
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-1"
@@ -200,7 +200,7 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
             <Building2 className="w-4 h-4" />
             My enterprise / Education / Organization
           </a>
-        </div>
+        </div> */}
       </div>
     </aside>
   );

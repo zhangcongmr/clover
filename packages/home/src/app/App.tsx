@@ -104,7 +104,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
 
   return (
-    <div className="size-full flex flex-col bg-white">
+    <div className="h-screen size-full flex flex-col bg-white">
       <Header 
         isAuthenticated={isAuthenticated} 
         onLogin={handleLogin}
