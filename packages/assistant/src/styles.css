@@ -42,14 +42,25 @@ img, svg {
     font-weight: 400;
     height: 36px;
     justify-content: start;
-    padding-left: 20px;
     /* 替代空 span 做缩进 */
     word-wrap: break-word;
     cursor: pointer;
+
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
 }
 
 .codigma-menu-every-item:hover {
-    background-color: lightblue;
+    background-color: #f5f5f5;;
+}
+
+.codigma-menu-every-item:last-child {
+  border-bottom: none;
+}
+
+.codigma-menu-every-item svg, .codigma-menu-every-item img {
+    margin-right: 16px; /* 调整图标与文本间的距离 */
 }
 
 .custom-scroll {
