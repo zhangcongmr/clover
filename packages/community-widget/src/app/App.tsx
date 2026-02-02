@@ -14,7 +14,7 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      <Header />
+      {/* <Header /> */}
       <div className="flex flex-1 overflow-hidden">
         {/* <CategorySidebar /> */}
         <MainContent onAction={onAction} />
