@@ -1,4 +1,4 @@
-import { Search, Bell, HelpCircle, ChevronDown, User, Settings, Star, FileText, LogOut, LogIn } from "lucide-react";
+import { Search, Bell, ChevronDown, User, Settings, Star, FileText, LogOut, LogIn, SquarePlus } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 
@@ -96,8 +96,9 @@ export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
         <button className="text-gray-600 hover:text-gray-900">
           <Bell className="w-5 h-5" />
         </button>
-        <button className="text-gray-600 hover:text-gray-900">
-          <HelpCircle className="w-5 h-5" />
+        <button className="text-gray-600 hover:bg-gray-100 cursor-pointer border border-gray-300 rounded px-2 py-1 flex items-center gap-1">
+          {/* <SquarePlus className="w-5 h-5" /> */}
+          <a href="/editor" target="_blank" className="text-sm">Luxio Editor</a>
         </button>
 
         {/* User avatar with dropdown */}

@@ -265,7 +265,8 @@ export function Repositories() {
                 </div>
 
                 {/* Repository Info */}
-                <div className="flex-1 min-w-0">
+                <a href={"/editor/" + repo.id}
+                    target="_blank" className="flex-1 min-w-0">
                   <h3 className="text-base text-blue-600 hover:text-blue-800 cursor-pointer font-medium">
                     {repo.name}
                   </h3>
@@ -280,7 +281,7 @@ export function Repositories() {
                       Last updated {repo.lastUpdated}
                     </span>
                   </div>
-                </div>
+                </a>
 
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-sm text-gray-600">
