@@ -31,7 +31,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   blurSwitch = true;
   isOpen = false;
-  menuInitiator: any;
+  menuInitiator: DOMRect | undefined;
 
   openedList: Array<any> = [
     {

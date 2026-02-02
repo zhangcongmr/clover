@@ -30,7 +30,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly menuItemAction = output<any>();
 
   menuId = signal('')
-  showMenuStyle = signal('');
   showShareButton = false;
 
   dataBackUp: Array<any> = [];
@@ -154,6 +153,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   currentContextMenuEvt: any;
+  menuInitiator: DOMRect | undefined;
+  isOpen = false;
   showContextMenu(evt: any, item: any) {
     if(this.fobiddenContextMenu()) {
       return;
@@ -162,11 +163,19 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
 
     this.menuId.set(this.uuid())
-    // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
-    let horizontalComputed = (window.innerWidth - evt.clientX) > 336 ? "left:" + (evt.clientX + 10) : "right:" + (window.innerWidth - evt.clientX + 10);
-    let verticalComputed = (window.innerHeight - evt.clientY) > 3*36 ? "top:" + evt.clientY : "bottom:" + (window.innerHeight - evt.clientY);
-    this.showMenuStyle.set(horizontalComputed + 'px;' + verticalComputed + 'px;' + "display:block;")
 
+    this.menuInitiator = { // 模拟一个 DOMRect 对象
+      x: evt.clientX,
+      y: evt.clientY,
+      left: evt.clientX,
+      top: evt.clientY,
+      bottom: evt.clientY,
+      right: evt.clientX,
+      width: 0,
+      height: 0,
+      toJSON: () => { }
+    };
+    this.isOpen = true;
     this.currentContextMenuEvt = {
       currentTargetEvt: evt.currentTarget,
       clientX: evt.clientX,
@@ -271,7 +280,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   closeMenu() {
-    this.showMenuStyle.set("display:none;")
+    this.isOpen = false;
     this.menuId.set('')
   }
 
