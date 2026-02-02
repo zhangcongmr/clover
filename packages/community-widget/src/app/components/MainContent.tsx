@@ -66,7 +66,7 @@ export function MainContent( { onAction }: { onAction?: (data: any) => void } ) 
 
 
   return (
-    <div className="flex-1 bg-gray-50 p-6 overflow-y-auto">
+    <div className="flex-1 flex justify-center bg-gray-50 p-6 overflow-y-auto">
       <div className="max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg">Recommend projects</h2>
