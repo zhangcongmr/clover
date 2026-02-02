@@ -13,7 +13,7 @@ export function Header() {
   return (
     <div className="bg-white border-b border-gray-200">
       {/* Brand Carousel */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      {/* <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
@@ -32,10 +32,10 @@ export function Header() {
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <ChevronRight className="w-5 h-5 text-gray-600" />
         </button>
-      </div>
+      </div> */}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between px-6 py-3">
+      {/* <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-4">
           <button className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +64,7 @@ export function Header() {
             <Search className="w-4 h-4 text-gray-400" />
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
