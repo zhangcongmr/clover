@@ -29,16 +29,18 @@ export class ServerAndServiceInfo {
 
 export enum TreeNodeType {
     Folder = "folder",
-    File = "file"
+    File = "file",
+    Bookmark = "bookmark",
+    Api = "api"
 }
 export interface AstTreeNode {
     id: string;
     label: string;
     children: Array<AstTreeNode>;
+    deepLevel: number;
     isExpanded?: boolean;
     nodeType?: TreeNodeType;
     isNewData?: boolean;
-
     servers?: Array<string>;
     folder?: string;
     folderInfo?: {

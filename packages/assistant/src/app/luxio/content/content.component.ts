@@ -59,28 +59,36 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const json = JSON.parse(doc);
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
       this.dataList.set(datas);
+      this.currentSelect = this.findActiveNode(datas);
     } else if(typeof doc === 'object') {
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(doc), JSON.stringify(doc), this.myConfigService.getFileName());
       this.dataList.set(datas);
+      this.currentSelect = this.findActiveNode(datas);
     } else if(typeof doc === 'function') {
       const result = doc();
       if(this.isPromiseLike(result)) {
         (result as Promise<string | any>).then((res: string | any) => {
           if(typeof res === 'string' && res.length > 0) {
             const json = JSON.parse(res);
-            this.dataList.set(this.coreService.parseOpenApiSpec(json));
+            const datas = this.coreService.parseOpenApiSpec(json);
+            this.dataList.set(datas);
+            this.currentSelect = this.findActiveNode(datas);
           } else if(typeof res === 'object') {
             this.dataList.set(res.dataList || []);
             this.openedList.set(res.openedList || []);
+            this.currentSelect = this.findActiveNode(res.dataList || []);
           }
         });
       } else {
         if(typeof result === 'string' && result.length > 0) {
           const json = JSON.parse(result);
-          this.dataList.set(this.coreService.parseOpenApiSpec(json));
+          const datas = this.coreService.parseOpenApiSpec(json);
+          this.dataList.set(datas);
+          this.currentSelect = this.findActiveNode(datas);
         } else if(typeof result === 'object') {
           this.dataList.set(result.dataList || []);
           this.openedList.set(result.openedList || []);
+          this.currentSelect = this.findActiveNode(result.dataList || []);
         }
       }
     }
@@ -107,28 +115,24 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
         delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
 
-        const newApi = this.createNewApi();
+        const newApi = this.createNewFile();
         newApi['rename'] = true;
         newApi['parentItem'] = parentItemCopy;
-        if (!newApi['nodeType']) {
-          newApi['nodeType'] = TreeNodeType.File;
-        }
         this.currentSelect.children.splice(0, 0, newApi);
       } else if (this.currentSelect.nodeType == TreeNodeType.File) {
-        const dataId = this.currentSelect['parentItem']['id'];
-        const datas = this.dataList();
-        if(datas) {
-          const currentIndex = datas.findIndex(dataval => dataval.id == dataId);
-          if (currentIndex > -1) {
-            const newApi = this.createNewApi();
-            newApi['rename'] = true;
-            newApi['parentItem'] = this.currentSelect['parentItem'];
-            if (!newApi['nodeType']) {
-              newApi['nodeType'] = TreeNodeType.File;
-            }
-            datas[currentIndex].children?.splice(0, 0, newApi);
-          }
-        }
+          const newApi = this.createNewApi();
+
+          const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
+          delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
+          delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
+          delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
+          delete this.currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
+          
+          newApi['rename'] = true;
+          newApi['parentItem'] = parentItemCopy;
+          this.currentSelect.children?.splice(0, 0, newApi);
+      } else {
+        //TODO
       }
     }
   }
@@ -139,6 +143,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       isExpanded:false,
       label: "New Folder",
       nodeType: TreeNodeType.Folder,
+      deepLevel: 0,
       children: []
     }
     this.dataList.update(value => [
@@ -166,10 +171,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   listClick(evt: any) {
     this.currentSelect = evt;
-    if (evt['nodeType'] != TreeNodeType.File) {
+    if (evt['nodeType'] != TreeNodeType.Bookmark && evt['nodeType'] != TreeNodeType.Api) {
       return;
     }
-
+    this.reset(this.dataList())
     this.openTab(evt);
     this.storeApi()
     this.storeOpenedList()
@@ -179,17 +184,62 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   public openTab(targetTab: any) {
     let oldTab = false;
     const openeds = this.openedList()
-    for (const item of openeds) {
-      delete item["isActive"];
-      if (item.id == targetTab.id) {
-        item["isActive"] = true;
-        oldTab = true;
-      }
+    this.reset(openeds);
+
+    const findNode = this.findNodeById(this.openedList(), targetTab.id);
+    const originNode = this.findNodeById(this.dataList(), targetTab.id);
+    originNode!['isActive'] = true;
+    if (findNode) {
+      findNode['isActive'] = true;
+      oldTab = true;
     }
+
     if (!oldTab) {
       targetTab["isActive"] = true;
       openeds.push(targetTab);
     }
+  }
+
+  reset(data: Array<any>, deepIn?: boolean) {
+    for (let index = 0; index < data.length; index++) {
+      const dataItem = data[index];
+      dataItem['isActive'] = false
+      if (deepIn == null || deepIn) { //递归重置子节点
+        if (dataItem.children && dataItem.children.length) {
+          this.reset(dataItem.children)
+        }
+      }
+    }
+  }
+
+  findNodeById(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
+    for (const node of nodes) {
+      if (node.id === targetId) {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = this.findNodeById(node.children, targetId);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  findActiveNode(nodes: AstTreeNode[]): AstTreeNode | undefined {
+    for (const node of nodes) {
+      if (node.isActive) {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = this.findActiveNode(node.children);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return nodes[0];//默认返回第一个节点
   }
 
   apiSelected(evt: any) {
@@ -246,7 +296,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       label: fileName,
       children: apiData,
       isExpanded: apiData.length > 0,
-      nodeType: TreeNodeType.Folder,
+      nodeType: TreeNodeType.File,
+      deepLevel: 1,
       servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
       sourceCodeText: sourceCodeText,
       isNewData: true
@@ -395,6 +446,21 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     this.storeOpenedList()
   }
 
+  createNewFile() {
+    const apiInfo: AstTreeNode = {
+      id: this.uuid(),
+      summary: "",
+      label: "Untitle.json",
+      tabLabel: "Untitle.json",
+      nodeType: TreeNodeType.File,
+      deepLevel: 1,
+      children: [],
+      auth: {}
+    }
+
+    return apiInfo;
+  }
+
   createNewApi() {
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
@@ -404,10 +470,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       path: "",
       url: "",
       summary: "",
-      label: "Untitle.json",
-      tabLabel: "Untitle.json",
+      label: "Untitle",
+      tabLabel: "Untitle",
       server: "",
       symbolColor: "green",
+      nodeType: TreeNodeType.Api,
+      deepLevel: 2,
       custom: true,
       rawApiInfo: {},
       customQueryparameters: [

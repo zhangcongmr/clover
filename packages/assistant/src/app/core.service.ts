@@ -2,7 +2,7 @@ import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
-import { ServiceRouteInfo, AstTreeNode, UserInfo } from './shared/model';
+import { ServiceRouteInfo, AstTreeNode, UserInfo, TreeNodeType } from './shared/model';
 
 @Injectable({
   providedIn: 'root'
@@ -669,6 +669,8 @@ export class CoreService {
                 server: currentServer,
                 // parentItem: parentItemCopy,
                 symbolColor: CoreService.getSymbolColor(methodInfoKey.toUpperCase()),
+                nodeType: TreeNodeType.Api,
+                deepLevel: 2,
                 response: {},
                 children: [],
                 customQueryparameters: [],

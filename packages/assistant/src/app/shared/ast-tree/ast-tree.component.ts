@@ -73,7 +73,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
           continue;
         }
         if (dataItem) {
-          dataItem['nodeType'] = TreeNodeType.Folder
           const parentItemCopy = JSON.parse(JSON.stringify(dataItem))
           delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
           delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
@@ -83,9 +82,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
           dataItem.children = dataItem.children || [];
           dataItem.children.forEach((child: any) => {
             child['parentItem'] = parentItemCopy;
-            if (!child['nodeType']) {
-              child['nodeType'] = TreeNodeType.File;
-            }
           });
         }
 
@@ -109,9 +105,9 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       this.selectedNodeType.set(item['nodeType']);
     }
 
-    if (item['nodeType'] != TreeNodeType.File) {
+    if (item['nodeType'] != TreeNodeType.Bookmark && item['nodeType'] != TreeNodeType.Api) {
       item.isExpanded = !item.isExpanded;
-      this.reset(this.data(), false) //false -- 只重置同级节点的选中状态
+      this.reset(this.data()) //false -- 只重置同级节点的选中状态
 
       item['isActive'] = true;
       this.nodeClick.emit(item);
@@ -136,6 +132,10 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         }
       }
     }
+  }
+
+  recurListClick(evt: any) {
+    this.nodeClick.emit(evt);
   }
 
   selectedNodeTypeOutputChange(nodeType: string) {
@@ -182,7 +182,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       clientY: evt.clientY
     };
     if(item) {
-      if (item['nodeType'] == TreeNodeType.File) {
+      if (item['nodeType'] == TreeNodeType.Bookmark || item['nodeType'] == TreeNodeType.Api) {
         this.showShareButton = false;
         const dataId = item['parentItem']['id'];
         const filterData = this.data().filter(dataval => dataval.id == dataId);
