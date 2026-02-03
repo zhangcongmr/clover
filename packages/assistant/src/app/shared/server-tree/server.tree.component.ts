@@ -6,6 +6,7 @@ import { ServerManagerComponent } from '../server-manager/server-manager.compone
 import { ServiceManagerComponent } from '../service-manager/service-manager.component';
 import { FormsModule } from '@angular/forms';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
+import { TreeNodeType } from '../model';
 
 @Component({
     selector: 'server-tree',
@@ -41,14 +42,14 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   async init() {
     const servers = await this.coreService.getServersFromStorage(true);
     servers.map(server => {
-      server['nodeType'] = 'root';
+      server['nodeType'] = TreeNodeType.Folder;
       server.label = server.text
     });
     this.serverList = servers;
   }
 
   listClick(evt: any) {
-    if (evt['nodeType'] != 'leaf') {
+    if (evt['nodeType'] != TreeNodeType.File) {
       this.setService(evt);
       this.currentServer = evt;
       this.checkIfShouldAuthorize();
@@ -124,7 +125,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
       val["id"] = val.serviceName;
       val["label"] = val.serviceName;
       val['parentItem'] = parentItemCopy;
-      val['nodeType'] = 'leaf'
+      val['nodeType'] = TreeNodeType.File;
     });
 
     if (serviceList && serviceList.length > 0) {

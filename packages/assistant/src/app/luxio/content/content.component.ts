@@ -11,7 +11,7 @@ import { file, write } from 'opfs-tools';
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { ApiInfoModel, AstTreeNode } from '../../shared/model';
+import { ApiInfoModel, AstTreeNode, TreeNodeType } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
@@ -100,7 +100,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   FileaddBtn(evt: any) {
     if (this.currentSelect) {
-      if (this.currentSelect.nodeType == 'root') {
+      if (this.currentSelect.nodeType == TreeNodeType.Folder) {
         this.currentSelect.isExpanded = true
         const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
         delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
@@ -111,10 +111,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         newApi['rename'] = true;
         newApi['parentItem'] = parentItemCopy;
         if (!newApi['nodeType']) {
-          newApi['nodeType'] = 'leaf';
+          newApi['nodeType'] = TreeNodeType.File;
         }
         this.currentSelect.children.splice(0, 0, newApi);
-      } else if (this.currentSelect.nodeType == 'leaf') {
+      } else if (this.currentSelect.nodeType == TreeNodeType.File) {
         const dataId = this.currentSelect['parentItem']['id'];
         const datas = this.dataList();
         if(datas) {
@@ -124,7 +124,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             newApi['rename'] = true;
             newApi['parentItem'] = this.currentSelect['parentItem'];
             if (!newApi['nodeType']) {
-              newApi['nodeType'] = 'leaf';
+              newApi['nodeType'] = TreeNodeType.File;
             }
             datas[currentIndex].children?.splice(0, 0, newApi);
           }
@@ -138,7 +138,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       isActive: false,
       isExpanded:false,
       label: "New Folder",
-      nodeType: "root",
+      nodeType: TreeNodeType.Folder,
       children: []
     }
     this.dataList.update(value => [
@@ -166,7 +166,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   listClick(evt: any) {
     this.currentSelect = evt;
-    if (evt['nodeType'] != 'leaf') {
+    if (evt['nodeType'] != TreeNodeType.File) {
       return;
     }
 
@@ -246,7 +246,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       label: fileName,
       children: apiData,
       isExpanded: apiData.length > 0,
-      nodeType: 'root',
+      nodeType: TreeNodeType.Folder,
       servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
       sourceCodeText: sourceCodeText,
       isNewData: true

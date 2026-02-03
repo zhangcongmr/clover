@@ -27,7 +27,7 @@
   @for (childItem of item.children; track childItem.id; let childDataIndex = $index) {
     <div class="child-item"
       [style.display]="item.isExpanded?'flex':'none'"
-      (click)="elementClick(childItem);" [class.active]="(selectedNodeType() != 'root' && selectedNodeType() != 'parent') && childItem['isActive']"
+      (click)="elementClick(childItem);" [class.active]="(selectedNodeType() != 'folder') && childItem['isActive']"
       (contextmenu)="showContextMenu($event, childItem)" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
       @if (childItem.children!=null&&childItem.children.length>0) {
         <button class="btn-item" (click)="expandCollapseClick($event, item)">

@@ -27,21 +27,16 @@ export class ServerAndServiceInfo {
     serviceRoute?: ServiceRouteInfo;
 }
 
-// export interface TreeNodeType {
-//   id: string;
-//   label: string;
-//   children?: Array<TreeNodeType>;
-//   isExpanded?: boolean;
-//   nodeType?: 'root' | 'parent' | 'leaf';
-//   isNewData?: boolean;
-// }
-
+export enum TreeNodeType {
+    Folder = "folder",
+    File = "file"
+}
 export interface AstTreeNode {
     id: string;
     label: string;
     children: Array<AstTreeNode>;
     isExpanded?: boolean;
-    nodeType?: 'root' | 'parent' | 'leaf';
+    nodeType?: TreeNodeType;
     isNewData?: boolean;
 
     servers?: Array<string>;
