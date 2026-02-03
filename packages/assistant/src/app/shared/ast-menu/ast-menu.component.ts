@@ -6,7 +6,8 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
   styleUrls: ['./ast-menu.component.css'],
   host: {
     '[style.display]': 'display',
-    '[style]': 'showMenuStyle',
+    '[style]': 'positionStyle',
+    '[style.width.px]': 'width',
     '(mouseenter)': 'onMouseenterMenu($event)',
     '(mouseleave)': 'onMouseleaveMenu($event)'
   },
@@ -17,13 +18,14 @@ export class AstMenuComponent implements OnChanges{
   @Output() mouseentermenu = new EventEmitter<MouseEvent>();
   @Output() mouseleavemenu = new EventEmitter<MouseEvent>();
 
-  showMenuStyle: string = '';
+  positionStyle: string = '';
+  width: number = 200; // 菜单宽度
 
   ngOnChanges(changes: SimpleChanges): void {
     if(changes["display"]) {
       if(changes["display"].currentValue != changes["display"].previousValue) {
         if(changes["display"].currentValue == 'none') {
-          this.showMenuStyle = "display:none;";
+          this.positionStyle = this.positionStyle.replace(/(block|flex|flex-inline)/g, 'none');
           return;
         }
         let menuInitiator = this.menuInitiator;
@@ -33,7 +35,7 @@ export class AstMenuComponent implements OnChanges{
         // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
         let horizontalComputed = this.getHorizontalComputed(menuInitiator);
         let verticalComputed = this.getVerticalComputed(menuInitiator);
-        this.showMenuStyle = horizontalComputed + 'px;' + verticalComputed + 'px;' + "display:block;"
+        this.positionStyle = horizontalComputed + 'px;' + verticalComputed + 'px;'
 
       }
     }
@@ -41,7 +43,7 @@ export class AstMenuComponent implements OnChanges{
 
   private getHorizontalComputed(menuInitiator: DOMRect) {
     let offset = menuInitiator.left == menuInitiator.right ? 10 : 10;
-    return (window.innerWidth - menuInitiator.left) > 336 ? "left:" + (menuInitiator.left + offset) : "right:" + (window.innerWidth - menuInitiator.left - menuInitiator.width);
+    return (window.innerWidth - menuInitiator.left) > this.width ? "left:" + (menuInitiator.left + offset) : "right:" + (window.innerWidth - menuInitiator.left - menuInitiator.width);
   }
 
   private getVerticalComputed(menuInitiator: DOMRect) {
