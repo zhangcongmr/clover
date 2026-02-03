@@ -67,6 +67,11 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes["data"] && this.data()) {
+      if(this.dataType() != 'subData') {
+        const newDatas = this.data();
+        this.assignDeepLevel(newDatas);
+        this.data.set(newDatas);
+      }
       for (let index = 0; index < this.data().length; index++) {
         const dataItem = this.data()[index];
         if (!dataItem.isNewData) {
@@ -92,6 +97,17 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       }
     }
   }
+
+  
+  assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
+    for (const node of nodes) {
+      node.deepLevel = level; // 设置当前层级
+      if (node.children && node.children.length > 0) {
+        this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
+      }
+    }
+  }
+
 
   elementClick(item: any) {
     if (item['rename']) {

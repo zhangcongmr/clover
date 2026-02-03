@@ -116,6 +116,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
 
         const newApi = this.createNewFile();
+        newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
         newApi['rename'] = true;
         newApi['parentItem'] = parentItemCopy;
         this.currentSelect.children.splice(0, 0, newApi);
@@ -128,6 +129,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete this.currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
           
+          newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
           newApi['rename'] = true;
           newApi['parentItem'] = parentItemCopy;
           this.currentSelect.children?.splice(0, 0, newApi);
@@ -135,9 +137,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         //TODO
       }
     }
-    const newDatas = this.dataList();
-    this.assignDeepLevel(newDatas)
-    this.dataList.set(newDatas);
+  }
+
+  assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
+    for (const node of nodes) {
+      node.deepLevel = level; // 设置当前层级
+      if (node.children && node.children.length > 0) {
+        this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
+      }
+    }
   }
 
   FolderaddBtn(evt: any) {
@@ -146,6 +154,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       isActive: false,
       isExpanded:false,
       label: "New Folder",
+      deepLevel: 0,
       nodeType: TreeNodeType.Folder,
       children: []
     }
@@ -153,7 +162,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       ...this.dataList(),
       folder
     ]
-    this.assignDeepLevel(newDatas)
     this.dataList.set(newDatas);
   }
   importBtn(evt: any) {
@@ -324,15 +332,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // 返回更新后的 result  
       return result;
     }, {});
-  }
-
-  assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
-    for (const node of nodes) {
-      node.deepLevel = level; // 设置当前层级
-      if (node.children && node.children.length > 0) {
-        this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
-      }
-    }
   }
 
   saveApi(evt: any) {
