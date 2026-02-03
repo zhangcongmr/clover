@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, QueryList, SimpleChanges, ViewChildren, afterNextRender, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { ApiTreeNodeType } from '../model';
+import { AstTreeNode } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
 
@@ -17,7 +17,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
   imports: [FormsModule, AstMenuComponent]
 })
 export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
-  data = model<Array<ApiTreeNodeType>>([])
+  data = model<Array<AstTreeNode>>([])
   @ViewChildren('inputRef') inputRefs!: QueryList<ElementRef<HTMLInputElement>>;
   readonly filterNode = input(false);
   readonly dataType = input<string>(); //内部使用，用于区分传入的data是总的数据，还是分数据
@@ -199,7 +199,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     } else {
       // right click on empty area
       this.showShareButton = false;
-      this.currentContextMenuEvt['empty'] = true;
+      this.currentContextMenuEvt['non-element-select'] = true;
     }
   }
 
@@ -249,7 +249,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         target: this.currentContextMenuEvt
       })
     } else if (action == 'New') {
-      if (!current['empty']) {
+      if (!current['non-element-select']) {
         if (current.item && current.childItem) {
           this.menuItemAction.emit({
             action: action,
@@ -265,7 +265,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       } else {
           this.menuItemAction.emit({
             action: action,
-            target: 'empty'
+            target: 'non-element-select'
           })
       }
     } else if (action == 'Share') {

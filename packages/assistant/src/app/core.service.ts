@@ -2,7 +2,7 @@ import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
-import { ServiceRouteInfo, ApiTreeNodeType, UserInfo } from './shared/model';
+import { ServiceRouteInfo, AstTreeNode, UserInfo } from './shared/model';
 
 @Injectable({
   providedIn: 'root'
@@ -652,7 +652,7 @@ export class CoreService {
                 url = rawSpecDef.servers[0].url +  pathKey;
               }
 
-              const apiInfo: ApiTreeNodeType = {
+              const apiInfo: AstTreeNode = {
                 id: this.uuid(),
                 folderInfo: {
                   servers: rawSpecDef.servers ? rawSpecDef.servers : [],

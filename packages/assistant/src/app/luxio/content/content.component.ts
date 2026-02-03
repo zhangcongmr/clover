@@ -11,7 +11,7 @@ import { file, write } from 'opfs-tools';
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { ApiInfoModel, ApiTreeNodeType } from '../../shared/model';
+import { ApiInfoModel, AstTreeNode } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
@@ -32,7 +32,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   /***aside */
   serverList: Array<any> = [];
-  dataList= signal<Array<ApiTreeNodeType>>([]);
+  dataList= signal<Array<AstTreeNode>>([]);
   /***aside */
 
   openedList = signal<Array<any>>([]);
@@ -133,7 +133,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
   FolderaddBtn(evt: any) {
-    const folder: ApiTreeNodeType = {
+    const folder: AstTreeNode = {
       id: this.uuid(),
       isActive: false,
       isExpanded:false,
@@ -241,7 +241,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private addRoot(apiData: any, sourceCodeText: string, fileName: string = "Default.json") {
     apiData.map((val: any) => val['saved'] = true);
     let datas: Array<any> = [];
-    const data: ApiTreeNodeType = {
+    const data: AstTreeNode = {
       id: this.uuid(),
       label: fileName,
       children: apiData,
@@ -323,7 +323,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.storeApi()
     }
     if (evt.action == 'New') {
-      if (evt.target != 'empty') {
+      if (evt.target != 'non-element-select') {
         this.currentSelect = evt.target
         this.FileaddBtn(null)
       } else {
@@ -396,7 +396,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   createNewApi() {
-    const apiInfo: ApiTreeNodeType = {
+    const apiInfo: AstTreeNode = {
       id: this.uuid(),
       serviceName: "",
       method: "get",
@@ -404,8 +404,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       path: "",
       url: "",
       summary: "",
-      label: "Untitle",
-      tabLabel: "Untitle",
+      label: "Untitle.json",
+      tabLabel: "Untitle.json",
       server: "",
       symbolColor: "green",
       custom: true,

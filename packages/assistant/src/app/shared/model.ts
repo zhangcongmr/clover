@@ -36,10 +36,10 @@ export class ServerAndServiceInfo {
 //   isNewData?: boolean;
 // }
 
-export interface ApiTreeNodeType {
+export interface AstTreeNode {
     id: string;
     label: string;
-    children: Array<ApiTreeNodeType>;
+    children: Array<AstTreeNode>;
     isExpanded?: boolean;
     nodeType?: 'root' | 'parent' | 'leaf';
     isNewData?: boolean;
