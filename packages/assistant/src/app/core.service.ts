@@ -670,7 +670,6 @@ export class CoreService {
                 // parentItem: parentItemCopy,
                 symbolColor: CoreService.getSymbolColor(methodInfoKey.toUpperCase()),
                 nodeType: TreeNodeType.Api,
-                deepLevel: 2,
                 response: {},
                 children: [],
                 customQueryparameters: [],

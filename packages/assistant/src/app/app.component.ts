@@ -8,6 +8,7 @@ import { ContentComponent } from './luxio/content/content.component';
 import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
 import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
+import { file } from 'opfs-tools';
 
 @Component({
     selector: 'app-root',
@@ -370,5 +371,10 @@ export class AppComponent implements OnInit, AfterViewInit {
       window.location.href = '/signin';
       this.coreService.isAuthenticated.set(false);
     }
-  };
+  }
+
+  async cleanUp() {
+    await file('/dir/file.txt').remove();
+    await file('/dir/file_openedList.txt').remove();
+  }
 }

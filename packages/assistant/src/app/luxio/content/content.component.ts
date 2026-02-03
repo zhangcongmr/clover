@@ -135,7 +135,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         //TODO
       }
     }
+    const newDatas = this.dataList();
+    this.assignDeepLevel(newDatas)
+    this.dataList.set(newDatas);
   }
+
   FolderaddBtn(evt: any) {
     const folder: AstTreeNode = {
       id: this.uuid(),
@@ -143,13 +147,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       isExpanded:false,
       label: "New Folder",
       nodeType: TreeNodeType.Folder,
-      deepLevel: 0,
       children: []
     }
-    this.dataList.update(value => [
-      ...value,
+    const newDatas = [
+      ...this.dataList(),
       folder
-    ])
+    ]
+    this.assignDeepLevel(newDatas)
+    this.dataList.set(newDatas);
   }
   importBtn(evt: any) {
     this.openAddDlg();
@@ -246,6 +251,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     const fileName = evt.fileName;
     const apiData = evt.apiData;
     let datas: Array<any> = this.addRoot(apiData, evt.sourceCodeText, fileName);
+    this.assignDeepLevel(datas);
     this.dataList.update(value => value.concat(datas))
     this.storeApi()
     this.currentDisplayViewId.set(1);
@@ -297,7 +303,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       children: apiData,
       isExpanded: apiData.length > 0,
       nodeType: TreeNodeType.File,
-      deepLevel: 1,
       servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
       sourceCodeText: sourceCodeText,
       isNewData: true
@@ -319,6 +324,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // 返回更新后的 result  
       return result;
     }, {});
+  }
+
+  assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
+    for (const node of nodes) {
+      node.deepLevel = level; // 设置当前层级
+      if (node.children && node.children.length > 0) {
+        this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
+      }
+    }
   }
 
   saveApi(evt: any) {
@@ -453,7 +467,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       label: "Untitle.json",
       tabLabel: "Untitle.json",
       nodeType: TreeNodeType.File,
-      deepLevel: 1,
       children: [],
       auth: {}
     }
@@ -475,7 +488,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       server: "",
       symbolColor: "green",
       nodeType: TreeNodeType.Api,
-      deepLevel: 2,
       custom: true,
       rawApiInfo: {},
       customQueryparameters: [
