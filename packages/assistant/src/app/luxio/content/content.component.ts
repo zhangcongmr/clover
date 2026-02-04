@@ -153,6 +153,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
         delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
         delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
+        delete parentItemCopy.sourceCodeText;
 
         const newApi = this.createNewFile();
         newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
@@ -167,6 +168,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
           delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete this.currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
+          delete parentItemCopy.sourceCodeText;
           
           newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
           newApi['rename'] = true;

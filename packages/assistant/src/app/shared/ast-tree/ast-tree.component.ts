@@ -69,6 +69,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
           delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
           delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete dataItem.isNewData;//子节点的父节点不维护是否新添加节点这个状态
+          delete parentItemCopy.sourceCodeText;
 
           dataItem.children = dataItem.children || [];
           dataItem.children.forEach((child: any) => {
