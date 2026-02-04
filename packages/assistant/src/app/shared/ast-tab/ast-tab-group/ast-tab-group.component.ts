@@ -1,13 +1,14 @@
-import { AfterContentInit, AfterViewInit, Component, ContentChildren, OnChanges, OnInit, QueryList, SimpleChanges, input, output } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ContentChildren, OnChanges, OnInit, QueryList, SimpleChanges, input, output, signal } from '@angular/core';
 import { AstTabComponent } from '../ast-tab.component';
 import { Subscription, merge } from 'rxjs';
+import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
 
 @Component({
   selector: '[ast-tab-group]',
   templateUrl: './ast-tab-group.component.html',
   styleUrls: ['./ast-tab-group.component.css'],
   standalone: true,
-  imports: []
+  imports: [AstMenuComponent]
 })
 export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit {
   @ContentChildren(AstTabComponent) topLevelTabs!: QueryList<AstTabComponent>;
@@ -21,7 +22,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly addNewTab = output<any>();
 
   readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
-
+  readonly fobiddenContextMenu = input(false)
   ulStyle: string = "height: 2rem;"
 
   tabMap: Map<string, boolean> = new Map();
@@ -118,7 +119,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     });
   }
 
-  iconCloseClick(evt: any, tab: any) {
+  iconCloseClick(evt: any, tab: AstTabComponent) {
     evt.stopPropagation(); // 阻止事件冒泡
     if (this.topLevelTabs.length > 0) {
       const tabs: any = this.topLevelTabs;
@@ -304,4 +305,72 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   whenMouseLeaveTabCloseCnr(tab: AstTabComponent) {
     tab.dotOrClose = true;
   }
+
+  currentContextMenuEvt: any;
+  menuInitiator: DOMRect | undefined;
+  isOpen = false;
+  showContextMenu(evt: any, tab: AstTabComponent) {
+    if(this.fobiddenContextMenu()) {
+      return;
+    }
+    evt.preventDefault(); // 阻止默认右键菜单
+    evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
+
+    this.menuInitiator = { // 模拟一个 DOMRect 对象
+      x: evt.clientX,
+      y: evt.clientY,
+      left: evt.clientX,
+      top: evt.clientY,
+      bottom: evt.clientY,
+      right: evt.clientX,
+      width: 0,
+      height: 0,
+      toJSON: () => { }
+    };
+    this.isOpen = true;
+    this.currentContextMenuEvt = {
+      tab: tab,
+      clientX: evt.clientX,
+      clientY: evt.clientY
+    };
+
+  }
+
+  closeTabs(action: string) {
+    const evt = this.currentContextMenuEvt;
+    const tab = evt.tab;
+    const tabs: any = this.topLevelTabs;
+    let isFirst = tabs.get(0).id == tab.id;
+    let isLast = tabs.get(tabs.length - 1).id == tab.id;
+
+    const toClosedTab = {
+      label: tab.label,
+      id: tab.id,
+      isActivated: tab.isActivated,
+      isFirst: isFirst,
+      isLast: isLast,
+      closeAction: action
+    };
+
+    tab.onCloseTab.emit(toClosedTab)
+    this.isOpen = false;
+  }
+  
+  private uuid(): string {
+    let s: Array<any> = [];
+    const hexDigits = "0123456789abcdef";
+    for (let i = 0; i < 28; i++) {
+      const start = Math.floor(Math.random() * 0x10);
+      s[i] = hexDigits.substring(start, start + 1);
+    }
+    s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
+    const start1 = (s[19] & 0x3) | 0x8;
+    s[19] = hexDigits.substring(start1, start1 + 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = s[23] = "-";
+    s[0] = "a";
+
+    var uuid = s.join("");
+    return uuid;
+  }
+
 }

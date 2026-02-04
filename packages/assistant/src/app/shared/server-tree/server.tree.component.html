@@ -12,7 +12,7 @@
           fill="black" />
       </svg>
     </div>
-    <div ast-menu [display]="isOpen?'block':'none'" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
+    <div ast-menu [(isOpen)]="isOpen" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
         class="more-btn-dropdown-content codigma-right-menu">
       <div data-layer="Add Server" class="AddServer codigma-menu-every-item" (click)="addServerDlg()"><span>Add
           Server</span></div>

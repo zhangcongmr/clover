@@ -29,7 +29,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly nodeClick = output();
   readonly menuItemAction = output<any>();
 
-  menuId = signal('')
   showShareButton = false;
 
   dataBackUp: Array<any> = [];
@@ -39,19 +38,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   constructor() {
     let me = this;
     afterNextRender(() => {
-      // 监听文档点击事件以关闭菜单（如果点击不在菜单上）  
-      document.addEventListener('click', function (e: any) {
-        if (me.menuId() != '') {
-          if (!e.target.matches('#' + me.menuId() + " *")) {
-            me.closeMenu();
-          }
-        }
-      });
-      // 浏览器窗口之外点击鼠标，浏览器内部右键菜单响应关闭事件  
-      window.addEventListener('blur', function (e) {
-        e.preventDefault()
-        me.closeMenu();
-      });
       document.addEventListener('keydown', (event) => {
         const keyName = event.key;
 
@@ -178,8 +164,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     evt.preventDefault(); // 阻止默认右键菜单
     evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
 
-    this.menuId.set(this.uuid())
-
     this.menuInitiator = { // 模拟一个 DOMRect 对象
       x: evt.clientX,
       y: evt.clientY,
@@ -297,7 +281,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   closeMenu() {
     this.isOpen = false;
-    this.menuId.set('')
   }
 
   outOfRename(childItem: any, evt?: any) {

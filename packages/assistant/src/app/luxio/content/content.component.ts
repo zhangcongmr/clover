@@ -415,25 +415,36 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     let currentIndex = 0;
     let currentActived = evt.isActivated;
     const datas = this.openedList()
-    for (let index = 0; index < datas.length; index++) {
-      if (datas[index].id == evt.id) {
-        currentIndex = index;
-        datas[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
-        datas.splice(index, 1);
-        break;
+
+    if(evt.closeAction && evt.closeAction == 'close-all') {
+      datas.splice(0, datas.length);
+    } else if(evt.closeAction && evt.closeAction == 'close-others') {
+      for (let index = datas.length -1; index >=0 ; index--) {
+        if (datas[index].id != evt.id) {
+          datas.splice(index, 1);
+        }
       }
-    }
-    if(currentActived) { //关闭的tab是激活状态，则需要激活其他tab
-      if (evt.isFirst) {
-        if (datas.length >= 1) {
-          datas[0]["isActive"] = true;
+    } else {
+      for (let index = 0; index < datas.length; index++) {
+        if (datas[index].id == evt.id) {
+          currentIndex = index;
+          datas[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
+          datas.splice(index, 1);
+          break;
         }
-      } else if (evt.isLast) {
-        if (datas.length >= 1) {
-          datas[datas.length - 1]["isActive"] = true;
+      }
+      if(currentActived) { //关闭的tab是激活状态，则需要激活其他tab
+        if (evt.isFirst) {
+          if (datas.length >= 1) {
+            datas[0]["isActive"] = true;
+          }
+        } else if (evt.isLast) {
+          if (datas.length >= 1) {
+            datas[datas.length - 1]["isActive"] = true;
+          }
+        } else {
+          datas[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
         }
-      } else {
-        datas[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
       }
     }
 
