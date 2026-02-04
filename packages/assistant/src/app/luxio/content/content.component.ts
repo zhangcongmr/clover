@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, model, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnDestroy, OnInit, SimpleChanges, afterNextRender, inject, model, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -15,6 +15,7 @@ import { ApiInfoModel, AstTreeNode, TreeNodeType } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
+import { AutoSaver } from '../../auto-saver';
 
 @Component({
   selector: 'div[ast-content]',
@@ -23,7 +24,7 @@ import { MyConfigService } from '../../my-config.service';
   standalone: true,
   imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent]
 })
-export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit {
+export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   readonly sideOpen = model<boolean>(true);
   readonly addProjectComponent = viewChild(AddProjectComponent);
   readonly currentDisplayViewId = model<number>(1);
@@ -43,11 +44,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchKeyword = ''
   searchResults = ''
 
+  private savers: AutoSaver[] = [];
+ 
   constructor() {
     super();
-    // afterNextRender(() => {
-    //     this.initData();
-    // });
+    afterNextRender(() => {
+      // this.initData();
+    });
   }
 
   ngOnInit() {
@@ -60,10 +63,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
       this.dataList.set(datas);
       this.currentSelect = this.findActiveNode(datas);
+      // 启动自动保存
+      this.startAutoSave();
     } else if(typeof doc === 'object') {
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(doc), JSON.stringify(doc), this.myConfigService.getFileName());
       this.dataList.set(datas);
       this.currentSelect = this.findActiveNode(datas);
+      // 启动自动保存
+      this.startAutoSave();
     } else if(typeof doc === 'function') {
       const result = doc();
       if(this.isPromiseLike(result)) {
@@ -78,6 +85,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             this.openedList.set(res.openedList || []);
             this.currentSelect = this.findActiveNode(res.dataList || []);
           }
+          // 启动自动保存
+          this.startAutoSave();
         });
       } else {
         if(typeof result === 'string' && result.length > 0) {
@@ -90,11 +99,37 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           this.openedList.set(result.openedList || []);
           this.currentSelect = this.findActiveNode(result.dataList || []);
         }
+        // 启动自动保存
+        this.startAutoSave();
       }
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+  }
+  // 确保组件销毁时清理定时器
+  ngOnDestroy(): void {
+    // 一次性停止所有自动保存
+    this.savers.forEach(saver => saver.stop());
+    this.savers = [];
+  }
+
+  private startAutoSave() {
+    const dataSaver = new AutoSaver(
+      '/dir/file.txt',
+      () => JSON.stringify(this.dataList()),
+      5000
+    );
+    dataSaver.start();
+    this.savers.push(dataSaver);
+
+    const openListSaver = new AutoSaver(
+      '/dir/openedList.txt',
+      () => JSON.stringify(this.openedList()),
+      5000
+    );
+    openListSaver.start();
+    this.savers.push(openListSaver);
   }
 
   isPromiseLike(obj: any): boolean {
@@ -189,10 +224,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     this.reset(this.dataList())
     this.openTab(evt);
-    this.storeApi()
-    this.storeOpenedList()
   }
-
 
   public openTab(targetTab: any) {
     let oldTab = false;

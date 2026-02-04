@@ -1041,3 +1041,54 @@ export enum MicroserviceDataStatus {
 }
 
 
+// 每个文件路径对应一个任务队列和状态
+const queues = new Map<string, Array<() => Promise<void>>>();
+const isWriting = new Map<string, boolean>();
+
+/**
+ * 安全写入 OPFS 文件，自动排队，避免 "Other writer have not been closed"
+ * @param path 文件路径，如 '/dir/file.txt'
+ * @param data 要写入的字符串（或 ArrayBuffer，取决于 opfs-tools 支持）
+ */
+export async function queuedWrite(path: string, data: string): Promise<void> {
+  if (!queues.has(path)) {
+    queues.set(path, []);
+    isWriting.set(path, false);
+  }
+
+  const queue = queues.get(path)!;
+
+  return new Promise((resolve, reject) => {
+    queue.push(async () => {
+      try {
+        await write(path, data); // 👈 调用原始 opfs-tools.write
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    processQueue(path);
+  });
+}
+
+async function processQueue(path: string) {
+  if (isWriting.get(path) || queues.get(path)!.length === 0) return;
+
+  isWriting.set(path, true);
+
+  const queue = queues.get(path)!;
+  while (queue.length > 0) {
+    const task = queue.shift()!;
+    try {
+      await task();
+    } catch (err) {
+      console.error(`[OPFS Queue] Write failed for ${path}:`, err);
+      // 继续处理下一个，不中断队列
+    }
+  }
+
+  // 清理空队列（可选，防内存泄漏）
+  queues.delete(path);
+  isWriting.delete(path);
+}
