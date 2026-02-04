@@ -42,7 +42,13 @@
     gap: 11px;
     justify-content: flex-start
 }
-
+.codigma-right-app-header {
+  align-items: flex-end;
+  display: inline-flex;
+  gap: 10px;
+  width: 150px;
+  justify-content: flex-end;
+}
 #flat-form {
     max-width: 100%;
     margin-left: 10px;

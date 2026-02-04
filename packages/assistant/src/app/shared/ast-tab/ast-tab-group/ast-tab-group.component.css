@@ -12,6 +12,7 @@ div[data-layer="tab-header"] {
 }
 
 ul[data-layer="tablist"] {
+    position: relative;
     align-self: stretch;
     display: inline-flex;
     height: 2rem;
@@ -140,4 +141,13 @@ li[data-layer="tab"]:hover .tab-close {
     background: white;
     /* border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid; */
     flex: 1 1 0;
+}
+.codigma-right-app-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  width: 150px;
+  border-left: 1px solid var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9);
+  border-bottom: 1px solid var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9);
+  justify-content: flex-end;
 }

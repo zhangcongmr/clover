@@ -37,7 +37,7 @@
 }
 
 .codigma-right-app-header {
-  align-items: flex-end;
+  align-items: center;
   display: inline-flex;
   gap: 10px;
   width: 150px;

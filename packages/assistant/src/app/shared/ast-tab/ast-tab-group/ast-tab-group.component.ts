@@ -23,6 +23,8 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
   readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
   readonly fobiddenContextMenu = input(false)
+  readonly moreButtons = input<Array<{ label: string; action: string }>>([]); //右上角更多操作按钮
+
   ulStyle: string = "height: 2rem;"
 
   tabMap: Map<string, boolean> = new Map();
@@ -219,10 +221,10 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     tab_presentation.style.display = "none";
   }
 
-  topScroll = 0;
-  leftScroll = 0;
-  scrollBarTop = 0;
-  scrollBarLeft = 0;
+  topScroll = 0; // Element.scrollTo()中传入的滚动参数， 滚动对象为元素ul
+  leftScroll = 0; // Element.scrollTo()中传入的滚动参数， 滚动对象为元素ul
+  scrollBarTop = 0; //滚动条的位置top
+  scrollBarLeft = 0; //滚动条的位置left
   mode = "horizontal";
   scrollToRightEnable = true;
   scrollToLeftEnable = false;
@@ -355,22 +357,8 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     tab.onCloseTab.emit(toClosedTab)
     this.isOpen = false;
   }
-  
-  private uuid(): string {
-    let s: Array<any> = [];
-    const hexDigits = "0123456789abcdef";
-    for (let i = 0; i < 28; i++) {
-      const start = Math.floor(Math.random() * 0x10);
-      s[i] = hexDigits.substring(start, start + 1);
-    }
-    s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
-    const start1 = (s[19] & 0x3) | 0x8;
-    s[19] = hexDigits.substring(start1, start1 + 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
-    s[8] = s[13] = s[18] = s[23] = "-";
-    s[0] = "a";
 
-    var uuid = s.join("");
-    return uuid;
+  onMoreButtonClick(action: string) {
   }
 
 }

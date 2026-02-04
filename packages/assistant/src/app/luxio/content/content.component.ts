@@ -44,6 +44,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchKeyword = ''
   searchResults = ''
 
+  moreButtons = [
+    { label: 'more', action: 'more' },
+  ];
+
   private savers: AutoSaver[] = [];
  
   constructor() {
