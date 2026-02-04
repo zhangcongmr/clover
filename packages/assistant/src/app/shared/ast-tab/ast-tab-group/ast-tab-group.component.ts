@@ -140,7 +140,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     }
   }
 
-  selectTab(e: any, targetTab: any) {
+  clickTab(evt: any, targetTab: any) {
+    this.scrollByTab(evt, targetTab);
+
     if (targetTab.isActivated) {
       //If the tab is already actived ,then return;
       return;
@@ -161,6 +163,43 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       }
       tab.activeClass = this.computeTabClass(tab, this.tabType());
     })
+  }
+
+  private scrollByTab(evt: any, targetTab: any) {
+    const ulElement = evt.currentTarget.parentElement;
+    const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
+
+    const childs = ulElement.children;
+    let totalLiWidth = 0;
+    for (let index = 0; index < childs.length; index++) {
+      const element = childs[index];
+      if (element.localName == 'li') {
+        let width = window.getComputedStyle(element).width.replace("px", "");
+        totalLiWidth = totalLiWidth + Number(width);
+      }
+    }
+    const tabs: any = this.topLevelTabs;
+    let isFirst = tabs.get(0).id == targetTab.id;
+    let isLast = tabs.get(tabs.length - 1).id == targetTab.id;
+    if (isFirst) {
+      ulElement.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+      this.scrollBarLeft = 0;
+      this.scrollToLeftEnable = false;
+      this.scrollToRightEnable = true;
+    } else if (isLast) {
+      ulElement.scrollTo({
+        top: 0,
+        left: totalLiWidth,
+        behavior: 'instant'
+      });
+      this.scrollBarLeft = Number(totalUlWidth) - this.computedScrollBarLengthNum;
+      this.scrollToLeftEnable = true;
+      this.scrollToRightEnable = false;
+    }
   }
 
   computeTabClass(tab: AstTabComponent, tabType: any) {
@@ -221,13 +260,13 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     tab_presentation.style.display = "none";
   }
 
-  topScroll = 0; // Element.scrollTo()中传入的滚动参数， 滚动对象为元素ul
-  leftScroll = 0; // Element.scrollTo()中传入的滚动参数， 滚动对象为元素ul
+  topScroll = 0; // Element.scrollTo()  指定的坐标位置的垂直坐标，是绝对位置， 滚动对象为元素ul
+  leftScroll = 0; // Element.scrollTo() 指定的坐标位置的水平坐标，是绝对位置， 滚动对象为元素ul
   scrollBarTop = 0; //滚动条的位置top
   scrollBarLeft = 0; //滚动条的位置left
   mode = "horizontal";
-  scrollToRightEnable = true;
-  scrollToLeftEnable = false;
+  scrollToRightEnable = true; //表示滚动条是否还可以向右移动 
+  scrollToLeftEnable = false; //表示滚动条是否还可以向左移动 
   onTabWheel(evt: any) {
     // 阻止默认滚动行为（不推荐，除非你有特殊需求）  
     evt.preventDefault();

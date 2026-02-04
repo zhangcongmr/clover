@@ -3,7 +3,7 @@
   @if (topLevelTabs) {
     <ul data-layer="tablist" class="TabsInst" (wheel)="onTabWheel($event)" [style]="ulStyle">
       @for (tab of topLevelTabs; track tab; let tabIndex = $index) {
-      <li data-layer="tab" data-tab_type="tab_header" (click)="selectTab($event, tab)" (contextmenu)="showContextMenu($event, tab)" [class]="tab.activeClass"
+      <li data-layer="tab" data-tab_type="tab_header" (click)="clickTab($event, tab)" (contextmenu)="showContextMenu($event, tab)" [class]="tab.activeClass"
         [style.min-width]="tab.minWidth">
         <div data-layer="padding_left_space" class="padding_left_space"></div>
         <div class="codigma-project">{{tab['label']()}}</div>
