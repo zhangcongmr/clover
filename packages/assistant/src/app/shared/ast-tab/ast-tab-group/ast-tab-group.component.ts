@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, Component, ContentChildren, OnChanges, OnInit, QueryList, SimpleChanges, input, output, signal } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ContentChildren, ElementRef, OnChanges, OnInit, QueryList, SimpleChanges, input, model, output, signal, viewChild } from '@angular/core';
 import { AstTabComponent } from '../ast-tab.component';
 import { Subscription, merge } from 'rxjs';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
@@ -12,18 +12,22 @@ import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
 })
 export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit {
   @ContentChildren(AstTabComponent) topLevelTabs!: QueryList<AstTabComponent>;
+  tabListInst = viewChild<ElementRef<HTMLButtonElement>>('tabListInst');
+
   readonly showAddTab = input<boolean>(false);
   readonly closable = input(true);
-  readonly tabType = input<{ size?: 'large' | 'normal' | 'small';
-                             height?: string;
-                             type?: 'bilateral' | 'bottom' | 'borderless';
-                             backgroundColor?: string;
-                           }>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
+  readonly tabType = input<{
+    size?: 'large' | 'normal' | 'small';
+    height?: string;
+    type?: 'bilateral' | 'bottom' | 'borderless';
+    backgroundColor?: string;
+  }>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
 
+  readonly tabGroupResizeObservable = input(false)
   readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
   readonly fobiddenContextMenu = input(false)
-  readonly moreButtons = input<Array<{ label: string; action: string }>>([]); //右上角更多操作按钮
+  readonly moreButtons = model<Array<{ label: string; action: string }>>([]); //右上角更多操作按钮
 
   ulStyle: string = "height: 2rem;"
 
@@ -57,14 +61,45 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ngOnInit() {
   }
 
+  showButtonAdded = false;
   ngAfterViewInit(): void {
-    // document.addEventListener('keydown', (event) => {
-    //   const keyName = event.key;
+    if(!this.tabGroupResizeObservable()) {
+      return;
+    }
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        // 在这里处理宽度变化的逻辑
+        const ulElement = entry.target;
+        const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
+        let totalLiWidth = this.getTotalLiWidth(ulElement);
+        if (!this.showButtonAdded) {
+          if (totalLiWidth > Number(totalUlWidth)) {
+            const downButtonIcon = {
+              label: 'show all opened',
+              action: 'down'
+            }
+            this.moreButtons.update(value => {
+              value.unshift(downButtonIcon);
+              return value;
+            })
+            this.showButtonAdded = true;
+          }
+        } else {
+          if (totalLiWidth < Number(totalUlWidth)) {
+            this.moreButtons.update(value => {
+              value.splice(0, 1);
+              return value;
+            })
+            this.showButtonAdded = false;
+          }
+        }
+      }
+    });
 
-    //   if (keyName === 'Control') {
-    //     return;
-    //   }
-    // }, false);
+    const tabList = this.tabListInst()
+    if (tabList) {
+      resizeObserver.observe(tabList.nativeElement);
+    }
   }
 
   ngAfterContentInit() {
@@ -84,7 +119,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.listenToTabEvents();
   }
 
-  
+
   private tabEventsSubscription: Subscription = Subscription.EMPTY;
 
   // 为每个 tab 绑定 isActivatedChange 事件
@@ -168,16 +203,8 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   private scrollByTab(evt: any, targetTab: any) {
     const ulElement = evt.currentTarget.parentElement;
     const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
+    let totalLiWidth = this.getTotalLiWidth(ulElement);
 
-    const childs = ulElement.children;
-    let totalLiWidth = 0;
-    for (let index = 0; index < childs.length; index++) {
-      const element = childs[index];
-      if (element.localName == 'li') {
-        let width = window.getComputedStyle(element).width.replace("px", "");
-        totalLiWidth = totalLiWidth + Number(width);
-      }
-    }
     const tabs: any = this.topLevelTabs;
     let isFirst = tabs.get(0).id == targetTab.id;
     let isLast = tabs.get(tabs.length - 1).id == targetTab.id;
@@ -203,7 +230,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   computeTabClass(tab: AstTabComponent, tabType: any) {
-    if(tabType == null || tabType['type'] == null) {
+    if (tabType == null || tabType['type'] == null) {
       return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';
     }
     if (tabType['type'] == 'bilateral') {
@@ -232,18 +259,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   whenMouseEnterTabContainer(evt: any) {
     const ulElement = evt.currentTarget.children[0];
     const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
+    let totalLiWidth = this.getTotalLiWidth(ulElement);
 
     const tab_presentation = evt.currentTarget.lastChild;
-    const childs = ulElement.children;
-
-    let totalLiWidth = 0;
-    for (let index = 0; index < childs.length; index++) {
-      const element = childs[index];
-      if (element.localName == 'li') {
-        let width = window.getComputedStyle(element).width.replace("px", "");
-        totalLiWidth = totalLiWidth + Number(width)
-      }
-    }
 
     if (totalLiWidth > Number(totalUlWidth)) {
       tab_presentation.style.display = "block";
@@ -275,15 +293,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     // event.deltaX 表示水平滚动的距离  
     // 正值表示向右滚动，负值表示向左滚动  
 
-
-    const totalUlWidth = window.getComputedStyle(evt.currentTarget).width.replace("px", "");
-    let totalLiWidth = 0;
-    const childs = evt.currentTarget.children;
-    for (let index = 0; index < childs.length; index++) {
-      const element = childs[index];
-      let width = window.getComputedStyle(element).width.replace("px", "");
-      totalLiWidth = totalLiWidth + Number(width)
-    }
+    const ulElement = evt.currentTarget
+    const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
+    let totalLiWidth = this.getTotalLiWidth(ulElement);
 
     if (totalLiWidth > Number(totalUlWidth)) {
       if (evt.deltaY > 0) {
@@ -347,11 +359,24 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     tab.dotOrClose = true;
   }
 
+  private getTotalLiWidth(ulElement: any) {
+    const childs = ulElement.children;
+    let totalLiWidth = 0;
+    for (let index = 0; index < childs.length; index++) {
+      const element = childs[index];
+      if (element.localName == 'li') {
+        let width = window.getComputedStyle(element).width.replace("px", "");
+        totalLiWidth = totalLiWidth + Number(width);
+      }
+    }
+    return totalLiWidth;
+  }
+
   currentContextMenuEvt: any;
   menuInitiator: DOMRect | undefined;
   isOpen = false;
   showContextMenu(evt: any, tab: AstTabComponent) {
-    if(this.fobiddenContextMenu()) {
+    if (this.fobiddenContextMenu()) {
       return;
     }
     evt.preventDefault(); // 阻止默认右键菜单

@@ -73,8 +73,8 @@
 
   <div [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'" style="display: flex;">
     @if (openedList().length>0) {
-      <div ast-tab-group [showAddTab]="true" (addNewTab)="onAddNewTab($event)"  [tabType]="{'type':'bilateral'}"
-      [moreButtons]="moreButtons">
+      <div ast-tab-group [showAddTab]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)"  [tabType]="{'type':'bilateral'}"
+      [(moreButtons)]="moreButtons">
         @for (openedTab of openedList(); track openedTab.id) {
         <div ast-tab [id]="openedTab.id" [label]="openedTab.tabLabel" [saved]="openedTab['saved']"
           [isActivated]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
