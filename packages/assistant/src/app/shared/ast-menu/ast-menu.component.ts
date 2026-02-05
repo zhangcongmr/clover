@@ -19,7 +19,7 @@ export class AstMenuComponent implements OnChanges{
   @Output() mouseleavemenu = new EventEmitter<MouseEvent>();
 
   positionStyle: string = '';
-  width: number = 200; // 菜单宽度
+  width: number = 240; // 菜单宽度
   display: string | null = null;
 
   constructor(private elementRef: ElementRef) {

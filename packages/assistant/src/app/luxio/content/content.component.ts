@@ -45,7 +45,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchResults = ''
 
   moreButtons = [
-    { label: 'more', action: 'more' },
+    { label: 'more', action: 'hori-more' },
   ];
 
   private savers: AutoSaver[] = [];

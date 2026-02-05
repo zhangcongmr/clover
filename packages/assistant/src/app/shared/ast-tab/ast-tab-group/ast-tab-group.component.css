@@ -150,4 +150,5 @@ li[data-layer="tab"]:hover .tab-close {
   border-left: 1px solid var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9);
   border-bottom: 1px solid var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9);
   justify-content: flex-end;
+  padding-right: 8px;
 }
