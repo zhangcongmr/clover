@@ -26,7 +26,8 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
   readonly onClickTab = output<any>();
 
   dotOrClose?:boolean;//When the tab is not saved, true: dot, false: close button
-
+  
+  isOld = false;//目前专门用来判断是否tabType被已经处理过， 从而避免重复触发信号计算
   isActivated = model(false);
   tabType = model<AstTabType>({});
   activeClass: Signal<string> = computed(() => this.computeTabClass(this.isActivated(), this.tabType()));
@@ -49,7 +50,7 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
     // AstTabComponent.astTabLoadedSubject.next(changes["label"]["currentValue"])
     if(changes["isActivated"]) {
       if(changes["isActivated"].currentValue != changes["isActivated"].previousValue) {
-        this.ariaHidden = !this.isActivated;
+        this.ariaHidden = !this.isActivated();
         // this.isActivatedChange.emit(this.isActivated);
       }
     }

@@ -26,12 +26,26 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ulStyle: string = "height: 2rem;"
 
   tabMap: Map<string, boolean> = new Map();
+  
+  previousTabCount = 0;
 
   constructor() {
     effect(() => {
       this.topLevelTabs().forEach(tab => {
-        tab.tabType.set(this.tabType())
+        if (!tab.isOld) {
+          tab.tabType.set(this.tabType())
+          tab.isOld = true;
+        }
       });
+      if(this.tabGroupResizeObservable() && this.previousTabCount > 0) {
+        if(this.previousTabCount < this.topLevelTabs().length) {
+          console.log("tab add")
+          this.previousTabCount = this.topLevelTabs().length;
+        } else if(this.previousTabCount > this.topLevelTabs().length) {
+          console.log("tab decrease")
+          this.previousTabCount = this.topLevelTabs().length;
+        }
+      }
     });
   }
 
@@ -102,6 +116,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   ngAfterContentInit() {
+    this.previousTabCount = this.topLevelTabs().length;
     // 初始设置
     this.initTabActiveStatus();
   }
@@ -130,7 +145,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       const toClosedTab = {
         label: tab.label,
         id: tab.id,
-        isActivated: tab.isActivated,
+        isActivated: tab.isActivated(),
         isFirst: isFirst,
         isLast: isLast
       };
