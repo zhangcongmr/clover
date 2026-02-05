@@ -12,10 +12,8 @@ div[data-layer="tab-header"] {
 }
 
 ul[data-layer="tablist"] {
-    position: relative;
     align-self: stretch;
     display: inline-flex;
-    height: 2rem;
     justify-content: flex-start;
     flex: 1;
     padding-left: 0;

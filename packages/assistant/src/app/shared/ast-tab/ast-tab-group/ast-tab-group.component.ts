@@ -1,6 +1,5 @@
-import { AfterContentInit, AfterViewInit, Component, ContentChildren, ElementRef, OnChanges, OnInit, QueryList, SimpleChanges, input, model, output, signal, viewChild } from '@angular/core';
-import { AstTabComponent } from '../ast-tab.component';
-import { Subscription, merge } from 'rxjs';
+import { AfterContentInit, AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, viewChild } from '@angular/core';
+import { AstTabComponent, AstTabType } from '../ast-tab.component';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
 
 @Component({
@@ -11,17 +10,12 @@ import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
   imports: [AstMenuComponent]
 })
 export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit {
-  @ContentChildren(AstTabComponent) topLevelTabs!: QueryList<AstTabComponent>;
+  topLevelTabs = contentChildren(AstTabComponent)
   tabListInst = viewChild<ElementRef<HTMLButtonElement>>('tabListInst');
 
   readonly showAddTab = input<boolean>(false);
   readonly closable = input(true);
-  readonly tabType = input<{
-    size?: 'large' | 'normal' | 'small';
-    height?: string;
-    type?: 'bilateral' | 'bottom' | 'borderless';
-    backgroundColor?: string;
-  }>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
+  readonly tabType = input<AstTabType>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
 
   readonly tabGroupResizeObservable = input(false)
@@ -32,9 +26,14 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ulStyle: string = "height: 2rem;"
 
   tabMap: Map<string, boolean> = new Map();
-  private _subscription = new Subscription();
 
-  constructor() { }
+  constructor() {
+    effect(() => {
+      this.topLevelTabs().forEach(tab => {
+        tab.tabType.set(this.tabType())
+      });
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes["tabType"]) {
@@ -103,65 +102,30 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   ngAfterContentInit() {
-    //topLevelTabs.changes 不会在初始化时触发，只在内容后续发生变化时发出事件。因此首次处理应在这ngAfterContentInit 中进行
     // 初始设置
-    this.updateTabsClass(true);
+    this.initTabActiveStatus();
+  }
 
-    // 监听投影内容变化（如 tab 被添加/移除）
-    this._subscription.add(
-      this.topLevelTabs.changes.subscribe(() => {
-        this.listenToTabEvents(); // 重新绑定事件监听
-        this.updateTabsClass();
+  private initTabActiveStatus() {
+    // 首次调用时，确保至少有一个 tab 被激活
+    const hasActivatedTab = this.topLevelTabs().some(tab => tab.isActivated());
+    if (!hasActivatedTab && this.topLevelTabs().length > 0) {
+      this.topLevelTabs().forEach((tab, index) => {
+        if(index == 0) {
+          tab.isActivated.set(true)
+        } else {
+          tab.isActivated.set(false)
+        }
       })
-    );
-
-    // 首次绑定所有 tab 的事件
-    this.listenToTabEvents();
-  }
-
-
-  private tabEventsSubscription: Subscription = Subscription.EMPTY;
-
-  // 为每个 tab 绑定 isActivatedChange 事件
-  private listenToTabEvents() {
-    // 先清空旧的监听
-    this._subscription.remove(this.tabEventsSubscription);
-    this.tabEventsSubscription?.unsubscribe();
-
-    // 创建新的事件合并流
-    const tabEvents$ = merge(
-      ...this.topLevelTabs.map(tab => tab.isActivatedChange)
-    );
-
-    const sub = tabEvents$.subscribe(() => {
-      this.updateTabsClass();
-    });
-
-    this.tabEventsSubscription = sub;
-    this._subscription.add(sub);
-  }
-
-
-  private updateTabsClass(firstTime?: boolean) {
-    if (firstTime) {
-      // 首次调用时，确保至少有一个 tab 被激活
-      const hasActivatedTab = this.topLevelTabs.some(tab => tab.isActivated);
-      if (!hasActivatedTab && this.topLevelTabs.length > 0) {
-        this.topLevelTabs.first.isActivated = true;
-      }
     }
-
-    this.topLevelTabs.forEach(tab => {
-      tab.activeClass = this.computeTabClass(tab, this.tabType());
-    });
   }
 
   iconCloseClick(evt: any, tab: AstTabComponent) {
     evt.stopPropagation(); // 阻止事件冒泡
-    if (this.topLevelTabs.length > 0) {
-      const tabs: any = this.topLevelTabs;
-      let isFirst = tabs.get(0).id == tab.id;
-      let isLast = tabs.get(tabs.length - 1).id == tab.id;
+    if (this.topLevelTabs().length > 0) {
+      const tabs: any = this.topLevelTabs();
+      let isFirst = tabs[0].id == tab.id;
+      let isLast = tabs[tabs.length - 1].id == tab.id;
 
       const toClosedTab = {
         label: tab.label,
@@ -175,10 +139,10 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     }
   }
 
-  clickTab(evt: any, targetTab: any) {
+  clickTab(evt: any, targetTab: AstTabComponent) {
     this.scrollByTab(evt, targetTab);
 
-    if (targetTab.isActivated) {
+    if (targetTab.isActivated()) {
       //If the tab is already actived ,then return;
       return;
     }
@@ -189,25 +153,24 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       isActivated: true
     };
 
-    this.topLevelTabs.forEach(tab => {
+    this.topLevelTabs().forEach(tab => {
       if (tab.id == targetTab.id) {
-        tab.isActivated = true;
+        tab.isActivated.set(true);
         tab.onClickTab.emit(toActivateTab);
       } else {
-        tab.isActivated = false;
+        tab.isActivated.set(false);
       }
-      tab.activeClass = this.computeTabClass(tab, this.tabType());
     })
   }
 
-  private scrollByTab(evt: any, targetTab: any) {
+  private scrollByTab(evt: any, targetTab: AstTabComponent) {
     const ulElement = evt.currentTarget.parentElement;
     const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
     let totalLiWidth = this.getTotalLiWidth(ulElement);
 
-    const tabs: any = this.topLevelTabs;
-    let isFirst = tabs.get(0).id == targetTab.id;
-    let isLast = tabs.get(tabs.length - 1).id == targetTab.id;
+    const tabs: any = this.topLevelTabs();
+    let isFirst = tabs[0].id == targetTab.id;
+    let isLast = tabs[tabs.length - 1].id == targetTab.id;
     if (isFirst) {
       ulElement.scrollTo({
         top: 0,
@@ -229,22 +192,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     }
   }
 
-  computeTabClass(tab: AstTabComponent, tabType: any) {
-    if (tabType == null || tabType['type'] == null) {
-      return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';
-    }
-    if (tabType['type'] == 'bilateral') {
-      return tab['isActivated'] ? 'bilateral-border-tab' : 'bottom-border-tab';
-    } else if (tabType['type'] == 'bottom') {
-      return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';
-    } else {
-      return tab['isActivated'] ? 'bottom-border-tab' : 'borderless-tab';
-    }
-  }
-
   addTab() {
-    const size = this.topLevelTabs.length;
-    this.topLevelTabs.forEach(tab => tab.isActivated = false);
+    const size = this.topLevelTabs().length;
+    this.topLevelTabs().forEach(tab => tab.isActivated.set(false));
     const newTabHeader = {
       label: 'Untitled',
       index: size + 1,
@@ -405,9 +355,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   closeTabs(action: string) {
     const evt = this.currentContextMenuEvt;
     const tab = evt.tab;
-    const tabs: any = this.topLevelTabs;
-    let isFirst = tabs.get(0).id == tab.id;
-    let isLast = tabs.get(tabs.length - 1).id == tab.id;
+    const tabs: any = this.topLevelTabs();
+    let isFirst = tabs[0].id == tab.id;
+    let isLast = tabs[tabs.length - 1].id == tab.id;
 
     const toClosedTab = {
       label: tab.label,

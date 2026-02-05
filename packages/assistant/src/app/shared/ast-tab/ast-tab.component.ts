@@ -1,30 +1,35 @@
-import { AfterViewInit, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, input, output } from '@angular/core';
+import { AfterViewInit, Component, HostBinding, Input, OnChanges, OnInit, Signal, SimpleChanges, computed, input, model, output } from '@angular/core';
+
+export interface AstTabType {
+    size?: 'large' | 'normal' | 'small';
+    height?: string;
+    type?: 'bilateral' | 'bottom' | 'borderless';
+    backgroundColor?: string;
+}
 
 @Component({
     selector: '[ast-tab]',
     templateUrl: './ast-tab.component.html',
     styleUrls: ['./ast-tab.component.css'],
     host: {
-        "[style.display]": "isActivated?'flex':'none'"
+        "[style.display]": "isActivated()?'flex':'none'"
     },
     standalone: true
 })
 export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
   readonly label = input("");
   @Input() id = "";
-  @Input() isActivated = false;
   @Input() minWidth = ''
   @Input() closable?: boolean;
   readonly saved = input<boolean | undefined>();
   readonly onCloseTab = output<any>();
   readonly onClickTab = output<any>();
-  // 输出事件，通知外部 isActivated 发生了变化
-  @Output() isActivatedChange = new EventEmitter<boolean>();
-
 
   dotOrClose?:boolean;//When the tab is not saved, true: dot, false: close button
 
-  activeClass: string = "";
+  isActivated = model(false);
+  tabType = model<AstTabType>({});
+  activeClass: Signal<string> = computed(() => this.computeTabClass(this.isActivated(), this.tabType()));
 
   previousEle: any;
 
@@ -45,7 +50,7 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
     if(changes["isActivated"]) {
       if(changes["isActivated"].currentValue != changes["isActivated"].previousValue) {
         this.ariaHidden = !this.isActivated;
-        this.isActivatedChange.emit(this.isActivated);
+        // this.isActivatedChange.emit(this.isActivated);
       }
     }
   }
@@ -57,6 +62,18 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
     }
   }
 
+  computeTabClass(isActivated: boolean, tabType: AstTabType) {
+    if (tabType == null || tabType['type'] == null) {
+      return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+    }
+    if (tabType['type'] == 'bilateral') {
+      return isActivated ? 'bilateral-border-tab' : 'bottom-border-tab';
+    } else if (tabType['type'] == 'bottom') {
+      return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+    } else {
+      return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+    }
+  }
 
 
   refreshData() {
