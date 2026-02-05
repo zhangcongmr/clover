@@ -190,21 +190,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   FolderaddBtn(evt: any) {
-    const folder: AstTreeNode = {
-      id: this.uuid(),
-      isActive: false,
-      isExpanded:false,
-      label: "New Folder",
-      deepLevel: 0,
-      nodeType: TreeNodeType.Folder,
-      children: []
-    }
+    const folder: AstTreeNode = this.createNewFolder()
     const newDatas = [
       ...this.dataList(),
       folder
     ]
     this.dataList.set(newDatas);
   }
+
   importBtn(evt: any) {
     this.openAddDlg();
   }
@@ -508,12 +501,24 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     this.storeOpenedList()
   }
 
-  createNewFile() {
+  private createNewFolder(): AstTreeNode {
+    return {
+      id: this.uuid(),
+      isActive: false,
+      isExpanded: false,
+      label: "New Folder",
+      deepLevel: 0,
+      nodeType: TreeNodeType.Folder,
+      children: []
+    };
+  }
+
+  createNewFile(): AstTreeNode {
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
       summary: "",
-      label: "Untitle.json",
-      tabLabel: "Untitle.json",
+      label: "Untitle",
+      tabLabel: "Untitle",
       nodeType: TreeNodeType.File,
       children: [],
       auth: {}
@@ -522,7 +527,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     return apiInfo;
   }
 
-  createNewApi() {
+  createNewApi(): AstTreeNode {
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
       serviceName: "",
