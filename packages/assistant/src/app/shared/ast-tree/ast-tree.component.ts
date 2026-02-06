@@ -1,6 +1,5 @@
-import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, QueryList, SimpleChanges, ViewChildren, afterNextRender, inject, input, model, output, signal } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import { AstTreeNode, TreeNodeType } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
@@ -18,7 +17,6 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 })
 export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   data = model<Array<AstTreeNode>>([])
-  @ViewChildren('inputRef') inputRefs!: QueryList<ElementRef<HTMLInputElement>>;
   readonly filterNode = input(false);
   readonly dataType = input<string>(); //内部使用，用于区分传入的data是总的数据，还是分数据
   readonly fobiddenContextMenu = input(false)
@@ -33,7 +31,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   dataBackUp: Array<any> = [];
   searchValue: string = ""
-  private _changesSubscription = Subscription.EMPTY;
 
   constructor() {
     let me = this;
@@ -226,6 +223,19 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       if (current.item && !current.childItem) {
         current.item['rename'] = true;
       }
+
+      setTimeout(() => {
+        // 聚焦并全选文本（可选体验优化
+        const el = this.currentContextMenuEvt.currentTargetEvt;
+        const editable = el.querySelector('[contenteditable="true"]');
+        editable.focus();
+        const range = document.createRange();
+        range.selectNodeContents(editable);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      });
+
     } else if (action == 'Duplicate') {
       if (current.item && current.childItem) {
         const index = current.item.children.findIndex((dataval: any) => dataval.id === current.childItem.id);
@@ -284,38 +294,33 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     this.isOpen = false;
   }
 
-  outOfRename(childItem: any, evt?: any) {
-    if (evt) {
-      if (evt.key === 'Enter') {
-        childItem['rename'] = false
-        childItem['tabLabel'] = childItem['label']
-        childItem['saved'] = true;
+  // 实时监听内容变化（可选）
+  onContentChange(event: Event) {
+    const el = this.currentContextMenuEvt.currentTargetEvt;
+    const editable = el.querySelector('[contenteditable="true"]');
+    const newContent = editable.innerText;
+    console.log('正在编辑:', newContent);
+    // 注意：此时不要直接赋值给 item.label，否则会触发变更检测导致光标跳动
+  }
 
-        this.menuItemAction.emit("Rename")
+  // 编辑结束（blur 时保存）
+  outOfRename(item: any) {
+    if (item.rename) {
+      const el = this.currentContextMenuEvt.currentTargetEvt;
+      const editable = el.querySelector('[contenteditable="true"]');
+      const newLabel = editable.innerText.trim();
+      // 防止空值或仅空白
+      if (newLabel) {
+        item.label = newLabel;
+        item.tabLabel = newLabel;
       }
-      return;
+      item['saved'] = true;
+      item.rename = false; // 退出编辑模式
+      this.menuItemAction.emit("Rename")
     }
-    childItem['rename'] = false
-    childItem['tabLabel'] = childItem['label']
-    childItem['saved'] = true;
-
-    this.menuItemAction.emit("Rename")
   }
 
   ngAfterViewInit(): void {
-    //监听内容变更
-    this._changesSubscription = (this.inputRefs || []).changes.subscribe((val: any) => {
-      console.log('内容已变更，当前数量:', this.inputRefs.length);
-      // 在这里执行你的逻辑，例如重新计算、更新状态等
-
-      const found = this.inputRefs.find(el => el.nativeElement.dataset['isfresh'] == "true");
-      if (found) {
-        try {
-          found.nativeElement.focus();
-          found.nativeElement.select();
-        } catch (e) { /* ignore */ }
-      }
-    });
   }
 
   private uuid(): string {
