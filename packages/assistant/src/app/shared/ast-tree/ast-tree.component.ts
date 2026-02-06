@@ -295,19 +295,17 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   // 实时监听内容变化（可选）
-  onContentChange(event: Event) {
-    const el = this.currentContextMenuEvt.currentTargetEvt;
-    const editable = el.querySelector('[contenteditable="true"]');
+  onContentChange(evt: any) {
+    const editable = evt.currentTarget;
     const newContent = editable.innerText;
     console.log('正在编辑:', newContent);
     // 注意：此时不要直接赋值给 item.label，否则会触发变更检测导致光标跳动
   }
 
   // 编辑结束（blur 时保存）
-  outOfRename(item: any) {
+  outOfRename(evt: any, item: any) {
     if (item.rename) {
-      const el = this.currentContextMenuEvt.currentTargetEvt;
-      const editable = el.querySelector('[contenteditable="true"]');
+      const editable = evt.currentTarget;
       const newLabel = editable.innerText.trim();
       // 防止空值或仅空白
       if (newLabel) {
