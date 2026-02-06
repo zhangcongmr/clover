@@ -26,13 +26,9 @@ export class ServerAndServiceInfo {
     server?: any;//  server.value  schemes + ip + port; eg: https://127.0.0.1:8080 、http://127.0.0.1:8080
     serviceRoute?: ServiceRouteInfo;
 }
+export type TreeNodeType = "folder" | "file" | "bookmark" | "api";
+export type TargetTreeNodeType = "exclude-folder" | "any";
 
-export enum TreeNodeType {
-    Folder = "folder",
-    File = "file",
-    Bookmark = "bookmark",
-    Api = "api"
-}
 export interface AstTreeNode {
     id: string;
     label: string;
@@ -69,6 +65,7 @@ export interface AstTreeNode {
     parameterHasBody?: boolean;
     parameterHasFormDataVer2?: boolean; //区分openapi 2.0
     isActive?: boolean;
+    hideActiveStatus?: boolean;//当激活了其它的节点的类型为folder的节点被激活时，隐藏非folder节点的激活状态
     custom?: boolean;
     customQueryparameters?: Array<any>;
     customHeaderparameters?: Array<any>;

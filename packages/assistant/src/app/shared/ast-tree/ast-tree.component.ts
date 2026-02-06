@@ -1,9 +1,103 @@
 import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AstTreeNode, TreeNodeType } from '../model';
+import { AstTreeNode, TargetTreeNodeType } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
+export enum ResetType {
+  brother,
+  deepIn, 
+  onlyResetFolder
+}
 
+export function reset(data: Array<AstTreeNode>, resetType?: ResetType): void {
+  for (let index = 0; index < data.length; index++) {
+    const dataItem = data[index];
+
+    delete dataItem.hideActiveStatus;
+    if(dataItem.children?.length) {
+      resetHideActiveStatus(dataItem.children);
+    }
+
+    // 根据 resetType 决定是否重置当前节点的 isActive
+    if (resetType === ResetType.onlyResetFolder) {
+      if (dataItem.nodeType === 'folder') {
+        dataItem.isActive = false;
+      }
+    } else {
+      // brother 或 deepIn 或 undefined：都重置当前节点
+      dataItem.isActive = false;
+    }
+
+    // 决定是否递归子节点
+    if (
+      (resetType == null || resetType === ResetType.deepIn) &&
+      dataItem.children?.length
+    ) {
+      reset(dataItem.children, resetType);
+    } else if (
+      resetType === ResetType.onlyResetFolder &&
+      dataItem.children?.length
+    ) {
+      // onlyFolder 也需要递归，以便找到深层的 folder 节点
+      reset(dataItem.children, resetType);
+    }
+    // 注意：ResetType.brother 不递归（当前层级处理完就结束）
+  }
+}
+
+function resetHideActiveStatus(data: Array<AstTreeNode>) {
+  for (let index = 0; index < data.length; index++) {
+    const dataItem = data[index];
+
+    delete dataItem.hideActiveStatus;
+    if(dataItem.children?.length) {
+      resetHideActiveStatus(dataItem.children);
+    }
+  }
+}
+
+export function findNodeById(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      return node;
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeById(node.children, targetId);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return undefined;
+}
+
+export function findActiveNode(nodes: AstTreeNode[], targetNodeType?: TargetTreeNodeType, defaultNode?: AstTreeNode): AstTreeNode | undefined {
+  for (const node of nodes) {
+    if(targetNodeType == null || targetNodeType != 'exclude-folder') {
+      if (node.isActive) {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findActiveNode(node.children, targetNodeType);
+        if (found) {
+          return found;
+        }
+      }
+    } else {
+      if (node.isActive && node.nodeType != 'folder') {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findActiveNode(node.children, targetNodeType);
+        if (found) {
+          return found;
+        }
+      }
+    }
+
+  }
+  return defaultNode  //如果未找到，则返回指定的默认节点
+}
 
 @Component({
   selector: '[ast-tree]',
@@ -11,7 +105,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
   styleUrls: ['./ast-tree.component.css'],
   standalone: true,
   host: {
-    '(contextmenu)': 'showContextMenu($event, null)' // 监听组件根元素的右键菜单事件
+    '(contextmenu)': 'showContextMenu({evt: $event, item: null})' // 监听组件根元素的右键菜单事件
   },
   imports: [FormsModule, AstMenuComponent]
 })
@@ -20,11 +114,10 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly filterNode = input(false);
   readonly dataType = input<string>(); //内部使用，用于区分传入的data是总的数据，还是分数据
   readonly fobiddenContextMenu = input(false)
-  readonly selectedNodeType = model<string>('') //内部使用，标识当前选中的节点类型  root/parent/leaf
-  readonly selectedNodeTypeOutput = output<string>();
-  currentSelectedNodeType = "";
+  selectedNodeType = model<string>('') //内部使用，标识当前选中的节点类型  TreeNodeType  暂时闲置未使用
 
   readonly nodeClick = output();
+  readonly showContextMenuClick = output<any>();
   readonly menuItemAction = output<any>();
 
   showShareButton = false;
@@ -67,6 +160,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
           delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete dataItem.isNewData;//子节点的父节点不维护是否新添加节点这个状态
           delete parentItemCopy.sourceCodeText;
+          delete parentItemCopy.isActive;
+          delete parentItemCopy.hideActiveStatus;
 
           dataItem.children = dataItem.children || [];
           dataItem.children.forEach((child: any) => {
@@ -97,23 +192,29 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     if (item['rename']) {
       return;
     }
-
-    this.currentSelectedNodeType = item['nodeType'];
-    if (this.dataType() == 'subData') {
-      this.selectedNodeTypeOutput.emit(this.currentSelectedNodeType);
-    } else {
-      this.selectedNodeType.set(item['nodeType']);
-    }
-
-    if (item['nodeType'] != TreeNodeType.Bookmark && item['nodeType'] != TreeNodeType.Api) {
-      item.isExpanded = !item.isExpanded;
-      this.reset(this.data()) //false -- 只重置同级节点的选中状态
-
-      item['isActive'] = true;
-      this.nodeClick.emit(item);
+    if(this.dataType() == 'subData') { //如果事件是发生在子树上，则需要递归向上，一直递归到根树上再处理
+      this.nodeClick.emit(item)
       return;
     }
-    this.reset(this.data())
+
+    this.selectedNodeType.set(item['nodeType']);
+    if(item.nodeType == 'folder') {
+      item.isExpanded = !item.isExpanded;
+      const activeNode = findActiveNode(this.data(), 'exclude-folder');
+      reset(this.data(), ResetType.onlyResetFolder)
+      item['isActive'] = true;
+
+      if(activeNode) {
+        activeNode['isActive'] = true;
+        activeNode['hideActiveStatus'] = true;
+      }
+    } else if(item.nodeType == 'file') {
+      item.isExpanded = !item.isExpanded;
+      reset(this.data())
+      item['isActive'] = true;
+    } else {
+      reset(this.data())
+    }
     this.nodeClick.emit(item);
   }
 
@@ -122,24 +223,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     item.isExpanded = !item.isExpanded;
   }
 
-  reset(data: Array<any>, deepIn?: boolean) {
-    for (let index = 0; index < data.length; index++) {
-      const dataItem = data[index];
-      dataItem['isActive'] = false
-      if (deepIn == null || deepIn) { //递归重置子节点
-        if (dataItem.children && dataItem.children.length) {
-          this.reset(dataItem.children)
-        }
-      }
-    }
-  }
-
   recurListClick(evt: any) {
     this.nodeClick.emit(evt);
-  }
-
-  selectedNodeTypeOutputChange(nodeType: string) {
-    this.currentSelectedNodeType = nodeType;
   }
 
   forbiddenUserselectText() {
@@ -155,12 +240,17 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   currentContextMenuEvt: any;
   menuInitiator: DOMRect | undefined;
   isOpen = false;
-  showContextMenu(evt: any, item: any) {
+  showContextMenu(evtObj: any) {
+    const evt = evtObj.evt;
+    const item = evtObj.item;
     if(this.fobiddenContextMenu()) {
       return;
     }
     evt.preventDefault(); // 阻止默认右键菜单
     evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
+    if(this.dataType() == 'subData') {  //如果事件是发生在子树上，则需要递归向上，一直递归到根树上再处理
+      this.showContextMenuClick.emit(evtObj)
+    }
 
     this.menuInitiator = { // 模拟一个 DOMRect 对象
       x: evt.clientX,
@@ -180,18 +270,18 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       clientY: evt.clientY
     };
     if(item) {
-      if (item['nodeType'] == TreeNodeType.Bookmark || item['nodeType'] == TreeNodeType.Api) {
-        this.showShareButton = false;
+      if(item['parentItem']) {
+        this.showShareButton = item['nodeType'] == 'file' ? true : false;
         const dataId = item['parentItem']['id'];
-        const filterData = this.data().filter(dataval => dataval.id == dataId);
-        if (filterData.length > 0) {
+        const filterNode = findNodeById(this.data(), dataId);
+        if (filterNode) {
           // right click on child item
-          this.currentContextMenuEvt['item'] = filterData[0];
+          this.currentContextMenuEvt['item'] = filterNode;
           this.currentContextMenuEvt['childItem'] = item;
         }
       } else {
         // right click on parent item
-        this.showShareButton = true;
+        this.showShareButton = (item.children && item.children.length > 0) ? true : false;
         this.currentContextMenuEvt['item'] = item;
       }
     } else {

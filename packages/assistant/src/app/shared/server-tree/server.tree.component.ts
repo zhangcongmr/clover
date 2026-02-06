@@ -42,14 +42,14 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   async init() {
     const servers = await this.coreService.getServersFromStorage(true);
     servers.map(server => {
-      server['nodeType'] = TreeNodeType.Folder;
+      server['nodeType'] = 'folder';
       server.label = server.text
     });
     this.serverList = servers;
   }
 
   listClick(evt: any) {
-    if (evt['nodeType'] != TreeNodeType.File) {
+    if (evt['nodeType'] != 'file') {
       this.setService(evt);
       this.currentServer = evt;
       this.checkIfShouldAuthorize();
@@ -125,7 +125,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
       val["id"] = val.serviceName;
       val["label"] = val.serviceName;
       val['parentItem'] = parentItemCopy;
-      val['nodeType'] = TreeNodeType.File;
+      val['nodeType'] ='file';
     });
 
     if (serviceList && serviceList.length > 0) {

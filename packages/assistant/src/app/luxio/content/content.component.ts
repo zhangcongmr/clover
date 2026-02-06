@@ -8,10 +8,10 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, findActiveNode, findNodeById, reset } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { ApiInfoModel, AstTreeNode, TreeNodeType } from '../../shared/model';
+import { ApiInfoModel, AstTreeNode } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
@@ -66,13 +66,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const json = JSON.parse(doc);
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
       this.dataList.set(datas);
-      this.currentSelect = this.findActiveNode(datas);
+      this.currentSelect = findActiveNode(datas, datas[0]);
       // 启动自动保存
       this.startAutoSave();
     } else if(typeof doc === 'object') {
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(doc), JSON.stringify(doc), this.myConfigService.getFileName());
       this.dataList.set(datas);
-      this.currentSelect = this.findActiveNode(datas);
+      this.currentSelect = findActiveNode(datas, datas[0]);
       // 启动自动保存
       this.startAutoSave();
     } else if(typeof doc === 'function') {
@@ -83,11 +83,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             const json = JSON.parse(res);
             const datas = this.coreService.parseOpenApiSpec(json);
             this.dataList.set(datas);
-            this.currentSelect = this.findActiveNode(datas);
+            this.currentSelect = findActiveNode(datas, datas[0]);
           } else if(typeof res === 'object') {
             this.dataList.set(res.dataList || []);
             this.openedList.set(res.openedList || []);
-            this.currentSelect = this.findActiveNode(res.dataList || []);
+            this.currentSelect = findActiveNode(res.dataList || [], (res.dataList || [])[0]);
           }
           // 启动自动保存
           this.startAutoSave();
@@ -97,11 +97,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           const json = JSON.parse(result);
           const datas = this.coreService.parseOpenApiSpec(json);
           this.dataList.set(datas);
-          this.currentSelect = this.findActiveNode(datas);
+          this.currentSelect = findActiveNode(datas, datas[0]);
         } else if(typeof result === 'object') {
           this.dataList.set(result.dataList || []);
           this.openedList.set(result.openedList || []);
-          this.currentSelect = this.findActiveNode(result.dataList || []);
+          this.currentSelect = findActiveNode(result.dataList || [], (result.dataList || [])[0]);
         }
         // 启动自动保存
         this.startAutoSave();
@@ -147,20 +147,22 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   FileaddBtn(evt: any) {
     if (this.currentSelect) {
-      if (this.currentSelect.nodeType == TreeNodeType.Folder) {
+      if (this.currentSelect.nodeType == 'folder') {
         this.currentSelect.isExpanded = true
         const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
         delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
         delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
         delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
         delete parentItemCopy.sourceCodeText;
+        delete parentItemCopy.isActive;
+        delete parentItemCopy.hideActiveStatus;
 
         const newApi = this.createNewFile();
         newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
         newApi['rename'] = true;
         newApi['parentItem'] = parentItemCopy;
         this.currentSelect.children.splice(0, 0, newApi);
-      } else if (this.currentSelect.nodeType == TreeNodeType.File) {
+      } else if (this.currentSelect.nodeType == 'file') {
           const newApi = this.createNewApi();
 
           const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
@@ -169,7 +171,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete this.currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
           delete parentItemCopy.sourceCodeText;
-          
+          delete parentItemCopy.isActive;
+          delete parentItemCopy.hideActiveStatus;
+
           newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
           newApi['rename'] = true;
           newApi['parentItem'] = parentItemCopy;
@@ -218,20 +222,20 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   listClick(evt: any) {
     this.currentSelect = evt;
-    if (evt['nodeType'] != TreeNodeType.Bookmark && evt['nodeType'] != TreeNodeType.Api) {
+    if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api') {
       return;
     }
-    this.reset(this.dataList())
+
     this.openTab(evt);
   }
 
   public openTab(targetTab: any) {
     let oldTab = false;
     const openeds = this.openedList()
-    this.reset(openeds);
+    reset(openeds);
 
-    const findNode = this.findNodeById(this.openedList(), targetTab.id);
-    const originNode = this.findNodeById(this.dataList(), targetTab.id);
+    const findNode = findNodeById(this.openedList(), targetTab.id);
+    const originNode = findNodeById(this.dataList(), targetTab.id);
     originNode!['isActive'] = true;
     if (findNode) {
       findNode['isActive'] = true;
@@ -242,48 +246,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       targetTab["isActive"] = true;
       openeds.push(targetTab);
     }
-  }
-
-  reset(data: Array<any>, deepIn?: boolean) {
-    for (let index = 0; index < data.length; index++) {
-      const dataItem = data[index];
-      dataItem['isActive'] = false
-      if (deepIn == null || deepIn) { //递归重置子节点
-        if (dataItem.children && dataItem.children.length) {
-          this.reset(dataItem.children)
-        }
-      }
-    }
-  }
-
-  findNodeById(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
-    for (const node of nodes) {
-      if (node.id === targetId) {
-        return node;
-      }
-      if (node.children && node.children.length > 0) {
-        const found = this.findNodeById(node.children, targetId);
-        if (found) {
-          return found;
-        }
-      }
-    }
-    return undefined;
-  }
-
-  findActiveNode(nodes: AstTreeNode[]): AstTreeNode | undefined {
-    for (const node of nodes) {
-      if (node.isActive) {
-        return node;
-      }
-      if (node.children && node.children.length > 0) {
-        const found = this.findActiveNode(node.children);
-        if (found) {
-          return found;
-        }
-      }
-    }
-    return nodes[0];//默认返回第一个节点
   }
 
   apiSelected(evt: any) {
@@ -341,7 +303,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       label: fileName,
       children: apiData,
       isExpanded: apiData.length > 0,
-      nodeType: TreeNodeType.File,
+      nodeType: 'file',
       servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
       sourceCodeText: sourceCodeText,
       isNewData: true
@@ -483,6 +445,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   onClickTab(evt: any) {
+    reset(this.dataList())
     const datas = this.openedList()
     for (let index = 0; index < datas.length; index++) {
       if (datas[index].id == evt.id) {
@@ -492,6 +455,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       }
     }
     this.storeOpenedList()
+
+    const filterNode = findNodeById(this.dataList(), evt.id)
+    if (filterNode) {
+      filterNode["isActive"] = true
+
+      if(filterNode['parentItem']) {
+
+      }
+    }
   }
 
   onAddNewTab(evt: any) {
@@ -508,7 +480,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       isExpanded: false,
       label: "New Folder",
       deepLevel: 0,
-      nodeType: TreeNodeType.Folder,
+      nodeType: 'folder',
       children: []
     };
   }
@@ -519,7 +491,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       summary: "",
       label: "Untitle",
       tabLabel: "Untitle",
-      nodeType: TreeNodeType.File,
+      nodeType: 'file',
       children: [],
       auth: {}
     }
@@ -540,7 +512,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       tabLabel: "Untitle",
       server: "",
       symbolColor: "green",
-      nodeType: TreeNodeType.Api,
+      nodeType: 'api',
       custom: true,
       rawApiInfo: {},
       customQueryparameters: [

@@ -6,8 +6,8 @@
 }
 @for (item of data(); track item.id; let dataIndex = $index) {
   <div class="child-item" (click)="elementClick(item)"
-    [class.active]="item['isActive']"
-    (contextmenu)="showContextMenu($event, item)" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
+    [class.active]="item['isActive']&&!item['hideActiveStatus']"
+    (contextmenu)="showContextMenu({evt: $event, item: item})" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
     <div [style.width.px]="5 + (item.deepLevel || 0) * 16"></div>
     @if (item.nodeType=='folder' || (item.children!=null&&item.children.length>0)) {
       <button class="btn-item" (click)="expandCollapseClick($event, item)">
@@ -41,8 +41,8 @@
   @for (childItem of item.children; track childItem.id; let childDataIndex = $index) {
     <div class="child-item"
       [style.display]="item.isExpanded?'flex':'none'"
-      (click)="elementClick(childItem);" [class.active]="childItem['isActive']"
-      (contextmenu)="showContextMenu($event, childItem)" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
+      (click)="elementClick(childItem);" [class.active]="childItem['isActive']&&!childItem['hideActiveStatus']"
+      (contextmenu)="showContextMenu({evt: $event, item: childItem})" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
       <div [style.width.px]="5 + (childItem.deepLevel || 0) * 8"></div>
       @if (childItem.children!=null&&childItem.children.length>0) {
         <button class="btn-item" (click)="expandCollapseClick($event, childItem)">
@@ -78,9 +78,10 @@
       </div>
     </div>
     @if ((childItem.children || []).length > 0) {
-      <div ast-tree [data]="childItem.children" [dataType]="'subData'" [style.display]="(item.isExpanded && childItem.isExpanded)?'flex':'none'"
-       (selectedNodeTypeOutput)="selectedNodeTypeOutputChange($event)" [selectedNodeType]="currentSelectedNodeType"
-       (nodeClick)="recurListClick($event)" ></div>
+      <div ast-tree [data]="childItem.children" [dataType]="'subData'" [style.display]="(item.isExpanded && childItem.isExpanded)?'block':'none'"
+      [selectedNodeType]="selectedNodeType()"
+      (nodeClick)="elementClick($event)"
+      (showContextMenuClick)="showContextMenu($event)" ></div>
     }
     <!-- <div ast-tree [data]="childItem.children" [dataType]="'subData'"></div> -->
   }
