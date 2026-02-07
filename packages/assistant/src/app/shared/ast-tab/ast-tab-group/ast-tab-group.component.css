@@ -44,6 +44,11 @@ li[data-layer="tab"]:active {
     background-color: white;
 }
 
+li[data-layer="tab"]:not(.lightcolorselection-tab):hover {
+    background-color: var(--second-color, rgb(163, 197, 246));
+}
+
+
 li[data-layer="tab"]:hover .tab-close {
     opacity: 1;
     /* 鼠标悬停时变为可见 */
@@ -160,7 +165,7 @@ li[data-layer="tab"]:first-child.bilateral-border-tab .padding_left_space {
 
 /* 当鼠标悬停在 .lightcolorselection-tab 上时，改变 ::after 的背景色 */
 .lightcolorselection-tab:hover::after {
-  background-color: var(--primary-color, rgb(103, 137, 186)); /* ✅ 有效 */
+  background-color: var(--primary-color, rgb(103, 137, 186));
 }
 .lightcolorselection-tab::after {
     content: '';
