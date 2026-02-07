@@ -20,7 +20,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly addNewTab = output<any>();
   readonly dragDrop = output<any>()
 
-  readonly isDropListDisbale = input(true)
+  readonly isDropListDisable = input(true)
   readonly tabGroupResizeObservable = input(false)
   readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
   readonly fobiddenContextMenu = input(false)

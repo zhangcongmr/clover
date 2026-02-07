@@ -73,7 +73,7 @@
 
   <div [style.width]="sideOpen() ? ((1 - leftWidth) * 100 + '%') : '100%'" style="display: flex;">
     @if (openedList().length>0) {
-      <div ast-tab-group [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisbale]="false" (dragDrop)="dragDrop($event)"
+      <div ast-tab-group [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
       [tabType]="{'type':'bilateral'}"
       [(moreButtons)]="moreButtons">
         @for (openedTab of openedList(); track openedTab.id) {

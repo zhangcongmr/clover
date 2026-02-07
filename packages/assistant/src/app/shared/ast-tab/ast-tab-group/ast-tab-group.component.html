@@ -2,7 +2,7 @@
     (mouseleave)="whenMouseLeaveTabContainer($event)">
   @if (topLevelTabs()) {
     <ul #tabHeaderListRef data-layer="tablist" class="TabsInst" (wheel)="onTabWheel($event)" (cdkDropListDropped)="drop($event)" [style]="ulStyle"
-     cdkDropListOrientation="horizontal" [cdkDropListDisabled]="isDropListDisbale()" cdkDropList>
+     cdkDropListOrientation="horizontal" [cdkDropListDisabled]="isDropListDisable()" cdkDropList>
       @for (tab of topLevelTabs(); track tab; let tabIndex = $index) {
       <li data-layer="tab" data-tab_type="tab_header" (click)="clickTab($event, tab)" (contextmenu)="showContextMenu($event, tab)" [class]="tab.activeClass()"
         [style.min-width]="tab.minWidth" cdkDrag>
