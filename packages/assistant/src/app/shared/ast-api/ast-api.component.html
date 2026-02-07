@@ -16,7 +16,7 @@
     <input type="text" name="uri" [(ngModel)]="apiInfo.url"
       style=" flex-grow: 1;display: inline;border-top-left-radius: 0;border-bottom-left-radius: 0;"
       autocomplete="off" spellcheck="false">
-    <button id="sendRequestBtn" (click)="sendRequest()">Send</button>
+    <button class="sendRequestBtn" (click)="sendRequest()">Send</button>
   </div>
   <div
     style="position: relative;text-align:left; margin-top: 0.5rem;background-color: white;
@@ -30,7 +30,7 @@
 
     <div id="req_section_{{apiInfo.id}}" class="flat-form" style="position: relative;height: 60%;background-color: white;"
       [style.height]="dragHeight * 100 + '%'">
-      <div ast-tab-group [closable]="false" [fobiddenContextMenu]="true">
+      <div ast-tab-group [closable]="false" [fobiddenContextMenu]="true"  [tabType]="{'type':'textbottom'}">
         <div ast-tab [label]="'Parameters'" [id]="'request_parameters'" [minWidth]="'122px'" role="tabpanel"
           aria-hidden="false" [isActivated]="true" (onClickTab)="onParamsClickTab($event)">
           @if(rawQueryOrPathParasCount>0 || apiInfo.customQueryparameters.length>0) {

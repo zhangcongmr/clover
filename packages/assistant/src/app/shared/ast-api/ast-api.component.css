@@ -40,17 +40,18 @@
     background-color: lightgrey;
 }
 
-#sendRequestBtn {
+.sendRequestBtn {
     border: 0.8px solid #D9D9D9;
-    background-color: white;
+    background-color: var(--second-color, (206, 216, 231));
     color: black;
+    border-radius: 8px;
     margin-left: 5px;
     line-height: 2.4rem;
     width: 4rem;
 }
 
-#sendRequestBtn:hover {
-    background-color: #ccc;
+.sendRequestBtn:hover {
+    background-color: var(--primary-color, rgb(103, 137, 186));
 }
 
 .parameter-content {
@@ -180,7 +181,7 @@ input[type="number"]:focus,
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus {
-    border-color: #4CAF50;
+    border-color: var(--primary-color, rgb(103, 137, 186));
     /* 当输入字段获得焦点时改变边框颜色 */
 }
 

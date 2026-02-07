@@ -4,6 +4,9 @@
     margin-left: 2px;
     border: 0.8px solid rgb(240, 240, 240);
 }
+:host(:hover) {
+  border-color: var(--primary-color, rgb(103, 137, 186));
+}
 
 .menu-list {
     display: none;

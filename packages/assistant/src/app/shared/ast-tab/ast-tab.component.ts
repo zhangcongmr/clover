@@ -3,7 +3,15 @@ import { AfterViewInit, Component, HostBinding, Input, OnChanges, OnInit, Signal
 export interface AstTabType {
     size?: 'large' | 'normal' | 'small';
     height?: string;
-    type?: 'bilateral' | 'bottom' | 'borderless' | 'lightcolorselection';
+    /**
+     * bilateral: 容器元素的顶部边框
+     * bottom: 普通容器元素的边框的底框
+     * textbottom: 文字容器上添加底部边框， 使底部的宽度与文字宽度一致
+     * borderless: 无边框
+     * lightcolorselection: 元素容器的浅色填充
+     * 
+     */
+    type?: 'bilateral' | 'bottom' | 'textbottom' | 'borderless' | 'lightcolorselection';
     backgroundColor?: string;
 }
 
@@ -71,7 +79,9 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
       return isActivated ? 'bilateral-border-tab' : 'bottom-border-tab';
     } else if (tabType['type'] == 'bottom') {
       return isActivated ? 'bottom-border-tab' : 'borderless-tab';
-    }else if (tabType['type'] == 'lightcolorselection') {
+    } else if (tabType['type'] == 'textbottom') {
+      return isActivated ? 'textbottom-border-tab' : 'borderless-tab';
+    } else if (tabType['type'] == 'lightcolorselection') {
       return isActivated ? 'lightcolorselection-tab' : 'bottom-border-tab';
     } else {
       return isActivated ? 'bottom-border-tab' : 'borderless-tab';

@@ -82,12 +82,12 @@ li[data-layer="tab"]:hover .tab-close {
     color: black;
     display: flex;
     flex-direction: column;
-    flex: 1 1 0;
     font-size: 12px;
     font-weight: 400;
     justify-content: center;
     text-align: center;
-    word-wrap: break-word
+    word-wrap: break-word;
+    align-self: stretch;
 }
 
 /**
@@ -103,6 +103,21 @@ li[data-layer="tab"]:hover .tab-close {
     background-color: var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9);
 }
 
+/* when tabType is 'textbottom'  改为在文字容器上添加底部边框 */
+.textbottom-border-tab .codigma-project {
+  position: relative; /* 使 ::after 能相对于它定位 */
+}
+
+.textbottom-border-tab .codigma-project::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: var(--primary-color, rgb(103, 137, 186));
+}
+
 /**
  * when tabType is 'bilateral'
  */
@@ -113,7 +128,7 @@ li[data-layer="tab"]:hover .tab-close {
     right: 0;
     top: 0;
     height: 1px;
-    background-color: #6366F1;
+    background-color: var(--primary-color, rgb(103, 137, 186));
 }
 
 .bilateral-border-tab .padding_left_space {
@@ -145,7 +160,7 @@ li[data-layer="tab"]:first-child.bilateral-border-tab .padding_left_space {
 
 /* 当鼠标悬停在 .lightcolorselection-tab 上时，改变 ::after 的背景色 */
 .lightcolorselection-tab:hover::after {
-  background-color: #e0e0e0; /* ✅ 有效 */
+  background-color: var(--primary-color, rgb(103, 137, 186)); /* ✅ 有效 */
 }
 .lightcolorselection-tab::after {
     content: '';
@@ -154,8 +169,9 @@ li[data-layer="tab"]:first-child.bilateral-border-tab .padding_left_space {
     left: 5px;
     right: 5px;
     bottom: 5px;
+    border-radius: 8px 8px 8px 8px;
     z-index: -1;
-    background-color: #f8f8f8;
+    background-color: var(--second-color, rgb(163, 197, 246));
 }
 
 /* 
