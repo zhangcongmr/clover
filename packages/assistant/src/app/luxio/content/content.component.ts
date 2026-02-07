@@ -37,7 +37,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   /***aside */
 
   openedList = signal<Array<any>>([]);
-  currentSelect: any;
 
   addMarkFile = false;
   newFileName: string = '';
@@ -66,13 +65,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const json = JSON.parse(doc);
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
       this.dataList.set(datas);
-      this.currentSelect = findActiveNode(datas, datas[0]);
       // 启动自动保存
       this.startAutoSave();
     } else if(typeof doc === 'object') {
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(doc), JSON.stringify(doc), this.myConfigService.getFileName());
       this.dataList.set(datas);
-      this.currentSelect = findActiveNode(datas, datas[0]);
       // 启动自动保存
       this.startAutoSave();
     } else if(typeof doc === 'function') {
@@ -83,11 +80,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             const json = JSON.parse(res);
             const datas = this.coreService.parseOpenApiSpec(json);
             this.dataList.set(datas);
-            this.currentSelect = findActiveNode(datas, datas[0]);
           } else if(typeof res === 'object') {
             this.dataList.set(res.dataList || []);
             this.openedList.set(res.openedList || []);
-            this.currentSelect = findActiveNode(res.dataList || [], (res.dataList || [])[0]);
           }
           // 启动自动保存
           this.startAutoSave();
@@ -97,11 +92,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           const json = JSON.parse(result);
           const datas = this.coreService.parseOpenApiSpec(json);
           this.dataList.set(datas);
-          this.currentSelect = findActiveNode(datas, datas[0]);
         } else if(typeof result === 'object') {
           this.dataList.set(result.dataList || []);
           this.openedList.set(result.openedList || []);
-          this.currentSelect = findActiveNode(result.dataList || [], (result.dataList || [])[0]);
         }
         // 启动自动保存
         this.startAutoSave();
@@ -222,7 +215,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   listClick(evt: any) {
-    this.currentSelect = evt;
     if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api') {
       return;
     }
