@@ -33,7 +33,7 @@
       </svg>
     }
 
-    <div [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 0px;cursor: text;' : ''"
+    <div #editorItemRef [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 0px;cursor: text;' : ''"
       (input)="onContentChange($event)" (blur)="outOfRename($event, item)"  (keydown.enter)="$event.preventDefault(); outOfRename($event, item)">
       {{ item.label }}
     </div>
@@ -72,7 +72,7 @@
        
       }
 
-      <div [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 0px;cursor: text;' : ''"
+      <div #editorItemRef [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 0px;cursor: text;' : ''"
         (input)="onContentChange($event)" (blur)="outOfRename($event, childItem)"  (keydown.enter)="$event.preventDefault(); outOfRename($event, childItem)">
         {{ childItem.label }}
       </div>

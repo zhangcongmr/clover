@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, input, model, output } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges, afterNextRender, effect, input, model, output, viewChild, viewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AstTreeNode, NoN_SELECTION, TargetTreeNodeType } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
@@ -14,6 +14,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
   imports: [FormsModule, AstMenuComponent]
 })
 export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
+  editorItemRefs = viewChildren<ElementRef<HTMLDivElement>>('editorItemRef');
   data = model<Array<AstTreeNode>>([])
   readonly isSearch = input(false);
   readonly dataType = input<string>(); //内部使用，用于区分传入的data是总的数据，还是分数据
@@ -38,6 +39,18 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         }
       }, false);
     });
+    effect(() => {
+      const editorItemRefs = this.editorItemRefs()
+      if(editorItemRefs) {
+        editorItemRefs.forEach((editorItemRef: any) => {
+          if(editorItemRef.nativeElement.contentEditable === 'true') {
+            editorItemRef.nativeElement.focus();
+            this.selectAllText(editorItemRef.nativeElement)
+          }
+        })
+
+      }
+    })
   }
 
   ngOnInit() {
@@ -156,6 +169,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       height: 0,
       toJSON: () => { }
     };
+    resetRenameStatus(this.data())
     this.isOpen = true;
     this.currentContextMenuEvt = {
       currentTargetEvt: evt.currentTarget,
@@ -246,7 +260,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   onContentChange(evt: any) {
     const editable = evt.currentTarget;
     const newContent = editable.innerText;
-    console.log('正在编辑:', newContent);
     // 注意：此时不要直接赋值给 item.label，否则会触发变更检测导致光标跳动
   }
 
@@ -262,8 +275,24 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       }
       item['saved'] = true;
       item.rename = false; // 退出编辑模式
+      window.getSelection()?.removeAllRanges();
       this.menuItemAction.emit("Rename")
     }
+  }
+
+  selectAllText(el: HTMLElement) {
+    const range = document.createRange();
+    const selection = window.getSelection();
+
+    // 选择整个元素的内容
+    range.selectNodeContents(el);
+    
+    // 清除现有选区并添加新选区
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    // 确保元素获得焦点（有些浏览器需要）
+    el.focus();
   }
 
   ngAfterViewInit(): void {
@@ -375,6 +404,17 @@ function resetHideActiveStatus(data: Array<AstTreeNode>) {
     delete dataItem.hideActiveStatus;
     if(dataItem.children?.length) {
       resetHideActiveStatus(dataItem.children);
+    }
+  }
+}
+
+function resetRenameStatus(data: Array<AstTreeNode>) {
+  for (let index = 0; index < data.length; index++) {
+    const dataItem = data[index];
+
+    delete dataItem.rename;
+    if(dataItem.children?.length) {
+      resetRenameStatus(dataItem.children);
     }
   }
 }
