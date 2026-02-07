@@ -29,7 +29,7 @@
         <div data-layer="padding_right_space" class="padding_right_space"></div>
       </li>
       }
-      <div data-layer="remaining_space" class="RemainingSpace codigma-remaining-space"
+      <div data-layer="remaining_space" class="RemainingSpace codigma-remaining-space" (dblclick)="dblclickAddTab()" [style.cursor]="addTabEnable()?'pointer': ''"
         [style.border-bottom]="tabType() && tabType()['type']=='bilateral'?'1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid':''">
       </div>
 

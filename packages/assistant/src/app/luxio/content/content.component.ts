@@ -459,7 +459,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   onAddNewTab(evt: any) {
     const datas = this.openedList()
     datas.forEach(ele => ele.isActive = false);
-    datas.push(this.createNewApi())
+    const newNode: any = this.createNewApi()
+    newNode['saved'] = false
+    newNode.isActive = true;
+    datas.push(newNode)
     this.storeOpenedList()
   }
 

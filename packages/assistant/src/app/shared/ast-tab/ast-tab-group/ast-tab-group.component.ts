@@ -13,7 +13,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   topLevelTabs = contentChildren(AstTabComponent)
   tabListInst = viewChild<ElementRef<HTMLButtonElement>>('tabListInst');
 
-  readonly showAddTab = input<boolean>(false);
+  readonly addTabEnable = input<boolean>(false);
   readonly closable = input(true);
   readonly tabType = input<AstTabType>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
@@ -207,18 +207,6 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     }
   }
 
-  addTab() {
-    const size = this.topLevelTabs().length;
-    this.topLevelTabs().forEach(tab => tab.isActivated.set(false));
-    const newTabHeader = {
-      label: 'Untitled',
-      index: size + 1,
-      isActivated: true
-    }
-
-    this.addNewTab.emit(newTabHeader);
-  }
-
   computedScrollBarLength = "0px";
   computedScrollBarLengthNum = 0;
   whenMouseEnterTabContainer(evt: any) {
@@ -385,6 +373,25 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
     tab.onCloseTab.emit(toClosedTab)
     this.isOpen = false;
+  }
+
+  addTab() {
+    const size = this.topLevelTabs().length;
+    this.topLevelTabs().forEach(tab => tab.isActivated.set(false));
+    const newTabHeader = {
+      label: 'Untitled',
+      index: size + 1,
+      isActivated: true
+    }
+
+    this.addNewTab.emit(newTabHeader);
+  }
+
+  dblclickAddTab() {
+    if(!this.addTabEnable()) {
+      return;
+    }
+    this.addTab()
   }
 
   onMoreButtonClick(action: string) {
