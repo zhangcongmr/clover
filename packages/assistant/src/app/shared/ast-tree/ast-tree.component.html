@@ -33,7 +33,7 @@
       </svg>
     }
 
-    <div [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 0px;' : ''"
+    <div [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 0px;cursor: text;' : ''"
       (input)="onContentChange($event)" (blur)="outOfRename($event, item)"  (keydown.enter)="$event.preventDefault(); outOfRename($event, item)">
       {{ item.label }}
     </div>
@@ -72,7 +72,7 @@
        
       }
 
-      <div [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 0px;' : ''"
+      <div [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 0px;cursor: text;' : ''"
         (input)="onContentChange($event)" (blur)="outOfRename($event, childItem)"  (keydown.enter)="$event.preventDefault(); outOfRename($event, childItem)">
         {{ childItem.label }}
       </div>
@@ -89,9 +89,15 @@
 
 @if(dataType() != 'subData') {
   <div ast-menu   [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content codigma-right-menu">
-    <div data-layer="New" class="New codigma-menu-every-item" (click)="menuSelectAction('New')">
+    <div data-layer="New Api" class="New codigma-menu-every-item" (click)="menuSelectAction('NewApi')">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
-      <span>New</span></div>
+      <span>New Api</span></div>
+    <div data-layer="New File" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFile')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
+      <span>New File</span></div>
+    <div data-layer="New Folder" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFolder')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
+      <span>New Folder</span></div>
     <div data-layer="Delete" class="Delete codigma-menu-every-item" (click)="menuSelectAction('Delete')">
      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"   fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z"></path></svg>
       <span>Delete</span></div>

@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, afterNextRender, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AstTreeNode, TargetTreeNodeType } from '../model';
+import { AstTreeNode, NoN_SELECTION, TargetTreeNodeType } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
 @Component({
@@ -104,7 +104,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       item['isActive'] = true;
 
       if(activeNode) {
-        activeNode['isActive'] = true;
         activeNode['hideActiveStatus'] = true;
       }
     } else if(item.nodeType == 'file') {
@@ -183,7 +182,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     } else {
       // right click on empty area
       this.showShareButton = false;
-      this.currentContextMenuEvt['non-element-select'] = true;
+      this.currentContextMenuEvt['item'] = NoN_SELECTION;
     }
   }
 
@@ -246,7 +245,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         target: this.currentContextMenuEvt
       })
     } else if (action == 'New') {
-      if (!current['non-element-select']) {
+      if (current['item']!= NoN_SELECTION) {
         if (current.item && current.childItem) {
           this.menuItemAction.emit({
             action: action,
@@ -262,7 +261,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       } else {
           this.menuItemAction.emit({
             action: action,
-            target: 'non-element-select'
+            target: NoN_SELECTION
           })
       }
     } else if (action == 'Share') {

@@ -28,6 +28,7 @@ export class ServerAndServiceInfo {
 }
 export type TreeNodeType = "folder" | "file" | "bookmark" | "api";
 export type TargetTreeNodeType = "exclude-folder" | "any";
+export const NoN_SELECTION = 'NoN_SELECTION'
 
 export interface AstTreeNode {
     id: string;

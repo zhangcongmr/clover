@@ -8,10 +8,10 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { ApiInfoModel, AstTreeNode } from '../../shared/model';
+import { ApiInfoModel, AstTreeNode, NoN_SELECTION } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
@@ -186,10 +186,20 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   FolderaddBtn(evt: any) {
     const folder: AstTreeNode = this.createNewFolder()
     const newDatas = [
+      folder,
       ...this.dataList(),
-      folder
     ]
     this.dataList.set(newDatas);
+
+    if (folder.nodeType == 'folder') {
+      const activeNode = findActiveNode(this.dataList(), 'exclude-folder');
+      reset(this.dataList(), ResetType.onlyResetFolder)
+      folder['isActive'] = true;
+
+      if (activeNode) {
+        activeNode['hideActiveStatus'] = true;
+      }
+    }
   }
 
   importBtn(evt: any) {
@@ -370,7 +380,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.storeApi()
     }
     if (evt.action == 'New') {
-      if (evt.target != 'non-element-select') {
+      if (evt.target != NoN_SELECTION) {
         this.currentSelect = evt.target
         this.FileaddBtn(null)
       } else {
@@ -469,6 +479,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       label: "New Folder",
       deepLevel: 0,
       nodeType: 'folder',
+      rename: true,
       children: []
     };
   }
