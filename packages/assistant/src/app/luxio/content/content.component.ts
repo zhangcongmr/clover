@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, deleteParentItemRef, findActiveNode, findNodeById, reset } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { ApiInfoModel, AstTreeNode } from '../../shared/model';
@@ -449,10 +449,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     const filterNode = findNodeById(this.dataList(), evt.id)
     if (filterNode) {
       filterNode["isActive"] = true
-
-      if(filterNode['parentItem']) {
-
-      }
+      // 调用函数
+      expandAncestorsIfActive(filterNode, this.dataList());
     }
   }
 

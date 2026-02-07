@@ -122,9 +122,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     item.isExpanded = !item.isExpanded;
   }
 
-  recurListClick(evt: any) {
-    this.nodeClick.emit(evt);
-  }
 
   forbiddenUserselectText() {
     // 点击开始时禁用文本选中
@@ -472,5 +469,51 @@ export function deleteParentItemRef(parentItemCopy: any) {
     'hideActiveStatus'
   ]
   .forEach(k => delete parentItemCopy[k]);
+}
+
+/**
+ * 构建 id 到节点对象的映射（深度优先）
+ */
+function buildIdToNodeMap(nodes: AstTreeNode[], map = new Map()) {
+  for (const node of nodes) {
+    map.set(node.id, node);
+    if (Array.isArray(node.children)) {
+      buildIdToNodeMap(node.children, map);
+    }
+  }
+  return map;
+}
+
+/**
+ * 根据 item，在 datas 中向上展开所有祖先节点（设置 isExpanded = true）
+ * @param {Object} item - 当前项（需包含 parentItem 链）
+ * @param {Array} datas - 完整的树形数据（会被原地修改）
+ */
+export function expandAncestorsIfActive(item: AstTreeNode, datas: AstTreeNode[]) {
+  //如果父节点不存在，则直接退出
+  if(!item.parentItem) {
+    return;
+  }
+  // 如果 item 不活跃，直接返回
+  if (!item?.isActive) {
+    return;
+  }
+
+  // 构建 id -> node 映射
+  const idMap = buildIdToNodeMap(datas);
+
+  // 从 item 的直接父节点开始向上遍历
+  let currentParentId = item.parentItem?.id;
+
+  while (currentParentId) {
+    const node = idMap.get(currentParentId);
+    if (!node) break; // 父节点不存在（理论上不应发生）
+
+    // 展开当前祖先节点
+    node.isExpanded = true;
+
+    // 继续向上找父节点
+    currentParentId = node.parentItem?.id;
+  }
 }
 
