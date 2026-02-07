@@ -3,7 +3,7 @@ import { AfterViewInit, Component, HostBinding, Input, OnChanges, OnInit, Signal
 export interface AstTabType {
     size?: 'large' | 'normal' | 'small';
     height?: string;
-    type?: 'bilateral' | 'bottom' | 'borderless';
+    type?: 'bilateral' | 'bottom' | 'borderless' | 'lightcolorselection';
     backgroundColor?: string;
 }
 
@@ -71,6 +71,8 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
       return isActivated ? 'bilateral-border-tab' : 'bottom-border-tab';
     } else if (tabType['type'] == 'bottom') {
       return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+    }else if (tabType['type'] == 'lightcolorselection') {
+      return isActivated ? 'lightcolorselection-tab' : 'bottom-border-tab';
     } else {
       return isActivated ? 'bottom-border-tab' : 'borderless-tab';
     }

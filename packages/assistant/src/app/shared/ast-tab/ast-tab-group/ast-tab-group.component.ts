@@ -121,7 +121,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ngAfterContentInit() {
     this.previousTabCount = this.topLevelTabs().length;
     // 初始设置
-    this.initTabActiveStatus();
+    // this.initTabActiveStatus();//注释掉，不在默认设置tab初始状态
   }
 
   private initTabActiveStatus() {

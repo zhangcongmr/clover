@@ -123,6 +123,40 @@ li[data-layer="tab"]:hover .tab-close {
 .bilateral-border-tab .padding_right_space {
     border-right: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid;
 }
+/* === 特殊位置处理 === */
+
+/* 如果激活项是第一个 <li> → 移除左边框 */
+li[data-layer="tab"]:first-child.bilateral-border-tab .padding_left_space {
+  border-left: none;
+}
+
+/* 如果激活项是最后一个 <li>（即倒数第二个子元素，因 RemainingSpace 在最后）→ 移除右边框 */
+/* li[data-layer="tab"]:nth-last-child(2).bilateral-border-tab .padding_right_space {
+  border-right: none;
+} */
+
+/**
+ * when tabType is 'lightcolorselection'
+ */
+.lightcolorselection-tab {
+    z-index: 1;
+    border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid
+}
+
+/* 当鼠标悬停在 .lightcolorselection-tab 上时，改变 ::after 的背景色 */
+.lightcolorselection-tab:hover::after {
+  background-color: #e0e0e0; /* ✅ 有效 */
+}
+.lightcolorselection-tab::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    z-index: -1;
+    background-color: #f8f8f8;
+}
 
 /* 
 .codigma-tab-closeable {

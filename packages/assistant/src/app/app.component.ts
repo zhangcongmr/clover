@@ -38,7 +38,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     {
       id: 'editor',
       title: 'Editor',
-      // isActive: true,//让组件自己处理初始状态，默认会初始化为true
       isClosable: false,
     }
   ];
