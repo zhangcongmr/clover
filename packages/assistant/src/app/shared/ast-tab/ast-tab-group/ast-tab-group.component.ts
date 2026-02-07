@@ -1,4 +1,5 @@
 import { AfterContentInit, AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, viewChild } from '@angular/core';
+import {CdkDrag, CdkDragDrop, CdkDropList} from '@angular/cdk/drag-drop';
 import { AstTabComponent, AstTabType } from '../ast-tab.component';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
 
@@ -7,16 +8,17 @@ import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
   templateUrl: './ast-tab-group.component.html',
   styleUrls: ['./ast-tab-group.component.css'],
   standalone: true,
-  imports: [AstMenuComponent]
+  imports: [AstMenuComponent, CdkDropList, CdkDrag]
 })
 export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit {
   topLevelTabs = contentChildren(AstTabComponent)
-  tabListInst = viewChild<ElementRef<HTMLButtonElement>>('tabListInst');
+  tabHeaderListRef = viewChild<ElementRef<HTMLButtonElement>>('tabHeaderListRef');
 
   readonly addTabEnable = input<boolean>(false);
   readonly closable = input(true);
   readonly tabType = input<AstTabType>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
   readonly addNewTab = output<any>();
+  readonly dragDrop = output<any>()
 
   readonly tabGroupResizeObservable = input(false)
   readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
@@ -109,7 +111,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       }
     });
 
-    const tabList = this.tabListInst()
+    const tabList = this.tabHeaderListRef()
     if (tabList) {
       resizeObserver.observe(tabList.nativeElement);
     }
@@ -395,6 +397,10 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   onMoreButtonClick(action: string) {
+  }
+
+  drop(event: CdkDragDrop<string[]>) {
+    this.dragDrop.emit(event)
   }
 
 }

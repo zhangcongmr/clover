@@ -1,10 +1,10 @@
 <div data-layer="tab-header"  (mouseenter)="whenMouseEnterTabContainer($event)"
     (mouseleave)="whenMouseLeaveTabContainer($event)">
   @if (topLevelTabs()) {
-    <ul #tabListInst data-layer="tablist" class="TabsInst" (wheel)="onTabWheel($event)" [style]="ulStyle">
+    <ul #tabHeaderListRef data-layer="tablist" class="TabsInst" (wheel)="onTabWheel($event)" (cdkDropListDropped)="drop($event)" [style]="ulStyle" cdkDropListOrientation="horizontal" cdkDropList>
       @for (tab of topLevelTabs(); track tab; let tabIndex = $index) {
       <li data-layer="tab" data-tab_type="tab_header" (click)="clickTab($event, tab)" (contextmenu)="showContextMenu($event, tab)" [class]="tab.activeClass()"
-        [style.min-width]="tab.minWidth">
+        [style.min-width]="tab.minWidth" cdkDrag>
         <div data-layer="padding_left_space" class="padding_left_space"></div>
         <div class="codigma-project">{{tab['label']()}}</div>
         @if (closable()&&(tab.closable==null||tab.closable==true)) {

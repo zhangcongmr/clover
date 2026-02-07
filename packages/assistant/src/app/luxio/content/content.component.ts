@@ -16,6 +16,7 @@ import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
 import { AutoSaver } from '../../auto-saver';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'div[ast-content]',
@@ -394,6 +395,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   addMarked(node: string) {
     this.addMarkFile = true;
+  }
+
+  dragDrop(event: CdkDragDrop<string[]>) {
+    moveItemInArray(this.openedList(), event.previousIndex, event.currentIndex);
+    this.storeOpenedList()
   }
 
   onCloseTab(evt: any) {
