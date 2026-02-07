@@ -34,7 +34,7 @@
   </div>
 </div>
 
-<div ast-tree [data]="serverList" [filterNode]="true" (nodeClick)="listClick($event)" [fobiddenContextMenu]="true" style="margin-top: 0.5rem;"></div>
+<div ast-tree [data]="serverList" [isSearch]="true" (nodeClick)="listClick($event)" [fobiddenContextMenu]="true" style="margin-top: 0.5rem;"></div>
 
 @if (currentServer && currentServer.data != null && shouldAuthorize) {
 <div id="aside_basic_info" style="padding: 3px; border: 1px solid #96a5b4;">

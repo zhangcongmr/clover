@@ -145,31 +145,51 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     );
   }
 
-  FileaddBtn(evt: any) {
-    if (this.currentSelect) {
-      if (this.currentSelect.nodeType == 'folder') {
-        this.currentSelect.isExpanded = true
-        const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
-        deleteParentItemRef(parentItemCopy)
+  newNodeAction(currentSelect: any, action: string) {
+    let newNode;
+    if (currentSelect) {
+      delete currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
+      currentSelect.isExpanded = true
+      const parentItemCopy = JSON.parse(JSON.stringify(currentSelect))
+      deleteParentItemRef(parentItemCopy)
 
-        const newApi = this.createNewFile();
-        newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
-        newApi['rename'] = true;
-        newApi['parentItem'] = parentItemCopy;
-        this.currentSelect.children.splice(0, 0, newApi);
-      } else if (this.currentSelect.nodeType == 'file') {
-          const newApi = this.createNewApi();
+      if (action == 'NewApi') {
+        newNode = this.createNewApi();
+      } else if (action == 'NewFile') {
+        newNode = this.createNewFile();
+      } else if (action == 'NewFolder') {
+        newNode = this.createNewFolder();
+      }
+      if(newNode) {
+        newNode['deepLevel'] = parentItemCopy.deepLevel + 1;
+        newNode['rename'] = true;
+        newNode['parentItem'] = parentItemCopy;
+        currentSelect.children.splice(0, 0, newNode);
+      }
+    } else {
+      if(action == 'NewFolder') {
+        newNode = this.createNewFolder();
+        newNode['rename'] = true;
+        const newDatas = [
+          newNode,
+          ...this.dataList(),
+        ]
+        this.dataList.set(newDatas);
+      }
+    }
 
-          const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
-          delete this.currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
-          deleteParentItemRef(parentItemCopy)
-
-          newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
-          newApi['rename'] = true;
-          newApi['parentItem'] = parentItemCopy;
-          this.currentSelect.children?.splice(0, 0, newApi);
-      } else {
-        //TODO
+    //set node active
+    const activeNode = findActiveNode(this.dataList(), 'exclude-folder');
+    if(newNode && action == 'NewFolder') {
+      reset(this.dataList(), ResetType.onlyResetFolder)
+      newNode['isActive'] = true;
+      if (activeNode) {
+        activeNode['hideActiveStatus'] = true;
+      }
+    } else {
+      reset(this.dataList())
+      if(newNode) {
+        newNode['isActive'] = true;
       }
     }
   }
@@ -179,25 +199,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       node.deepLevel = level; // 设置当前层级
       if (node.children && node.children.length > 0) {
         this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
-      }
-    }
-  }
-
-  FolderaddBtn(evt: any) {
-    const folder: AstTreeNode = this.createNewFolder()
-    const newDatas = [
-      folder,
-      ...this.dataList(),
-    ]
-    this.dataList.set(newDatas);
-
-    if (folder.nodeType == 'folder') {
-      const activeNode = findActiveNode(this.dataList(), 'exclude-folder');
-      reset(this.dataList(), ResetType.onlyResetFolder)
-      folder['isActive'] = true;
-
-      if (activeNode) {
-        activeNode['hideActiveStatus'] = true;
       }
     }
   }
@@ -379,12 +380,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (evt.action == 'Delete' || evt.action == 'Duplicate') {
       this.storeApi()
     }
-    if (evt.action == 'New') {
+    if (evt.action == 'NewApi' || evt.action == 'NewFile' || evt.action == 'NewFolder') {
       if (evt.target != NoN_SELECTION) {
-        this.currentSelect = evt.target
-        this.FileaddBtn(null)
+        this.newNodeAction(evt.target, evt.action)
       } else {
-        this.FolderaddBtn(null)
+        this.newNodeAction(null, 'NewFolder')
       }
     }
     if (evt.action == 'Share') {

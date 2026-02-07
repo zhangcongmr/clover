@@ -15,7 +15,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 })
 export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   data = model<Array<AstTreeNode>>([])
-  readonly filterNode = input(false);
+  readonly isSearch = input(false);
   readonly dataType = input<string>(); //内部使用，用于区分传入的data是总的数据，还是分数据
   readonly fobiddenContextMenu = input(false)
   selectedNodeType = model<string>('') //内部使用，标识当前选中的节点类型  TreeNodeType  暂时闲置未使用
@@ -23,8 +23,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly nodeClick = output();
   readonly showContextMenuClick = output<any>();
   readonly menuItemAction = output<any>();
-
-  showShareButton = false;
 
   dataBackUp: Array<any> = [];
   searchValue: string = ""
@@ -70,7 +68,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
       }
 
-      if (this.filterNode()) {
+      if (this.isSearch()) {
         this.dataBackUp = JSON.parse(JSON.stringify(this.data()));
       }
     }
@@ -132,7 +130,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     document.body.style.userSelect = '';
   }
 
-  currentContextMenuEvt: any;
+  currentContextMenuEvt: any = {};
   menuInitiator: DOMRect | undefined;
   isOpen = false;
   showContextMenu(evtObj: any) {
@@ -166,22 +164,19 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     };
     if(item) {
       if(item['parentItem']) {
-        this.showShareButton = item['nodeType'] == 'file' ? true : false;
         const dataId = item['parentItem']['id'];
         const filterNode = findNodeById(this.data(), dataId);
         if (filterNode) {
           // right click on child item
-          this.currentContextMenuEvt['item'] = filterNode;
-          this.currentContextMenuEvt['childItem'] = item;
+          this.currentContextMenuEvt['item'] = item;
+          this.currentContextMenuEvt['parentItem'] = filterNode;
         }
       } else {
         // right click on parent item
-        this.showShareButton = (item.children && item.children.length > 0) ? true : false;
         this.currentContextMenuEvt['item'] = item;
       }
     } else {
       // right click on empty area
-      this.showShareButton = false;
       this.currentContextMenuEvt['item'] = NoN_SELECTION;
     }
   }
@@ -189,10 +184,10 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   menuSelectAction(action: string) {
     let current = this.currentContextMenuEvt;
     if (action == 'Delete') {
-      if (current.item && current.childItem) {
-        current.item.children = current.item.children.filter((val: any) => val.id != current.childItem.id)
+      if (current.item && current.parentItem) {
+        current.parentItem.children = current.parentItem.children.filter((val: any) => val.id != current.item.id)
       }
-      if (current.item && !current.childItem) {
+      if (current.item && !current.parentItem) {
         const tempData = this.data().filter((val: any) => val.id != current.item.id)
         this.data.set(tempData)
       }
@@ -202,12 +197,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         target: current
       })
     } else if (action == 'Rename') {
-      if (current.item && current.childItem) {
-        current.childItem['rename'] = true;
-      }
-      if (current.item && !current.childItem) {
-        current.item['rename'] = true;
-      }
+      current.item['rename'] = true;
 
       setTimeout(() => {
         // 聚焦并全选文本（可选体验优化
@@ -222,55 +212,28 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       });
 
     } else if (action == 'Duplicate') {
-      if (current.item && current.childItem) {
-        const index = current.item.children.findIndex((dataval: any) => dataval.id === current.childItem.id);
-        if (index !== -1) {
-          const copyObj = JSON.parse(JSON.stringify(current.childItem))
-          copyObj['id'] = this.uuid()
-          current.item.children.splice(index + 1, 0, copyObj);
-          current.childItem['isActive'] = false
-        }
-      }
-      if (current.item && !current.childItem) {
-        const index = this.data().findIndex((dataval: any) => dataval.id === current.item.id);
-        if (index !== -1) {
-          const copyObj = JSON.parse(JSON.stringify(current.item))
-          copyObj['id'] = this.uuid()
-          this.data().splice(index + 1, 0, copyObj);
-          current.item['isActive'] = false;
-        }
+      let toUpdateNodes = current.parentItem ? current.parentItem.children : this.data()
+      const index = toUpdateNodes.findIndex((dataval: any) => dataval.id === current.item.id);
+      if (index !== -1) {
+        const copyObj = JSON.parse(JSON.stringify(current.item))
+        copyObj['id'] = this.uuid()
+        toUpdateNodes.splice(index + 1, 0, copyObj);
+        current.item['isActive'] = false
       }
       this.menuItemAction.emit({
         action: action,
         target: this.currentContextMenuEvt
       })
-    } else if (action == 'New') {
-      if (current['item']!= NoN_SELECTION) {
-        if (current.item && current.childItem) {
-          this.menuItemAction.emit({
-            action: action,
-            target: current.childItem
-          })
-        }
-        if (current.item && !current.childItem) {
-          this.menuItemAction.emit({
-            action: action,
-            target: current.item
-          })
-        }
-      } else {
-          this.menuItemAction.emit({
-            action: action,
-            target: NoN_SELECTION
-          })
-      }
+    } else if (action == 'NewApi' || action == 'NewFile' || action == 'NewFolder') {
+      this.menuItemAction.emit({
+        action: action,
+        target: current['item']!= NoN_SELECTION ? current['item'] : NoN_SELECTION
+      })
     } else if (action == 'Share') {
-      if (current.item && !current.childItem) {
-        this.menuItemAction.emit({
-          action: action,
-          target: current.item
-        })
-      }
+      this.menuItemAction.emit({
+        action: action,
+        target: current['item']
+      })
     }
     this.closeMenu();
   }
