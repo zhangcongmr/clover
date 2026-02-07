@@ -3,102 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { AstTreeNode, TargetTreeNodeType } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 
-export enum ResetType {
-  brother,
-  deepIn, 
-  onlyResetFolder
-}
-
-export function reset(data: Array<AstTreeNode>, resetType?: ResetType): void {
-  for (let index = 0; index < data.length; index++) {
-    const dataItem = data[index];
-
-    delete dataItem.hideActiveStatus;
-    if(dataItem.children?.length) {
-      resetHideActiveStatus(dataItem.children);
-    }
-
-    // 根据 resetType 决定是否重置当前节点的 isActive
-    if (resetType === ResetType.onlyResetFolder) {
-      if (dataItem.nodeType === 'folder') {
-        dataItem.isActive = false;
-      }
-    } else {
-      // brother 或 deepIn 或 undefined：都重置当前节点
-      dataItem.isActive = false;
-    }
-
-    // 决定是否递归子节点
-    if (
-      (resetType == null || resetType === ResetType.deepIn) &&
-      dataItem.children?.length
-    ) {
-      reset(dataItem.children, resetType);
-    } else if (
-      resetType === ResetType.onlyResetFolder &&
-      dataItem.children?.length
-    ) {
-      // onlyFolder 也需要递归，以便找到深层的 folder 节点
-      reset(dataItem.children, resetType);
-    }
-    // 注意：ResetType.brother 不递归（当前层级处理完就结束）
-  }
-}
-
-function resetHideActiveStatus(data: Array<AstTreeNode>) {
-  for (let index = 0; index < data.length; index++) {
-    const dataItem = data[index];
-
-    delete dataItem.hideActiveStatus;
-    if(dataItem.children?.length) {
-      resetHideActiveStatus(dataItem.children);
-    }
-  }
-}
-
-export function findNodeById(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
-  for (const node of nodes) {
-    if (node.id === targetId) {
-      return node;
-    }
-    if (node.children && node.children.length > 0) {
-      const found = findNodeById(node.children, targetId);
-      if (found) {
-        return found;
-      }
-    }
-  }
-  return undefined;
-}
-
-export function findActiveNode(nodes: AstTreeNode[], targetNodeType?: TargetTreeNodeType, defaultNode?: AstTreeNode): AstTreeNode | undefined {
-  for (const node of nodes) {
-    if(targetNodeType == null || targetNodeType != 'exclude-folder') {
-      if (node.isActive) {
-        return node;
-      }
-      if (node.children && node.children.length > 0) {
-        const found = findActiveNode(node.children, targetNodeType);
-        if (found) {
-          return found;
-        }
-      }
-    } else {
-      if (node.isActive && node.nodeType != 'folder') {
-        return node;
-      }
-      if (node.children && node.children.length > 0) {
-        const found = findActiveNode(node.children, targetNodeType);
-        if (found) {
-          return found;
-        }
-      }
-    }
-
-  }
-  return defaultNode  //如果未找到，则返回指定的默认节点
-}
-
 @Component({
   selector: '[ast-tree]',
   templateUrl: './ast-tree.component.html',
@@ -467,3 +371,100 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
   /***************************文本搜索********************************/
 }
+
+export enum ResetType {
+  brother,
+  deepIn, 
+  onlyResetFolder
+}
+
+export function reset(data: Array<AstTreeNode>, resetType?: ResetType): void {
+  for (let index = 0; index < data.length; index++) {
+    const dataItem = data[index];
+
+    delete dataItem.hideActiveStatus;
+    if(dataItem.children?.length) {
+      resetHideActiveStatus(dataItem.children);
+    }
+
+    // 根据 resetType 决定是否重置当前节点的 isActive
+    if (resetType === ResetType.onlyResetFolder) {
+      if (dataItem.nodeType === 'folder') {
+        dataItem.isActive = false;
+      }
+    } else {
+      // brother 或 deepIn 或 undefined：都重置当前节点
+      dataItem.isActive = false;
+    }
+
+    // 决定是否递归子节点
+    if (
+      (resetType == null || resetType === ResetType.deepIn) &&
+      dataItem.children?.length
+    ) {
+      reset(dataItem.children, resetType);
+    } else if (
+      resetType === ResetType.onlyResetFolder &&
+      dataItem.children?.length
+    ) {
+      // onlyFolder 也需要递归，以便找到深层的 folder 节点
+      reset(dataItem.children, resetType);
+    }
+    // 注意：ResetType.brother 不递归（当前层级处理完就结束）
+  }
+}
+
+function resetHideActiveStatus(data: Array<AstTreeNode>) {
+  for (let index = 0; index < data.length; index++) {
+    const dataItem = data[index];
+
+    delete dataItem.hideActiveStatus;
+    if(dataItem.children?.length) {
+      resetHideActiveStatus(dataItem.children);
+    }
+  }
+}
+
+export function findNodeById(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      return node;
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeById(node.children, targetId);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return undefined;
+}
+
+export function findActiveNode(nodes: AstTreeNode[], targetNodeType?: TargetTreeNodeType, defaultNode?: AstTreeNode): AstTreeNode | undefined {
+  for (const node of nodes) {
+    if(targetNodeType == null || targetNodeType != 'exclude-folder') {
+      if (node.isActive) {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findActiveNode(node.children, targetNodeType);
+        if (found) {
+          return found;
+        }
+      }
+    } else {
+      if (node.isActive && node.nodeType != 'folder') {
+        return node;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findActiveNode(node.children, targetNodeType);
+        if (found) {
+          return found;
+        }
+      }
+    }
+
+  }
+  return defaultNode  //如果未找到，则返回指定的默认节点
+}
+
