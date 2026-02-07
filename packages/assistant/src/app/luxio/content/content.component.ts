@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, findActiveNode, findNodeById, reset } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, deleteParentItemRef, findActiveNode, findNodeById, reset } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { ApiInfoModel, AstTreeNode } from '../../shared/model';
@@ -150,12 +150,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       if (this.currentSelect.nodeType == 'folder') {
         this.currentSelect.isExpanded = true
         const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
-        delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
-        delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
-        delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
-        delete parentItemCopy.sourceCodeText;
-        delete parentItemCopy.isActive;
-        delete parentItemCopy.hideActiveStatus;
+        deleteParentItemRef(parentItemCopy)
 
         const newApi = this.createNewFile();
         newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
@@ -166,13 +161,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           const newApi = this.createNewApi();
 
           const parentItemCopy = JSON.parse(JSON.stringify(this.currentSelect))
-          delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
-          delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
-          delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete this.currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
-          delete parentItemCopy.sourceCodeText;
-          delete parentItemCopy.isActive;
-          delete parentItemCopy.hideActiveStatus;
+          deleteParentItemRef(parentItemCopy)
 
           newApi['deepLevel'] = parentItemCopy.deepLevel + 1;
           newApi['rename'] = true;

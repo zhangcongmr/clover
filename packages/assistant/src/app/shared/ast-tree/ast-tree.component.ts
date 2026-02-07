@@ -59,13 +59,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         }
         if (dataItem) {
           const parentItemCopy = JSON.parse(JSON.stringify(dataItem))
-          delete parentItemCopy["children"] //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
-          delete parentItemCopy.isExpanded;//子节点的父节点引用不维护是否节点展开这个状态
-          delete parentItemCopy.isNewData;//子节点的父节点引用不维护是否新添加节点这个状态
           delete dataItem.isNewData;//子节点的父节点不维护是否新添加节点这个状态
-          delete parentItemCopy.sourceCodeText;
-          delete parentItemCopy.isActive;
-          delete parentItemCopy.hideActiveStatus;
+          deleteParentItemRef(parentItemCopy)
 
           dataItem.children = dataItem.children || [];
           dataItem.children.forEach((child: any) => {
@@ -466,5 +461,16 @@ export function findActiveNode(nodes: AstTreeNode[], targetNodeType?: TargetTree
 
   }
   return defaultNode  //如果未找到，则返回指定的默认节点
+}
+
+export function deleteParentItemRef(parentItemCopy: any) {
+  ['children', //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
+    'isExpanded',
+    'isNewData',
+    'sourceCodeText',
+    'isActive',
+    'hideActiveStatus'
+  ]
+  .forEach(k => delete parentItemCopy[k]);
 }
 

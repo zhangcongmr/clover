@@ -667,7 +667,6 @@ export class CoreService {
                 tabLabel: methodInfoKey.toUpperCase() + "  " + pathKey,
                 rawApiInfo: methodInfos[methodInfoKey],
                 server: currentServer,
-                // parentItem: parentItemCopy,
                 symbolColor: CoreService.getSymbolColor(methodInfoKey.toUpperCase()),
                 nodeType: 'api',
                 response: {},
