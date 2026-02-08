@@ -12,7 +12,6 @@ if (environment.production) {
 const initData = async () => {
   let dataAny: any = {};
   const readDataListText = await file('/dir/file.txt').text();
-  // console.log("readDataListText: " + readDataListText)
   if (readDataListText) {
     dataAny.dataList = JSON.parse(readDataListText);
   }

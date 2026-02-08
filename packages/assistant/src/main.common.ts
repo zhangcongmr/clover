@@ -13,7 +13,6 @@ import { DocModel } from './app/shared/model';
 injectSvgSprite();
 
 loadCommunityWidget().then(() => {
-  console.log('Community widget loaded!');
   // 此时 IIFE 已执行，可能已自动挂载到页面
 });
 

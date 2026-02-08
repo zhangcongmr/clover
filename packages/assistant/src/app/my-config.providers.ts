@@ -4,7 +4,6 @@ import { MyConfig } from './my-config.service';
 import { MY_CONFIG } from './tokens';
 
 export function provideMyConfig(config: MyConfig) {
-console.log('✅ provideMyConfig called with:', config); // 👈 加这一行
   return makeEnvironmentProviders([
     {
       provide: MY_CONFIG,
