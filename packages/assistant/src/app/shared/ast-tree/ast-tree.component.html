@@ -34,7 +34,7 @@
     }
 
     <div #editorItemRef [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
-      (input)="onContentChange($event)" (blur)="outOfRename($event, item)"  (keydown.enter)="$event.preventDefault(); outOfRename($event, item)">
+      (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: item})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: item})">
       {{ item.label }}
     </div>
   </div>
@@ -73,7 +73,7 @@
       }
 
       <div #editorItemRef [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
-        (input)="onContentChange($event)" (blur)="outOfRename($event, childItem)"  (keydown.enter)="$event.preventDefault(); outOfRename($event, childItem)">
+      (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: childItem})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: childItem})">
         {{ childItem.label }}
       </div>
     </div>
@@ -81,7 +81,8 @@
       <div ast-tree [data]="childItem.children" [dataType]="'subData'" [style.display]="(item.isExpanded && childItem.isExpanded)?'block':'none'"
       [selectedNodeType]="selectedNodeType()"
       (nodeClick)="elementClick($event)"
-      (showContextMenuClick)="showContextMenu($event)" ></div>
+      (showContextMenuClick)="showContextMenu($event)"
+      (outOfRenameClick)="outOfRename($event)"></div>
     }
     <!-- <div ast-tree [data]="childItem.children" [dataType]="'subData'"></div> -->
   }

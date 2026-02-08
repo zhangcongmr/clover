@@ -23,6 +23,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   readonly nodeClick = output();
   readonly showContextMenuClick = output<any>();
+  readonly outOfRenameClick = output<any>();
   readonly menuItemAction = output<any>();
 
   dataBackUp: Array<any> = [];
@@ -143,9 +144,18 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     document.body.style.userSelect = '';
   }
 
-  currentContextMenuEvt: any = {};
+  currentContextMenuEvt: {
+    currentTargetEvt?: any;
+    clientX?: number;
+    clientY?: number;
+    action?: string;
+    item?: any;
+    parentItem?: any;
+    rawLabel?: string;//在重名名时，保存修改前的原始名称
+  } = {};
   menuInitiator: DOMRect | undefined;
   isOpen = false;
+
   showContextMenu(evtObj: any) {
     const evt = evtObj.evt;
     const item = evtObj.item;
@@ -156,6 +166,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     evt.stopPropagation(); //事件阻止冒泡（stop propagation），阻止事件继续向父级传播，从而避免父元素的 contextmenu 被触发
     if(this.dataType() == 'subData') {  //如果事件是发生在子树上，则需要递归向上，一直递归到根树上再处理
       this.showContextMenuClick.emit(evtObj)
+      return;
     }
 
     this.menuInitiator = { // 模拟一个 DOMRect 对象
@@ -196,6 +207,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   menuSelectAction(action: string) {
+    this.currentContextMenuEvt['action'] = action;
     let current = this.currentContextMenuEvt;
     if (action == 'Delete') {
       if (current.item && current.parentItem) {
@@ -212,6 +224,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       })
     } else if (action == 'Rename') {
       current.item['rename'] = true;
+      current.rawLabel = current.item.label;
 
       setTimeout(() => {
         // 聚焦并全选文本（可选体验优化
@@ -264,18 +277,42 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   // 编辑结束（blur 时保存）
-  outOfRename(evt: any, item: any) {
-    if (item.rename) {
-      const editable = evt.currentTarget;
+  outOfRename(evtObj: any) {
+    if(this.dataType() == 'subData') {  //如果事件是发生在子树上，则需要递归向上，一直递归到根树上再处理
+      this.outOfRenameClick.emit({
+        evt: evtObj.evt,
+        item: evtObj.item
+      })
+      return;
+    }
+    if (evtObj.item.rename) {
+      const editable = evtObj.evt.currentTarget;
       const newLabel = editable.innerText.trim();
       // 防止空值或仅空白
       if (newLabel) {
-        item.label = newLabel;
-        item.tabLabel = newLabel;
+        evtObj.item.label = newLabel;
+        evtObj.item.tabLabel = newLabel;
       }
-      item['saved'] = true;
-      item.rename = false; // 退出编辑模式
+      evtObj.item['saved'] = true;
+      evtObj.item.rename = false; // 退出编辑模式
       window.getSelection()?.removeAllRanges();
+
+      if(newLabel == '' || newLabel == null) {
+        if(this.currentContextMenuEvt['action'] && this.currentContextMenuEvt['action'].includes('New')) {
+          if (this.currentContextMenuEvt['item'] == NoN_SELECTION) {
+            this.data().splice(0, 1)
+          } else {
+            const parentItem = evtObj.item.parentItem;
+            const target = findNodeById(this.data(), parentItem.id);
+            if(target) {
+              target.children.splice(0, 1)
+            }
+          }
+        } else if(this.currentContextMenuEvt['action'] === 'Rename'){
+           editable.innerText = this.currentContextMenuEvt.rawLabel;
+          //  evtObj.item.label = this.currentContextMenuEvt.rawLabel;  //恢复原始名称
+        }
+      }
       this.menuItemAction.emit("Rename")
     }
   }
