@@ -17,13 +17,16 @@ import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
 import { AutoSaver } from '../../auto-saver';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { ApiNoteBookComponent } from '../../shared/api-notebook/api-notebook.component';
 
 @Component({
   selector: 'div[ast-content]',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
-  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent]
+  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent,
+    ApiNoteBookComponent
+  ]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   readonly sideOpen = model<boolean>(true);
@@ -216,7 +219,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   listClick(evt: any) {
-    if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api') {
+    if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api'&& evt['nodeType'] != 'file') {
       return;
     }
 
