@@ -16,7 +16,7 @@ export class ApiNoteBookComponent implements OnInit {
         let openapiSpecStr = this.openapiSpecStr();
         const openapiSpec: any = openapiSpecStr != null ? JSON.parse(openapiSpecStr) : {}
         if (!openapiSpec || !openapiSpec.paths) {
-            alert('⚠️ Please define `openapiSpec` in the script tag.');
+            // alert('⚠️ Please define `openapiSpec` in the script tag.');
             return;
         }
         requestAnimationFrame(()=> {
