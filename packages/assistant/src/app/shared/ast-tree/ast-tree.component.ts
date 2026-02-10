@@ -456,15 +456,17 @@ function resetRenameStatus(data: Array<AstTreeNode>) {
   }
 }
 
-export function findNodeById(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
+export function findNodeById(nodes: AstTreeNode[], targetId: string, deepIn?: boolean): AstTreeNode | undefined {
   for (const node of nodes) {
     if (node.id === targetId) {
       return node;
     }
-    if (node.children && node.children.length > 0) {
-      const found = findNodeById(node.children, targetId);
-      if (found) {
-        return found;
+    if(deepIn) {
+      if (node.children && node.children.length > 0) {
+        const found = findNodeById(node.children, targetId);
+        if (found) {
+          return found;
+        }
       }
     }
   }

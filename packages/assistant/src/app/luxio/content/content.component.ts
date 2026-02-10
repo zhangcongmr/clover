@@ -231,7 +231,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     const openeds = this.openedList()
     reset(openeds);
 
-    const findNode = findNodeById(this.openedList(), targetTab.id);
+    const findNode = findNodeById(this.openedList(), targetTab.id, false);
     const originNode = findNodeById(this.dataList(), targetTab.id);
     if (findNode) {
       findNode['isActive'] = true;
