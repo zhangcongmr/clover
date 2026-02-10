@@ -456,7 +456,7 @@ function resetRenameStatus(data: Array<AstTreeNode>) {
   }
 }
 
-export function findNodeById(nodes: AstTreeNode[], targetId: string, deepIn?: boolean): AstTreeNode | undefined {
+export function findNodeById(nodes: AstTreeNode[], targetId: string, deepIn: boolean = true): AstTreeNode | undefined {
   for (const node of nodes) {
     if (node.id === targetId) {
       return node;
