@@ -28,24 +28,6 @@
     margin-bottom: 0.5rem;
 }
 
-.close-button {
-    position: absolute;
-    /* top: 0.1rem; */
-    right: 0;
-    font-size: 1.5rem;
-    color: #aaa;
-    cursor: pointer;
-    border: none;
-    background: none;
-    width: 2rem;
-    text-align: center;
-}
-
-.close-button:hover {
-    color: white;
-    background-color: red;
-}
-
 .codigma-ast-modal {
     align-items: flex-start;
     justify-content: flex-start;
@@ -79,6 +61,22 @@
     font-weight: 400;
     word-wrap: break-word;
     padding-left: 10px;
+}
+
+.close-button {
+    width: 2rem;
+    align-content: center;
+    align-self: stretch;
+    align-items: center;
+}
+
+.close-button:hover {
+    color: white;
+    background-color: red;
+    cursor: pointer;
+}
+.close-button svg:hover {
+    color: white;
 }
 
 ast-modal .codigma-ast-modal-body {
