@@ -37,7 +37,7 @@
 
 .split-line:hover {
     cursor: ns-resize;
-    background-color: lightgrey;
+    background-color: var(--primary-color, rgb(103, 137, 186));
 }
 
 .sendRequestBtn {

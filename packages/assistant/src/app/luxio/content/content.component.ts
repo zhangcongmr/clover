@@ -470,7 +470,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   onAddNewTab(evt: any) {
     const datas = this.openedList()
     datas.forEach(ele => ele.isActive = false);
-    const newNode: any = this.createNewApi()
+    const newNode: any = this.createNewFile("Untitled")
     newNode['saved'] = false
     newNode.isActive = true;
     datas.push(newNode)
@@ -490,7 +490,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     };
   }
 
-  createNewFile(): AstTreeNode {
+  createNewFile(defaultName?: string): AstTreeNode {
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
       summary: "",
@@ -499,6 +499,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       nodeType: 'file',
       children: [],
       auth: {}
+    }
+    if(defaultName) {
+      apiInfo.label = defaultName
+      apiInfo.tabLabel = defaultName
     }
 
     return apiInfo;

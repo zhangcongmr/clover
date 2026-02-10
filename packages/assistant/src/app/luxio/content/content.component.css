@@ -4,7 +4,7 @@
 }
 
 .split-line:hover {
-    background-color: lightgrey;
+    background-color: var(--primary-color, rgb(103, 137, 186));
     cursor: ew-resize;
 }
 

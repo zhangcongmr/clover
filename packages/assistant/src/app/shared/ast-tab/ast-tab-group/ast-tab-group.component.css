@@ -38,6 +38,7 @@ li[data-layer="tab"] {
     display: flex;
     justify-content: space-between;
     cursor: pointer;
+    min-width: 5rem;
 }
 
 li[data-layer="tab"]:active {
