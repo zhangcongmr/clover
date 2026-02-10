@@ -44,7 +44,7 @@
     "rxjs": "~7.8.0",
     "tailwindcss": "^4.1.18",
     "tslib": "^2.3.0",
-    "api-render-ui": "^1.0.9",
+    "api-render-ui": "^1.1.0",
     "@luxio/community-widget": "workspace:*"
   },
   "devDependencies": {
