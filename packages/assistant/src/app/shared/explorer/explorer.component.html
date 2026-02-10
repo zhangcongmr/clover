@@ -8,11 +8,6 @@
 <app-privacy-error-dialog /> -->
 @if(subPanelType === 1) {
   <community-widget style="flex: 1 1 0;" [attr.base-href]="baseHref" (widgetAction)="onWidgetAction($event)"></community-widget>
-  @if(currentDisplayViewId()!=4) {
-    <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
-      <div data-layer="desc" class="Desc codigma-desc">Import from Community</div>
-    </div>
-  }
 } @else if(subPanelType === 2) {
   <div data-layer="api-content" class="ApiContent codigma-api-content">
     <div data-layer="overview-type" class="OverviewType codigma-overview-type">
