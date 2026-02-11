@@ -42,19 +42,19 @@ export class ServerManagerComponent implements OnInit {
   ]
 
   ngOnInit() {
-    this.coreService.dialogSubject.subscribe((val: any) => {
-      if (val.action == "open" && val.id == ConfigService.dialogServerManagerId) {
-        this.type = val.data.type;
-        if(val.data.type == ConfigService.addServer) {
-          // this.placement = 'center';
-          this.addServerVisible = true;
-        } else if(val.data.type == ConfigService.deleteServer) {
-          // this.placement = 'center';
-          this.deleteServerVisible = true;
-          this.initServer();
-        }
-      }
-    })
+    // this.coreService.dialogSubject.subscribe((val: any) => {
+    //   if (val.action == "open" && val.id == ConfigService.dialogServerManagerId) {
+    //     this.type = val.data.type;
+    //     if(val.data.type == ConfigService.addServer) {
+    //       // this.placement = 'center';
+    //       this.addServerVisible = true;
+    //     } else if(val.data.type == ConfigService.deleteServer) {
+    //       // this.placement = 'center';
+    //       this.deleteServerVisible = true;
+    //       this.initServer();
+    //     }
+    //   }
+    // })
   }
 
   visibleChangeDeleteDlg(evt: any) {

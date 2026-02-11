@@ -50,18 +50,18 @@ export class AuthorizeComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.coreService.dialogSubject.subscribe((val: any) => {
-      if (val.action == "open" && val.id == ConfigService.dialogAuthorizeId) {
-        // this.placement = 'center';
-        this.visible = true;
-        this.url = val.data.url;
-      }
-      if (val.action == "open" && val.id == ConfigService.dialogTipId) {
-        // this.placement = 'center';
-        this.isShowTip = true;
-        this.contentTip = "Authorize success";
-      }
-    })
+    // this.coreService.dialogSubject.subscribe((val: any) => {
+    //   if (val.action == "open" && val.id == ConfigService.dialogAuthorizeId) {
+    //     // this.placement = 'center';
+    //     this.visible = true;
+    //     this.url = val.data.url;
+    //   }
+    //   if (val.action == "open" && val.id == ConfigService.dialogTipId) {
+    //     // this.placement = 'center';
+    //     this.isShowTip = true;
+    //     this.contentTip = "Authorize success";
+    //   }
+    // })
   }
 
   confirm() {

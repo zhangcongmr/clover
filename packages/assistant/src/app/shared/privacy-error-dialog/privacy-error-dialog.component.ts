@@ -35,12 +35,12 @@ export class PrivacyErrorDialogComponent implements OnInit {
   };
 
   ngOnInit() {
-    this.coreService.dialogSubject.subscribe((val: any) => {
-      if (val.action == "open" && val.id == ConfigService.dialogHttpsInterruptId) {
-        this.visible = true;
-        this.url = val.data.targetUrl;
-      }
-    });
+    // this.coreService.dialogSubject.subscribe((val: any) => {
+    //   if (val.action == "open" && val.id == ConfigService.dialogHttpsInterruptId) {
+    //     this.visible = true;
+    //     this.url = val.data.targetUrl;
+    //   }
+    // });
 
     let me = this;
     if(chrome.storage) {
@@ -48,7 +48,6 @@ export class PrivacyErrorDialogComponent implements OnInit {
         const privacyErrorDialogFlag = changes[ConfigService.privacyErrorDialogFlag];
         if(privacyErrorDialogFlag) {
           if(privacyErrorDialogFlag.oldValue == 0 && privacyErrorDialogFlag.newValue == 1) {
-            // me.coreService.forcePrivacyVisitSubject.next(1);
             chrome.storage.local.get("targetHref", (result) => {
               const targetHref = result["targetHref"];
               me.coreService.privacyErrorSettingWindow.postMessage("privacy_error_handle_ok", targetHref);

@@ -31,23 +31,23 @@ export class ServiceManagerComponent implements OnInit {
   services: Array<ServiceRouteInfo> = [];
 
   ngOnInit() {
-    this.coreService.dialogSubject.subscribe((val: any) => {
-      if (val.action == "open" && val.id == ConfigService.dialogServiceManagerId) {
-        this.type = val.data.type;
-        if(val.data.type == ConfigService.addService) {
-          // this.placement = 'center';
-          this.addServiceVisible = true;
-        } else if(val.data.type == ConfigService.deleteService) {
-          // this.placement = 'center';
-          this.deleteServiceVisible = true;
-          this.initService();
-        } else if(val.data.type == ConfigService.resetService) {
-          // this.placement = 'center';
-          this.resetServiceVisible = true;
-          this.initResetService();
-        }
-      }
-    })
+    // this.coreService.dialogSubject.subscribe((val: any) => {
+    //   if (val.action == "open" && val.id == ConfigService.dialogServiceManagerId) {
+    //     this.type = val.data.type;
+    //     if(val.data.type == ConfigService.addService) {
+    //       // this.placement = 'center';
+    //       this.addServiceVisible = true;
+    //     } else if(val.data.type == ConfigService.deleteService) {
+    //       // this.placement = 'center';
+    //       this.deleteServiceVisible = true;
+    //       this.initService();
+    //     } else if(val.data.type == ConfigService.resetService) {
+    //       // this.placement = 'center';
+    //       this.resetServiceVisible = true;
+    //       this.initResetService();
+    //     }
+    //   }
+    // })
   }
 
   async initService() {

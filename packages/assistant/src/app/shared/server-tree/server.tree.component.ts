@@ -86,13 +86,13 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
           }
         }
         if (reason.url.includes("/api/oauth2/v1/authorize?")) {
-          me.coreService.dialogSubject.next({
-            action: "open",
-            id: ConfigService.dialogAuthorizeId,
-            data: {
-              url: this.currentServer.value + ConfigService.authorizedUrl
-            }
-          });
+          // me.coreService.dialogSubject.next({
+          //   action: "open",
+          //   id: ConfigService.dialogAuthorizeId,
+          //   data: {
+          //     url: this.currentServer.value + ConfigService.authorizedUrl
+          //   }
+          // });
         }
       }
     });

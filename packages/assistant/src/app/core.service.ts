@@ -1,6 +1,5 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Subject } from 'rxjs';
 import { file, write } from 'opfs-tools';
 import { ServiceRouteInfo, AstTreeNode, UserInfo } from './shared/model';
 
@@ -10,14 +9,9 @@ import { ServiceRouteInfo, AstTreeNode, UserInfo } from './shared/model';
 export class CoreService {
   private http = inject(HttpClient);
 
-  // public publishSpecDefSubject = new Subject();
-  public forcePrivacyVisitSubject = new Subject();
-
-  public scrollIntoViewSubject = new Subject();
-
   // public selectedServerAndServiceInfo: ServerAndServiceInfo = new ServerAndServiceInfo();
 
-  public dialogSubject = new Subject();
+  // public dialogSubject = new Subject();
 
   // public specDef: any = {};
 
@@ -538,14 +532,14 @@ export class CoreService {
   }
 
   public handlePrivacyError(url: string) {
-    this.dialogSubject.next({
-      action: "open",
-      id: ConfigService.dialogHttpsInterruptId,
-      data: {
-        // targetUrl: this.getSpecUrl(),
-        targetUrl: url,
-      }
-    });
+    // this.dialogSubject.next({
+    //   action: "open",
+    //   id: ConfigService.dialogHttpsInterruptId,
+    //   data: {
+    //     // targetUrl: this.getSpecUrl(),
+    //     targetUrl: url,
+    //   }
+    // });
   }
 
   extractBasePath(url: string) {
