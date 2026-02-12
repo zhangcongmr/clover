@@ -24,8 +24,8 @@ import { json } from "@codemirror/lang-json";
   imports: [FormsModule, AstSelectComponent, AstTabGroupComponent, AstTabComponent]
 })
 export class AstApiComponent implements OnInit, AfterViewInit {
-  reqEditorContainerView = viewChild<ElementRef<HTMLButtonElement>>('reqEditorContainer');
-  editApiSourceCodeContainerView = viewChild<ElementRef<HTMLButtonElement>>('editApiSourceCodeContainer');
+  reqEditorContainerView = viewChild<ElementRef<HTMLElement>>('reqEditorContainer');
+  editApiSourceCodeContainerView = viewChild<ElementRef<HTMLElement>>('editApiSourceCodeContainer');
   @Input() apiInfo: any;
   readonly saved = output();
 

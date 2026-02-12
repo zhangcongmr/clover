@@ -1,4 +1,4 @@
-import { Component, model, OnInit } from "@angular/core";
+import { Component, ElementRef, model, OnInit, viewChild } from "@angular/core";
 import { ApiRenderer } from "api-render-ui"
 import { AstTreeNode } from "../../model";
 
@@ -9,7 +9,7 @@ import { AstTreeNode } from "../../model";
     standalone: true
 })
 export class ApiNoteBookComponent implements OnInit {
-
+    apiOperatorListView = viewChild<ElementRef<HTMLElement>>('apiOperatorList');
     data = model<AstTreeNode>()
 
 
@@ -22,8 +22,9 @@ export class ApiNoteBookComponent implements OnInit {
         }
         requestAnimationFrame(()=> {
         //    initNotebook();
+            const apiOperatorListView = this.apiOperatorListView()
             const apiRenderer = new ApiRenderer({
-                mountPoint: '#notebook', // 可以是选择器字符串
+                mountPoint: apiOperatorListView?.nativeElement, // 可以是选择器字符串
             });
             // 执行渲染
             apiRenderer.render(openapiSpec);

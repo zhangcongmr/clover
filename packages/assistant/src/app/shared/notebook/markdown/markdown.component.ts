@@ -15,7 +15,7 @@ import {markdown} from "@codemirror/lang-markdown"
     imports: [FormsModule]
 })
 export class MarkdownComponent implements OnInit {
-  textEditorView = viewChild<ElementRef<HTMLButtonElement>>('textEditor');
+  textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
   @Input() textInfo: any;
   readonly saved = output();
 
