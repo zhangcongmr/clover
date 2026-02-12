@@ -39,6 +39,7 @@ li[data-layer="tab"] {
     justify-content: space-between;
     cursor: pointer;
     min-width: 5rem;
+    flex-shrink: 0;
 }
 
 li[data-layer="tab"]:active {
