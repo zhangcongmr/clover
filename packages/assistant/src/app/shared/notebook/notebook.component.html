@@ -1,0 +1,5 @@
+@if(fileType()=='json') {
+    <div api-notebook [data]="data()"></div>
+} @else if(fileType()=='text') {
+    <markdown [textInfo]="data()" (saved)="saveText($event)"></markdown>
+}

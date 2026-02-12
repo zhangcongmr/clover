@@ -2,7 +2,6 @@ import { AfterViewInit, Component, OnChanges, OnDestroy, OnInit, SimpleChanges, 
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
-import { MarkdownComponent } from '../../shared/markdown/markdown.component';
 
 import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
@@ -17,15 +16,15 @@ import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
 import { AutoSaver } from '../../auto-saver';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ApiNoteBookComponent } from '../../shared/api-notebook/api-notebook.component';
+import { NoteBookComponent } from '../../shared/notebook/notebook.component';
 
 @Component({
   selector: 'div[ast-content]',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
-  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, MarkdownComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent,
-    ApiNoteBookComponent
+  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent,
+    NoteBookComponent
   ]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {

@@ -1,5 +1,6 @@
 import { Component, model, OnInit } from "@angular/core";
 import { ApiRenderer } from "api-render-ui"
+import { AstTreeNode } from "../../model";
 
 @Component({
     selector: '[api-notebook]',
@@ -9,12 +10,12 @@ import { ApiRenderer } from "api-render-ui"
 })
 export class ApiNoteBookComponent implements OnInit {
 
-    openapiSpecStr = model<string>()
+    data = model<AstTreeNode>()
 
 
     ngOnInit(): void {
-        let openapiSpecStr = this.openapiSpecStr();
-        const openapiSpec: any = openapiSpecStr != null ? JSON.parse(openapiSpecStr) : {}
+        let data = this.data();
+        const openapiSpec: any = data?.sourceCodeText != null ? JSON.parse(data?.sourceCodeText) : {}
         if (!openapiSpec || !openapiSpec.paths) {
             // alert('⚠️ Please define `openapiSpec` in the script tag.');
             return;

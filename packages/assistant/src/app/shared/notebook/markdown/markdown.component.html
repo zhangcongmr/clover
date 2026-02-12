@@ -1,5 +1,3 @@
-
-
 <!-- sample
 Marked - Markdown Parser
 ========================
@@ -38,11 +36,8 @@ Ready to start writing?  Either start changing stuff on the left or
 [Marked]: https://github.com/markedjs/marked/
 [Markdown]: http://daringfireball.net/projects/markdown/
  -->
-
-<div style="margin-top: 5px;display: flex;flex-direction: row">
-  <div style="width: 40%;">
-      <textarea style="width: 90%;height: calc(100vh - 3rem - 1px - 2rem - 2.7rem - 1rem);margin-left: 0.5rem;resize: none;overflow-y: auto;"
+<div style="width: 40%;">
+  <textarea style="width: 100%;height: 100%;border: none;outline: 0;">
       [(ngModel)]="textInfo.value" (blur)="outOfText()"></textarea>
-  </div>
-  <div style="width: 60%;height: calc(100vh - 3rem - 1px - 2rem - 2.7rem - 1rem);overflow-y: auto;" id="content_{{textInfo.id}}"></div>
 </div>
+<div style="width: 60%;"></div>
