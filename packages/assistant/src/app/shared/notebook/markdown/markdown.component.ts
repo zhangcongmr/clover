@@ -1,5 +1,7 @@
-import { Component, Input, OnInit, output } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, output, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import {EditorView, basicSetup} from "codemirror"
+import {markdown} from "@codemirror/lang-markdown"
 
 @Component({
     selector: 'markdown',
@@ -13,13 +15,37 @@ import { FormsModule } from '@angular/forms';
     imports: [FormsModule]
 })
 export class MarkdownComponent implements OnInit {
-
+  textEditorView = viewChild<ElementRef<HTMLButtonElement>>('textEditor');
   @Input() textInfo: any;
   readonly saved = output();
 
   constructor() { }
 
   ngOnInit() {
+
+    const textEditorView = this.textEditorView()
+    const view = new EditorView({
+      parent: textEditorView?.nativeElement,
+      doc: `*CodeMirror* Markdown \`mode\``,
+      extensions: [basicSetup, markdown(),
+        EditorView.theme({
+          '&': {
+            height: '100%',
+            minHeight: '0',
+            fontFamily: 'Consolas',
+            border: 'none', // 移除边框
+            outline: 'none', // 可选：移除聚焦时的 outline
+            boxShadow: 'none',
+          },
+          '.cm-scroller': {
+            height: '100%',
+            overflow: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#ccc transparent',
+          },
+        })
+      ]
+    })
   }
 
   outOfText() {

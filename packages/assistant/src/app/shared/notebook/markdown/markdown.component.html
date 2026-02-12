@@ -36,8 +36,4 @@ Ready to start writing?  Either start changing stuff on the left or
 [Marked]: https://github.com/markedjs/marked/
 [Markdown]: http://daringfireball.net/projects/markdown/
  -->
-<div style="width: 40%;">
-  <textarea style="width: 100%;height: 100%;border: none;outline: 0;">
-      [(ngModel)]="textInfo.value" (blur)="outOfText()"></textarea>
-</div>
-<div style="width: 60%;"></div>
+<div #textEditor style="overflow: hidden;height: 100%;width: 100%;"></div>
