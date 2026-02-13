@@ -586,10 +586,12 @@ export class AstApiComponent implements OnInit, AfterViewInit {
       }
     }
 
-    for (let index = 0; index < apiInfo.customHeaderparameters.length; index++) {
-      const paras = apiInfo.customHeaderparameters[index];
-      if (paras.name != '' && paras.value != '' && paras.name != null && paras.value != null) {
-        headersParams[paras.name] = paras.value
+    if (apiInfo.customHeaderparameters) {
+      for (let index = 0; index < apiInfo.customHeaderparameters.length; index++) {
+        const paras = apiInfo.customHeaderparameters[index];
+        if (paras.name != '' && paras.value != '' && paras.name != null && paras.value != null) {
+          headersParams[paras.name] = paras.value
+        }
       }
     }
 
@@ -612,10 +614,12 @@ export class AstApiComponent implements OnInit, AfterViewInit {
       }
     }
 
-    for (let index = 0; index < apiInfo.customQueryparameters.length; index++) {
-      const paras = apiInfo.customQueryparameters[index];
-      if (paras.name != '' && paras.value != '' && paras.name != null && paras.value != null) {
-        queryParams.push(paras.name + "=" + paras.value)
+    if (apiInfo.customQueryparameters) {
+      for (let index = 0; index < apiInfo.customQueryparameters.length; index++) {
+        const paras = apiInfo.customQueryparameters[index];
+        if (paras.name != '' && paras.value != '' && paras.name != null && paras.value != null) {
+          queryParams.push(paras.name + "=" + paras.value)
+        }
       }
     }
 
