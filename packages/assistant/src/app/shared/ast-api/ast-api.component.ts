@@ -446,10 +446,10 @@ export class AstApiComponent implements OnInit, AfterViewInit {
           }
         }
       } else {
-        body = null;
+        body = "";
       }
     } else {
-      body = null;
+      body = "";
     }
 
     this.ifSendingRequest = true;
