@@ -88,7 +88,7 @@
   }
 }
 
-@if(dataType() != 'subData') {
+@if(dataType() != 'subData' && isOpen) {
   <div ast-menu  [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content codigma-right-menu">
     @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'file') {
       <div data-layer="New Api" class="New codigma-menu-every-item" (click)="menuSelectAction('NewApi')">
