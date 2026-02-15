@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, viewChild } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, viewChild } from '@angular/core';
 import {CdkDrag, CdkDragDrop, CdkDropList} from '@angular/cdk/drag-drop';
 import { AstTabComponent, AstTabType } from '../ast-tab.component';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
@@ -31,6 +31,31 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   tabMap: Map<string, boolean> = new Map();
   
   previousTabCount = 0;
+  private _layoutChangeSignal = 0;
+  @Input()
+  set layoutChangeSignal(value: any) {
+    // 每次外部传入新值（哪怕相同类型），都视为一次“请重新计算”的请求
+    this._layoutChangeSignal = Date.now(); // 或直接用 value，但用时间戳确保变化
+    this.scheduleScrollbarRecalculation();
+  }
+
+  // 防抖：避免短时间内多次触发
+  private recalcDebounceTimer: any = null;
+
+  private scheduleScrollbarRecalculation() {
+    if (this.recalcDebounceTimer) {
+      clearTimeout(this.recalcDebounceTimer);
+    }
+    this.recalcDebounceTimer = setTimeout(() => {
+      this.recalculateScrollbarNow();
+    }, 0);
+  }
+
+  private recalculateScrollbarNow() {
+    const tabList = this.tabHeaderListRef();
+    if (!tabList?.nativeElement) return;
+    this.handleUlResize(tabList.nativeElement as HTMLElement);
+  }
 
   constructor() {
     effect(() => {
@@ -79,45 +104,73 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
   showButtonAdded = false;
   ngAfterViewInit(): void {
-    if(!this.tabGroupResizeObservable()) {
+    if (!this.tabGroupResizeObservable()) {
       return;
     }
+
     const resizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        // 在这里处理宽度变化的逻辑
-        const ulElement = entry.target;
-        const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
-        let totalLiWidth = this.getTotalLiWidth(ulElement);
-        if (!this.showButtonAdded) {
-          if (totalLiWidth > Number(totalUlWidth)) {
-            const downButtonIcon = {
-              label: 'show all opened',
-              action: 'down'
-            }
-            this.moreButtons.update(value => {
-              value.unshift(downButtonIcon);
-              return value;
-            })
-            this.showButtonAdded = true;
-          }
-        } else {
-          if (totalLiWidth < Number(totalUlWidth)) {
-            this.moreButtons.update(value => {
-              value.splice(0, 1);
-              return value;
-            })
-            this.showButtonAdded = false;
-          }
-        }
+      for (const entry of entries) {
+        this.handleUlResize(entry.target as HTMLElement);
       }
     });
 
-    const tabList = this.tabHeaderListRef()
+    const tabList = this.tabHeaderListRef();
     if (tabList) {
       resizeObserver.observe(tabList.nativeElement);
+      // 保存 observer 以便 ngOnDestroy 中 disconnect（可选）
     }
   }
+  // 抽离 ResizeObserver 的核心逻辑为可复用方法
+  private handleUlResize(ulElement: HTMLElement): void {
+    const totalUlWidth = parseFloat(window.getComputedStyle(ulElement).width);
+    const totalLiWidth = this.getTotalLiWidth(ulElement);
 
+    if (totalLiWidth <= totalUlWidth) {
+      // 无溢出
+      this.computedScrollBarLengthNum = 0;
+      this.computedScrollBarLength = '0px';
+      this.leftScroll = 0;
+      this.scrollBarLeft = 0;
+      this.scrollToLeftEnable = false;
+      this.scrollToRightEnable = false;
+      ulElement.scrollTo({ left: 0, behavior: 'instant' });
+
+      if (this.showButtonAdded) {
+        this.moreButtons.update(v => v.filter((_, i) => i !== 0));
+        this.showButtonAdded = false;
+      }
+      return;
+    }
+
+    // 有溢出
+    const maxScrollLeft = totalLiWidth - totalUlWidth;
+    const sliderWidth = (totalUlWidth * totalUlWidth) / totalLiWidth;
+    const maxSliderLeft = totalUlWidth - sliderWidth;
+
+    this.computedScrollBarLengthNum = sliderWidth;
+    this.computedScrollBarLength = sliderWidth + 'px';
+
+    // 校正 scroll 位置
+    if (this.leftScroll > maxScrollLeft) this.leftScroll = maxScrollLeft;
+    if (this.leftScroll < 0) this.leftScroll = 0;
+
+    // 重新计算滑动条位置（horizontal mode）
+    if (this.mode === 'horizontal') {
+      const ratio = maxScrollLeft > 0 ? this.leftScroll / maxScrollLeft : 0;
+      this.scrollBarLeft = ratio * maxSliderLeft;
+    }
+
+    ulElement.scrollTo({ left: this.leftScroll, behavior: 'instant' });
+
+    this.scrollToLeftEnable = this.leftScroll > 0;
+    this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
+
+    if (!this.showButtonAdded) {
+      this.moreButtons.update(v => [{ label: 'show all opened', action: 'down' }, ...v]);
+      this.showButtonAdded = true;
+    }
+  }
+  
   ngAfterContentInit() {
     this.previousTabCount = this.topLevelTabs().length;
     // 初始设置
@@ -223,9 +276,19 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       tab_presentation.style.display = "block";
       this.computedScrollBarLengthNum = Number(totalUlWidth) * Number(totalUlWidth) / totalLiWidth;
       this.computedScrollBarLength = this.computedScrollBarLengthNum + "px";
+
+      // 校正滑动条位置（防止因外部 resize 导致越界）
+      const maxSliderLeft = Number(totalUlWidth) - this.computedScrollBarLengthNum;
+      if (this.scrollBarLeft > maxSliderLeft) {
+        this.scrollBarLeft = maxSliderLeft;
+      }
+      if (this.scrollBarLeft < 0) {
+        this.scrollBarLeft = 0;
+      }
     } else {
       this.computedScrollBarLengthNum = 0;
       this.computedScrollBarLength = "0px";
+      tab_presentation.style.display = "none";
     }
   }
 
@@ -249,62 +312,55 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     // event.deltaX 表示水平滚动的距离  
     // 正值表示向右滚动，负值表示向左滚动  
 
-    const ulElement = evt.currentTarget
-    const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
-    let totalLiWidth = this.getTotalLiWidth(ulElement);
+    const ulElement = evt.currentTarget as HTMLElement;
+    const totalUlWidth = parseFloat(window.getComputedStyle(ulElement).width);
+    const totalLiWidth = this.getTotalLiWidth(ulElement);
 
-    if (totalLiWidth > Number(totalUlWidth)) {
-      if (evt.deltaY > 0) {
-        const scrollBardeltaY = (Number(totalUlWidth) - this.computedScrollBarLengthNum) / (totalLiWidth - Number(totalUlWidth)) * evt.deltaY
-        if (!this.scrollToRightEnable) {
-          return;
-        }
-        this.topScroll = this.mode == 'horizontal' ? 0 : (this.topScroll + evt.deltaY);
-        this.leftScroll = this.mode == 'horizontal' ? (this.leftScroll + evt.deltaY) : 0;
+    if (totalLiWidth <= totalUlWidth) {
+      return;
+    }
 
-        let tempScrollBarTop = this.mode == 'horizontal' ? 0 : (this.scrollBarTop + scrollBardeltaY);
-        let tempScrollBarLeft = this.mode == 'horizontal' ? (this.scrollBarLeft + scrollBardeltaY) : 0;
+    const delta = evt.deltaY; // 你用 deltaY 模拟水平滚动，保持不变
+    const maxScrollLeft = totalLiWidth - totalUlWidth;
 
-        this.scrollBarTop = tempScrollBarTop;//TODO
-        if (tempScrollBarLeft + this.computedScrollBarLengthNum > Number(totalUlWidth)) {
-          tempScrollBarLeft = Number(totalUlWidth) - this.computedScrollBarLengthNum;
-        }
-        this.scrollBarLeft = tempScrollBarLeft;
+    if (this.mode === 'horizontal') {
+      if (delta > 0) {
+        // 向右滚动
+        if (!this.scrollToRightEnable) return;
 
-        evt.currentTarget.scrollTo({
-          top: this.topScroll,
-          left: this.leftScroll,
-          behavior: 'instant'
-        })
+        let newLeftScroll = this.leftScroll + delta;
+        newLeftScroll = Math.min(newLeftScroll, maxScrollLeft);
+
+        this.leftScroll = newLeftScroll;
+
+        // 重新计算滑动条位置
+        const maxSliderLeft = totalUlWidth - this.computedScrollBarLengthNum;
+        const ratio = maxScrollLeft > 0 ? this.leftScroll / maxScrollLeft : 0;
+        this.scrollBarLeft = ratio * maxSliderLeft;
+
         this.scrollToLeftEnable = true;
-        if (this.leftScroll + Number(totalUlWidth) >= totalLiWidth) {
-          this.scrollToRightEnable = false;
-        }
+        this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
       } else {
-        const scrollBardeltaY = (Number(totalUlWidth) - this.computedScrollBarLengthNum) / (totalLiWidth - Number(totalUlWidth)) * evt.deltaY
-        if (!this.scrollToLeftEnable) {
-          return;
-        }
-        this.topScroll = this.topScroll + evt.deltaY;
-        this.leftScroll = this.leftScroll + evt.deltaY;
-        let tempScrollBarTop = this.mode == 'horizontal' ? 0 : (this.scrollBarTop + scrollBardeltaY);
-        let tempScrollBarLeft = this.mode == 'horizontal' ? (this.scrollBarLeft + scrollBardeltaY) : 0;
+        // 向左滚动
+        if (!this.scrollToLeftEnable) return;
 
-        this.scrollBarTop = tempScrollBarTop;//TODO
-        if (tempScrollBarLeft < 0) {
-          tempScrollBarLeft = 0;
-        }
-        this.scrollBarLeft = tempScrollBarLeft;
-        evt.currentTarget.scrollTo({
-          top: this.topScroll,
-          left: this.leftScroll,
-          behavior: 'instant'
-        })
+        let newLeftScroll = this.leftScroll + delta; // delta 为负
+        newLeftScroll = Math.max(newLeftScroll, 0);
+
+        this.leftScroll = newLeftScroll;
+
+        const maxSliderLeft = totalUlWidth - this.computedScrollBarLengthNum;
+        const ratio = maxScrollLeft > 0 ? this.leftScroll / maxScrollLeft : 0;
+        this.scrollBarLeft = ratio * maxSliderLeft;
+
         this.scrollToRightEnable = true;
-        if (this.leftScroll <= 0) {
-          this.scrollToLeftEnable = false;
-        }
+        this.scrollToLeftEnable = this.leftScroll > 0;
       }
+
+      ulElement.scrollTo({ left: this.leftScroll, behavior: 'instant' });
+    } else {
+      // vertical 模式（预留）
+      // 可类似处理 topScroll / scrollBarTop
     }
   }
 
