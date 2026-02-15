@@ -69,6 +69,13 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
         if(this.previousTabCount < this.topLevelTabs().length) {
           console.log("tab add")
           this.previousTabCount = this.topLevelTabs().length;
+          if (this.topLevelTabs().length > 0) {
+            const lastTab = this.topLevelTabs()[this.topLevelTabs().length - 1];
+            // 如果是新添加的（可通过某种标记判断），自动激活并滚动
+            queueMicrotask(() => {
+              this.activateAndScrollToTab(lastTab);
+            });
+          }
         } else if(this.previousTabCount > this.topLevelTabs().length) {
           console.log("tab decrease")
           this.previousTabCount = this.topLevelTabs().length;
@@ -260,6 +267,81 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       this.scrollBarLeft = Number(totalUlWidth) - this.computedScrollBarLengthNum;
       this.scrollToLeftEnable = true;
       this.scrollToRightEnable = false;
+    }
+  }
+
+  public activateAndScrollToTab(targetTab: AstTabComponent): void {
+    // 1. 激活 tab（复用 clickTab 中的逻辑）
+    this.topLevelTabs().forEach(tab => {
+      tab.isActivated.set(tab.id === targetTab.id);
+      if (tab.id === targetTab.id) {
+        const toActivateTab = { label: tab.label(), id: tab.id, isActivated: true };
+        tab.onClickTab.emit(toActivateTab);
+      }
+    });
+
+    // 2. 确保可见（延迟到 DOM 更新后）
+    setTimeout(() => {
+      this.ensureTabVisible(targetTab);
+    }, 0);
+  }
+
+  public ensureTabVisible(targetTab: AstTabComponent): void {
+    const tabList = this.tabHeaderListRef();
+    if (!tabList || !tabList.nativeElement) return;
+
+    const ulElement = tabList.nativeElement as HTMLElement;
+    const liElement = Array.from(ulElement.children).find(
+      child => child instanceof HTMLElement &&
+        child.dataset['tabType'] === 'tab_header' &&
+        (child as any).__ngContext__?.some((ctx: any) =>
+          ctx?.constructor === AstTabComponent && ctx.id === targetTab.id
+        )
+    ) as HTMLElement | undefined;
+
+    // 更可靠的方式：通过 id 或 label 匹配（建议给 li 加 data-id）
+    // 临时方案：假设顺序一致，用 index
+    const tabIndex = this.topLevelTabs().findIndex(t => t.id === targetTab.id);
+    if (tabIndex === -1) return;
+
+    const li = ulElement.children[tabIndex] as HTMLElement | undefined;
+    if (!li) return;
+
+    const ulRect = ulElement.getBoundingClientRect();
+    const liRect = li.getBoundingClientRect();
+
+    // 如果 tab 完全在可视区内，无需滚动
+    if (liRect.left >= ulRect.left && liRect.right <= ulRect.right) {
+      return;
+    }
+
+    // 否则，滚动使 tab 右对齐（或左对齐，根据需求）
+    // 这里采用“让 tab 尽量靠右显示”的策略
+    const ulScrollLeft = ulElement.scrollLeft;
+    const ulWidth = ulElement.clientWidth;
+    const liOffsetLeft = li.offsetLeft;
+    const liWidth = li.offsetWidth;
+
+    // 目标：让 li 的右侧与 ul 右侧对齐（但不超过内容总宽）
+    let newScrollLeft = liOffsetLeft + liWidth - ulWidth;
+
+    // 边界保护
+    const totalLiWidth = this.getTotalLiWidth(ulElement);
+    const maxScrollLeft = Math.max(0, totalLiWidth - ulWidth);
+    newScrollLeft = Math.min(newScrollLeft, maxScrollLeft);
+    newScrollLeft = Math.max(0, newScrollLeft);
+
+    // 应用滚动
+    ulElement.scrollTo({ left: newScrollLeft, behavior: 'instant' });
+
+    // 同步更新内部状态（scrollBarLeft 等）
+    this.leftScroll = newScrollLeft;
+    if (this.mode === 'horizontal') {
+      const ratio = maxScrollLeft > 0 ? newScrollLeft / maxScrollLeft : 0;
+      const sliderMaxLeft = ulWidth - this.computedScrollBarLengthNum;
+      this.scrollBarLeft = ratio * sliderMaxLeft;
+      this.scrollToLeftEnable = newScrollLeft > 0;
+      this.scrollToRightEnable = newScrollLeft < maxScrollLeft;
     }
   }
 
