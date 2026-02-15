@@ -75,10 +75,12 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
             queueMicrotask(() => {
               this.activateAndScrollToTab(lastTab);
             });
+            this.scheduleScrollbarRecalculation();
           }
         } else if(this.previousTabCount > this.topLevelTabs().length) {
           console.log("tab decrease")
           this.previousTabCount = this.topLevelTabs().length;
+          this.scheduleScrollbarRecalculation();
         }
       }
     });
