@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, viewChild } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, signal, viewChild } from '@angular/core';
 import {CdkDrag, CdkDragDrop, CdkDropList} from '@angular/cdk/drag-drop';
 import { AstTabComponent, AstTabType } from '../ast-tab.component';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
@@ -217,9 +217,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     }
   }
 
-  clickTab(evt: any, targetTab: AstTabComponent) {
-    this.scrollByTab(evt, targetTab);
-
+  clickTab(targetTab: AstTabComponent) {
+    // this.scrollByTab(evt, targetTab);
+    this.ensureTabVisible(targetTab); // 滚动到可见（前面已实现）
     if (targetTab.isActivated()) {
       //If the tab is already actived ,then return;
       return;
@@ -239,35 +239,6 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
         tab.isActivated.set(false);
       }
     })
-  }
-
-  private scrollByTab(evt: any, targetTab: AstTabComponent) {
-    const ulElement = evt.currentTarget.parentElement;
-    const totalUlWidth = window.getComputedStyle(ulElement).width.replace("px", "");
-    let totalLiWidth = this.getTotalLiWidth(ulElement);
-
-    const tabs: any = this.topLevelTabs();
-    let isFirst = tabs[0].id == targetTab.id;
-    let isLast = tabs[tabs.length - 1].id == targetTab.id;
-    if (isFirst) {
-      ulElement.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'instant'
-      });
-      this.scrollBarLeft = 0;
-      this.scrollToLeftEnable = false;
-      this.scrollToRightEnable = true;
-    } else if (isLast) {
-      ulElement.scrollTo({
-        top: 0,
-        left: totalLiWidth,
-        behavior: 'instant'
-      });
-      this.scrollBarLeft = Number(totalUlWidth) - this.computedScrollBarLengthNum;
-      this.scrollToLeftEnable = true;
-      this.scrollToRightEnable = false;
-    }
   }
 
   public activateAndScrollToTab(targetTab: AstTabComponent): void {
@@ -535,11 +506,96 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.addTab()
   }
 
+  blurSwitch = true;
+  downMenuInitiator: DOMRect | undefined;
+  downMenuOpen = false;
+  hiddenTabs = signal<AstTabComponent[]>([])
+  onDownButtonClick(evt: any, action: string) {
+    if (!this.downMenuOpen) {
+      this.downMenuOpen = !this.downMenuOpen;
+      this.downMenuInitiator = { // 模拟一个 DOMRect 对象
+        x: evt.clientX,
+        y: evt.clientY,
+        left: evt.clientX,
+        top: evt.clientY,
+        bottom: evt.clientY,
+        right: evt.clientX,
+        width: 0,
+        height: 0,
+        toJSON: () => { }
+      };
+    }
+    this.currentContextMenuEvt = {
+      clientX: evt.clientX,
+      clientY: evt.clientY
+    };
+    this.calculateHiddenTabs();
+  }
+
+  blurDownBtn(evt: any) {
+    let me = this;
+    if (me.blurSwitch) {
+      me.downMenuOpen = false;
+    }
+  }
+
+  mouseentermenu(evt: any) {
+    this.blurSwitch = false;
+  }
+
+  mouseleavemenu(evt: any) {
+    this.blurSwitch = true;
+  }
+
+
+  clickOpenedTab(tab: AstTabComponent) {
+    this.clickTab(tab); // 复用已有激活逻辑
+    this.downMenuOpen = false
+  }
+
   onMoreButtonClick(action: string) {
   }
 
   drop(event: CdkDragDrop<string[]>) {
     this.dragDrop.emit(event)
+  }
+
+  private calculateHiddenTabs(): void {
+    const tabList = this.tabHeaderListRef();
+    if (!tabList?.nativeElement) {
+      this.hiddenTabs.set([]);
+      return;
+    }
+
+    const ul = tabList.nativeElement as HTMLElement;
+    const ulRect = ul.getBoundingClientRect();
+    const scrollLeft = ul.scrollLeft;
+
+    const visibleTabs: AstTabComponent[] = [];
+    const hiddenTabs: AstTabComponent[] = [];
+
+    const tabs = this.topLevelTabs(); // 假设 topLevelTabs 是 Signal
+    const liElements = Array.from(ul.children).filter(child => child.tagName === 'LI');
+
+    for (let i = 0; i < tabs.length; i++) {
+      const tab = tabs[i];
+      const li = liElements[i] as HTMLElement | undefined;
+      if (!li) continue;
+
+      const liRect = li.getBoundingClientRect();
+      const isVisible = (
+        liRect.right >= ulRect.left &&
+        liRect.left <= ulRect.right
+      );
+
+      if (isVisible) {
+        visibleTabs.push(tab);
+      } else {
+        hiddenTabs.push(tab);
+      }
+    }
+
+    this.hiddenTabs.set(hiddenTabs);
   }
 
 }
