@@ -77,7 +77,7 @@
       [tabType]="{'type':'bilateral'}"
       [(moreButtons)]="moreButtons">
         @for (openedTab of openedList(); track openedTab.id) {
-        <div ast-tab [id]="openedTab.id" [label]="openedTab.tabLabel || openedTab.label" [saved]="openedTab['saved']"
+        <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
           [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
           (onClickTab)="onClickTab($event)">
           @if (openedTab['nodeType']=='api') {

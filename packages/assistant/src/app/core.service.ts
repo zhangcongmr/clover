@@ -658,7 +658,6 @@ export class CoreService {
                 url: url,
                 summary: methodInfos[methodInfoKey].summary,
                 label: pathKey,
-                tabLabel: methodInfoKey.toUpperCase() + "  " + pathKey,
                 rawApiInfo: methodInfos[methodInfoKey],
                 server: currentServer,
                 symbolColor: CoreService.getSymbolColor(methodInfoKey.toUpperCase()),

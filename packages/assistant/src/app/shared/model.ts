@@ -49,7 +49,6 @@ export interface AstTreeNode {
     path?: string;
     url?: string;
     summary?: string;
-    tabLabel?: string;
     rawApiInfo?: any;
     server?: any;
     parentItem?: any,

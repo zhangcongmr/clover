@@ -291,7 +291,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       // 防止空值或仅空白
       if (newLabel) {
         evtObj.item.label = newLabel;
-        evtObj.item.tabLabel = newLabel;
       }
       evtObj.item['saved'] = true;
       evtObj.item.rename = false; // 退出编辑模式

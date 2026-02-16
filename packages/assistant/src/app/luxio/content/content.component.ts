@@ -494,14 +494,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       id: this.uuid(),
       summary: "",
       label: "",
-      tabLabel: "",
       nodeType: 'file',
       children: [],
       auth: {}
     }
     if(defaultName) {
       apiInfo.label = defaultName
-      apiInfo.tabLabel = defaultName
     }
 
     return apiInfo;
@@ -517,7 +515,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       url: "",
       summary: "",
       label: "",
-      tabLabel: "",
       server: "",
       symbolColor: "green",
       nodeType: 'api',
@@ -552,7 +549,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         id: this.uuid(),
         symbol: "Mark",
         label: newFileName,
-        tabLabel: newFileName,
         custom: true,
         type: 'marked',
         value: "111222333",
