@@ -43,7 +43,7 @@
     "@luxio/community-widget": "workspace:*",
     "@mlc-ai/web-llm": "^0.2.80",
     "@tailwindcss/postcss": "^4.1.18",
-    "api-render-ui": "^1.1.3",
+    "api-render-ui": "^1.1.5",
     "asn1js": "^3.0.7",
     "codemirror": "^6.0.2",
     "express": "^5.2.1",
