@@ -462,7 +462,7 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     fetch(reuqestUrl, {
       method: apiInfo.method.toUpperCase(),
       headers: headers,
-      body: body,
+      body: ['GET', 'HEAD'].includes(apiInfo.method.toUpperCase()) ? null : body,
       signal: signal
     })
       .then(response => {
