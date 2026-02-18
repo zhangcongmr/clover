@@ -293,12 +293,21 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  private addRoot(apiData: any, sourceCodeText: string, fileName: string = "Default.json") {
+  removeExtension(filename: string) {
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      return filename; // 没有扩展名
+    }
+    return filename.substring(0, lastDotIndex);
+  }
+
+  private addRoot(apiData: any, sourceCodeText: string, fileName: string = "Default.ospec") {
     apiData.map((val: any) => val['saved'] = true);
     let datas: Array<any> = [];
+    fileName = this.removeExtension(fileName)
     const data: AstTreeNode = {
       id: this.uuid(),
-      label: fileName,
+      label: fileName + '.ospec',
       children: apiData,
       isExpanded: apiData.length > 0,
       nodeType: 'file',

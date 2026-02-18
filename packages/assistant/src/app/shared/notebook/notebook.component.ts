@@ -21,7 +21,9 @@ export class NoteBookComponent implements OnInit {
         if(data) {
             const fileName = data.label;
             if(fileName.endsWith(".json")) {
-                return 'json'
+                return 'text'
+            } else if (fileName.endsWith("ospec")) {
+                return 'ospec'
             } else {
                 return 'text'
             }
