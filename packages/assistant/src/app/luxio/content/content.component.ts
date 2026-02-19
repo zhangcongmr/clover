@@ -64,14 +64,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if(doc  == null || doc === undefined) {
       return;
     }
-    if(typeof doc === 'string' && doc.length > 0) {
-      const json = JSON.parse(doc);
+    if (typeof doc === 'string' || typeof doc === 'object') {
+      let json = (typeof doc === 'string' && doc.length > 0) ? JSON.parse(doc) : (typeof doc === 'object' ? doc : doc);
       let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
-      this.dataList.set(datas);
-      // 启动自动保存
-      this.startAutoSave();
-    } else if(typeof doc === 'object') {
-      let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(doc), JSON.stringify(doc), this.myConfigService.getFileName());
       this.dataList.set(datas);
       // 启动自动保存
       this.startAutoSave();
@@ -79,30 +74,25 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const result = doc();
       if(this.isPromiseLike(result)) {
         (result as Promise<string | any>).then((res: string | any) => {
-          if(typeof res === 'string' && res.length > 0) {
-            const json = JSON.parse(res);
-            const datas = this.coreService.parseOpenApiSpec(json);
-            this.dataList.set(datas);
-          } else if(typeof res === 'object') {
-            this.dataList.set(res.dataList || []);
-            this.openedList.set(res.openedList || []);
-          }
-          // 启动自动保存
-          this.startAutoSave();
+          this.dataParse(res);
         });
       } else {
-        if(typeof result === 'string' && result.length > 0) {
-          const json = JSON.parse(result);
-          const datas = this.coreService.parseOpenApiSpec(json);
-          this.dataList.set(datas);
-        } else if(typeof result === 'object') {
-          this.dataList.set(result.dataList || []);
-          this.openedList.set(result.openedList || []);
-        }
-        // 启动自动保存
-        this.startAutoSave();
+        this.dataParse(result);
       }
     }
+  }
+
+  private dataParse(result: any) {
+    if (typeof result === 'string' && result.length > 0) {
+      const json = JSON.parse(result);
+      const datas = this.coreService.parseOpenApiSpec(json);
+      this.dataList.set(datas);
+    } else if (typeof result === 'object') {
+      this.dataList.set(result.dataList || []);
+      this.openedList.set(result.openedList || []);
+    }
+    // 启动自动保存
+    this.startAutoSave();
   }
 
   ngOnChanges(changes: SimpleChanges): void {

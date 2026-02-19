@@ -58,17 +58,6 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   ngOnInit() {
     this.baseHref = document.querySelector('base')?.getAttribute('href') || '/';
     let me = this;
-    // this.coreService.fetchApiFromServer("/user/allBriefs", false).subscribe(
-    //   (rawData: any) => {
-    //     me.coreService.choosingApiLoading = false;
-    //     if (!rawData) {
-    //       return;
-    //     }
-    //     me.rawSpecBriefDefs = rawData;
-    //     // me.data = this.coreService.parseOpenApiSpec(rawData);
-    //   },
-    //   (reason: any) => {
-    //   });
   }
 
   ngAfterViewChecked(): void {
@@ -110,16 +99,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     let me = this;
     this.coreService.getData("/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
       (rawData: any) => {
-        me.coreService.choosingApiLoading = false;
-        if (!rawData) {
-          return;
-        }
-        me.rawSpecDef = JSON.parse(rawData.profile);
-        if(me.rawSpecDef['dataType'] == 'LUXIO_COLLECTION') {
-          me.data = me.rawSpecDef['children'] || [];
-        } else {
-          me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
-        }
+        this.parseData(rawData)
         me.importOut.emit(me.data);
       });
   }
@@ -129,21 +109,25 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     let me = this;
     this.coreService.getData("/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
       rawData => {
-        me.coreService.choosingApiLoading = false;
-        if (!rawData) {
-          return;
-        }
-        me.rawSpecDef = JSON.parse(rawData.profile);
-        if(me.rawSpecDef['dataType'] == 'LUXIO_COLLECTION') {
-          me.data = me.rawSpecDef['children'] || [];
-        } else {
-          me.data = me.coreService.parseOpenApiSpec(me.rawSpecDef);
-        }
+        this.parseData(rawData)
         me.viewApi({
           data: me.data,
           rawSpecDef: me.rawSpecDef
         });
       });
+  }
+
+  parseData(rawData: any) {
+    this.coreService.choosingApiLoading = false;
+    if (!rawData) {
+      return;
+    }
+    this.rawSpecDef = JSON.parse(rawData.profile);
+    if (this.rawSpecDef['dataType'] == 'LUXIO_COLLECTION') {
+      this.data = this.rawSpecDef['children'] || [];
+    } else {
+      this.data = this.coreService.parseOpenApiSpec(this.rawSpecDef);
+    }
   }
 
   showPreviewOrCode = true;
