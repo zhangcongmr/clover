@@ -656,7 +656,6 @@ export class CoreService {
                 symbol: methodInfoKey.toUpperCase(),
                 path: pathKey,
                 url: url,
-                summary: methodInfos[methodInfoKey].summary,
                 label: pathKey,
                 rawApiInfo: methodInfos[methodInfoKey],
                 server: currentServer,

@@ -18,16 +18,17 @@ export class MarkdownComponent implements OnInit {
   textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
   @Input() textInfo: any;
   readonly saved = output();
+  private editorView!: EditorView;
 
   constructor() { }
 
   ngOnInit() {
 
     const textEditorView = this.textEditorView()
-    const view = new EditorView({
+    this.editorView = new EditorView({
       parent: textEditorView?.nativeElement,
-      doc: `*CodeMirror* Markdown \`mode\``,
-      extensions: [basicSetup, markdown(),
+      doc: this.textInfo.sourceCodeText,
+      extensions: [basicSetup, markdown(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
         EditorView.theme({
           '&': {
             height: '100%',
@@ -49,12 +50,6 @@ export class MarkdownComponent implements OnInit {
   }
 
   outOfText() {
-    if (document) {
-      const contentEle = document.getElementById('content_'+ this.textInfo.id);
-      if (contentEle) {
-        contentEle.innerHTML = marked.parse(this.textInfo.value);
-      }
-    }
   }
 
 
@@ -65,8 +60,14 @@ export class MarkdownComponent implements OnInit {
       // if(this.textInfo['saved']) {
       //   return;
       // }
+      const doc = this.getEditorContent()
       this.textInfo['saved'] = true;
+      this.textInfo['sourceCodeText'] = doc;
       this.saved.emit(this.textInfo);
     }
+  }
+
+  getEditorContent(): string {
+    return this.editorView.state.doc.toString();
   }
 }

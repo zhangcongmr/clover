@@ -28,12 +28,6 @@ export class AddProjectComponent implements OnInit {
   importFromApiDefUrl = ""
 
   data = [];
-  columns = [
-    { key: "method", title: "Method" },
-    { key: "path", title: "Path" },
-    { key: "summary", title: "Summary" },
-    { key: "serviceName", title: "ServiceName" }
-  ];
 
 
   serverList: Array<any> = [];

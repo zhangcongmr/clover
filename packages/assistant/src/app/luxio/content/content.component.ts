@@ -347,13 +347,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   saveText(evt: any) {
-    const data: any = {
-      id: this.uuid(),
-      label: "New Collection",
-      children: [evt],
-      isExpanded: true
-    }
-    this.dataList().push(data)
+    // const data: any = {
+    //   id: this.uuid(),
+    //   label: "New Collection",
+    //   children: [evt],
+    //   isExpanded: true
+    // }
+    // this.dataList().push(data)
 
     this.storeApi()
   }
@@ -501,7 +501,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   createNewFile(defaultName?: string): AstTreeNode {
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
-      summary: "",
       label: "",
       nodeType: 'file',
       children: [],
@@ -522,7 +521,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       symbol: "GET",
       path: "",
       url: "",
-      summary: "",
       label: "",
       server: "",
       symbolColor: "green",
