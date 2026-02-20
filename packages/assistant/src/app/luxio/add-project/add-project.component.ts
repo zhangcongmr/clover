@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, output } from '@angular/core';
-import { CoreService, ConfigService } from '../../core.service';
+import { CoreService } from '../../core.service';
 import { AstTableComponent } from '../../shared/ast-table/ast-table.component';
 import { FormsModule } from '@angular/forms';
 
@@ -30,7 +30,6 @@ export class AddProjectComponent implements OnInit {
   data = [];
 
 
-  serverList: Array<any> = [];
   currentServer: any = {};
   selectedApiInfos: Array<any> = [];
   showServerInfo = false;
@@ -49,41 +48,10 @@ export class AddProjectComponent implements OnInit {
     this.importType = '1';
   }
 
-  beforeClose = () => {
-    // this.msgBox.confirm({
-    //   title: '提示',
-    //   content: '有未保存的数据，确认关闭吗？',
-    //   type: 'warning',
-    //   callback: (action: XMessageBoxAction) => {
-    //     action === 'confirm' && this.close();
-    //   }
-    // });
-    this.close();
-  };
-
-  confirm() {
-    this.confirmSelected(this.selectedApiInfos);
-  }
-
   private confirmSelected(selectedData: any) {
     this.apiInfoSelected.emit(selectedData);
     this.close();
     this.reset();
-  }
-
-  cancel() {
-    this.close();
-    this.reset();
-  }
-
-  clickRoot(evt: any) {
-    this.showServerInfo = true;
-    this.currentServer = evt;
-  }
-
-  serviceApis(evt: any) {
-    this.data = evt;
-    this.showServerInfo = false;
   }
 
   apiCheckedFun(evt: any) {
