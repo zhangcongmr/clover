@@ -59,7 +59,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     const doc = this.myConfigService.getDoc();
     if(doc  == null || doc === undefined) {
       return;
@@ -72,13 +72,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.startAutoSave();
     } else if(typeof doc === 'function') {
       const result = doc();
-      if(this.isPromiseLike(result)) {
-        (result as Promise<string | any>).then((res: string | any) => {
-          this.dataParse(res);
-        });
-      } else {
-        this.dataParse(result);
-      }
+      const res = this.isPromiseLike(result) ? (await result) : result;
+      this.dataParse(res);
     }
   }
 
@@ -238,7 +233,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   apiSelected(evt: any) {
     const fileName = evt.fileName;
-    const apiData = evt.apiData;
+    const apiData = this.coreService.parseOpenApiSpec(JSON.parse(evt.sourceCodeText));
     let datas: Array<any> = this.addRoot(apiData, evt.sourceCodeText, fileName);
     this.assignDeepLevel(datas);
     this.dataList.update(value => value.concat(datas))

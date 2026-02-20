@@ -47,8 +47,6 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   targetPageNumber = '';
   condition = false;
 
-  useNew = true;
-  currentUi = "Switch to old interface"
   apiSourceView!: EditorView;
   baseHref = ''
 
@@ -57,7 +55,6 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
 
   ngOnInit() {
     this.baseHref = document.querySelector('base')?.getAttribute('href') || '/';
-    let me = this;
   }
 
   ngAfterViewChecked(): void {
@@ -68,13 +65,6 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     //   }
     // }
   }
-
-  useNewUi() {
-    this.useNew = !this.useNew
-    this.currentUi = this.useNew ? "Switch to old interface" : "Switch to new interface"
-  }
-
-
 
   ngAfterViewInit(): void {
 
@@ -95,52 +85,10 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
     }
   }
 
-  importFromApiDef(rawSpecBrief: any) {
-    let me = this;
-    this.coreService.getData("/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
-      (rawData: any) => {
-        this.parseData(rawData)
-        me.importOut.emit(me.data);
-      });
-  }
-
-
-  view(rawSpecBrief: any) {
-    let me = this;
-    this.coreService.getData("/user/apiInfoModel/" + rawSpecBrief.id).subscribe(
-      rawData => {
-        this.parseData(rawData)
-        me.viewApi({
-          data: me.data,
-          rawSpecDef: me.rawSpecDef
-        });
-      });
-  }
-
-  parseData(rawData: any) {
-    this.coreService.choosingApiLoading = false;
-    if (!rawData) {
-      return;
-    }
-    this.rawSpecDef = JSON.parse(rawData.profile);
-    if (this.rawSpecDef['dataType'] == 'LUXIO_COLLECTION') {
-      this.data = this.rawSpecDef['children'] || [];
-    } else {
-      this.data = this.coreService.parseOpenApiSpec(this.rawSpecDef);
-    }
-  }
-
   showPreviewOrCode = true;
   sourceCodeText = '';
   subPanelType = 1;
-  viewApi(evt: any) {
-    this.subPanelType = 2;
-    this.data = evt.data;
-    this.sourceCodeText = JSON.stringify(evt.rawSpecDef, null, 2);
-    if(!this.showPreviewOrCode) {
-      this.showPreviewOrCodeFn(this.showPreviewOrCode);
-    }
-  }
+
 
   showPreviewOrCodeFn(flag: boolean) {
     this.showPreviewOrCode = flag;

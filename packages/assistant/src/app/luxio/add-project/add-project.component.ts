@@ -27,8 +27,6 @@ export class AddProjectComponent implements OnInit {
   sourceCodeText: string = '';
   importFromApiDefUrl = ""
 
-  data = [];
-
   ngOnInit() {
   }
 
@@ -37,7 +35,6 @@ export class AddProjectComponent implements OnInit {
   }
 
   close() {
-    this.data = [];
     this.visible = false;
     this.importType = '1';
   }
@@ -54,7 +51,6 @@ export class AddProjectComponent implements OnInit {
   }
 
   private reset() {
-    this.data = [];
     this.sourceCodeText = '';
     this.fileName = '';
   }
@@ -62,7 +58,6 @@ export class AddProjectComponent implements OnInit {
   fileContentChangedFn(evt: any) {
     this.sourceCodeText = evt.content;
     this.fileName = evt.fileName;
-    this.data = this.coreService.parseOpenApiSpec(JSON.parse(evt.content));
   }
 
   clearFileSelected() {
@@ -77,10 +72,8 @@ export class AddProjectComponent implements OnInit {
         if (!rawData) {
           return;
         }
-        me.data = this.coreService.parseOpenApiSpec(rawData);
         me.confirmSelected({
           sourceCodeText: JSON.stringify(rawData),
-          apiData: me.data
         })
       });
   }
@@ -95,7 +88,6 @@ export class AddProjectComponent implements OnInit {
     this.confirmSelected({
       fileName: this.fileName,
       sourceCodeText: this.sourceCodeText,
-      apiData: this.data
     })
   }
 }
