@@ -29,8 +29,6 @@ export class AddProjectComponent implements OnInit {
 
   data = [];
 
-  selectedApiInfos: Array<any> = [];
-
   ngOnInit() {
   }
 
@@ -40,7 +38,6 @@ export class AddProjectComponent implements OnInit {
 
   close() {
     this.data = [];
-    this.selectedApiInfos = [];
     this.visible = false;
     this.importType = '1';
   }
@@ -51,10 +48,6 @@ export class AddProjectComponent implements OnInit {
     this.reset();
   }
 
-  apiCheckedFun(evt: any) {
-    // this.selectedApiInfos = evt;
-  }
-
   importTypeChangeFn(flag: string) {
     this.importType = flag;
     this.reset();
@@ -62,7 +55,6 @@ export class AddProjectComponent implements OnInit {
 
   private reset() {
     this.data = [];
-    this.selectedApiInfos = [];
     this.sourceCodeText = '';
     this.fileName = '';
   }
