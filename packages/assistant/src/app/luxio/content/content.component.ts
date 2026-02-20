@@ -183,9 +183,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
     for (const node of nodes) {
-      node.deepLevel = level; // 设置当前层级
+      if(!node.deepLevel) {
+        node.deepLevel = level; // 设置当前层级
+      }
       if (node.children && node.children.length > 0) {
-        this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
+        this.assignDeepLevel(node.children, node.deepLevel + 1); // 递归处理子节点，层级+1
       }
     }
   }
@@ -220,6 +222,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       item.isExpanded = true;
       item.isParsed = true;
       item.servers = apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : []
+      this.assignDeepLevel([item])
     }
 
     this.openTab(item);

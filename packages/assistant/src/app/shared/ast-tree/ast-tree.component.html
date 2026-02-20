@@ -44,7 +44,7 @@
       (click)="elementClick(childItem);" [class.active]="childItem['isActive']&&!childItem['hideActiveStatus']"
       (contextmenu)="showContextMenu({evt: $event, item: childItem})" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
       <div [style.width.px]="5 + (childItem.deepLevel || 0) * 10"></div>
-      @if (childItem.nodeType=='folder'|| item.label.endsWith('.ospec') || (childItem.children!=null&&childItem.children.length>0)) {
+      @if (childItem.nodeType=='folder'|| childItem.label.endsWith('.ospec') || (childItem.children!=null&&childItem.children.length>0)) {
         <button class="btn-item" (click)="expandCollapseClick($event, childItem)">
           <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
