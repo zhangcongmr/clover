@@ -65,9 +65,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       return;
     }
     if (typeof doc === 'string' || typeof doc === 'object') {
-      let json = (typeof doc === 'string' && doc.length > 0) ? JSON.parse(doc) : (typeof doc === 'object' ? doc : doc);
-      let datas: Array<any> = this.addRoot(this.coreService.parseOpenApiSpec(json), doc, this.myConfigService.getFileName());
-      this.dataList.set(datas);
+      const ospecFileName = this.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
+
+      let data: AstTreeNode = this.createNewFile(doc, ospecFileName);
+      this.assignDeepLevel([data]);
+
+      this.dataList.set([data]);
       // 启动自动保存
       this.startAutoSave();
     } else if(typeof doc === 'function') {
@@ -79,9 +82,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   private dataParse(result: any) {
     if (typeof result === 'string' && result.length > 0) {
-      const json = JSON.parse(result);
-      const datas = this.coreService.parseOpenApiSpec(json);
-      this.dataList.set(datas);
+      const ospecFileName = this.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
+
+      let data: AstTreeNode = this.createNewFile(result, ospecFileName);
+      this.assignDeepLevel([data]);
+
+      this.dataList.set([data]);
     } else if (typeof result === 'object') {
       this.dataList.set(result.dataList || []);
       this.openedList.set(result.openedList || []);
@@ -207,7 +213,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       return;
     }
 
-    this.openTab(evt);
+    const item = evt;
+    if (item.nodeType == 'file' && item.label.endsWith('.ospec') && !item.isParsed) {
+      const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.sourceCodeText || ''));
+      item.children = apiData;
+      item.isExpanded = true;
+      item.isParsed = true;
+      item.servers = apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : []
+    }
+
+    this.openTab(item);
   }
 
   public openTab(targetTab: any) {
@@ -233,10 +248,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   apiSelected(evt: any) {
     const fileName = evt.fileName;
-    const apiData = this.coreService.parseOpenApiSpec(JSON.parse(evt.sourceCodeText));
-    let datas: Array<any> = this.addRoot(apiData, evt.sourceCodeText, fileName);
-    this.assignDeepLevel(datas);
-    this.dataList.update(value => value.concat(datas))
+    const ospecFileName = this.removeExtension(fileName) + '.ospec'
+
+    let data: AstTreeNode = this.createNewFile(evt.sourceCodeText, ospecFileName);
+    this.assignDeepLevel([data]);
+    this.dataList.update(value => value.concat([data]))
     this.storeApi()
     this.currentDisplayViewId.set(1);
     this.sideOpen.set(true);
@@ -284,39 +300,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       return filename; // 没有扩展名
     }
     return filename.substring(0, lastDotIndex);
-  }
-
-  private addRoot(apiData: any, sourceCodeText: string, fileName: string = "Default.ospec") {
-    apiData.map((val: any) => val['saved'] = true);
-    let datas: Array<any> = [];
-    fileName = this.removeExtension(fileName)
-    const data: AstTreeNode = {
-      id: this.uuid(),
-      label: fileName + '.ospec',
-      children: apiData,
-      isExpanded: apiData.length > 0,
-      nodeType: 'file',
-      servers: apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : [],
-      sourceCodeText: sourceCodeText,
-      isNewData: true
-    };
-    datas.push(data);
-    return datas;
-  }
-
-  groupBy(dataList: Array<any>, key: string) {
-    return dataList.reduce((result, currentValue) => {
-      const value = currentValue[key];
-      // 如果 key 值不存在于 result 中，则添加一个新数组  
-      if (!result[value]) {
-        result[value] = [];
-      }
-
-      // 将当前对象推送到相应 key 的数组中
-      result[value].push(currentValue);
-      // 返回更新后的 result  
-      return result;
-    }, {});
   }
 
   saveApi(evt: any) {
@@ -461,12 +444,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   onAddNewTab(evt: any) {
-    const datas = this.openedList()
-    datas.forEach(ele => ele.isActive = false);
-    const newNode: any = this.createNewFile("Untitled")
+    const openedList = this.openedList()
+    openedList.forEach(ele => ele.isActive = false);
+    const newNode: any = this.createNewFile("", "Untitled")
     newNode['saved'] = false
     newNode.isActive = true;
-    datas.push(newNode)
+    openedList.push(newNode)
     this.storeOpenedList()
   }
 
@@ -483,11 +466,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     };
   }
 
-  createNewFile(defaultName?: string): AstTreeNode {
+  private createNewFile(fileContent?: any, defaultName?: string): AstTreeNode {
+    if(typeof fileContent === 'object') {
+      fileContent = JSON.stringify(fileContent)
+    }
+
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
       label: "",
       nodeType: 'file',
+      sourceCodeText: fileContent,
       children: [],
       auth: {}
     }
@@ -498,7 +486,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     return apiInfo;
   }
 
-  createNewApi(): AstTreeNode {
+  private createNewApi(): AstTreeNode {
     const apiInfo: AstTreeNode = {
       id: this.uuid(),
       serviceName: "",
