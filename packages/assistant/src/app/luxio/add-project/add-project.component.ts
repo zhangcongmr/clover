@@ -29,10 +29,7 @@ export class AddProjectComponent implements OnInit {
 
   data = [];
 
-
-  currentServer: any = {};
   selectedApiInfos: Array<any> = [];
-  showServerInfo = false;
 
   ngOnInit() {
   }
