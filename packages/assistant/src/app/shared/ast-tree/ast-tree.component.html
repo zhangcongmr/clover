@@ -21,7 +21,7 @@
 
     @if(item.nodeType == 'api') {
       <div
-        style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;margin-left: 4px;margin-right: 4px;"
+        style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;margin-right: 4px;"
         [style.color]="item.symbolColor">
           <div style="text-align: left;font-size: 10px;">
             {{item.symbol}}
@@ -58,7 +58,7 @@
 
       @if(childItem.nodeType == 'api') {
         <div
-          style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;flex: 0 0 2rem;margin-left: 4px;margin-right: 4px;"
+          style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;flex: 0 0 2rem;margin-right: 4px;"
           [style.color]="childItem.symbolColor">
             <div style="text-align: left;font-size: 10px;">
               {{childItem.symbol}}
