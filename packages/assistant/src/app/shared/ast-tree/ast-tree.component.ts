@@ -504,7 +504,7 @@ export function deleteParentItemRef(parentItemCopy: any) {
   ['children', //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
     'isExpanded',
     'isNewData',
-    'sourceCodeText',
+    'content',
     'isActive',
     'hideActiveStatus'
   ]

@@ -86,7 +86,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   }
 
   showPreviewOrCode = true;
-  sourceCodeText = '';
+  content = '';
   subPanelType = 1;
 
 
@@ -102,7 +102,7 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
         const domView = this.apiSourceCodeContainerView();
         if (domView) {
           this.apiSourceView = new EditorView({
-            doc: this.sourceCodeText,
+            doc: this.content,
             parent: domView.nativeElement,
             extensions: [basicSetup, json(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
               EditorView.theme({

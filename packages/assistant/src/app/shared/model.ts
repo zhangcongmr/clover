@@ -70,7 +70,7 @@ export interface AstTreeNode {
     custom?: boolean;
     customQueryparameters?: Array<any>;
     customHeaderparameters?: Array<any>;
-    sourceCodeText?: string;
+    content?: string;
     auth?: any;
     rename?: boolean
 }

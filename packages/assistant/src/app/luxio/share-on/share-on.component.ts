@@ -31,7 +31,7 @@ export class ShareOnComponent {
       this.data.createtime = new Date().toISOString();
       this.data.updatetime = new Date().toISOString();
       this.data.username = this.coreService.userData?.username || "Anonymous";
-      this.data.profile = this.data.profile.sourceCodeText || "";
+      this.data.profile = this.data.profile.content || "";
 
       this.coreService.postData(this.serverDataUrl, this.data);
       this.share.emit();

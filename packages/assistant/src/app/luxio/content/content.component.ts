@@ -217,7 +217,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     const item = evt;
     if (item.nodeType == 'file' && item.label.endsWith('.ospec') && !item.isParsed) {
-      const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.sourceCodeText || ''));
+      const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));
       item.children = apiData;
       item.isExpanded = true;
       item.isParsed = true;
@@ -253,7 +253,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     const fileName = evt.fileName;
     const ospecFileName = this.removeExtension(fileName) + '.ospec'
 
-    let data: AstTreeNode = this.createNewFile(evt.sourceCodeText, ospecFileName);
+    let data: AstTreeNode = this.createNewFile(evt.content, ospecFileName);
     this.assignDeepLevel([data]);
     this.dataList.update(value => value.concat([data]))
     this.storeApi()
@@ -478,7 +478,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       id: this.uuid(),
       label: "",
       nodeType: 'file',
-      sourceCodeText: fileContent,
+      content: fileContent,
       children: [],
       auth: {}
     }

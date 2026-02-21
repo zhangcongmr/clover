@@ -24,7 +24,7 @@ export class AddProjectComponent implements OnInit {
   visible!: boolean;
   importType = '1';  // 1 - From API Definition  2 - From Community  3 - From Local
   fileName: string = '';
-  sourceCodeText: string = '';
+  content: string = '';
   importFromApiDefUrl = ""
 
   ngOnInit() {
@@ -51,12 +51,12 @@ export class AddProjectComponent implements OnInit {
   }
 
   private reset() {
-    this.sourceCodeText = '';
+    this.content = '';
     this.fileName = '';
   }
 
   fileContentChangedFn(evt: any) {
-    this.sourceCodeText = evt.content;
+    this.content = evt.content;
     this.fileName = evt.fileName;
   }
 
@@ -73,7 +73,7 @@ export class AddProjectComponent implements OnInit {
           return;
         }
         me.confirmSelected({
-          sourceCodeText: JSON.stringify(rawData),
+          content: JSON.stringify(rawData),
         })
       });
   }
@@ -87,7 +87,7 @@ export class AddProjectComponent implements OnInit {
   importOutFromLocal() {
     this.confirmSelected({
       fileName: this.fileName,
-      sourceCodeText: this.sourceCodeText,
+      content: this.content,
     })
   }
 }

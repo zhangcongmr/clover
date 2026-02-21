@@ -27,7 +27,7 @@ export class MarkdownComponent implements OnInit {
     const textEditorView = this.textEditorView()
     this.editorView = new EditorView({
       parent: textEditorView?.nativeElement,
-      doc: this.textInfo.sourceCodeText,
+      doc: this.textInfo.content,
       extensions: [basicSetup, markdown(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
         EditorView.theme({
           '&': {
@@ -62,7 +62,7 @@ export class MarkdownComponent implements OnInit {
       // }
       const doc = this.getEditorContent()
       this.textInfo['saved'] = true;
-      this.textInfo['sourceCodeText'] = doc;
+      this.textInfo['content'] = doc;
       this.saved.emit(this.textInfo);
     }
   }

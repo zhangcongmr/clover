@@ -15,7 +15,7 @@ export class ApiNoteBookComponent implements OnInit {
 
     ngOnInit(): void {
         let data = this.data();
-        const openapiSpec: any = data?.sourceCodeText != null ? JSON.parse(data?.sourceCodeText) : {}
+        const openapiSpec: any = data?.content != null ? JSON.parse(data?.content) : {}
         if (!openapiSpec || !openapiSpec.paths) {
             // alert('⚠️ Please define `openapiSpec` in the script tag.');
             return;
