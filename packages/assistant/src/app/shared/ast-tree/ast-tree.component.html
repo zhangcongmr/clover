@@ -1,4 +1,4 @@
-@if (isSearch()) {
+@if (dataType() != 'subData' && isSearch()) {
   <div style="margin-bottom: 0.5rem;">
     <input type="text"  [(ngModel)]="searchValue" (keyup)="keyUpSearch(searchValue, $event)" (paste)="pasteSearch(searchValue, $event)"
       (cut)="cutSearch(searchValue, $event)" autocomplete="off" placeholder="Input keywords filtering" class="input_filter">
