@@ -39,3 +39,11 @@
   background-color: transparent;
   cursor: pointer;
 }
+
+.lyout-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    margin-right: 4px;
+}

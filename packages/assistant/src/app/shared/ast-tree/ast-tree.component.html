@@ -18,23 +18,17 @@
         </svg>
       </button>
     }
-
-    @if(item.nodeType == 'api') {
-      <div
-        style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;margin-right: 4px;"
-        [style.color]="item.symbolColor">
-          <div style="text-align: left;font-size: 10px;">
-            {{item.symbol}}
-          </div>
-      </div>
-    } @else if(item.nodeType=='file') {
-        <div style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;margin-right: 4px;">
-          <svg class="icon" width="16" height="16">
-            <use href="#icon-file"></use>
-          </svg>
+    <div class="lyout-item" [style.flex]="item.nodeType == 'api' ? '0 0 2rem':''">
+      @if(item.nodeType == 'api') {
+        <div style="text-align: left;font-size: 10px;" [style.color]="item.symbolColor">
+          {{item.symbol}}
         </div>
-    }
-
+      } @else if(item.nodeType=='file') {
+        <svg class="icon" width="16" height="16">
+          <use href="#icon-file"></use>
+        </svg>
+      }
+    </div>
     <div #editorItemRef [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: item})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: item})">
       {{ item.label }}
@@ -55,25 +49,17 @@
           </svg>
         </button>
       }
-
-      @if(childItem.nodeType == 'api') {
-        <div
-          style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;flex: 0 0 2rem;margin-right: 4px;"
-          [style.color]="childItem.symbolColor">
-            <div style="text-align: left;font-size: 10px;">
-              {{childItem.symbol}}
-            </div>
-        </div>
-      } @else if(childItem.nodeType=='file') {
-        <div
-          style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;margin-right: 4px;">
+      <div class="lyout-item" [style.flex]="childItem.nodeType == 'api' ? '0 0 2rem':''">
+        @if(childItem.nodeType == 'api') {
+          <div style="text-align: left;font-size: 10px;" [style.color]="childItem.symbolColor">
+            {{childItem.symbol}}
+          </div>
+        } @else if(childItem.nodeType=='file') {
           <svg class="icon" width="16" height="16">
             <use href="#icon-file"></use>
           </svg>
-        </div>
-       
-      }
-
+        }
+      </div>
       <div #editorItemRef [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: childItem})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: childItem})">
         {{ childItem.label }}
