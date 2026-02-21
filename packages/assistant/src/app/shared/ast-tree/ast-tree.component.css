@@ -47,3 +47,14 @@
     justify-content: flex-end;
     margin-right: 4px;
 }
+.lyoutlabel-base::after {
+    
+}
+.lyoutlabel {
+    width: 100%;
+    border: 1px solid #ccc;
+    background-color: white;
+    outline: none;
+    padding: 4px;
+    cursor: text;
+}

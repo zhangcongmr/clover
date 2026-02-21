@@ -29,7 +29,7 @@
         </svg>
       }
     </div>
-    <div #editorItemRef [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
+    <div #editorItemRef [attr.contenteditable]="item.rename" class="lyoutlabel-base" [class.lyoutlabel]="item.rename"
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: item})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: item})">
       {{ item.label }}
     </div>
@@ -60,7 +60,7 @@
           </svg>
         }
       </div>
-      <div #editorItemRef [attr.contenteditable]="childItem.rename" [style]="childItem.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
+      <div #editorItemRef [attr.contenteditable]="childItem.rename" class="lyoutlabel-base" [class.lyoutlabel]="childItem.rename"
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: childItem})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: childItem})">
         {{ childItem.label }}
       </div>
