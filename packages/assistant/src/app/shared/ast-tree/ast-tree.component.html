@@ -28,9 +28,11 @@
           </div>
       </div>
     } @else if(item.nodeType=='file') {
-      <svg class="icon" width="16" height="16">
-        <use href="#icon-file"></use>
-      </svg>
+        <div style="display: flex;flex-direction: row;align-items: center;justify-content: flex-end;margin-right: 4px;">
+          <svg class="icon" width="16" height="16">
+            <use href="#icon-file"></use>
+          </svg>
+        </div>
     }
 
     <div #editorItemRef [attr.contenteditable]="item.rename" [style]="item.rename ? 'width: 100%; border: 1px solid #ccc;background-color:white; outline: none; padding: 4px;cursor: text;' : ''"
