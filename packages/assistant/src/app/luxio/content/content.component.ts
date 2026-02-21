@@ -366,6 +366,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     if (evt.action == 'Share') {
       this.shareOnMenuVisible = true;
+      this.shareData = {}
       this.shareData.profile = evt.target;
     }
   }
