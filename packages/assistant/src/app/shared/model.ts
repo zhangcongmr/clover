@@ -36,6 +36,7 @@ export interface AstTreeNode {
     children: Array<AstTreeNode>;
     deepLevel?: number;
     isExpanded?: boolean;
+    isLocal?: boolean;
     nodeType?: TreeNodeType;
     isNewData?: boolean;
     servers?: Array<string>;
