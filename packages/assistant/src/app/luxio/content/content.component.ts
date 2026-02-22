@@ -210,12 +210,24 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   }
 
-  listClick(evt: any) {
+  async listClick(evt: any) {
     if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api'&& evt['nodeType'] != 'file') {
       return;
     }
 
     const item = evt;
+
+    // if file under imported folder and we have a handle, read its content
+    if (item.folderHandle && item.folderHandle.kind === 'file') {
+      try {
+        const f: any = await item.folderHandle.getFile();
+        const text = await f.text();
+        item.content = text;
+      } catch (err) {
+        console.error('failed to read folder file', err);
+      }
+    }
+
     if (item.nodeType == 'file' && item.label.endsWith('.ospec') && !item.isParsed) {
       const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));
       item.children = apiData;
@@ -250,13 +262,47 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   apiSelected(evt: any) {
-    const fileName = evt.fileName;
-    const ospecFileName = this.removeExtension(fileName) + '.ospec'
+    // handle different import payloads
+    if (evt.folderHandle) {
+      // folder import
+      const rootName = evt.folderHandle.name || 'folder';
+      const rootNode: AstTreeNode = {
+        id: this.uuid(),
+        label: rootName,
+        children: evt.tree || [],
+        nodeType: 'folder',
+        isExpanded: true,
+        // store handle for later operations
+        custom: true,
+        folderHandle: evt.folderHandle,
+        folderInfo: {
+          servers: []
+        },
+        mode: evt.mode // read or readwrite
+      } as any;
+      this.assignDeepLevel([rootNode]);
+      this.dataList.update(value => value.concat([rootNode]));
+    } else if (evt.fileName) {
+      const fileName = evt.fileName;
+      const ospecFileName = this.removeExtension(fileName) + '.ospec';
 
-    let data: AstTreeNode = this.createNewFile(evt.content, ospecFileName);
-    this.assignDeepLevel([data]);
-    this.dataList.update(value => value.concat([data]))
-    this.storeApi()
+      let data: AstTreeNode = this.createNewFile(evt.content, ospecFileName);
+      this.assignDeepLevel([data]);
+      this.dataList.update(value => value.concat([data]));
+    } else if (evt.apiData) {
+      // from ecosystem
+      const data: AstTreeNode = {
+        id: this.uuid(),
+        label: evt.apiData.name || 'api',
+        children: [],
+        nodeType: 'api',
+        rawApiInfo: evt.apiData
+      } as any;
+      this.assignDeepLevel([data]);
+      this.dataList.update(value => value.concat([data]));
+    }
+
+    this.storeApi();
     this.currentDisplayViewId.set(1);
     this.sideOpen.set(true);
   }
@@ -317,16 +363,20 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     this.storeApi()
   }
 
-  saveText(evt: any) {
-    // const data: any = {
-    //   id: this.uuid(),
-    //   label: "New Collection",
-    //   children: [evt],
-    //   isExpanded: true
-    // }
-    // this.dataList().push(data)
+  async saveText(evt: any) {
+    // if the tab corresponds to a file from an imported folder and has a handle,
+    // attempt to write the updated content back to disk when in write mode
+    if (evt.folderHandle && evt.folderHandle.kind === 'file' && evt.mode === 'readwrite') {
+      try {
+        const writable = await evt.folderHandle.createWritable();
+        await writable.write(evt.content || '');
+        await writable.close();
+      } catch (err) {
+        console.error('failed to write file', err);
+      }
+    }
 
-    this.storeApi()
+    this.storeApi();
   }
 
   onViewOut(evt: any) {

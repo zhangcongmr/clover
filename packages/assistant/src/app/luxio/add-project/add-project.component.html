@@ -1,4 +1,22 @@
 <ast-modal [title]="'Import API'" [visible]="visible" (close)="close()">
+  <style>
+    /* scoped styles for folder selection tree inside the import modal */
+    .add-project-tree .child-item {
+      padding: 4px 6px;
+      border-radius: 4px;
+      margin: 2px 0;
+      transition: background-color 0.12s, border-left-color 0.12s;
+    }
+    .add-project-tree .child-item.active {
+      background-color: #e6f7ff; /* light blue */
+      border-left: 3px solid #1890ff; /* primary blue accent */
+      box-shadow: inset 0 0 0 1px rgba(24,144,255,0.06);
+    }
+    .add-project-tree .lyoutlabel-base {
+      padding-left: 6px;
+    }
+    .add-project-tree .btn-item { margin-right: 6px; }
+  </style>
   <div class="codigma-ast-modal-body">
     <div data-layer="import-type" class="ImportType codigma-import-type">
       <div data-layer="from-remote" class="FromRemote codigma-from-remote"
@@ -55,7 +73,27 @@
         <app-api-explorer (importOut)="importOutFromEcosystem($event)"></app-api-explorer>
       } @else {
         <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section" style="flex:none">
-          <file-input (fileContentChanged)="fileContentChangedFn($event)" (clearSelectd)="clearFileSelected()" />
+          <div style="display: flex;max-height: 300px;gap: 0.5rem;">
+            <!-- file picker -->
+            <file-input (fileContentChanged)="fileContentChangedFn($event)" (clearSelectd)="clearFileSelected()" />
+            <!-- show tree if folder selected -->
+            <div *ngIf="directoryTreeData.length>0" class="add-project-tree"
+              style="overflow:auto; border:1px solid #ccc;padding:4px;width: 300px;">
+              <div ast-tree [data]="directoryTreeData" [fobiddenContextMenu]="true"></div>
+            </div>
+
+          </div>
+
+          <!-- folder selection controls -->
+          <div style="margin-top:1rem;">
+            <label>Folder mode:</label>
+            <select [(ngModel)]="folderReadWriteMode" style="margin-left:.5rem;">
+              <option value="read">Read</option>
+              <option value="readwrite">Read/Write</option>
+            </select>
+            <button data-layer="open-folder-btn" (click)="openFolder(folderReadWriteMode)" style="margin-left:1rem; padding: 0.2rem; background-color: var(--primary-color, rgb(103, 137, 186));color: white;cursor: pointer;">Open Folder</button>
+          </div>
+
           <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
             <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importOutFromLocal()">
             Import</div>
