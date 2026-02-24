@@ -215,6 +215,119 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   }
 
+  async openFolderInContent(mode: 'read' | 'readwrite' = 'read') {
+    // Delegate folder selection and tree building to the AddProjectComponent
+    const addProject = this.addProjectComponent();
+    if (!addProject) {
+      console.warn('AddProjectComponent not available');
+      return;
+    }
+
+    // ensure environment supports picker
+    if (!('showDirectoryPicker' in window)) {
+      alert('The File System Access API is not supported in this browser.');
+      return;
+    }
+
+    try {
+      // Reuse AddProjectComponent.openFolder which populates its folderHandle
+      // and directoryTreeData using its own buildTreeFromDirectory implementation.
+      await addProject.openFolder(mode as any);
+
+      // grab the results from the child component
+      const folderHandle = (addProject as any).folderHandle;
+      const treeData: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
+
+      const rootName = folderHandle?.name || 'folder';
+      const rootNode: AstTreeNode = {
+        id: this.uuid(),
+        label: rootName,
+        children: treeData,
+        nodeType: 'folder',
+        isExpanded: true,
+        custom: true,
+        folderHandle: folderHandle,
+        folderInfo: { servers: [] },
+        mode: mode
+      } as any;
+
+      this.assignDeepLevel([rootNode]);
+      this.dataList.set([rootNode]);
+      try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
+    } catch (err) {
+      console.error('openFolderInContent error', err);
+    }
+  }
+
+  async openFileInContent() {
+    // Try native file picker first
+    try {
+      if ('showOpenFilePicker' in window) {
+        const handles: any = await (window as any).showOpenFilePicker({ multiple: false });
+        if (!handles || handles.length === 0) return;
+        const fileHandle = handles[0];
+        const f: any = await fileHandle.getFile();
+        const name = fileHandle.name || f.name || 'file';
+        const isBinary = /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
+        let content = '';
+        if (!isBinary) {
+          try { content = await f.text(); } catch (e) { console.warn('openFileInContent: read failed', e); }
+        }
+
+        const node: AstTreeNode = {
+          id: this.uuid(),
+          label: name,
+          nodeType: 'file',
+          content: content,
+          children: [],
+          custom: true,
+          folderHandle: fileHandle,
+          mode: 'read'
+        } as any;
+
+        this.assignDeepLevel([node]);
+        this.dataList.set([node]);
+        try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
+        return;
+      }
+    } catch (err) {
+      console.warn('showOpenFilePicker failed or unsupported', err);
+    }
+
+    // Fallback: use hidden input element
+    try {
+      const input: HTMLInputElement = document.createElement('input');
+      input.type = 'file';
+      input.accept = '*/*';
+      input.onchange = async (ev: any) => {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+        const name = file.name;
+        const isBinary = /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
+        let content = '';
+        if (!isBinary) {
+          try { content = await file.text(); } catch (e) { console.warn('fallback read failed', e); }
+        }
+        const node: AstTreeNode = {
+          id: this.uuid(),
+          label: name,
+          nodeType: 'file',
+          content: content,
+          children: [],
+          custom: true,
+          mode: 'read'
+        } as any;
+        this.assignDeepLevel([node]);
+        this.dataList.set([node]);
+        try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
+      };
+      // trigger
+      input.click();
+    } catch (err) {
+      console.error('openFileInContent fallback error', err);
+    }
+  }
+
   async listClick(evt: any) {
     if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api'&& evt['nodeType'] != 'file') {
       return;
@@ -629,6 +742,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     var uuid = s.join("");
     return uuid;
   }
+
+  private isBinaryName(name: string): boolean {
+    return /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
+  }
+
+  // Folder/file tree building is delegated to AddProjectComponent.
+  // See AddProjectComponent.buildTreeFromDirectory for the implementation.
 
   // snapshot persistence helpers have been removed.
   // Storing a JSON snapshot of FileSystem handles is forbidden; we now
