@@ -131,6 +131,10 @@ export class AddProjectComponent implements OnInit {
     this.directoryTreeData = [];
   }
 
+  private isBinaryName(name: string): boolean {
+    return /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
+  }
+
   private async buildTreeFromDirectory(dirHandle: any, target: Array<AstTreeNode>) {
     for await (const [name, handle] of (dirHandle as any).entries()) {
       const node: AstTreeNode = {
@@ -144,6 +148,21 @@ export class AddProjectComponent implements OnInit {
         folderHandle: handle,
         mode: this.folderReadWriteMode
       } as any;
+
+      if (handle.kind === 'file') {
+        if (!this.isBinaryName(name)) {
+          try {
+            const fh = await handle.getFile();
+            node.content = await fh.text();
+          } catch (err) {
+            console.warn('add-project: failed to read file content', name, err);
+            node.content = '';
+          }
+        } else {
+          node.content = 'Binary file - content not loaded';
+        }
+      }
+
       target.push(node);
       if (handle.kind === 'directory') {
         await this.buildTreeFromDirectory(handle, node.children!);

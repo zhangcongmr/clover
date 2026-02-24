@@ -37,6 +37,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   /***aside */
   serverList: Array<any> = [];
   dataList= signal<Array<AstTreeNode>>([]);
+  // folder persistence mode
+  folderReadWriteMode: 'read' | 'readwrite' = 'read';
   /***aside */
 
   openedList = signal<Array<any>>([]);
@@ -61,7 +63,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   async ngOnInit() {
     const doc = this.myConfigService.getDoc();
-    if(doc  == null || doc === undefined) {
+    if (doc == null || doc === undefined) {
+      // previously we attempted to restore a folder snapshot from OPFS here,
+      // but that feature has been removed.  Without a document the app simply
+      // returns and waits for the user to open something manually.
       return;
     }
     if (typeof doc === 'string' || typeof doc === 'object') {
@@ -217,17 +222,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     const item = evt;
 
-    // if file under imported folder and we have a handle, read its content
-    if (item.folderHandle && item.folderHandle.kind === 'file') {
-      try {
-        const f: any = await item.folderHandle.getFile();
-        const text = await f.text();
-        item.content = text;
-      } catch (err) {
-        console.error('failed to read folder file', err);
-      }
-    }
-
     if (item.nodeType == 'file' && item.label.endsWith('.ospec') && !item.isParsed) {
       const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));
       item.children = apiData;
@@ -261,7 +255,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  apiSelected(evt: any) {
+  async apiSelected(evt: any) {
     // handle different import payloads
     if (evt.folderHandle) {
       // folder import
@@ -282,6 +276,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       } as any;
       this.assignDeepLevel([rootNode]);
       this.dataList.update(value => value.concat([rootNode]));
+      // persist snapshot to OPFS for later restoration
+      // try {
+      //   const snapshot = { name: evt.folderHandle?.name || rootName, mode: evt.mode, tree: evt.tree || [] };
+      //   await this.saveFolderSnapshotToOPFS(snapshot);
+      // } catch (err) {
+      //   console.warn('failed to persist folder snapshot to OPFS', err);
+      // }
     } else if (evt.fileName) {
       const fileName = evt.fileName;
       const ospecFileName = this.removeExtension(fileName) + '.ospec';
@@ -308,15 +309,20 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async storeApi() {
-    // --------- Create / Write ---------
-    // await dir('/test-dir').create(); // create a directory
+    // before persisting, strip out any non‑serializable handles.  we still
+    // keep `content` on file nodes so OPFS will hold the file text.
+    const strip = (node: any): any => {
+      const { folderHandle, ...rest } = node;
+      if (rest.children) {
+        rest.children = rest.children.map(strip);
+      }
+      return rest;
+    };
 
-    await write('/dir/file.txt', JSON.stringify(this.dataList()));
-    // await write('/dir/api.txt', this.dataList); // empty file
-    // --------- Remove ---------
-    // await dir('/test-dir').remove();
+    const toSave = this.dataList().map(strip);
 
-    // await file('/dir/file.txt').remove();
+    // write to OPFS
+    await write('/dir/file.txt', JSON.stringify(toSave));
   }
 
   async storeOpenedList() {
@@ -623,6 +629,37 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     var uuid = s.join("");
     return uuid;
   }
+
+  // snapshot persistence helpers have been removed.
+  // Storing a JSON snapshot of FileSystem handles is forbidden; we now
+  // simply serialize the tree (including `content`) via `/dir/file.txt`
+  // and read handles on the fly when the user re‑selects a folder.
+
+  private async checkPermission(handle: any, mode: 'read' | 'readwrite' = 'readwrite'): Promise<string> {
+    try {
+      const status = await handle.queryPermission({ mode });
+      return status;
+    } catch {
+      return 'prompt';
+    }
+  }
+
+  private async requestPermission(handle: any, mode: 'read' | 'readwrite' = 'readwrite'): Promise<string> {
+    try {
+      const status = await handle.requestPermission({ mode });
+      return status;
+    } catch {
+      return 'denied';
+    }
+  }
+
+
+  // Previously we offered the ability to restore a folder snapshot on
+  // startup by deserializing the JSON stored under `/dir/folder-snapshot.json`.
+  // That mechanism has been removed: we no longer persist handles, and the
+  // snapshot file itself is forbidden. All folder data now comes from
+  // explicit user actions (e.g. selecting a folder via the picker), and
+  // `dataList` is saved only via `storeApi()`.
 
   getRandomInt(min: number, max: number) {
     min = Math.ceil(min); // 确保最小值是整数  
