@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnChanges, OnDestroy, OnInit, SimpleChanges, afterNextRender, inject, model, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnDestroy, OnInit, SimpleChanges, afterNextRender, computed, inject, model, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -53,7 +53,34 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   ];
 
   private savers: AutoSaver[] = [];
- 
+
+  userResource = resource({
+    // Define a reactive comput`ation.
+    // The params value recomputes whenever any read signals change.
+    params: () => (this.dataList().length === 0),
+    // Define an async loader that retrieves data.
+    // The resource calls this function every time the `params` value changes.
+    loader: ({ params, previous }) => {
+      if(previous.status === 'idle') {
+        //When reload page, set the resolved result to undefined, so that the UI will not show the previous data before the new loading is completed.  in a more realistic example, the loader would likely use the params value to fetch different data, and we would want it to run on every params change.  but for this demo, we only want to run it once on initial load, so we check if the previous status is 'idle' before deciding to return the params or undefined.
+        // only load on initial call, not on subsequent param changes, since our loader doesn't actually need the params value to do anything.  in a more realistic example, the loader would likely use the params value to fetch different data, and we would want it to run on every params change.
+        return Promise.resolve(undefined)
+      }
+      return Promise.resolve(params)
+    },
+  });
+  // Create a computed signal based on the result of the resource's loader function.
+  showButtonPlaceholder = computed(() => {
+    if (this.userResource.hasValue() && this.userResource.status() === 'resolved') {
+      // `hasValue` serves 2 purposes:
+      // - It acts as type guard to strip `false` from the type
+      // - If protects against reading a throwing `value` when the resource is in error state
+      return this.userResource.value();
+    }
+    // fallback in case the resource value is `false` or if the resource is in error state
+    return false;
+  });
+
   constructor() {
     super();
     afterNextRender(() => {
@@ -83,6 +110,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const res = this.isPromiseLike(result) ? (await result) : result;
       this.dataParse(res);
     }
+    requestAnimationFrame(() => {
+      // this.showButtonPlaceholder.set(this.dataList().length === 0);
+    });
   }
 
   private dataParse(result: any) {
@@ -415,6 +445,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.assignDeepLevel([data]);
       this.dataList.update(value => value.concat([data]));
     }
+    // this.showButtonPlaceholder.set(this.dataList().length === 0);
 
     this.storeApi();
     this.currentDisplayViewId.set(1);
@@ -524,6 +555,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.storeApi()
     }
     if (evt.action == 'Delete' || evt.action == 'Duplicate') {
+      // this.showButtonPlaceholder.set(this.dataList().length === 0);
       this.storeApi()
     }
     if (evt.action == 'NewApi' || evt.action == 'NewFile' || evt.action == 'NewFolder') {
