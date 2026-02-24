@@ -110,9 +110,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const res = this.isPromiseLike(result) ? (await result) : result;
       this.dataParse(res);
     }
-    requestAnimationFrame(() => {
-      // this.showButtonPlaceholder.set(this.dataList().length === 0);
-    });
   }
 
   private dataParse(result: any) {
@@ -445,7 +442,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.assignDeepLevel([data]);
       this.dataList.update(value => value.concat([data]));
     }
-    // this.showButtonPlaceholder.set(this.dataList().length === 0);
 
     this.storeApi();
     this.currentDisplayViewId.set(1);
@@ -555,7 +551,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.storeApi()
     }
     if (evt.action == 'Delete' || evt.action == 'Duplicate') {
-      // this.showButtonPlaceholder.set(this.dataList().length === 0);
       this.storeApi()
     }
     if (evt.action == 'NewApi' || evt.action == 'NewFile' || evt.action == 'NewFolder') {
