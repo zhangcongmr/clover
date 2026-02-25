@@ -125,7 +125,7 @@ if(chrome && chrome.storage) {
         if(!luxioMenusIdCreatedStatus || luxioMenusIdCreatedStatus == 0) {
             chrome.contextMenus.create({
                 id: "luxio_menus_id",
-                title: 'Trans', // %s表示选中的文字
+                title: 'Luxio', // %s表示选中的文字
                 contexts: ['page'], // 只有当选中文字时才会出现此右键菜单
                 documentUrlPatterns: ["http://*/*", "https://*/*", "file://*"]
             });

@@ -1,12 +1,12 @@
 {
     "manifest_version": 3,
-    "name": "Trans",
+    "name": "Luxio",
     "version": "1.0.0",
     "description": "Tool for developers",
     "icons": {
-        "16": "assets/lib/img/T.png",
-		"48": "assets/lib/img/T.png",
-		"128": "assets/lib/img/T.png"
+        "16": "assets/lib/img/favicon-pack/favicon-16x16.png",
+		"48": "assets/lib/img/favicon-pack/favicon-48x48.png",
+		"128": "assets/lib/img/favicon-pack/favicon-128x128.png"
     },
     "background": {
         "service_worker": "background.js"
