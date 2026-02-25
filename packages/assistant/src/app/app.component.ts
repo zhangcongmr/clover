@@ -26,6 +26,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   luxioAppTabId: any;
   textArr: Array<String> = []
 
+  // current selected file type (extension or nodeType)
+  fileType: string = '';
+
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   sideOpen = true

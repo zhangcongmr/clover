@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnChanges, OnDestroy, OnInit, SimpleChanges, afterNextRender, computed, inject, model, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, afterNextRender, computed, inject, model, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -40,6 +40,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // folder persistence mode
   folderReadWriteMode: 'read' | 'readwrite' = 'read';
   /***aside */
+
+  /** event emitted when selected node's file type changes */
+  @Output() fileTypeChange = new EventEmitter<string>();
+
 
   openedList = signal<Array<any>>([]);
 
@@ -365,6 +369,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
 
     const item = evt;
+
+    // determine and emit file type for display
+    let type = '';
+    if (item.nodeType === 'file') {
+      const idx = item.label.lastIndexOf('.');
+      type = idx >= 0 ? item.label.substring(idx + 1) : '';
+    } else {
+      type = item.nodeType || '';
+    }
+    this.fileTypeChange.emit(type);
 
     if (item.nodeType == 'file' && item.label.endsWith('.ospec') && !item.isParsed) {
       const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));

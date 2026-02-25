@@ -86,7 +86,8 @@
           </div>
         </div>
       </div>
-      <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content></div>
+      <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
+           (fileTypeChange)="fileType=$event"></div>
       <!-- @if(currentDisplayViewId==1) {
         <div [sideOpen]="sideOpen" [currentDisplayViewId]="currentDisplayViewId" ast-content></div>
       } @else if(currentDisplayViewId==2) {
@@ -98,7 +99,9 @@
     <div data-layer="overview-longstrip" class="OverviewLongstrip codigma-overview-longstrip">
       @if(currentDisplayViewId!=4) {
         <div data-layer="filetype-cnr" class="FiletypeCnr codigma-methodtype">
-          <div data-layer="File type" class="FileType codigma-projectname">File type</div>
+          <div data-layer="File type" class="FileType codigma-projectname">
+            {{ fileType || 'File type' }}
+          </div>
         </div>
         <div data-layer="just-fill-cnr" class="JustFillCnr codigma-responsebody"></div>
         <div data-layer="status-cnr" class="StatusCnr codigma-methodtype">
