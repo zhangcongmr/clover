@@ -67,7 +67,6 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       });
       if(this.tabGroupResizeObservable() && this.previousTabCount > 0) {
         if(this.previousTabCount < this.topLevelTabs().length) {
-          console.log("tab add")
           this.previousTabCount = this.topLevelTabs().length;
           if (this.topLevelTabs().length > 0) {
             const lastTab = this.topLevelTabs()[this.topLevelTabs().length - 1];
@@ -78,7 +77,6 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
             this.scheduleScrollbarRecalculation();
           }
         } else if(this.previousTabCount > this.topLevelTabs().length) {
-          console.log("tab decrease")
           this.previousTabCount = this.topLevelTabs().length;
           this.scheduleScrollbarRecalculation();
         }
