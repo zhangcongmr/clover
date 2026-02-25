@@ -263,6 +263,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
       // grab the results from the child component
       const folderHandle = (addProject as any).folderHandle;
+      if (folderHandle == null) {
+        console.warn('No folder selected');
+        return;
+      }
       const treeData: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
       const rootName = folderHandle?.name || 'folder';

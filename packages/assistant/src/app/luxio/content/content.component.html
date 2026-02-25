@@ -15,49 +15,11 @@
   @if (sideOpen()) {
     <div style="width:25%;background-color: #F2F2F2;display: flex;flex-direction: column;" [style.width]="leftWidth * 100 + '%'">
       @if(currentDisplayViewId()==1) {
-        <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
-          <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
-            <!-- <div data-layer="ProjectName" class="Projectname codigma-projectname">ProjectName</div> -->
-            <div data-layer="ProjectName" class="Projectname codigma-projectname"></div>
-          </div>
-          <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
-            <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-add-file"></use>
-              </svg>
-            </div>
-            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" title="Add Folder" class="btn-svg FolderaddBtn">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-add-folder"></use>
-              </svg>
-            </div> -->
-            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" title="Import" class="btn-svg ImportBtn">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-import-btn"></use>
-              </svg>
-            </div>
-            <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-location"></use>
-              </svg>
-            </div> -->
-            <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" title="All Collapse" class="btn-svg CollapseBtn">
-              <svg class="icon" width="19" height="21">
-                <use href="#icon-collapse"></use>
-              </svg>
-            </div>
-            <div data-svg-wrapper="" data-layer="more-btn" (click)="MoreBtn($event)" title="More" class="btn-svg MoreBtn">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-more"></use>
-              </svg>
-            </div>
-          </div>
-        </div>
         @if(showButtonPlaceholder()) {
           <div style="text-align:center; color: #333;">
             <div style="border:1px solid #ddd; padding:1.25rem; border-radius:4px; background:#fff; display:inline-block;">
-              <div style="font-weight:600; margin-bottom:0.5rem;">NO FOLDER OPENED</div>
-              <div style="margin-bottom:1rem; color:#666;">You have not yet opened a folder.</div>
+              <div style="font-weight:600; margin-bottom:0.5rem;">NO FOLDER/FILE OPENED</div>
+              <div style="margin-bottom:1rem; color:#666;">You have not yet opened a folder or file.</div>
               <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;margin-bottom:0.6rem;">
                 <button (click)="openFolderInContent('read')" style="background:var(--primary-color, rgb(103, 137, 186));color:#fff;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open Folder</button>
                 <button (click)="openFileInContent()" style="background:#e1e1e1;color:#222;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open File</button>
@@ -66,10 +28,50 @@
             </div>
           </div>
         } @else {
+          <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
+            <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
+              <!-- <div data-layer="ProjectName" class="Projectname codigma-projectname">ProjectName</div> -->
+              <div data-layer="ProjectName" class="Projectname codigma-projectname"></div>
+            </div>
+            <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
+              <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
+                                  <svg class="icon" width="20" height="20">
+                                    <use href="#icon-add-file"></use>
+                                  </svg>
+                                </div>
+                                <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" title="Add Folder" class="btn-svg FolderaddBtn">
+                                  <svg class="icon" width="20" height="20">
+                                    <use href="#icon-add-folder"></use>
+                                  </svg>
+                                </div> -->
+              <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" title="Import"
+                class="btn-svg ImportBtn">
+                <svg class="icon" width="20" height="20">
+                  <use href="#icon-import-btn"></use>
+                </svg>
+              </div>
+              <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
+                                  <svg class="icon" width="20" height="20">
+                                    <use href="#icon-location"></use>
+                                  </svg>
+                                </div> -->
+              <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" title="All Collapse"
+                class="btn-svg CollapseBtn">
+                <svg class="icon" width="19" height="21">
+                  <use href="#icon-collapse"></use>
+                </svg>
+              </div>
+              <div data-svg-wrapper="" data-layer="more-btn" (click)="MoreBtn($event)" title="More" class="btn-svg MoreBtn">
+                <svg class="icon" width="20" height="20">
+                  <use href="#icon-more"></use>
+                </svg>
+              </div>
+            </div>
+          </div>
           <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
+          <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
-        <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
       } @else if(currentDisplayViewId()==2) {
         <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
           <div>Search:</div>

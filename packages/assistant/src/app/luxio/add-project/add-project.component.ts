@@ -137,6 +137,11 @@ export class AddProjectComponent implements OnInit {
 
   private async buildTreeFromDirectory(dirHandle: any, target: Array<AstTreeNode>) {
     for await (const [name, handle] of (dirHandle as any).entries()) {
+      // don't traverse into node_modules, .git, dist/build, etc. to avoid performance issues
+      const ignoreDirs = new Set(['node_modules', '.git', 'dist', 'build', 'venv', 'bower_components', '.cache', '__pycache__']);
+      if (handle.kind==='directory' && ignoreDirs.has(name)) {
+        continue;
+      }
       const node: AstTreeNode = {
         id: this.uuid(),
         label: name,
