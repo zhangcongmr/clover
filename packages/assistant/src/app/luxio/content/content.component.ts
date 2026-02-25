@@ -103,9 +103,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (typeof doc === 'string' || typeof doc === 'object') {
       const ospecFileName = this.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
 
-      let data: AstTreeNode = this.createNewFile(doc, ospecFileName);
-      this.assignDeepLevel([data]);
-
+      // let data: AstTreeNode = this.createNewFile(doc, ospecFileName);
+      // this.assignDeepLevel([data]);
+      let data = typeof doc === 'string' ? JSON.stringify(doc) : doc;
       this.dataList.set([data]);
       // 启动自动保存
       this.startAutoSave();
@@ -281,7 +281,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         nodeType: 'folder',
         isExpanded: true,
         custom: true,
-        folderHandle: folderHandle,
         folderInfo: { servers: [] },
         mode: mode
       } as any;
@@ -426,7 +425,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         isExpanded: true,
         // store handle for later operations
         custom: true,
-        folderHandle: evt.folderHandle,
         folderInfo: {
           servers: []
         },
@@ -581,7 +579,20 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (evt.action == 'Share') {
       this.shareOnMenuVisible = true;
       this.shareData = {}
-      this.shareData.profile = evt.target;
+      this.shareData.name = evt.target.label || "Untitled API"
+      this.shareData.username = this.coreService.userData?.username || "Anonymous";
+
+      const copyOfTarget = JSON.parse(JSON.stringify(evt.target))
+      // recursively remove the children of any file nodes in the tree that end with '.ospec', since we only want to share the original file content for those files, not the parsed tree
+      const traverse = (node: any) => {
+        if (node.nodeType === 'file' && node.label.endsWith('.ospec')) {
+          node.children = []
+        } else if (node.nodeType === 'folder') {
+          node.children?.forEach((child: any) => traverse(child));
+        }
+      }
+      traverse(copyOfTarget);
+      this.shareData.profile = JSON.stringify(copyOfTarget) || "";
     }
   }
 

@@ -8,16 +8,16 @@ let angularLoaded = false;
 function HomePage() {
   let params = useParams();
 
-  const openApiDef = (rawSpecBrief: any) => {
-    fetch("/user/apiInfoModel/" + rawSpecBrief.id).then(
+  const projectDef = (project: any) => {
+    fetch("/user/apiInfoModel/" + project.id).then(
       (response: any) => {
         if (!response.ok) {
           throw new Error('Network response was not ok.');
         }
         return response.json()
       }).then(rawData => {
-        const parseOpenApiSpec = JSON.parse(rawData?.profile);
-        Luxio("coderEditor", parseOpenApiSpec, rawData?.name)
+        const projectDef = JSON.parse(rawData?.profile);
+        Luxio("coderEditor", projectDef, rawData?.name)
           .catch(err => {
             console.error('Angular failed to start', err);
             angularLoaded = false; // 可选：允许重试
@@ -31,7 +31,7 @@ function HomePage() {
     angularLoaded = true;
     console.log('Loading Angular app with ID:', params);
     if (params && params.id) {
-      openApiDef({ id: params.id });
+      projectDef({ id: params.id });
     } else {
       Luxio("coderEditor")
         .catch(err => {

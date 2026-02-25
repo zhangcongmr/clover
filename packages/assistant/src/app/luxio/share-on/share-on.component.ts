@@ -27,12 +27,6 @@ export class ShareOnComponent {
 
   confirmShare(): void {
     if(this.data && this.data.profile) {
-      this.data.name = this.data.profile.label || "Untitled API"
-      this.data.createtime = new Date().toISOString();
-      this.data.updatetime = new Date().toISOString();
-      this.data.username = this.coreService.userData?.username || "Anonymous";
-      this.data.profile = this.data.profile.content || "";
-
       this.coreService.postData(this.serverDataUrl, this.data);
       this.share.emit();
       this.onClose();
