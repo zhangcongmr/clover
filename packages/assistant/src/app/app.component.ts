@@ -103,22 +103,25 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     // in extension scene
     if (chrome.storage) {
-      function updatePosition() {
+      function updateWindowRect() {
         // 兼容写法：优先使用 screenX/Y， fallback 到 screenLeft/Top
         const x = window.screenX || window.screenLeft;
         const y = window.screenY || window.screenTop;
 
-        chrome.storage.local.set({ windPosition: { x: x, y: y } }, function () {
+        const width = window.outerWidth;
+        const height = window.outerHeight;
+
+        chrome.storage.local.set({ windowRect: { x: x, y: y, width: width, height: height } }, function () {
           // let us know it worked
-          console.log("V3 Test: updated window position to storage: ", x, y);
+          console.log("V3 Test: updated windowRect to storage: ", x, y, width, height);
         });
       }
 
       // 初始加载时获取一次
-      updatePosition();
+      updateWindowRect();
 
       // 监听窗口移动事件 (注意：并非所有浏览器都高频触发此事件，且拖动过程中可能不连续更新)
-      // window.addEventListener('move', updatePosition); //move事件不生效， 注释掉
+      // window.addEventListener('move', updateWindowRect); //move事件不生效， 注释掉
     }
   }
 

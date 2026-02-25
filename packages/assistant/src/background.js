@@ -162,15 +162,15 @@ if(chrome && chrome.tabs) {
 if(chrome && chrome.contextMenus) {
     chrome.contextMenus.onClicked.addListener(event => {
         if (event.menuItemId == "luxio_menus_id") {
-            chrome.storage.local.get("windPosition", result => {
-                const windPosition = result['windPosition'] || { x: 100, y: 100 };
+            chrome.storage.local.get("windowRect", result => {
+                const windowRect = result['windowRect'] || { x: 100, y: 100, width: 1200, height: 800 };
                 chrome.windows.create({
                     url: chrome.runtime.getURL('index.html'),
                     type: "panel",
-                    // width: panelWidth,
-                    // height: panelHeight,
-                    left: windPosition.x,
-                    top: windPosition.y
+                    width: windowRect.width,
+                    height: windowRect.height,
+                    left: windowRect.x,
+                    top: windowRect.y
                 });
             });
         }
