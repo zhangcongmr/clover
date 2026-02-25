@@ -76,7 +76,7 @@ export class AppComponent implements OnInit, AfterViewInit {
           me.coreService.privacyErrorSettingWindow.close();
         }
       }
-      me.fileVist()
+      // me.fileVist()
     });
   }
 
@@ -400,6 +400,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   async cleanUp() {
     await file('/dir/file.txt').remove();
-    await file('/dir/file_openedList.txt').remove();
+    await file('/dir/openedList.txt').remove();
   }
 }

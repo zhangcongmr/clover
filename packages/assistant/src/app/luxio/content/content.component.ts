@@ -486,7 +486,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   async storeOpenedList() {
     // --------- Create / Write ---------
     // await dir('/test-dir').create(); // create a directory
-    await write('/dir/file_openedList.txt', JSON.stringify(this.openedList()));
+    await write('/dir/openedList.txt', JSON.stringify(this.openedList()));
     // await write('/dir/api.txt', this.dataList); // empty file
     // --------- Remove ---------
     // await dir('/test-dir').remove();
@@ -501,7 +501,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.dataList.set(JSON.parse(readDataListText));
     }
 
-    const openedListText = await file('/dir/file_openedList.txt').text();
+    const openedListText = await file('/dir/openedList.txt').text();
     if (openedListText) {
       this.openedList.set(JSON.parse(openedListText));
     }

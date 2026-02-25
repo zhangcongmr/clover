@@ -16,7 +16,7 @@ const initData = async () => {
     dataAny.dataList = JSON.parse(readDataListText);
   }
 
-  const openedListText = await file('/dir/file_openedList.txt').text();
+  const openedListText = await file('/dir/openedList.txt').text();
   if (openedListText) {
     dataAny.openedList = JSON.parse(openedListText);
   }
