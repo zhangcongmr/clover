@@ -133,23 +133,40 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   private modifyPermission(docObj: any) {
-    if (docObj && 'permission' in docObj) {
-      // if the shared payload carries a username, determine ownership
-      if (docObj && docObj.username) {
-        const currentUser = this.coreService.userData?.username;
-        if (currentUser && docObj.username === currentUser) {
-          // owner always gets full rights
-          this.permission = 'readwrite';
-        } else {
-          // non-owner falls back to provided permission or default read
-          this.permission = docObj.permission || 'read';
+    // if the shared payload carries a username, determine ownership
+    if (docObj && docObj.username) {
+      const fetchProfile = async () => {
+        try {
+          const response = await fetch(`/api/auth/profile`, {
+            credentials: 'include', // 携带 Cookie
+          });
+          this.coreService.userData = await response.json();
+          this.coreService.isAuthenticated.set(true);
+
+
+          const currentUser = this.coreService.userData?.username;
+          if (currentUser && docObj.username === currentUser) {
+            // owner always gets full rights
+            this.permission = 'readwrite';
+          } else {
+            // non-owner falls back to provided permission or default read
+            this.permission = docObj.permission || 'read';
+          }
+          this.permissionChange.emit(this.permission);
+
+        } catch (err) {
+          this.coreService.isAuthenticated.set(false);
+          console.error('获取用户信息失败:', err);
+          // // 可跳转到登录页
+          // window.location.href = '/signin';
         }
-        this.permissionChange.emit(this.permission);
-      } else if (docObj && docObj.permission) {
-        // not a shared payload, but explicit permission
-        this.permission = docObj.permission;
-        this.permissionChange.emit(this.permission);
-      }
+      };
+
+      fetchProfile();
+    } else if (docObj && docObj.permission) {
+      // not a shared payload, but explicit permission
+      this.permission = docObj.permission;
+      this.permissionChange.emit(this.permission);
     }
   }
 
@@ -405,7 +422,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     this.fileTypeChange.emit(type);
 
-    if (item.nodeType == 'file' && item.label.endsWith('.ospec') && !item.isParsed) {
+    if (item.nodeType == 'file' && item.label.endsWith('.ospec')) {
       const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));
       item.children = apiData;
       item.isExpanded = true;
@@ -623,6 +640,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const traverse = (node: any) => {
         if (node.nodeType === 'file' && node.label.endsWith('.ospec')) {
           node.children = []
+          node.isParsed = false;
         } else if (node.nodeType === 'folder') {
           node.children?.forEach((child: any) => traverse(child));
         }
