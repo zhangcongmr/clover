@@ -129,7 +129,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.modifyPermission(docObj);
     }
     // 启动自动保存
-    this.startAutoSave();
+    // this.startAutoSave();
   }
 
   private modifyPermission(docObj: any) {
@@ -508,6 +508,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async storeApi() {
+    if (this.permission === 'read') {
+      return; // don't persist in read-only mode since the data may be shared across multiple users and we don't want one user's edits to overwrite another's; we can consider implementing a separate "Save As" flow for read-only/shared trees if there's demand for it
+    }
     // before persisting, strip out any non‑serializable handles.  we still
     // keep `content` on file nodes so OPFS will hold the file text.
     const strip = (node: any): any => {
@@ -525,6 +528,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async storeOpenedList() {
+    if(this.permission === 'read') {
+      return; // don't persist opened list in read-only mode since it may be shared across multiple users and we don't want one user's tab actions to affect others
+    }
     // --------- Create / Write ---------
     // await dir('/test-dir').create(); // create a directory
     await write('/dir/openedList.txt', JSON.stringify(this.openedList()));
