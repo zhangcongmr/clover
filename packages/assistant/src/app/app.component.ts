@@ -28,6 +28,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   // current selected file type (extension or nodeType)
   fileType: string = '';
+  filePermission: string = '';
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;

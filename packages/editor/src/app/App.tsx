@@ -16,8 +16,7 @@ function HomePage() {
         }
         return response.json()
       }).then(rawData => {
-        const projectDef = JSON.parse(rawData?.profile);
-        Luxio("coderEditor", projectDef, rawData?.name)
+        Luxio("coderEditor", rawData, rawData?.name)
           .catch(err => {
             console.error('Angular failed to start', err);
             angularLoaded = false; // 可选：允许重试

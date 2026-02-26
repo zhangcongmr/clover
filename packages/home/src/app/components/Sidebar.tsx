@@ -12,7 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ApiBriefDocument } from "@luxio/common";
+import { NodeDef } from "@luxio/common";
 
 interface Repository {
   name: string;
@@ -26,7 +26,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, currentView }: SidebarProps) {
-  const [repositories, setRepositories] = useState<ApiBriefDocument[]>([]);
+  const [repositories, setRepositories] = useState<NodeDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +46,7 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data: Array<ApiBriefDocument> = await response.json();
+        const data: Array<NodeDef> = await response.json();
         setRepositories(data);        
         setError(null);
       } catch (err) {

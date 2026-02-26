@@ -7,7 +7,7 @@ import { withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/c
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@luxio/community-widget';
-import { DocModel } from './app/shared/model';
+import { DocModelType } from './app/shared/model';
 
 //svg sprite 注入到 DOM
 injectSvgSprite();
@@ -17,7 +17,7 @@ loadCommunityWidget().then(() => {
 });
 
 // 👇 新增：定义启动函数
-export function startAngularApp(doc?: string | any | (() => string | DocModel), fileName?: string) {
+export function startAngularApp(doc?: DocModelType, fileName?: string) {
   const defaultConfig = {
     doc: doc,
     fileName: fileName

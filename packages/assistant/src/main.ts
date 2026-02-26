@@ -2,6 +2,7 @@ import { enableProdMode } from "@angular/core";
 import { environment } from "./environments/environment";
 import { file, write } from 'opfs-tools';
 import { startAngularApp } from "./main.common";
+import { DocModel } from "./app/shared/model";
 
 
 if (environment.production) {
@@ -10,7 +11,7 @@ if (environment.production) {
 
 
 const initData = async () => {
-  let dataAny: any = {};
+  let dataAny: DocModel = {};
   const readDataListText = await file('/dir/file.txt').text();
   if (readDataListText) {
     dataAny.dataList = JSON.parse(readDataListText);

@@ -68,7 +68,7 @@
               </div>
             </div>
           </div>
-          <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
+          <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [readOnly]="isReadOnly" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
           <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />

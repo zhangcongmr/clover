@@ -118,3 +118,10 @@
   font-weight: 400;
   word-wrap: break-word
 }
+
+/* read-only badge in header */
+.read-only-indicator {
+  font-size: 0.8rem;
+  color: #d32f2f;
+  margin-left: 8px;
+}

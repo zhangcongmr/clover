@@ -1,10 +1,10 @@
 import { Star, GitFork, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { coreService } from '../core.service';
-import { ApiBriefDocument } from "@luxio/common";
+import { NodeDef } from "@luxio/common";
 
 interface ProjectCardProps {
-  project: ApiBriefDocument;
+  project: NodeDef;
   onAction?: (data: any) => void; // 建议更具体的类型，如 { id: string; value: string }
 }
 

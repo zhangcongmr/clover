@@ -10,13 +10,14 @@ import { file, write } from 'opfs-tools';
 import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { ApiInfoModel, AstTreeNode, NoN_SELECTION } from '../../shared/model';
+import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
 import { AutoSaver } from '../../auto-saver';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { NoteBookComponent } from '../../shared/notebook/notebook.component';
+import { NodeDef } from '@luxio/common';
 
 @Component({
   selector: 'div[ast-content]',
@@ -33,6 +34,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   readonly currentDisplayViewId = model<number>(1);
   private myConfigService = inject(MyConfigService)
   private coreService = inject(CoreService);
+
+  // permission for the currently loaded tree; shared trees may set this to 'read'
+  permission: 'read' | 'readwrite' = 'readwrite';
+  @Output() permissionChange = new EventEmitter<'read' | 'readwrite'>();
+  get isReadOnly() {
+    return this.permission === 'read';
+  }
 
   /***aside */
   serverList: Array<any> = [];
@@ -95,41 +103,54 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   async ngOnInit() {
     const doc = this.myConfigService.getDoc();
     if (doc == null || doc === undefined) {
-      // previously we attempted to restore a folder snapshot from OPFS here,
-      // but that feature has been removed.  Without a document the app simply
-      // returns and waits for the user to open something manually.
       return;
     }
-    if (typeof doc === 'string' || typeof doc === 'object') {
-      const ospecFileName = this.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
-
-      // let data: AstTreeNode = this.createNewFile(doc, ospecFileName);
-      // this.assignDeepLevel([data]);
-      let data = typeof doc === 'string' ? JSON.stringify(doc) : doc;
-      this.dataList.set([data]);
-      // 启动自动保存
-      this.startAutoSave();
-    } else if(typeof doc === 'function') {
+    let docObj: any = doc;
+    if (typeof doc === 'string') {
+      docObj = JSON.parse(doc);
+    } else if (typeof doc === 'object') {
+      docObj = doc;
+    } else if (typeof doc === 'function') {
       const result = doc();
-      const res = this.isPromiseLike(result) ? (await result) : result;
-      this.dataParse(res);
+      docObj = this.isPromiseLike(result) ? (await result) : result;
     }
-  }
 
-  private dataParse(result: any) {
-    if (typeof result === 'string' && result.length > 0) {
+    if ('openapi' in docObj && 'paths' in docObj) { //OpenApiV3Document
       const ospecFileName = this.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
-
-      let data: AstTreeNode = this.createNewFile(result, ospecFileName);
+      let data: AstTreeNode = this.createNewFile(docObj, ospecFileName);
       this.assignDeepLevel([data]);
-
       this.dataList.set([data]);
-    } else if (typeof result === 'object') {
-      this.dataList.set(result.dataList || []);
-      this.openedList.set(result.openedList || []);
+    } else if ('dataList' in docObj || 'openedList' in docObj) { //DocModel
+      this.dataList.set(docObj.dataList || []);
+      this.openedList.set(docObj.openedList || []);
+    } else { //NodeDef
+      this.dataList.set([docObj.profile ? JSON.parse(docObj.profile) : {}]);
+      // if the provided object carries permission info, apply it
+      this.modifyPermission(docObj);
     }
     // 启动自动保存
     this.startAutoSave();
+  }
+
+  private modifyPermission(docObj: any) {
+    if (docObj && 'permission' in docObj) {
+      // if the shared payload carries a username, determine ownership
+      if (docObj && docObj.username) {
+        const currentUser = this.coreService.userData?.username;
+        if (currentUser && docObj.username === currentUser) {
+          // owner always gets full rights
+          this.permission = 'readwrite';
+        } else {
+          // non-owner falls back to provided permission or default read
+          this.permission = docObj.permission || 'read';
+        }
+        this.permissionChange.emit(this.permission);
+      } else if (docObj && docObj.permission) {
+        // not a shared payload, but explicit permission
+        this.permission = docObj.permission;
+        this.permissionChange.emit(this.permission);
+      }
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -169,6 +190,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   newNodeAction(currentSelect: any, action: string) {
+    if (this.isReadOnly) {
+      // ignore attempts to modify when in read-only mode
+      console.warn('read-only mode: action', action, 'blocked');
+      return;
+    }
     let newNode;
     if (currentSelect) {
       delete currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
@@ -526,6 +552,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async saveText(evt: any) {
+    if (this.isReadOnly) {
+      console.warn('read-only mode: cannot save text');
+      return;
+    }
     // if the tab corresponds to a file from an imported folder and has a handle,
     // attempt to write the updated content back to disk when in write mode
     if (evt.folderHandle && evt.folderHandle.kind === 'file' && evt.mode === 'readwrite') {
@@ -561,8 +591,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   shareOnMenuVisible = false;
-  shareData: ApiInfoModel = {};
+  shareData: NodeDef = { permission: 'read' };
   menuItemAction(evt: any) {
+    // guard against modifications when in read-only mode
+    const modifyingActions = ['Rename','Delete','Duplicate','NewApi','NewFile','NewFolder'];
+    if (this.isReadOnly && modifyingActions.includes(evt.action)) {
+      // ignore edits in read-only state
+      return;
+    }
     if(evt == 'Rename') {
       this.storeApi()
     }
@@ -578,7 +614,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     if (evt.action == 'Share') {
       this.shareOnMenuVisible = true;
-      this.shareData = {}
+      this.shareData = { permission: 'read' };
       this.shareData.name = evt.target.label || "Untitled API"
       this.shareData.username = this.coreService.userData?.username || "Anonymous";
 
@@ -593,6 +629,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       }
       traverse(copyOfTarget);
       this.shareData.profile = JSON.stringify(copyOfTarget) || "";
+      // owners always have full rights when editing their own tree
+      if (!this.shareData.permission) {
+        this.shareData.permission = 'read';
+      }
     }
   }
 

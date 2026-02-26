@@ -1,3 +1,5 @@
+import { NodeDef, OpenApiV3Document } from "@luxio/common";
+
 export class ServiceRouteInfo {
     namespace?: string;
     serviceName?: string;
@@ -90,21 +92,10 @@ export interface UserInfo {
   updatetime?: string | null;
 }
 
-export interface ApiInfoModel {
-  id?: string;
-  name?: string;
-  avatar?: string;
-  username?: string | null;
-  starred?: boolean;
-  specType?: string;
-  category?: string;
-  createtime?: string;
-  updatetime?: string;
-  stars?: string;
-  profile?: any; // 或者如果 profile 应该是对象，可改为 Record<string, any> 或具体接口
-}
-
 export interface DocModel {
     dataList?: Array<any>;
     openedList?: Array<any>;
 }
+
+export type DocModelTypeChoice = string | DocModel | NodeDef | OpenApiV3Document
+export type DocModelType = DocModelTypeChoice | (() => DocModelTypeChoice) | (() => Promise<DocModelTypeChoice>);

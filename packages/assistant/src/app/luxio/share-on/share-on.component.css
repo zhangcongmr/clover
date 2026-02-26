@@ -27,3 +27,11 @@
   background:#1976d2;
   color:white;
 }
+.ShareOnPermission{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.ShareOnPermission select{
+  padding:4px;
+}

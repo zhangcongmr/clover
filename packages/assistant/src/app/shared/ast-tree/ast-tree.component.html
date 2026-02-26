@@ -80,12 +80,12 @@
 
 @if(dataType() != 'subData' && isOpen) {
   <div ast-menu  [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content codigma-right-menu">
-    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'file') {
+    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'file' && !readOnly()) {
       <div data-layer="New Api" class="New codigma-menu-every-item" (click)="menuSelectAction('NewApi')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New Api</span></div>
     }
-    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'folder') {
+    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'folder' && !readOnly()) {
       <div data-layer="New File" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFile')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New File</span></div>
@@ -103,9 +103,9 @@
          &&(currentContextMenuEvt['item']['nodeType'] == 'bookmark'
          ||currentContextMenuEvt['item']['nodeType'] == 'api'
          ||currentContextMenuEvt['item']['nodeType'] == 'file'
-         ||currentContextMenuEvt['item']['nodeType'] == 'folder')) {
+         ||currentContextMenuEvt['item']['nodeType'] == 'folder') && !readOnly()) {
       <div data-layer="Delete" class="Delete codigma-menu-every-item" (click)="menuSelectAction('Delete')">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"   fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"   fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z"></path></svg>
         <span>Delete</span></div>
       <div data-layer="Rename" class="Rename codigma-menu-every-item" (click)="menuSelectAction('Rename')">
       <svg t="1770033793953" class="icon" viewBox="0 0 1024 1024"  height="16" width="16"   version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5638" width="16" height="16"><path d="M561.024 652.032H136.96V371.904h424a8 8 0 0 0 8-8v-56a8 8 0 0 0-8-8h-464a32 32 0 0 0-32 32v360a32 32 0 0 0 32 32h464a8 8 0 0 0 8-7.936v-56.064a8 8 0 0 0-8-7.936z m140.992-344.064v56c0 4.48 3.584 8 8 8h176v280h-176a8 8 0 0 0-8 8.064v55.936c0 4.48 3.584 8.064 8 8.064h216a32 32 0 0 0 32-32V331.904a32 32 0 0 0-32-32h-216a8 8 0 0 0-8 8zM668.032 192h74.944a8 8 0 0 0 8-8v-48A8 8 0 0 0 743.04 128H529.024a8 8 0 0 0-8 8v48c0 4.416 3.584 8 8 8h74.944v638.976H529.088a8 8 0 0 0-8 8v48c0 4.48 3.584 8 8 8h213.952a8 8 0 0 0 8-8v-48a8 8 0 0 0-8-8h-74.944V192zM194.944 480h275.968v64H195.008v-64z" fill="#000000" p-id="5639"></path></svg>

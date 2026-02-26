@@ -1,18 +1,19 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { CoreService } from '../../core.service';
-import { ApiInfoModel } from '../../shared/model';
+import { NodeDef } from "@luxio/common";
 
 @Component({
   selector: 'share-on',
   templateUrl: './share-on.component.html',
   styleUrls: ['./share-on.component.css'],
   standalone: true,
-  imports: [AstModalComponent]
+  imports: [FormsModule, AstModalComponent]
 })
 export class ShareOnComponent {
   @Input() visible = false;
-  @Input() data: ApiInfoModel = {};
+  @Input() data: NodeDef = { permission: 'read' };
   @Output() close = new EventEmitter<void>();
   @Output() share = new EventEmitter<void>();
 

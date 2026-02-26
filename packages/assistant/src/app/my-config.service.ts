@@ -1,12 +1,12 @@
 // my-config.service.ts
 import { Inject, Injectable } from '@angular/core';
 import { MY_CONFIG } from './tokens';
-import { DocModel } from './shared/model';
+import { DocModelType } from './shared/model';
 
 export interface MyConfig {
   apiUrl?: string;
   timeout?: number;
-  doc?: string | any | (() => string | DocModel);
+  doc?: DocModelType;
   fileName?: string;
 }
 
@@ -24,7 +24,7 @@ export class MyConfigService {
     return this.config.timeout;
   }
 
-  getDoc(): string | any | (() => string | DocModel) | undefined {
+  getDoc(): DocModelType | undefined {
     return this.config.doc;
   }
 
