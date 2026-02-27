@@ -6,7 +6,7 @@ import { Component } from "@angular/core";
     styleUrls: ['./ast-draggable.component.css'],
     host: {
         '(mouseup)': 'dragEnd($event)',
-        '(mousemove)': 'ewResize($event)'
+      '(mousemove)': 'whenMouseMove($event)'
     },
     standalone: true,
 })
@@ -32,7 +32,7 @@ export class AstDraggableComponent {
     document.body.style.cursor = 'default'; // 恢复默认光标
   }
 
-  ewResize(evt: any) {
+  whenMouseMove(evt: any) {
     if (this.active) {
       evt.preventDefault()
       const leftWidth = (evt.clientX - 32) / (window.innerWidth - 32);

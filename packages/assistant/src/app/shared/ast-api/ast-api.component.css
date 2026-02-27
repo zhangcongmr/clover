@@ -6,6 +6,7 @@
 }
 
 :host(:hover) .codigma-edit-btn {
+  /* keep hover support as fallback but visibility handled by JS */
   opacity: 1;
   visibility: visible;
 }
@@ -14,18 +15,28 @@
     display: inline-flex;
     position: absolute;
     top: 10%;
-    right: 2%;
+    /* start offscreen to right */
+    right: -60px;
     z-index: 1000;
     align-items: center;
     cursor: pointer;
-    pointer-events: auto; /* 子按钮恢复交互能力 */
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+    /* pointer-events controlled by visible class */
+    pointer-events: none;
+    opacity: 0;
+    transition: right 0.3s ease, opacity 0.3s ease;
+}
+
+.codigma-edit-btn.visible {
+    right: 2%;
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    background-color: transparent;
 }
 
 .codigma-edit {
-    color: #787777;
+    color: var(--primary-color, rgb(103, 137, 186));
     display: flex;
     flex-direction: column;
     font-family: Inter;

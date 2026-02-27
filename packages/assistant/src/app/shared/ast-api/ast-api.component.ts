@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, output, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, output, viewChild, HostListener } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
@@ -15,10 +15,9 @@ import { json } from "@codemirror/lang-json";
   styleUrls: ['./ast-api.component.css'],
   host: {
     '(mouseup)': 'dragEnd($event)',
-    '(mousemove)': 'nsResize($event)',
+    '(mousemove)': 'whenMouseMove($event)',
     '[tabIndex]': '-1',
-    '(keydown)': 'saveApi($event)',
-    '(dblclick)': 'editApiSourceCodeFn($event)'
+    '(keydown)': 'saveApi($event)'
   },
   standalone: true,
   imports: [FormsModule, AstSelectComponent, AstTabGroupComponent, AstTabComponent]
@@ -28,6 +27,9 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   editApiSourceCodeContainerView = viewChild<ElementRef<HTMLElement>>('editApiSourceCodeContainer');
   @Input() apiInfo: any;
   readonly saved = output();
+
+  // whether the floating edit button is currently shown (mouse near right edge)
+  editBtnVisible = false;
 
   auths = [
     {
@@ -738,11 +740,20 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     document.body.style.cursor = 'default'; // 恢复默认光标
   }
 
-  nsResize(evt: any) {
+  whenMouseMove(evt: any) {
     if (this.active) {
       evt.preventDefault()
       const yOffset = evt.clientY - this.initialY;
       this.dragHeight = (this.topSectionHeight + yOffset) / (this.topSectionHeight + this.bottomSectionHeight)
+      return;
+    }
+
+    const threshold = 50; // px from right edge
+    const x = evt.clientX;
+    const w = window.innerWidth;
+    const show = w - x < threshold;
+    if (show !== this.editBtnVisible) {
+      this.editBtnVisible = show;
     }
   }
 

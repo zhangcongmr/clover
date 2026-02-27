@@ -1,16 +1,17 @@
 @if(editApiSourceCodeEnable == false) {
-  <!-- <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
-    <div data-layer="edit-btn" class="EditBtn codigma-edit-btn" (click)="editApiSourceCodeFn()">
+  <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
+    <div data-layer="edit-btn" class="EditBtn codigma-edit-btn" [class.visible]="editBtnVisible && !editApiSourceCodeEnable" (click)="editApiSourceCodeFn($event)"
+         style="pointer-events: auto;cursor: pointer;">
       <div data-svg-wrapper="" data-layer="Frame" class="Frame">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
             d="M5 18.9706H6.41421L15.7279 9.65685L14.3137 8.24264L5 17.5564V18.9706ZM21 20.9706H3V16.7279L16.435 3.29289C16.8256 2.90237 17.4587 2.90237 17.8492 3.29289L20.6777 6.12132C21.0682 6.51184 21.0682 7.14501 20.6777 7.53553L9.24264 18.9706H21V20.9706ZM15.7279 6.82843L17.1421 8.24264L18.5563 6.82843L17.1421 5.41421L15.7279 6.82843Z"
-            fill="#787777"></path>
+            fill="var(--primary-color, rgb(103, 137, 186))"></path>
         </svg>
       </div>
-      <div data-layer="Edit" class="Edit codigma-edit">Edit</div>
+      <div data-layer="Edit" class="Edit codigma-edit" title="Open API data in editor">Edit API</div>
     </div>
-  </div> -->
+  </div>
   <div style="display: flex;flex-wrap: nowrap;margin-top: 0.5rem;">
     <ast-select [data]="methodOptions" [inputValue]="apiInfo.method.toUpperCase()" (selected)="methodChange($event)" [readonly]="true"></ast-select>
     <input type="text" name="uri" [(ngModel)]="apiInfo.url"
