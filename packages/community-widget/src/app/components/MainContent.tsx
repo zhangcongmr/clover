@@ -2,22 +2,11 @@ import { ProjectCard } from './ProjectCard';
 import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { debounce } from 'lodash'; // 或自己实现
-
-// Type definition for project data
-interface Project {
-  avatar: string;
-  name: string;
-  starred: boolean;
-  description: string;
-  language: string;
-  languageColor: string;
-  category: string;
-  timeAgo: string;
-  stars: string;
-}
+import { NodeDef } from '@luxio/common';
+import { coreService } from '../core.service';
 
 interface Data {
-  list: Project[];
+  list: NodeDef[];
   total: number;
   page: number;
   pageSize: number;
@@ -34,7 +23,7 @@ export function MainContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [committedSearch, setCommittedSearch] = useState('');
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<NodeDef[]>([]);
   const [totalProjects, setTotalProjects] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -76,7 +65,9 @@ useEffect(() => {
         }
         
         const data: ApiResponse = await response.json();
-        
+        for (let item of data.data.list) {
+          item.timeAgo = coreService.timeAgoIntl(item.updatetime);
+        }
         setProjects(data.data.list);
         setTotalProjects(data.data.total);
         setTotalPages(data.data.totalPages);
