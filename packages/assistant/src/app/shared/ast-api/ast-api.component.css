@@ -5,12 +5,6 @@
     position: relative;
 }
 
-:host(:hover) .codigma-edit-btn {
-  /* keep hover support as fallback but visibility handled by JS */
-  opacity: 1;
-  visibility: visible;
-}
-
 .codigma-edit-btn {
     display: inline-flex;
     position: absolute;

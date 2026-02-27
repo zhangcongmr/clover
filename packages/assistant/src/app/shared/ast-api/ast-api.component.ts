@@ -30,6 +30,7 @@ export class AstApiComponent implements OnInit, AfterViewInit {
 
   // whether the floating edit button is currently shown (mouse near right edge)
   editBtnVisible = false;
+  private editBtnHideTimer: any = null;
 
   auths = [
     {
@@ -751,9 +752,22 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     const threshold = 50; // px from right edge
     const x = evt.clientX;
     const w = window.innerWidth;
-    const show = w - x < threshold;
-    if (show !== this.editBtnVisible) {
-      this.editBtnVisible = show;
+    const shouldShow = w - x < threshold;
+    if (shouldShow) {
+      if (this.editBtnHideTimer) {
+        clearTimeout(this.editBtnHideTimer);
+        this.editBtnHideTimer = null;
+      }
+      if (!this.editBtnVisible) {
+        this.editBtnVisible = true;
+      }
+    } else {
+      if (this.editBtnVisible && this.editBtnHideTimer == null) {
+        this.editBtnHideTimer = setTimeout(() => {
+          this.editBtnVisible = false;
+          this.editBtnHideTimer = null;
+        }, 3000);
+      }
     }
   }
 
