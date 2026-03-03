@@ -34,7 +34,6 @@
     font-weight: 600;
     transition: all 0.3s ease;
     font-size: 12px;
-    margin: 15px 0;
 }
 
 .file-input-label:hover {
@@ -54,6 +53,7 @@
     font-weight: 500;
     transition: all 0.3s ease;
     font-size: 12px;
+    margin-left: 1rem;
 }
 
 .clear-button {

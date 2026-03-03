@@ -4,7 +4,7 @@ import { AstTableComponent } from '../../shared/ast-table/ast-table.component';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
-import { AstTreeNode } from '../../shared/model';
+import { AstTreeNode, AstTreeNodeWithHd } from '../../shared/model';
 
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { ServerTreeComponent } from '../../shared/server-tree/server.tree.component';
@@ -32,8 +32,8 @@ export class AddProjectComponent implements OnInit {
 
   // folder import state
   folderHandle: any = null;
-  directoryTreeData: Array<AstTreeNode> = [];
-  folderReadWriteMode: 'read' | 'readwrite' = 'read';
+  directoryTreeData: Array<AstTreeNodeWithHd> = [];
+  folderReadWriteMode: 'read' | 'readwrite' = 'readwrite';
 
   ngOnInit() {
   }
@@ -64,11 +64,38 @@ export class AddProjectComponent implements OnInit {
     this.clearFolderSelection();
   }
 
-  fileContentChangedFn(evt: any) {
-    this.content = evt.content;
-    this.fileName = evt.fileName;
-    // when selecting a file we should clear any previous folder data
-    this.clearFolderSelection();
+  async fileContentChangedFn(evt: Array<FileSystemFileHandle | FileSystemDirectoryHandle>) {
+    this.folderHandle = evt;
+    this.directoryTreeData = [];
+    for (let index = 0; index < evt.length; index++) {
+      const hd: any = evt[index];
+      if (hd.kind === 'directory') {
+        const tempTree: any = []
+        await this.buildTreeFromDirectory(hd, tempTree);
+        const rootName = hd.name || 'folder';
+
+        this.directoryTreeData.push(
+          {
+            id: this.uuid(),
+            label: rootName,
+            children: tempTree,
+            nodeType: 'folder',
+            isExpanded: true,
+            // store handle for later operations
+            custom: true,
+            folderHandle: hd,
+            folderInfo: {
+              servers: []
+            },
+            mode: 'read'
+          }
+        );
+      } else {
+        const tempTree: any = []
+        await this.buildTreeFromDirectory(hd, tempTree);
+        this.directoryTreeData.push(...tempTree)
+      }
+    }
   }
 
   clearFileSelected() {
@@ -98,29 +125,32 @@ export class AddProjectComponent implements OnInit {
 
   importOutFromLocal() {
     if (this.directoryTreeData && this.directoryTreeData.length > 0) {
-      // folder selected
-      this.confirmSelected({
-        folderHandle: this.folderHandle,
-        tree: this.directoryTreeData,
-        mode: this.folderReadWriteMode
-      });
-    } else {
-      this.confirmSelected({
-        fileName: this.fileName,
-        content: this.content,
-      });
+      this.confirmSelected(this.directoryTreeData);
     }
   }
 
-  async openFolder(mode: 'read' | 'readwrite' = 'read') {
+
+  async openFolder(mode: 'read' | 'readwrite' = 'readwrite') {
     if (!('showDirectoryPicker' in window)) {
       alert('The File System Access API is not supported in this browser.');
       return;
     }
     try {
       this.folderHandle = await (window as any).showDirectoryPicker({ mode });
-      this.directoryTreeData = [];
-      await this.buildTreeFromDirectory(this.folderHandle, this.directoryTreeData);
+      await this.fileContentChangedFn([this.folderHandle]);
+    } catch (err) {
+      console.error('openFolder error', err);
+    }
+  }
+
+  async openFileInContent() {
+    if (!('showOpenFilePicker' in window)) {
+      alert('The File System Access API is not supported in this browser.');
+      return;
+    }
+    try {
+      this.folderHandle = await (window as any).showOpenFilePicker({ multiple: true });
+      await this.fileContentChangedFn(this.folderHandle);
     } catch (err) {
       console.error('openFolder error', err);
     }
@@ -136,46 +166,56 @@ export class AddProjectComponent implements OnInit {
   }
 
   private async buildTreeFromDirectory(dirHandle: any, target: Array<AstTreeNode>) {
-    for await (const [name, handle] of (dirHandle as any).entries()) {
-      // don't traverse into node_modules, .git, dist/build, etc. to avoid performance issues
-      const ignoreDirs = new Set(['node_modules', '.git', 'dist', 'build', 'venv', 'bower_components',
-         '.cache', '__pycache__', '.angular', '.vscode', '.idea', '.vs', 'target', 'out', 'coverage',
-        'logs', 'log', 'tmp', 'temp', 'cache', 'build', 'bin', 'obj', 'vendor', 'third_party',
-         'jspm_packages']);
-      if (handle.kind==='directory' && ignoreDirs.has(name)) {
-        continue;
-      }
-      const node: AstTreeNode = {
-        id: this.uuid(),
-        label: name,
-        children: [],
-        nodeType: handle.kind === 'file' ? 'file' : 'folder',
-        isExpanded: false,
-        // keep reference to handle for later read/write operations
-        custom: true,
-        folderHandle: handle,
-        mode: this.folderReadWriteMode
-      } as any;
+    if(dirHandle.kind === 'file') {
+      const node: AstTreeNode = await this.createAstTreeNode(dirHandle.name, dirHandle);
+      target.push(node);
+    } else {
+      for await (const [name, handle] of (dirHandle as any).entries()) {
+        // don't traverse into node_modules, .git, dist/build, etc. to avoid performance issues
+        const ignoreDirs = new Set(['node_modules', '.git', 'dist', 'build', 'venv', 'bower_components',
+          '.cache', '__pycache__', '.angular', '.vscode', '.idea', '.vs', 'target', 'out', 'coverage',
+          'logs', 'log', 'tmp', 'temp', 'cache', 'build', 'bin', 'obj', 'vendor', 'third_party',
+          'jspm_packages']);
+        if (handle.kind === 'directory' && ignoreDirs.has(name)) {
+          continue;
+        }
+        const node: AstTreeNode = await this.createAstTreeNode(name, handle);
 
-      if (handle.kind === 'file') {
-        if (!this.isBinaryName(name)) {
-          try {
-            const fh = await handle.getFile();
-            node.content = await fh.text();
-          } catch (err) {
-            console.warn('add-project: failed to read file content', name, err);
-            node.content = '';
-          }
-        } else {
-          node.content = 'Binary file - content not loaded';
+        target.push(node);
+        if (handle.kind === 'directory') {
+          await this.buildTreeFromDirectory(handle, node.children!);
         }
       }
+    }
+  }
 
-      target.push(node);
-      if (handle.kind === 'directory') {
-        await this.buildTreeFromDirectory(handle, node.children!);
+  private async createAstTreeNode(name: any, handle: any) {
+    const node: AstTreeNode = {
+      id: this.uuid(),
+      label: name,
+      children: [],
+      nodeType: handle.kind === 'file' ? 'file' : 'folder',
+      isExpanded: false,
+      // keep reference to handle for later read/write operations
+      custom: true,
+      folderHandle: handle,
+      mode: this.folderReadWriteMode
+    } as any;
+
+    if (handle.kind === 'file') {
+      if (!this.isBinaryName(name)) {
+        try {
+          const fh = await handle.getFile();
+          node.content = await fh.text();
+        } catch (err) {
+          console.warn('add-project: failed to read file content', name, err);
+          node.content = '';
+        }
+      } else {
+        node.content = 'Binary file - content not loaded';
       }
     }
+    return node;
   }
 
   private uuid(): string {

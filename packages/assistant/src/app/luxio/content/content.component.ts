@@ -10,7 +10,7 @@ import { file, write } from 'opfs-tools';
 import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
+import { AstTreeNode, AstTreeNodeWithHd, NoN_SELECTION } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
@@ -116,7 +116,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
 
     if ('openapi' in docObj && 'paths' in docObj) { //OpenApiV3Document
-      const ospecFileName = this.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
+      const ospecFileName = this.coreService.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
       let data: AstTreeNode = this.createNewFile(docObj, ospecFileName);
       this.assignDeepLevel([data]);
       this.dataList.set([data]);
@@ -307,30 +307,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // Reuse AddProjectComponent.openFolder which populates its folderHandle
       // and directoryTreeData using its own buildTreeFromDirectory implementation.
       await addProject.openFolder(mode as any);
-
       // grab the results from the child component
-      const folderHandle = (addProject as any).folderHandle;
-      if (folderHandle == null) {
-        console.warn('No folder selected');
-        return;
-      }
-      const treeData: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
+      const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
-      const rootName = folderHandle?.name || 'folder';
-      const rootNode: AstTreeNode = {
-        id: this.uuid(),
-        label: rootName,
-        children: treeData,
-        nodeType: 'folder',
-        isExpanded: true,
-        custom: true,
-        folderHandle: folderHandle,
-        folderInfo: { servers: [] },
-        mode: mode
-      } as any;
-
-      this.assignDeepLevel([rootNode]);
-      this.dataList.set([rootNode]);
+      this.assignDeepLevel(rootNode);
+      this.dataList.set(rootNode);
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
       console.error('openFolderInContent error', err);
@@ -338,33 +319,19 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async openFileInContent() {
+    const addProject = this.addProjectComponent();
+    if (!addProject) {
+      console.warn('AddProjectComponent not available');
+      return;
+    }
     // Try native file picker first
     try {
       if ('showOpenFilePicker' in window) {
-        const handles: any = await (window as any).showOpenFilePicker({ multiple: false });
-        if (!handles || handles.length === 0) return;
-        const fileHandle = handles[0];
-        const f: any = await fileHandle.getFile();
-        const name = fileHandle.name || f.name || 'file';
-        const isBinary = /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
-        let content = '';
-        if (!isBinary) {
-          try { content = await f.text(); } catch (e) { console.warn('openFileInContent: read failed', e); }
-        }
+        await addProject.openFileInContent();
+        const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
-        const node: AstTreeNode = {
-          id: this.uuid(),
-          label: name,
-          nodeType: 'file',
-          content: content,
-          children: [],
-          custom: true,
-          folderHandle: fileHandle,
-          mode: 'read'
-        } as any;
-
-        this.assignDeepLevel([node]);
-        this.dataList.set([node]);
+        this.assignDeepLevel(rootNode);
+        this.dataList.set(rootNode);
         try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
         return;
       }
@@ -456,53 +423,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  async apiSelected(evt: any) {
-    // handle different import payloads
-    if (evt.folderHandle) {
-      // folder import
-      const rootName = evt.folderHandle.name || 'folder';
-      const rootNode: AstTreeNode = {
-        id: this.uuid(),
-        label: rootName,
-        children: evt.tree || [],
-        nodeType: 'folder',
-        isExpanded: true,
-        // store handle for later operations
-        custom: true,
-        folderHandle: evt.folderHandle,
-        folderInfo: {
-          servers: []
-        },
-        mode: evt.mode // read or readwrite
-      } as any;
-      this.assignDeepLevel([rootNode]);
-      this.dataList.update(value => value.concat([rootNode]));
-      // persist snapshot to OPFS for later restoration
-      // try {
-      //   const snapshot = { name: evt.folderHandle?.name || rootName, mode: evt.mode, tree: evt.tree || [] };
-      //   await this.saveFolderSnapshotToOPFS(snapshot);
-      // } catch (err) {
-      //   console.warn('failed to persist folder snapshot to OPFS', err);
-      // }
-    } else if (evt.fileName) {
-      const fileName = evt.fileName;
-      const ospecFileName = this.removeExtension(fileName) + '.ospec';
-
-      let data: AstTreeNode = this.createNewFile(evt.content, ospecFileName);
-      this.assignDeepLevel([data]);
-      this.dataList.update(value => value.concat([data]));
-    } else if (evt.apiData) {
-      // from ecosystem
-      const data: AstTreeNode = {
-        id: this.uuid(),
-        label: evt.apiData.name || 'api',
-        children: [],
-        nodeType: 'api',
-        rawApiInfo: evt.apiData
-      } as any;
-      this.assignDeepLevel([data]);
-      this.dataList.update(value => value.concat([data]));
-    }
+  async apiSelected(evt: Array<AstTreeNodeWithHd>) {
+    this.assignDeepLevel(evt);
+    this.dataList.update(value => value.concat(evt));
+    // persist snapshot to OPFS for later restoration
+    // try {
+    //   const snapshot = { name: evt.folderHandle?.name || rootName, mode: evt.mode, tree: evt.tree || [] };
+    //   await this.saveFolderSnapshotToOPFS(snapshot);
+    // } catch (err) {
+    //   console.warn('failed to persist folder snapshot to OPFS', err);
+    // }
 
     this.storeApi();
     this.currentDisplayViewId.set(1);
@@ -554,14 +484,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (openedListText) {
       this.openedList.set(JSON.parse(openedListText));
     }
-  }
-
-  removeExtension(filename: string) {
-    const lastDotIndex = filename.lastIndexOf('.');
-    if (lastDotIndex === -1) {
-      return filename; // 没有扩展名
-    }
-    return filename.substring(0, lastDotIndex);
   }
 
   saveApi(evt: any) {

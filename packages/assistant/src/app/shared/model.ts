@@ -77,6 +77,10 @@ export interface AstTreeNode {
     rename?: boolean
 }
 
+export interface AstTreeNodeWithHd extends AstTreeNode {
+    folderHandle: any;
+    mode: 'read' | 'readwrite'
+}
 export interface UserInfo {
   id: string;
   username?: string | null;

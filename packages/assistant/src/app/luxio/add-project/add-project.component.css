@@ -138,7 +138,7 @@
     gap: 10px;
     justify-content: flex-start;
     padding-bottom: 20px;
-    padding-top: 40px
+    padding-top: 1rem
 }
 .codigma-import-desc-title {
     align-items: flex-start;
@@ -265,6 +265,23 @@
     flex: 1 1 0;
     justify-content: flex-start;
     overflow: hidden
+}
+
+.file-input-label {
+    display: inline-block;
+    background: white;
+    border: 1px solid black;
+    padding: 6px 12px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 12px;
+}
+
+.file-input-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
 .codigma-c1 {

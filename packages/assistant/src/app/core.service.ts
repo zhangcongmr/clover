@@ -926,6 +926,14 @@ export class CoreService {
     return total;
   }
 
+  removeExtension(filename: string) {
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      return filename; // 没有扩展名
+    }
+    return filename.substring(0, lastDotIndex);
+  }
+
   static isBrowserEnvironment() {
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       return true; // 浏览器环境

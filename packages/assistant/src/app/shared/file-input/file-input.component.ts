@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, input, output } from '@angular/core';
+import { Component, ElementRef, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, output } from '@angular/core';
 
 
 @Component({
@@ -8,7 +8,7 @@ import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, afterNe
     standalone: true
 })
 export class FileInputComponent implements OnInit, OnChanges {
-    readonly fileContentChanged = output<{fileName: string, content: string | ArrayBuffer | null | undefined}>();
+    readonly fileContentChanged = output<Array<FileSystemFileHandle | FileSystemDirectoryHandle>>();
     readonly clearSelectd = output<void>();
 
     fileNameDisplay: string = 'No file selected';
@@ -48,10 +48,22 @@ export class FileInputComponent implements OnInit, OnChanges {
 
             dropZone.addEventListener('drop', handleDrop, false);
 
-            function handleDrop(e: any) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                me.handleFileSelection(files[0]);
+            async function handleDrop(e: any) {
+                const handles: any = [];
+                const items = e.dataTransfer.items
+                let itemsArray = Array.from(items);
+                let PromiseArray: any = [];
+                for (let index = 0; index < itemsArray.length; index++) {
+                    const element: any = itemsArray[index];
+                    const handlePromise = element.getAsFileSystemHandle();
+                    PromiseArray.push(handlePromise);
+                }
+                const handleResults = await Promise.all(PromiseArray);
+                handles.push(...handleResults);
+
+                me.fileNameDisplay = handles.map((hd: any) => hd.name).join(" ");
+                me.isFileSelected = true;
+                me.fileContentChanged.emit(handles);
             }
 
         });
@@ -63,6 +75,40 @@ export class FileInputComponent implements OnInit, OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
 
+    }
+
+    async openFileInContent() {
+        // Try native file picker first
+        try {
+            if ('showOpenFilePicker' in window) {
+                const handles: any = await (window as any).showOpenFilePicker({ multiple: true });
+                if (!handles || handles.length === 0) return;
+                this.fileNameDisplay = handles.map((hd: any) => hd.name).join(" ");
+                this.isFileSelected = true;
+                this.fileContentChanged.emit(handles);
+                return;
+            }
+        } catch (err) {
+            console.warn('showOpenFilePicker failed or unsupported', err);
+        }
+    }
+
+    async openFolder(mode: 'read' | 'readwrite' = 'readwrite') {
+        if (!('showDirectoryPicker' in window)) {
+            alert('The File System Access API is not supported in this browser.');
+            return;
+        }
+        try {
+            const handle: any = await (window as any).showDirectoryPicker({ mode });
+            if (!handle) return;
+            this.fileNameDisplay = handle.name;
+            this.isFileSelected = true;
+            this.fileContentChanged.emit([handle]);
+            return;
+
+        } catch (err) {
+            console.error('openFolder error', err);
+        }
     }
 
     onFileSelected(evt: any) {
@@ -77,7 +123,7 @@ export class FileInputComponent implements OnInit, OnChanges {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target?.result;
-                this.fileContentChanged.emit({fileName: file.name, content: content});
+                // this.fileContentChanged.emit({fileName: file.name, content: content});
             };
             reader.readAsText(file);
             this.isFileSelected = true;
@@ -89,13 +135,5 @@ export class FileInputComponent implements OnInit, OnChanges {
         // Reset file info display
         this.fileNameDisplay = 'No file selected';
         this.clearSelectd.emit();
-
-        // 查询父元素下所有具有 'file-input-select' 的子元素
-        const childElements = this.elementRef.nativeElement.getElementsByClassName('file-input-select');
-
-        const fileInput = childElements[0];
-
-        // Reset file input
-        fileInput.value = '';
     }
 }
