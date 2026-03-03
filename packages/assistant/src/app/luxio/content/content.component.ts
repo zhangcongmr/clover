@@ -324,6 +324,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         nodeType: 'folder',
         isExpanded: true,
         custom: true,
+        folderHandle: folderHandle,
         folderInfo: { servers: [] },
         mode: mode
       } as any;
@@ -468,6 +469,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         isExpanded: true,
         // store handle for later operations
         custom: true,
+        folderHandle: evt.folderHandle,
         folderInfo: {
           servers: []
         },
