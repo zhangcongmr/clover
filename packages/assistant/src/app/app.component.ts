@@ -86,6 +86,14 @@ export class AppComponent implements OnInit, AfterViewInit {
     console.log("--++++++----")
 
     const fetchProfile = async () => {
+      // Skip API call during SSR to avoid SSL certificate issues
+      // The profile will be fetched when the app runs on the browser
+      if (typeof window === 'undefined') {
+        // Running on the server - skip the API call
+        console.log("Skipping profile fetch during SSR");
+        return;
+      }
+
       try {
         const response = await fetch(`/api/auth/profile`, {
           credentials: 'include', // 携带 Cookie
@@ -103,7 +111,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     fetchProfile();
 
     // in extension scene
-    if (chrome.storage) {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
       function updateWindowRect() {
         // 兼容写法：优先使用 screenX/Y， fallback 到 screenLeft/Top
         const x = window.screenX || window.screenLeft;
