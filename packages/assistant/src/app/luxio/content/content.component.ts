@@ -144,9 +144,24 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // Restore folderHandle if there's a key reference
       if (node.folderHandleKey) {
         try {
-          const handle = await this.coreService.idbGet(node.folderHandleKey);
+          const handle: any = await this.coreService.idbGet(node.folderHandleKey);
           if (handle) {
             result.folderHandle = handle;
+            
+            // If this is a file node, refresh its content from the file system
+            if (result.nodeType === 'file' && handle.kind === 'file') {
+              if (!this.coreService.isBinaryName(handle.name)) {
+                try {
+                  const fh = await handle.getFile();
+                  result.content = await fh.text();
+                } catch (err) {
+                  console.warn('failed to read file content ', handle.name, err);
+                  result.content = '';
+                }
+              } else {
+                result.content = 'Binary file - content not loaded';
+              }
+            }
           }
           // Remove the temporary key reference
           delete result.folderHandleKey;

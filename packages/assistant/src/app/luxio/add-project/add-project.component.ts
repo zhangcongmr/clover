@@ -156,10 +156,6 @@ export class AddProjectComponent implements OnInit {
     this.directoryTreeData = [];
   }
 
-  private isBinaryName(name: string): boolean {
-    return /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
-  }
-
   private async buildTreeFromDirectory(dirHandle: any, target: Array<AstTreeNode>) {
     if(dirHandle.kind === 'file') {
       const node: AstTreeNode = await this.createAstTreeNode(dirHandle.name, dirHandle);
@@ -197,7 +193,7 @@ export class AddProjectComponent implements OnInit {
     } as any;
 
     if (handle.kind === 'file') {
-      if (!this.isBinaryName(name)) {
+      if (!this.coreService.isBinaryName(name)) {
         try {
           const fh = await handle.getFile();
           node.content = await fh.text();

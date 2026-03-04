@@ -361,6 +361,11 @@ export class CoreService {
     });
   }
 
+  public isBinaryName(name: string): boolean {
+    return /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
+  }
+
+
   splitSpec(apiInfo: any) {
     if (!apiInfo || !apiInfo.specDef || !apiInfo.specDef.paths) {
       return;
