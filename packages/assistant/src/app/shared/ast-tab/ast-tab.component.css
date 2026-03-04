@@ -4,4 +4,5 @@
     display: flex;
     flex: 1 1 0;
     overflow: hidden;
+    border-bottom: 1px solid var(--vscode-tab-border);
 }

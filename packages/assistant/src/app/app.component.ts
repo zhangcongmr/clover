@@ -9,6 +9,7 @@ import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
 import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { file } from 'opfs-tools';
+import { ThemeService } from './theme.service';
 
 @Component({
     selector: 'app-root',
@@ -19,6 +20,7 @@ import { file } from 'opfs-tools';
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
+  protected themeService = inject(ThemeService);
   contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
 
@@ -132,6 +134,15 @@ export class AppComponent implements OnInit, AfterViewInit {
       // 监听窗口移动事件 (注意：并非所有浏览器都高频触发此事件，且拖动过程中可能不连续更新)
       // window.addEventListener('move', updateWindowRect); //move事件不生效， 注释掉
     }
+
+    if (typeof document !== 'undefined') {
+      // 初始化主题
+      if (this.themeService.getCurrentTheme() === 'dark') {
+        document.body.classList.add('vscode-dark-theme');
+      } else {
+        document.body.classList.remove('vscode-dark-theme');
+      }
+    }
   }
 
   async fileVist() {
@@ -199,6 +210,16 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     let num = new Integer({value: 75889});
     let vi = new Uint8Array(num.toBER());
+  }
+
+  // 切换主题的方法
+  toggleTheme() {
+    this.themeService.toggleTheme();
+    if (this.themeService.getCurrentTheme() === 'dark') {
+      document.body.classList.add('vscode-dark-theme');
+    } else {
+      document.body.classList.remove('vscode-dark-theme');
+    }
   }
 
   onCloseTab(evt: any) {

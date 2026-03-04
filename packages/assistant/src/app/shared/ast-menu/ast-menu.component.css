@@ -5,10 +5,15 @@
 }
 :host(.codigma-right-menu) {
   align-items: flex-start;
-  background: white;
-  border: 1px solid #eaeaea;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 4px;
-  min-width: 120px;
-  font-size: 14px;
+  min-width: 160px;
+  font-size: 13px;
+  color: var(--vscode-foreground);
+}
+
+:host(.codigma-right-menu) .codigma-menu-every-item {
+  background: var(--vscode-editorWidget-background);
 }

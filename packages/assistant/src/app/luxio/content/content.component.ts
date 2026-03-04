@@ -132,7 +132,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     
     // 启动自动刷新功能
-    this.startAutoRefresh();
+    // this.startAutoRefresh();
     
     // 启动自动保存
     // this.startAutoSave();
@@ -141,10 +141,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // 确保组件销毁时清理定时器
   ngOnDestroy(): void {
     // 停止自动刷新
-    this.stopAutoRefresh();
+    // this.stopAutoRefresh();
     
     // 一次性停止所有自动保存
-    this.savers.forEach(saver => saver.stop());
+    // this.savers.forEach(saver => saver.stop());
     this.savers = [];
   }
 

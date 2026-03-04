@@ -1,13 +1,82 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
+
+/* VS Code Light Modern theme variables */
+:root {
+  /* Background and UI colors */
+  --vscode-background: #ffffff;
+  --vscode-foreground: #616161;
+  --vscode-editor-background: #ffffff;
+  --vscode-sideBar-background: #f8f8f8;
+  --vscode-tab-inactiveBackground: #eef0f2;
+  --vscode-tab-activeBackground: #ffffff;
+  --vscode-tab-border: #f0f0f0;
+  --vscode-panel-background: #f3f3f3;
+  --vscode-statusBar-background: #007acc;
+  --vscode-statusBar-foreground: #ffffff;
+  --vscode-button-background: #007acc;
+  --vscode-button-foreground: #ffffff;
+  --vscode-input-background: #ffffff;
+  --vscode-input-border: #ddd;
+  --vscode-list-hoverBackground: #e8e8e8;
+  --vscode-list-activeSelectionBackground: #0060c0;
+  --vscode-list-activeSelectionForeground: #ffffff;
+  --vscode-list-inactiveSelectionBackground: #e4e6f1;
+  --vscode-editorGroup-border: #e7e7e7;
+  --vscode-editorWidget-background: #f3f3f3;
+  --vscode-titleBar-activeBackground: #dddddd;
+  --vscode-titleBar-inactiveBackground: #dddddd;
+  --vscode-activityBar-background: #f8f8f8;
+  --vscode-activityBar-foreground: #616161;
+  --vscode-activityBar-inactiveForeground: #616161;
+  --vscode-activityBarBadge-background: #007acc;
+  --vscode-activityBarBadge-foreground: #ffffff;
+  --vscode-icon-foreground: #616161;
+  --vscode-focusBorder: #0078d4;
+  --vscode-textLink-foreground: #006ab1;
+  --vscode-textLink-activeForeground: #006ab1;
+  --vscode-textSeparator-foreground: #0000002e;
+}
+
+/* VS Code Dark Modern theme variables */
+[data-theme="dark"] {
+  /* Background and UI colors */
+  --vscode-background: #1f1f1f;
+  --vscode-foreground: #cccccc;
+  --vscode-editor-background: #1e1e1e;
+  --vscode-sideBar-background: #181818;
+  --vscode-tab-inactiveBackground: #252526;
+  --vscode-tab-activeBackground: #1e1e1e;
+  --vscode-tab-border: #252526;
+  --vscode-panel-background: #181818;
+  --vscode-statusBar-background: #0078d4;
+  --vscode-statusBar-foreground: #ffffff;
+  --vscode-button-background: #0078d4;
+  --vscode-button-foreground: #ffffff;
+  --vscode-input-background: #3c3c3c;
+  --vscode-input-border: #3c3c3c;
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-list-activeSelectionBackground: #2f3337;
+  --vscode-list-activeSelectionForeground: #d7dae0;
+  --vscode-list-inactiveSelectionBackground: #3a3d41;
+  --vscode-editorGroup-border: #454545;
+  --vscode-editorWidget-background: #252526;
+  --vscode-titleBar-activeBackground: #3c3c3c;
+  --vscode-titleBar-inactiveBackground: #3c3c3c;
+  --vscode-activityBar-background: #333333;
+  --vscode-activityBar-foreground: #ffffff;
+  --vscode-activityBar-inactiveForeground: #ffffff66;
+  --vscode-activityBarBadge-background: #0078d4;
+  --vscode-activityBarBadge-foreground: #ffffff;
+  --vscode-icon-foreground: #cccccc;
+  --vscode-focusBorder: #0078d4;
+  --vscode-textLink-foreground: #4daafc;
+  --vscode-textLink-activeForeground: #4daafc;
+  --vscode-textSeparator-foreground: #ffffff2e;
+}
+
 html {
     height: 100%;
-}
-:root {
-  --primary-color: rgb(103, 137, 186);
-  --second-color: rgb(206, 216, 231);
-  --border-color: #D9D9D9;
-  --font-size-base: 16px;
 }
 
 *,
@@ -23,15 +92,27 @@ body::after {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 75%;
+    background-color: var(--vscode-background);
+    color: var(--vscode-foreground);
 }
 
 img, svg {
     vertical-align: middle;
 }
 
+.btn-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  color: var(--vscode-activityBar-foreground);
+}
+
 .btn-svg:hover {
-    background-color: #ccc;
-    cursor: pointer;
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-activityBar-foreground);
+  cursor: pointer;
 }
 
 .btn-text {
@@ -42,7 +123,7 @@ img, svg {
 .codigma-menu-every-item {
     align-items: center;
     /* 垂直居中 */
-    color: black;
+    color: var(--vscode-foreground);
     display: flex;
     font-size: 16px;
     font-weight: 400;
@@ -53,12 +134,13 @@ img, svg {
     cursor: pointer;
 
     padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--vscode-editorGroup-border);
     transition: background-color 0.2s;
+    background-color: var(--vscode-sideBar-background);
 }
 
 .codigma-menu-every-item:hover {
-    background-color: #f5f5f5;;
+    background-color: var(--vscode-list-hoverBackground);
 }
 
 .codigma-menu-every-item:last-child {
@@ -67,6 +149,7 @@ img, svg {
 
 .codigma-menu-every-item svg, .codigma-menu-every-item img {
     margin-right: 16px; /* 调整图标与文本间的距离 */
+    color: var(--vscode-icon-foreground);
 }
 
 .custom-scroll {
@@ -84,12 +167,16 @@ img, svg {
 }
 
 .custom-scroll::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--vscode-background);
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-  background: #ccc transparent;
+  background: #ccc;
   border-radius: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
 }
 
 .tooltip-bubble {

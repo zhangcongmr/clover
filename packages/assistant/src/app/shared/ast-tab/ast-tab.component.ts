@@ -73,18 +73,18 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
 
   computeTabClass(isActivated: boolean, tabType: AstTabType) {
     if (tabType == null || tabType['type'] == null) {
-      return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+      return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
     }
     if (tabType['type'] == 'bilateral') {
-      return isActivated ? 'bilateral-border-tab' : 'bottom-border-tab';
+      return isActivated ? 'active-tab bilateral-border-tab' : 'bottom-border-tab';
     } else if (tabType['type'] == 'bottom') {
-      return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+      return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
     } else if (tabType['type'] == 'textbottom') {
-      return isActivated ? 'textbottom-border-tab' : 'borderless-tab';
+      return isActivated ? 'active-tab textbottom-border-tab' : 'borderless-tab';
     } else if (tabType['type'] == 'lightcolorselection') {
-      return isActivated ? 'lightcolorselection-tab' : 'bottom-border-tab';
+      return isActivated ? 'active-tab lightcolorselection-tab' : 'bottom-border-tab';
     } else {
-      return isActivated ? 'bottom-border-tab' : 'borderless-tab';
+      return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
     }
   }
 
