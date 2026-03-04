@@ -44,7 +44,6 @@ li[data-layer="tab"] {
     cursor: pointer;
     min-width: 5rem;
     flex-shrink: 0;
-    border-right: 1px solid var(--vscode-tab-border);
     color: var(--vscode-foreground);
 }
 
@@ -82,9 +81,6 @@ li[data-layer="tab"]:hover .tab-close {
 .tab-close {
     opacity: 0;
     visibility: hidden;
-    padding: 2px;
-    border-radius: 3px;
-    margin-left: 5px;
 }
 
 .tab-close:hover {

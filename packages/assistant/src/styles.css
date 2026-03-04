@@ -100,14 +100,7 @@ img, svg {
     vertical-align: middle;
 }
 
-.btn-svg {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  border-radius: 4px;
-  color: var(--vscode-activityBar-foreground);
-}
+
 
 .btn-svg:hover {
   background-color: var(--vscode-list-hoverBackground);

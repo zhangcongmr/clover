@@ -11,7 +11,7 @@
       autocomplete="off" required>
   </div>
 </div>
-<div style="position: relative;display: flex;height: 100%;">
+<div style="position: relative;display: flex;width: calc(100vw - 42px);height: 100%;">
   @if (sideOpen()) {
     <div style="width:25%;background-color: #F2F2F2;display: flex;flex-direction: column;" [style.width]="leftWidth * 100 + '%'">
       @if(currentDisplayViewId()==1) {
