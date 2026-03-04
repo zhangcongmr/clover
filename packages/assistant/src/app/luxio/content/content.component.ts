@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, afterNextRender, computed, inject, model, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, model, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -98,13 +98,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     // fallback in case the resource value is `false` or if the resource is in error state
     return false;
   });
-
-  constructor() {
-    super();
-    afterNextRender(() => {
-      // this.initData();
-    });
-  }
 
   async ngOnInit() {
     const doc = this.myConfigService.getDoc();
@@ -601,20 +594,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     // await dir('/test-dir').remove();
 
     // await file('/dir/file.txt').remove();
-  }
-
-  async initData() {
-    // This method is no longer used, keeping for compatibility only
-    const readDataListText = await file('/dir/file.txt').text();
-    // console.log("readDataListText: " + readDataListText)
-    if (readDataListText) {
-      this.dataList.set(JSON.parse(readDataListText));
-    }
-
-    const openedListText = await file('/dir/openedList.txt').text();
-    if (openedListText) {
-      this.openedList.set(JSON.parse(openedListText));
-    }
   }
 
   saveApi(evt: any) {
