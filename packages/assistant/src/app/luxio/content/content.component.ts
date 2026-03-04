@@ -121,15 +121,49 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.assignDeepLevel([data]);
       this.dataList.set([data]);
     } else if ('dataList' in docObj || 'openedList' in docObj) { //DocModel
-      this.dataList.set(docObj.dataList || []);
-      this.openedList.set(docObj.openedList || []);
-    } else { //NodeDef
+      // Restore folderHandles from IndexedDB for both dataList and openedList
+      const dataListWithHandles = await this.restoreHandles(docObj.dataList || []);
+      const openedListWithHandles = await this.restoreHandles(docObj.openedList || []);
+      this.dataList.set(dataListWithHandles);
+      this.openedList.set(openedListWithHandles);
+    } else if ('profile' in docObj) { //NodeDef
       this.dataList.set(docObj.profile ? [JSON.parse(docObj.profile)] : []);
       // if the provided object carries permission info, apply it
       this.modifyPermission(docObj);
     }
+    
     // 启动自动保存
     // this.startAutoSave();
+  }
+
+  // Restore folderHandles from IndexedDB
+  private async restoreHandles(nodes: any[]): Promise<any[]> {
+    const restoreHandles = async (node: any): Promise<any> => {
+      const result: any = { ...node };
+      
+      // Restore folderHandle if there's a key reference
+      if (node.folderHandleKey) {
+        try {
+          const handle = await this.coreService.idbGet(node.folderHandleKey);
+          if (handle) {
+            result.folderHandle = handle;
+          }
+          // Remove the temporary key reference
+          delete result.folderHandleKey;
+        } catch (error) {
+          console.warn(`Could not restore handle for key: ${node.folderHandleKey}`, error);
+        }
+      }
+      
+      // Process children recursively
+      if (result.children) {
+        result.children = await Promise.all(result.children.map(restoreHandles));
+      }
+      
+      return result;
+    };
+    
+    return await Promise.all(nodes.map(restoreHandles));
   }
 
   private modifyPermission(docObj: any) {
@@ -442,20 +476,33 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (this.permission === 'read') {
       return; // don't persist in read-only mode since the data may be shared across multiple users and we don't want one user's edits to overwrite another's; we can consider implementing a separate "Save As" flow for read-only/shared trees if there's demand for it
     }
-    // before persisting, strip out any non‑serializable handles.  we still
-    // keep `content` on file nodes so OPFS will hold the file text.
-    const strip = (node: any): any => {
-      const { folderHandle, ...rest } = node;
-      if (rest.children) {
-        rest.children = rest.children.map(strip);
+    
+    // Extract and store folderHandles in IndexedDB, replacing them with identifiers in the serialized data
+    const extractHandles = async (node: any): Promise<any> => {
+      const result: any = { ...node };
+      
+      // Store folderHandle if it exists
+      if (node.folderHandle) {
+        // Generate a unique key for the handle
+        const handleKey = `handle_${node.id}`;
+        await this.coreService.idbPut(handleKey, node.folderHandle);
+        // Replace the handle with its key reference
+        result.folderHandleKey = handleKey;
+        delete result.folderHandle;
       }
-      return rest;
+      
+      // Process children recursively
+      if (result.children) {
+        result.children = await Promise.all(result.children.map(extractHandles));
+      }
+      
+      return result;
     };
 
-    // const toSave = this.dataList().map(strip);
+    const processedDataList = await Promise.all(this.dataList().map(extractHandles));
 
     // write to OPFS
-    await write('/dir/file.txt', JSON.stringify(this.dataList()));
+    await write('/dir/file.txt', JSON.stringify(processedDataList));
   }
 
   async storeOpenedList() {
@@ -473,6 +520,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async initData() {
+    // This method is no longer used, keeping for compatibility only
     const readDataListText = await file('/dir/file.txt').text();
     // console.log("readDataListText: " + readDataListText)
     if (readDataListText) {

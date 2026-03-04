@@ -314,6 +314,53 @@ export class CoreService {
     }
   }
 
+  // IndexedDB helpers: put/get that correctly await transaction and request
+  async idbPut(key: string, value: any) {
+    const db = await this.openDBInternal();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readwrite');
+      const store = tx.objectStore('handles');
+      console.debug('idbPut: storing key=', key, 'value=', value && value.name ? value.name : value);
+      const req = store.put(value, key);
+      req.onsuccess = () => { };
+      req.onerror = () => { };
+      tx.oncomplete = () => resolve("done");
+      tx.onabort = tx.onerror = () => reject(tx.error || req.error);
+    });
+  }
+
+  async idbGet(key: string) {
+    const db: IDBDatabase = await this.openDBInternal();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readonly');
+      const store = tx.objectStore('handles');
+      console.debug('idbGet: fetching key=', key);
+      const req = store.get(key);
+      req.onsuccess = () => {
+        console.debug('idbGet: got key=', key, 'result=', req.result && req.result.name ? req.result.name : req.result);
+        resolve(req.result);
+      };
+      req.onerror = () => {
+        console.error('idbGet: error getting key=', key, req.error);
+        reject(req.error);
+      };
+    });
+  }
+
+  private openDBInternal(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request: IDBOpenDBRequest = indexedDB.open('fs-editor', 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('handles')) {
+          db.createObjectStore('handles');
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   splitSpec(apiInfo: any) {
     if (!apiInfo || !apiInfo.specDef || !apiInfo.specDef.paths) {
       return;
@@ -1090,55 +1137,5 @@ async function processQueue(path: string) {
   // 清理空队列（可选，防内存泄漏）
   queues.delete(path);
   isWriting.delete(path);
-}
-
-
-
-// IndexedDB helpers: put/get that correctly await transaction and request
-async function idbPut(key: string, value: any) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    const store = tx.objectStore('handles');
-    console.debug('idbPut: storing key=', key, 'value=', value && value.name ? value.name : value);
-    const req = store.put(value, key);
-    req.onsuccess = () => { };
-    req.onerror = () => { };
-    tx.oncomplete = () => resolve("done");
-    tx.onabort = tx.onerror = () => reject(tx.error || req.error);
-  });
-}
-
-async function idbGet(key: string) {
-  const db: IDBDatabase = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readonly');
-    const store = tx.objectStore('handles');
-    console.debug('idbGet: fetching key=', key);
-    const req = store.get(key);
-    req.onsuccess = () => {
-      console.debug('idbGet: got key=', key, 'result=', req.result && req.result.name ? req.result.name : req.result);
-      resolve(req.result);
-    };
-    req.onerror = () => {
-      console.error('idbGet: error getting key=', key, req.error);
-      reject(req.error);
-    };
-  });
-}
-
-
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request: IDBOpenDBRequest = indexedDB.open('fs-editor', 1);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains('handles')) {
-        db.createObjectStore('handles');
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
 }
 
