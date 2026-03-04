@@ -30,8 +30,6 @@ export class AddProjectComponent implements OnInit {
   content: string = '';
   importFromApiDefUrl = "";
 
-  // folder import state
-  folderHandle: any = null;
   directoryTreeData: Array<AstTreeNodeWithHd> = [];
   folderReadWriteMode: 'read' | 'readwrite' = 'readwrite';
 
@@ -65,7 +63,6 @@ export class AddProjectComponent implements OnInit {
   }
 
   async fileContentChangedFn(evt: Array<FileSystemFileHandle | FileSystemDirectoryHandle>) {
-    this.folderHandle = evt;
     this.directoryTreeData = [];
     for (let index = 0; index < evt.length; index++) {
       const hd: any = evt[index];
@@ -136,8 +133,8 @@ export class AddProjectComponent implements OnInit {
       return;
     }
     try {
-      this.folderHandle = await (window as any).showDirectoryPicker({ mode });
-      await this.fileContentChangedFn([this.folderHandle]);
+      const folderHandle = await (window as any).showDirectoryPicker({ mode });
+      await this.fileContentChangedFn([folderHandle]);
     } catch (err) {
       console.error('openFolder error', err);
     }
@@ -149,15 +146,14 @@ export class AddProjectComponent implements OnInit {
       return;
     }
     try {
-      this.folderHandle = await (window as any).showOpenFilePicker({ multiple: true });
-      await this.fileContentChangedFn(this.folderHandle);
+      const folderHandle = await (window as any).showOpenFilePicker({ multiple: true });
+      await this.fileContentChangedFn(folderHandle);
     } catch (err) {
       console.error('openFolder error', err);
     }
   }
 
   private clearFolderSelection() {
-    this.folderHandle = null;
     this.directoryTreeData = [];
   }
 
