@@ -33,15 +33,51 @@ export type TargetTreeNodeType = "exclude-folder" | "any";
 export const NoN_SELECTION = 'NoN_SELECTION'
 
 export interface AstTreeNode {
+    /**
+     * Basic properties
+     */
     id: string;
     label: string;
     children: Array<AstTreeNode>;
+
+    /**
+     * Advanced properties
+     *
+     */
+    nodeType?: TreeNodeType;
+    parentItem?: any,
     deepLevel?: number;
     isExpanded?: boolean;
+
+    /**
+     * Local properties
+     */
     isLocal?: boolean;
-    nodeType?: TreeNodeType;
+
+    /**
+     * node status properties
+     */
+    isActive?: boolean;
+    hideActiveStatus?: boolean;//当激活了其它的节点的类型为folder的节点被激活时，隐藏非folder节点的激活状态
+
+    /**
+     * New data properties
+     */
     isNewData?: boolean;
+
+    /**
+     * Folder/File properties (folder/file)
+     */
+    content?: string; // file content
+    rename?: boolean  // rename file or folder
+    folderHandle?: any; // folder/ file handle
+    mode?: 'read' | 'readwrite' // folder read/write mode, default is readwrite, when set to read, the folder and its children nodes are not allowed to be modified, but can be read and added to other folders with readwrite mode
+
+    /**
+     * Api properties (api)
+     */
     servers?: Array<string>;
+    auth?: any;
     folder?: string;
     folderInfo?: {
         servers: Array<any>
@@ -49,13 +85,12 @@ export interface AstTreeNode {
     serviceName?: string;
     method?: string;
     symbol?: string;
+    symbolColor?: string;
     path?: string;
     url?: string;
     summary?: string;
     rawApiInfo?: any;
     server?: any;
-    parentItem?: any,
-    symbolColor?: string;
     consumes?: Array<any>;
     produces?: Array<any>;
     currentConsume?: string;
@@ -67,20 +102,10 @@ export interface AstTreeNode {
     };
     parameterHasBody?: boolean;
     parameterHasFormDataVer2?: boolean; //区分openapi 2.0
-    isActive?: boolean;
-    hideActiveStatus?: boolean;//当激活了其它的节点的类型为folder的节点被激活时，隐藏非folder节点的激活状态
-    custom?: boolean;
     customQueryparameters?: Array<any>;
     customHeaderparameters?: Array<any>;
-    content?: string;
-    auth?: any;
-    rename?: boolean
 }
 
-export interface AstTreeNodeWithHd extends AstTreeNode {
-    folderHandle: any;
-    mode: 'read' | 'readwrite'
-}
 export interface UserInfo {
   id: string;
   username?: string | null;

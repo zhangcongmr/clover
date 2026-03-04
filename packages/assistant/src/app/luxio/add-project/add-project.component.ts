@@ -4,7 +4,7 @@ import { AstTableComponent } from '../../shared/ast-table/ast-table.component';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
-import { AstTreeNode, AstTreeNodeWithHd } from '../../shared/model';
+import { AstTreeNode } from '../../shared/model';
 
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { ServerTreeComponent } from '../../shared/server-tree/server.tree.component';
@@ -30,7 +30,7 @@ export class AddProjectComponent implements OnInit {
   content: string = '';
   importFromApiDefUrl = "";
 
-  directoryTreeData: Array<AstTreeNodeWithHd> = [];
+  directoryTreeData: Array<AstTreeNode> = [];
   folderReadWriteMode: 'read' | 'readwrite' = 'readwrite';
 
   ngOnInit() {
@@ -79,7 +79,6 @@ export class AddProjectComponent implements OnInit {
             nodeType: 'folder',
             isExpanded: true,
             // store handle for later operations
-            custom: true,
             folderHandle: hd,
             folderInfo: {
               servers: []
@@ -193,7 +192,6 @@ export class AddProjectComponent implements OnInit {
       nodeType: handle.kind === 'file' ? 'file' : 'folder',
       isExpanded: false,
       // keep reference to handle for later read/write operations
-      custom: true,
       folderHandle: handle,
       mode: this.folderReadWriteMode
     } as any;

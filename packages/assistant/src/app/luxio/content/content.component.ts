@@ -10,7 +10,7 @@ import { file, write } from 'opfs-tools';
 import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
-import { AstTreeNode, AstTreeNodeWithHd, NoN_SELECTION } from '../../shared/model';
+import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
@@ -359,7 +359,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           nodeType: 'file',
           content: content,
           children: [],
-          custom: true,
           mode: 'read'
         } as any;
         this.assignDeepLevel([node]);
@@ -423,7 +422,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  async apiSelected(evt: Array<AstTreeNodeWithHd>) {
+  async apiSelected(evt: Array<AstTreeNode>) {
     this.assignDeepLevel(evt);
     this.dataList.update(value => value.concat(evt));
     // persist snapshot to OPFS for later restoration
@@ -715,7 +714,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       server: "",
       symbolColor: "green",
       nodeType: 'api',
-      custom: true,
       rawApiInfo: {},
       customQueryparameters: [
         {
@@ -746,7 +744,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         id: this.uuid(),
         symbol: "Mark",
         label: newFileName,
-        custom: true,
         type: 'marked',
         value: "111222333",
         symbolColor: "green",
