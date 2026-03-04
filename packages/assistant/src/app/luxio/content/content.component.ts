@@ -453,10 +453,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       return rest;
     };
 
-    const toSave = this.dataList().map(strip);
+    // const toSave = this.dataList().map(strip);
 
     // write to OPFS
-    await write('/dir/file.txt', JSON.stringify(toSave));
+    await write('/dir/file.txt', JSON.stringify(this.dataList()));
   }
 
   async storeOpenedList() {
