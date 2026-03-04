@@ -44,6 +44,24 @@ export class MarkdownComponent implements OnInit {
             scrollbarWidth: 'thin',
             scrollbarColor: '#ccc transparent',
           },
+          ".cm-gutters": {
+            backgroundColor: "var(--vscode-editor-background)",
+            color: "var(--vscode-foreground)",
+            border: "none", 
+            "&:not(.cm-activeLineGutter)": { // 对非当前行的 gutter 应用样式
+              backgroundColor: "var(--vscode-sideBar-background)",
+              color: "var(--vscode-foreground)",
+            },
+          },  
+          ".cm-activeLineGutter": { // 当前行在 gutter 上的高亮样式
+            backgroundColor: "var(--vscode-editor-background)", // 当前行号所在 gutter 的背景色
+            color: "var(--vscode-textLink-activeForeground)", // 当前行号的颜色
+          },
+          '.cm-cursor': {
+            caretColor: "#ff0000", // 改变颜色
+            borderLeft: "2px solid currentColor", // 改变粗细
+            // borderLeft: "solid transparent", // 甚至设为透明也无法变成中划线
+          }
         })
       ]
     })

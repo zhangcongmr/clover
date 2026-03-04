@@ -42,7 +42,7 @@
 
 .split-line:hover {
     cursor: ns-resize;
-    background-color: var(--primary-color, rgb(103, 137, 186));
+    background-color: var(--vscode-statusBar-background);
 }
 
 .sendRequestBtn {

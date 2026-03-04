@@ -6,8 +6,14 @@
 }
 
 .split-line:hover {
-    background-color: var(--vscode-foreground);
+    background-color: var(--vscode-statusBar-background);
     cursor: ew-resize;
+}
+.left-side-section {
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--vscode-sideBar-background);
 }
 
 .codigma-collection-headers {

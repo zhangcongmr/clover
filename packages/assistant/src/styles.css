@@ -14,7 +14,7 @@
   --vscode-panel-background: #f3f3f3;
   --vscode-statusBar-background: #007acc;
   --vscode-statusBar-foreground: #ffffff;
-  --vscode-button-background: #007acc;
+  --vscode-button-background: rgb(213, 203, 203);
   --vscode-button-foreground: #ffffff;
   --vscode-input-background: #ffffff;
   --vscode-input-border: #ddd;
@@ -36,6 +36,8 @@
   --vscode-textLink-foreground: #006ab1;
   --vscode-textLink-activeForeground: #006ab1;
   --vscode-textSeparator-foreground: #0000002e;
+  --vscode-scrollbar-background: #ccc;
+  --vscode-tabborder-background: rgb(204, 204, 204);
 }
 
 /* VS Code Dark Modern theme variables */
@@ -73,6 +75,8 @@
   --vscode-textLink-foreground: #4daafc;
   --vscode-textLink-activeForeground: #4daafc;
   --vscode-textSeparator-foreground: #ffffff2e;
+  --vscode-scrollbar-background: #1f1f1f;
+  --vscode-tabborder-background: rgba(0, 0, 0, 0);
 }
 
 html {
@@ -112,6 +116,11 @@ img, svg {
     cursor: pointer;
 }
 
+/* 选中编辑器中的内容区域 */
+.cm-editor .cm-content {
+  /* 将鼠标指针设置为文本输入样式 (I-Beam)，这就是 "|"-shaped cursor */
+  cursor: text;
+}
 
 .codigma-menu-every-item {
     align-items: center;
@@ -148,7 +157,7 @@ img, svg {
 .custom-scroll {
   /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #ccc transparent;
+  scrollbar-color: var(--vscode-scrollbar-background) transparent;
 
   /* WebKit */
   overflow-y: scroll; /* 确保出现滚动条 */

@@ -13,18 +13,18 @@
 </div>
 <div style="position: relative;display: flex;width: calc(100vw - 42px);height: 100%;">
   @if (sideOpen()) {
-    <div style="width:25%;background-color: #F2F2F2;display: flex;flex-direction: column;" [style.width]="leftWidth * 100 + '%'">
+    <div class="left-side-section" [style.width]="leftWidth * 100 + '%'">
       @if(currentDisplayViewId()==1) {
         @if(showButtonPlaceholder()) {
-          <div style="text-align:center; color: #333;">
-            <div style="border:1px solid #ddd; padding:1.25rem; border-radius:4px; background:#fff; display:inline-block;">
+          <div style="text-align:center; color: var(--vscode-foreground);">
+            <div style="border:1px solid var(--vscode-statusBar-background); padding:1.25rem; border-radius:4px; background:var(--vscode-background); display:inline-block;">
               <div style="font-weight:600; margin-bottom:0.5rem;">NO FOLDER/FILE OPENED</div>
-              <div style="margin-bottom:1rem; color:#666;">You have not yet opened a folder or file.</div>
+              <div style="margin-bottom:1rem; color:var(--vscode-textSeparator-foreground);">You have not yet opened a folder or file.</div>
               <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;margin-bottom:0.6rem;">
                 <button (click)="openFolderInContent('readwrite')" style="background:var(--primary-color, rgb(103, 137, 186));color:#fff;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open Folder</button>
                 <button (click)="openFileInContent()" style="background:#e1e1e1;color:#222;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open File</button>
               </div>
-              <div style="margin-top:0.2rem; color:#666; font-size:0.9rem;">Opening a folder will close all currently open editors. To keep them open, add a folder instead.</div>
+              <div style="margin-top:0.2rem; color:var(--vscode-textSeparator-foreground); font-size:0.9rem;">Opening a folder will close all currently open editors. To keep them open, add a folder instead.</div>
             </div>
           </div>
         } @else {

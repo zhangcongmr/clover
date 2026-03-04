@@ -21,11 +21,11 @@
 
 .child-item:hover {
     cursor: pointer;
-    background-color: gainsboro;
+    background-color: var(--vscode-list-hoverBackground);
 }
 
 .child-item.active {
-    background-color: rgb(213, 203, 203);
+    background-color: var(--vscode-button-background);
 }
 
 .child-item:focus {

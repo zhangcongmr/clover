@@ -28,7 +28,7 @@ export class AstDraggableComponent {
     // initialX = currentX;  
     // initialY = currentY;  
     this.active = false;
-    evt.target.parentElement.style.zIndex = "";
+    evt.target.style.zIndex = "";
     document.body.style.cursor = 'default'; // 恢复默认光标
   }
 
