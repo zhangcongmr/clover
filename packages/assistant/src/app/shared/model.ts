@@ -70,7 +70,7 @@ export interface AstTreeNode {
      */
     content?: string; // file content
     rename?: boolean  // rename file or folder
-    folderHandle?: any; // folder/ file handle
+    folderHandle?: FileSystemHandle; // folder/ file handle
     mode?: 'read' | 'readwrite' // folder read/write mode, default is readwrite, when set to read, the folder and its children nodes are not allowed to be modified, but can be read and added to other folders with readwrite mode
 
     /**
