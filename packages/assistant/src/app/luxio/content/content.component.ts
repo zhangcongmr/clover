@@ -52,6 +52,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   /** event emitted when selected node's file type changes */
   @Output() fileTypeChange = new EventEmitter<string>();
 
+  // 添加自动刷新控制变量
+  autoRefreshEnabled = signal<boolean>(true);
+  refreshIntervalMs = 10; // 后续如果有必要，从2秒改为10秒，减少性能影响
 
   openedList = signal<Array<any>>([]);
 
@@ -65,6 +68,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   ];
 
   private savers: AutoSaver[] = [];
+  
+  // 添加自动刷新定时器
+  private refreshIntervalId: any = null;
 
   userResource = resource({
     // Define a reactive comput`ation.
@@ -121,7 +127,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.assignDeepLevel([data]);
       this.dataList.set([data]);
     } else if ('dataList' in docObj || 'openedList' in docObj) { //DocModel
-      // Restore folderHandles from IndexedDB for both dataList and openedList
+      // Restore folderHandles from IndexedDB for both dataList and openedList and set them only once
       const dataListWithHandles = await this.restoreHandles(docObj.dataList || []);
       const openedListWithHandles = await this.restoreHandles(docObj.openedList || []);
       this.dataList.set(dataListWithHandles);
@@ -132,8 +138,75 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.modifyPermission(docObj);
     }
     
+    // 启动自动刷新功能
+    this.startAutoRefresh();
+    
     // 启动自动保存
     // this.startAutoSave();
+  }
+
+  // 确保组件销毁时清理定时器
+  ngOnDestroy(): void {
+    // 停止自动刷新
+    this.stopAutoRefresh();
+    
+    // 一次性停止所有自动保存
+    this.savers.forEach(saver => saver.stop());
+    this.savers = [];
+  }
+
+  // 启动自动刷新
+  private startAutoRefresh() {
+    if (!this.autoRefreshEnabled()) {
+      return; // 如果禁用则不启动
+    }
+    
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+    }
+    
+    this.refreshIntervalId = setInterval(async () => {
+      if (this.autoRefreshEnabled()) {
+        // 只刷新 openedList 中的文件，因为这些是当前打开的文件
+        const updatedOpenedList = await this.updateFileContent(this.openedList());
+        this.openedList.set(updatedOpenedList);
+      }
+    }, this.refreshIntervalMs); // 使用可配置的时间间隔
+  }
+
+  // 停止自动刷新
+  private stopAutoRefresh() {
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
+  }
+
+  // 更新节点列表中文件节点的内容
+  private async updateFileContent(nodes: any[]): Promise<any[]> {
+    const updateNodes = async (node: any): Promise<any> => {
+      const result: any = { ...node };
+      
+      // 如果是文件节点且有 folderHandle，则更新内容
+      if (result.nodeType === 'file' && result.folderHandle && result.folderHandle.kind === 'file') {
+        try {
+          const fileData = await result.folderHandle.getFile();
+          const content = await fileData.text();
+          result.content = content;
+        } catch (error) {
+          console.error(`Failed to read file content for node:`, error);
+        }
+      }
+      
+      // 递归处理子节点
+      if (result.children) {
+        result.children = await Promise.all(result.children.map(updateNodes));
+      }
+      
+      return result;
+    };
+    
+    return await Promise.all(nodes.map(updateNodes));
   }
 
   // Restore folderHandles from IndexedDB
@@ -220,12 +293,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-  }
-  // 确保组件销毁时清理定时器
-  ngOnDestroy(): void {
-    // 一次性停止所有自动保存
-    this.savers.forEach(saver => saver.stop());
-    this.savers = [];
   }
 
   private startAutoSave() {
@@ -889,5 +956,17 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     min = Math.ceil(min); // 确保最小值是整数  
     max = Math.floor(max); // 确保最大值是整数  
     return Math.floor(Math.random() * (max - min + 1)) + min; // 生成[min, max]之间的随机整数  
+  }
+
+  // 切换自动刷新状态
+  toggleAutoRefresh() {
+    const newState = !this.autoRefreshEnabled();
+    this.autoRefreshEnabled.set(newState);
+    
+    if (newState) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
   }
 }

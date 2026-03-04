@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, output, viewChild } from '@angular/core';
+import { Component, ElementRef, input, OnInit, output, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {EditorView, basicSetup} from "codemirror"
 import {markdown} from "@codemirror/lang-markdown"
@@ -16,7 +16,7 @@ import {markdown} from "@codemirror/lang-markdown"
 })
 export class MarkdownComponent implements OnInit {
   textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
-  @Input() textInfo: any;
+  textInfo = input<any>();
   readonly saved = output();
   private editorView!: EditorView;
 
@@ -27,7 +27,7 @@ export class MarkdownComponent implements OnInit {
     const textEditorView = this.textEditorView()
     this.editorView = new EditorView({
       parent: textEditorView?.nativeElement,
-      doc: this.textInfo.content,
+      doc: this.textInfo().content,
       extensions: [basicSetup, markdown(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
         EditorView.theme({
           '&': {
@@ -61,9 +61,9 @@ export class MarkdownComponent implements OnInit {
       //   return;
       // }
       const doc = this.getEditorContent()
-      this.textInfo['saved'] = true;
-      this.textInfo['content'] = doc;
-      this.saved.emit(this.textInfo);
+      this.textInfo()['saved'] = true;
+      this.textInfo()['content'] = doc;
+      this.saved.emit(this.textInfo());
     }
   }
 
