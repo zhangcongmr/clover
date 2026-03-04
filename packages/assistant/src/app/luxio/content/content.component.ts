@@ -237,7 +237,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             }
           }
           // Remove the temporary key reference
-          delete result.folderHandleKey;
+          // delete result.folderHandleKey;
         } catch (error) {
           console.warn(`Could not restore handle for key: ${node.folderHandleKey}`, error);
         }
@@ -569,6 +569,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         const handleKey = `handle_${node.id}`;
         await this.coreService.idbPut(handleKey, node.folderHandle);
         // Replace the handle with its key reference
+        node.folderHandleKey = handleKey;
+
         result.folderHandleKey = handleKey;
         delete result.folderHandle;
       }
@@ -675,6 +677,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // ignore edits in read-only state
       return;
     }
+    
+    if (evt.action == 'Delete') {
+      // 删除节点及其后代在IndexedDB中的handle
+      this.deleteHandlesForNodeAndDescendants(evt.target.item).then(() => {
+        console.log('Handles deleted for node and descendants');
+      }).catch(error => {
+        console.error('Error deleting handles for node and descendants:', error);
+      });
+    }
+    
     if(evt == 'Rename') {
       this.storeApi()
     }
@@ -967,6 +979,25 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.startAutoRefresh();
     } else {
       this.stopAutoRefresh();
+    }
+  }
+
+  // 删除节点及其所有后代节点在IndexedDB中的handle
+  private async deleteHandlesForNodeAndDescendants(node: any) {
+    // 如果节点有folderHandleKey，删除它
+    if (node.folderHandleKey) {
+      try {
+        await this.coreService.idbDelete(node.folderHandleKey);
+      } catch (error) {
+        console.warn(`Could not delete handle for key: ${node.folderHandleKey}`, error);
+      }
+    }
+    
+    // 递归删除子节点的handles
+    if (node.children) {
+      for (const child of node.children) {
+        await this.deleteHandlesForNodeAndDescendants(child);
+      }
     }
   }
 }

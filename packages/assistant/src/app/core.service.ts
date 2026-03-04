@@ -347,6 +347,26 @@ export class CoreService {
     });
   }
 
+  async idbDelete(key: string) {
+    const db = await this.openDBInternal();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readwrite');
+      const store = tx.objectStore('handles');
+      console.debug('idbDelete: deleting key=', key);
+      const req = store.delete(key);
+      req.onsuccess = () => { 
+        console.debug('idbDelete: successfully deleted key=', key);
+        resolve("done"); 
+      };
+      req.onerror = () => { 
+        console.error('idbDelete: error deleting key=', key, req.error);
+        reject(req.error); 
+      };
+      tx.oncomplete = () => resolve("done");
+      tx.onabort = tx.onerror = () => reject(tx.error || req.error);
+    });
+  }
+
   private openDBInternal(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       const request: IDBOpenDBRequest = indexedDB.open('fs-editor', 1);
