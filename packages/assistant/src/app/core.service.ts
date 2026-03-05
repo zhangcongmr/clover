@@ -382,7 +382,7 @@ export class CoreService {
   }
 
   public isBinaryName(name: string): boolean {
-    return /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
+    return /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso|keystore|p12|jks|jar)$/i.test(name);
   }
 
 
