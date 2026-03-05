@@ -60,12 +60,31 @@ li[data-layer="tab"]:not(.lightcolorselection-tab):hover {
     background-color: var(--vscode-list-hoverBackground);
 }
 
-
 li[data-layer="tab"]:hover .tab-close {
     opacity: 1;
     /* 鼠标悬停时变为可见 */
     visibility: visible;
     /* 鼠标悬停时变为可见 */
+}
+
+li[data-layer="tab"].active-tab .tab-close {
+    opacity: 1;
+    /* 鼠标悬停时变为可见 */
+    visibility: visible;
+    /* 鼠标悬停时变为可见 */
+}
+
+.tab-close {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.tab-close:hover {
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.tab-dot-or-close:hover {
+    background-color: var(--vscode-list-hoverBackground);
 }
 
 .padding_left_space {
@@ -76,21 +95,6 @@ li[data-layer="tab"]:hover .tab-close {
 .padding_right_space {
     width: 5px;
     height: 100%;
-}
-
-.tab-close {
-    opacity: 0;
-    visibility: hidden;
-}
-
-.tab-close:hover {
-    background-color: var(--vscode-list-hoverBackground);
-    opacity: 1;
-    visibility: visible;
-}
-
-.tab-close-cnr:hover {
-    background-color: var(--vscode-list-hoverBackground);
 }
 
 #addTabBtn {

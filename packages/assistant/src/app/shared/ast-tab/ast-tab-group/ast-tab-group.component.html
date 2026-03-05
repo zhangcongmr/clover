@@ -10,7 +10,7 @@
         <div class="codigma-project">{{tab['label']()}}</div>
         @if (closable()&&(tab.closable==null||tab.closable==true)) {
           @if(tab['saved']()==false) {
-            <div data-svg-wrapper="" data-layer="close-btn" class="CloseBtn tab-close-cnr" (click)="iconCloseClick($event,tab)"
+            <div data-svg-wrapper="" data-layer="close-btn" class="CloseBtn tab-dot-or-close" (click)="iconCloseClick($event,tab)"
               (mouseenter)="whenMouseEnterTabCloseCnr(tab)" (mouseleave)="whenMouseLeaveTabCloseCnr(tab)">
               <!-- <img
                 [attr.src]="(tab.dotOrClose || tab.dotOrClose == null || tab.dotOrClose == undefined) ? 'assets/imgs/red-dot.svg' : 'assets/imgs/close-icon.svg'"> -->
