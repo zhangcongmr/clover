@@ -151,7 +151,7 @@ li[data-layer="tab"]:hover .tab-close {
     left: 0;
     right: 0;
     top: 0;
-    height: 1px;
+    height: 2px;
     background-color: var(--primary-color, rgb(103, 137, 186));
 }
 
