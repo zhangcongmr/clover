@@ -5,6 +5,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { CoreService } from '../../core.service';
+import JSZip from 'jszip';
 
 @Component({
   selector: '[ast-tree]',
@@ -202,8 +203,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     let current = this.currentContextMenuEvt;
     
     if (action == 'Upload') {
-      // 处理上传功能
-      this.handleUpload(current.item);
+      // 处理上传功能 - 所有上传都使用ZIP压缩方式
+      this.handleZipUpload(current.item);
       this.closeMenu();
       return;
     } else if (action == 'Delete') {
@@ -263,70 +264,80 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   /**
-   * 处理上传功能
+   * 处理ZIP压缩上传功能 - 统一处理单个文件和文件夹
    */
-  async handleUpload(item: AstTreeNode) {
-    if (!item.folderHandle) {
-      console.error(`No folderHandle found for item: ${item.label}`);
-      return;
-    }
+  async handleZipUpload(item: AstTreeNode) {
+    try {
+      // 显示上传进度提示
+      console.log('开始压缩文件...');
 
-    if (item.nodeType === 'file') {
-      await this.uploadSingleFile(item);
-    } else if (item.nodeType === 'folder') {
-      await this.uploadFolder(item);
+      // 创建一个新的ZIP实例
+      const zip = new JSZip();
+
+      if (item.nodeType === 'file') {
+        // 单个文件：直接添加文件到ZIP
+        await this.addFileToZip(zip, item, '');
+      } else if (item.nodeType === 'folder') {
+        // 整个文件夹：递归添加所有文件到ZIP
+        await this.addFolderToZip(zip, item, item.label);
+      }
+
+      // 生成ZIP文件
+      const zipBlob = await zip.generateAsync({ type: 'blob' }, (metadata: any) => {
+      });
+
+      // 创建ZIP文件对象
+      const zipFile = new File([zipBlob], `${item.label}.zip`, { type: 'application/zip' });
+
+      // 上传ZIP文件
+      const directoryPath = this.generateDirectoryPath(item);
+      await this.uploadFileToServer(zipFile, directoryPath);
+      
+      console.log(`ZIP文件上传成功: ${item.label}.zip`);
+      alert(`成功上传: ${item.label}.zip`);
+    } catch (error: any) {
+      console.error('ZIP压缩或上传失败:', error);
+      alert(`ZIP压缩或上传失败: ${error.message}`);
     }
   }
 
   /**
-   * 上传单个文件
+   * 将单个文件添加到ZIP中
    */
-  async uploadSingleFile(fileNode: AstTreeNode) {
+  async addFileToZip(zip: JSZip, fileNode: AstTreeNode, folderPath: string): Promise<void> {
     if (!fileNode.folderHandle) {
       console.error('No folderHandle for file node');
       return;
     }
 
     try {
-      // 获取文件对象
       const fileHandle = fileNode.folderHandle as unknown as FileSystemFileHandle;
       const file = await fileHandle.getFile();
-
-      // 生成目录路径
-      const directoryPath = this.generateDirectoryPath(fileNode);
-
-      // 开始上传
-      await this.uploadFileToServer(file, directoryPath);
+      const content = await file.arrayBuffer();
+      
+      // 构造文件在ZIP中的路径
+      const filePath = folderPath ? `${folderPath}/${fileNode.label}` : fileNode.label;
+      zip.file(filePath, content);
     } catch (error) {
-      console.error('Error uploading file:', error);
-      alert(`Failed to upload file: ${fileNode.label}`);
+      console.error('Error adding file to zip:', error);
+      throw error;
     }
   }
 
   /**
-   * 递归上传整个文件夹
+   * 将整个文件夹递归添加到ZIP中
    */
-  async uploadFolder(folderNode: AstTreeNode) {
-    try {
-      // 递归处理所有子节点
-      await this.processFolderNode(folderNode);
-    } catch (error) {
-      console.error('Error uploading folder:', error);
-      alert(`Failed to upload folder: ${folderNode.label}`);
-    }
-  }
-
-  /**
-   * 处理文件夹节点，递归上传其中的所有文件
-   */
-  async processFolderNode(node: AstTreeNode, currentPath: string = ''): Promise<void> {
-    if (node.nodeType === 'file') {
-      // 如果是文件节点，上传文件
-      await this.uploadSingleFile(node);
-    } else if (node.nodeType === 'folder' && node.children) {
-      // 如果是文件夹节点，递归处理子节点
-      for (const child of node.children) {
-        await this.processFolderNode(child, `${currentPath}${node.label}/`);
+  async addFolderToZip(zip: JSZip, folderNode: AstTreeNode, folderPath: string): Promise<void> {
+    if (folderNode.children) {
+      for (const child of folderNode.children) {
+        if (child.nodeType === 'file') {
+          // 文件节点：直接添加到ZIP
+          await this.addFileToZip(zip, child, folderPath);
+        } else if (child.nodeType === 'folder') {
+          // 文件夹节点：递归处理
+          const childFolderPath = `${folderPath}/${child.label}`;
+          await this.addFolderToZip(zip, child, childFolderPath);
+        }
       }
     }
   }
@@ -415,8 +426,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
           observe: 'events'
         }).toPromise();
 
-        console.log(`Chunk ${i+1}/${totalChunks} uploaded for file ${file.name}`, response);
-        
         // 可以在这里添加进度提示
         
       } catch (error) {
@@ -753,6 +762,4 @@ export function pick(obj: any, keys: string[]) {
       result[key] = obj[key];
     }
   }
-  return result;
 }
-
