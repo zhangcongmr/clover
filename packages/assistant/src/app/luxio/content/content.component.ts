@@ -130,7 +130,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // if the provided object carries permission info, apply it
       this.modifyPermission(docObj);
     }
-    
+    if (Object.keys(docObj).length === 0) {
+      this.dataList.set([]);
+    }
+
     // 启动自动刷新功能
     // this.startAutoRefresh();
     
