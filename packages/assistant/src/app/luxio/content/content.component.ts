@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, deleteParentItemRef, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, pickParentObject, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
@@ -328,8 +328,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (currentSelect) {
       delete currentSelect.isNewData;//子节点的父节点不维护是否新添加节点这个状态
       currentSelect.isExpanded = true
-      const parentItemCopy = JSON.parse(JSON.stringify(currentSelect))
-      deleteParentItemRef(parentItemCopy)
+      const parentItemCopy = pickParentObject(currentSelect);
 
       if (action == 'NewApi') {
         newNode = this.createNewApi();
@@ -383,6 +382,23 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
+  private assignDeepParent(evt: AstTreeNode[]) {
+    for (let index = 0; index < evt.length; index++) {
+      const dataItem = evt[index];
+      if (dataItem) {
+        const parentItemCopy = pickParentObject(dataItem);
+        delete dataItem.isNewData; //子节点的父节点不维护是否新添加节点这个状态
+
+        dataItem.children = dataItem.children || [];
+        dataItem.children.forEach((child: any) => {
+          child['parentItem'] = parentItemCopy;
+        });
+
+        this.assignDeepParent(dataItem.children);
+      }
+    }
+  }
+
   importBtn(evt: any) {
     this.openAddDlg();
   }
@@ -423,6 +439,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
       this.assignDeepLevel(rootNode);
+      this.assignDeepParent(rootNode);
       this.dataList.set(rootNode);
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
@@ -443,6 +460,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
         this.assignDeepLevel(rootNode);
+        this.assignDeepParent(rootNode);
         this.dataList.set(rootNode);
         try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
         return;
@@ -536,6 +554,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   async apiSelected(evt: Array<AstTreeNode>) {
     this.assignDeepLevel(evt);
+    this.assignDeepParent(evt);
     this.dataList.update(value => value.concat(evt));
     // persist snapshot to OPFS for later restoration
     // try {

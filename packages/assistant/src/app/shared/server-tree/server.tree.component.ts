@@ -71,9 +71,6 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
           return;
         }
 
-        const parentItemCopy = JSON.parse(JSON.stringify(evt))
-        parentItemCopy["children"] = []
-
         me.data = this.coreService.parseOpenApiSpec(rawData, me.currentServer, evt.id);
         me.dataOutput.emit(me.data);
         me.rawDataOutput.emit(rawData);

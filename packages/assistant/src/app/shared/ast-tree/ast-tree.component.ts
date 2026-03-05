@@ -66,25 +66,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         this.assignDeepLevel(newDatas);
         this.data.set(newDatas);
       }
-      for (let index = 0; index < this.data().length; index++) {
-        const dataItem = this.data()[index];
-        if (!dataItem.isNewData) {
-          continue;
-        }
-        if (dataItem) {
-          const parentItemCopy = JSON.parse(JSON.stringify(dataItem))
-          delete dataItem.isNewData;//子节点的父节点不维护是否新添加节点这个状态
-          deleteParentItemRef(parentItemCopy)
 
-          dataItem.children = dataItem.children || [];
-          dataItem.children.forEach((child: any) => {
-            child['parentItem'] = parentItemCopy;
-          });
-        }
-
-      }
-
-      if (this.isSearch()) {
+      if (this.dataType() != 'subData' && this.isSearch()) {
         this.dataBackUp = JSON.parse(JSON.stringify(this.data()));
       }
     }
@@ -557,5 +540,32 @@ export function expandAncestorsIfActive(item: AstTreeNode, datas: AstTreeNode[])
     // 继续向上找父节点
     currentParentId = node.parentItem?.id;
   }
+}
+
+
+  /**
+   * 提取对象的父级属性
+   * @param obj 
+   * @returns 
+   */
+export function pickParentObject(obj: any) {
+  const keys = ['deepLevel', 'id', 'label', 'nodeType']
+  return pick(obj, keys);
+}
+
+  /**
+   * 提取对象的指定属性
+   * @param obj 
+   * @param keys 
+   * @returns 
+   */
+export function pick(obj: any, keys: string[]) {
+  const result: any = {};
+  for (const key of keys) {
+    if (obj.hasOwnProperty(key)) {
+      result[key] = obj[key];
+    }
+  }
+  return result;
 }
 
