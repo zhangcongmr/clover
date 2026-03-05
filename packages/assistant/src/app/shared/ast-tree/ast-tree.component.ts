@@ -2,6 +2,9 @@ import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges,
 import { FormsModule } from '@angular/forms';
 import { AstTreeNode, NoN_SELECTION, TargetTreeNodeType } from '../model';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
+import { HttpClient, HttpEventType } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { CoreService } from '../../core.service';
 
 @Component({
   selector: '[ast-tree]',
@@ -30,6 +33,9 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   dataBackUp: Array<any> = [];
   searchValue: string = ""
+
+  http = inject(HttpClient);
+  coreService = inject(CoreService);
 
   constructor() {
     let me = this;
@@ -194,7 +200,13 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   menuSelectAction(action: string) {
     this.currentContextMenuEvt['action'] = action;
     let current = this.currentContextMenuEvt;
-    if (action == 'Delete') {
+    
+    if (action == 'Upload') {
+      // 处理上传功能
+      this.handleUpload(current.item);
+      this.closeMenu();
+      return;
+    } else if (action == 'Delete') {
       if (current.item && current.parentItem) {
         current.parentItem.children = current.parentItem.children.filter((val: any) => val.id != current.item.id)
       }
@@ -248,6 +260,181 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       })
     }
     this.closeMenu();
+  }
+
+  /**
+   * 处理上传功能
+   */
+  async handleUpload(item: AstTreeNode) {
+    if (!item.folderHandle) {
+      console.error(`No folderHandle found for item: ${item.label}`);
+      return;
+    }
+
+    if (item.nodeType === 'file') {
+      await this.uploadSingleFile(item);
+    } else if (item.nodeType === 'folder') {
+      await this.uploadFolder(item);
+    }
+  }
+
+  /**
+   * 上传单个文件
+   */
+  async uploadSingleFile(fileNode: AstTreeNode) {
+    if (!fileNode.folderHandle) {
+      console.error('No folderHandle for file node');
+      return;
+    }
+
+    try {
+      // 获取文件对象
+      const fileHandle = fileNode.folderHandle as unknown as FileSystemFileHandle;
+      const file = await fileHandle.getFile();
+
+      // 生成目录路径
+      const directoryPath = this.generateDirectoryPath(fileNode);
+
+      // 开始上传
+      await this.uploadFileToServer(file, directoryPath);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert(`Failed to upload file: ${fileNode.label}`);
+    }
+  }
+
+  /**
+   * 递归上传整个文件夹
+   */
+  async uploadFolder(folderNode: AstTreeNode) {
+    try {
+      // 递归处理所有子节点
+      await this.processFolderNode(folderNode);
+    } catch (error) {
+      console.error('Error uploading folder:', error);
+      alert(`Failed to upload folder: ${folderNode.label}`);
+    }
+  }
+
+  /**
+   * 处理文件夹节点，递归上传其中的所有文件
+   */
+  async processFolderNode(node: AstTreeNode, currentPath: string = ''): Promise<void> {
+    if (node.nodeType === 'file') {
+      // 如果是文件节点，上传文件
+      await this.uploadSingleFile(node);
+    } else if (node.nodeType === 'folder' && node.children) {
+      // 如果是文件夹节点，递归处理子节点
+      for (const child of node.children) {
+        await this.processFolderNode(child, `${currentPath}${node.label}/`);
+      }
+    }
+  }
+
+  /**
+   * 生成目录路径
+   */
+  generateDirectoryPath(node: AstTreeNode): string {
+    // 从根节点开始查找节点的完整路径
+    const pathSegments: string[] = [];
+    
+    // 查找节点的完整路径
+    const found = this.findNodePath(this.data(), node.id, pathSegments);
+    
+    if (found && pathSegments.length > 0) {
+      // 移除最后一个元素（即当前文件名），只保留目录路径
+      pathSegments.pop();
+      return pathSegments.join('/');
+    }
+    
+    return '';
+  }
+
+  /**
+   * 查找节点路径
+   */
+  private findNodePath(nodes: AstTreeNode[], targetId: string, pathSegments: string[]): boolean {
+    for (const node of nodes) {
+      if (node.id === targetId) {
+        pathSegments.push(node.label);
+        return true;
+      }
+      
+      if (node.children && node.children.length > 0) {
+        // 先将当前节点加入路径
+        const currentPathLength = pathSegments.length;
+        pathSegments.push(node.label);
+        
+        // 在子节点中查找
+        if (this.findNodePath(node.children, targetId, pathSegments)) {
+          return true;
+        }
+        
+        // 如果没找到，回退路径
+        pathSegments.splice(currentPathLength);
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * 将文件上传到服务器
+   */
+  async uploadFileToServer(file: File, directoryPath: string): Promise<void> {
+    const chunkSize = 1024 * 1024; // 1MB per chunk
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    const fileId = this.generateUUID();
+    const userId = this.coreService.userData?.username || '';
+
+    // 先获取文件的完整字节数组
+    const fileBytes = new Uint8Array(await file.arrayBuffer());
+
+    // 准备表单数据并分块上传
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * chunkSize;
+      const end = Math.min(start + chunkSize, file.size);
+      const chunk = fileBytes.slice(start, end);
+
+      // 创建Blob对象来模拟文件片段
+      const chunkBlob = new Blob([chunk]);
+      
+      const formData = new FormData();
+      formData.append('chunk', chunkBlob, `${file.name}.part${i}`);
+      formData.append('fileId', fileId);
+      formData.append('chunkIndex', i.toString());
+      formData.append('totalChunks', totalChunks.toString());
+      formData.append('fileName', file.name);
+      formData.append('fileSize', file.size.toString());
+      formData.append('userId', userId);
+      formData.append('directoryPath', directoryPath);
+
+      try {
+        const response = await this.http.post('/user/api/chunk/upload', formData, {
+          reportProgress: true,
+          observe: 'events'
+        }).toPromise();
+
+        console.log(`Chunk ${i+1}/${totalChunks} uploaded for file ${file.name}`, response);
+        
+        // 可以在这里添加进度提示
+        
+      } catch (error) {
+        console.error(`Error uploading chunk ${i+1} of file ${file.name}:`, error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * 生成UUID
+   */
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   closeMenu() {

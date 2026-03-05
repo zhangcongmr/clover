@@ -338,7 +338,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         newNode = this.createNewFolder();
       }
       if(newNode) {
-        newNode['deepLevel'] = parentItemCopy.deepLevel + 1;
+        newNode['deepLevel'] = currentSelect.deepLevel + 1;
         newNode['rename'] = true;
         newNode['parentItem'] = parentItemCopy;
         currentSelect.children.splice(0, 0, newNode);
