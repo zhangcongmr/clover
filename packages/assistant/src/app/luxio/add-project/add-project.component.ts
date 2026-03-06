@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
 import { AstTreeNode } from '../../shared/model';
+import { NotificationService } from '../../shared/notification/notification.service';
 
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { ServerTreeComponent } from '../../shared/server-tree/server.tree.component';
@@ -20,6 +21,7 @@ import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 })
 export class AddProjectComponent implements OnInit {
   private coreService = inject(CoreService);
+  private notificationService = inject(NotificationService);
 
   readonly confirmed = output<Array<any>>();
   readonly apiInfoSelected = output<Array<any>>();
@@ -128,7 +130,7 @@ export class AddProjectComponent implements OnInit {
 
   async openFolder(mode: 'read' | 'readwrite' = 'readwrite') {
     if (!('showDirectoryPicker' in window)) {
-      alert('The File System Access API is not supported in this browser.');
+      this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
       return;
     }
     try {
@@ -141,7 +143,7 @@ export class AddProjectComponent implements OnInit {
 
   async openFileInContent() {
     if (!('showOpenFilePicker' in window)) {
-      alert('The File System Access API is not supported in this browser.');
+      this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
       return;
     }
     try {

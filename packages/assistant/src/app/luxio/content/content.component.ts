@@ -18,6 +18,7 @@ import { AutoSaver } from '../../auto-saver';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { NoteBookComponent } from '../../shared/notebook/notebook.component';
 import { NodeDef } from '@luxio/common';
+import { NotificationService } from '../../shared/notification/notification.service';
 
 @Component({
   selector: 'div[ast-content]',
@@ -34,6 +35,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   readonly currentDisplayViewId = model<number>(1);
   private myConfigService = inject(MyConfigService)
   private coreService = inject(CoreService);
+  private notificationService = inject(NotificationService);
 
   // permission for the currently loaded tree; shared trees may set this to 'read'
   permission: 'read' | 'readwrite' = 'readwrite';
@@ -427,7 +429,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     // ensure environment supports picker
     if (!('showDirectoryPicker' in window)) {
-      alert('The File System Access API is not supported in this browser.');
+      this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
       return;
     }
 
@@ -672,6 +674,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   shareOnMenuVisible = false;
   shareData: NodeDef = { permission: 'read' };
   menuItemAction(evt: any) {
+    // Check if this is an upload success or error notification
+    if (evt && evt.type) {
+      if (evt.type === 'upload-success') {
+        this.notificationService.showNotification(evt.message, 'success');
+      } else if (evt.type === 'upload-error') {
+        this.notificationService.showNotification(evt.message, 'error');
+      }
+      return; // Exit early if it's an upload notification
+    }
+
     // guard against modifications when in read-only mode
     const modifyingActions = ['Rename','Delete','Duplicate','NewApi','NewFile','NewFolder'];
     if (this.isReadOnly && modifyingActions.includes(evt.action)) {

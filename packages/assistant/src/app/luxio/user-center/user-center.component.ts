@@ -1,12 +1,18 @@
-import { Component, OnInit } from "@angular/core";
-
+import { Component, inject, OnInit } from "@angular/core";
+import { CommonModule } from '@angular/common';
+import { CoreService } from '../../core.service';
+import { NotificationService } from '../../shared/notification/notification.service';
 
 @Component({
   selector: 'div[user-center]',
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './user-center.component.html',
   styleUrls: ['./user-center.component.css']
 })
-export class UserCenterComponent implements OnInit{
+export class UserCenterComponent implements OnInit {
+  protected coreService = inject(CoreService);
+  protected notificationService = inject(NotificationService);
   userInfo = {
     username: 'AS773223423',
     phone: '139****5635',
@@ -76,7 +82,9 @@ export class UserCenterComponent implements OnInit{
   }
 
   checkin() {
-    alert('签到成功！');
+    // Mock签到逻辑
+    console.log('签到成功！');
+    this.notificationService.showNotification('签到成功！', 'success');
   }
 
 

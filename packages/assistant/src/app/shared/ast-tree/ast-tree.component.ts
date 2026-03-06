@@ -294,10 +294,10 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       await this.uploadFileToServer(zipFile, directoryPath);
       
       console.log(`ZIP文件上传成功: ${item.label}.zip`);
-      alert(`成功上传: ${item.label}.zip`);
+      this.menuItemAction.emit({ type: 'upload-success', message: `成功上传: ${item.label}.zip` });
     } catch (error: any) {
       console.error('ZIP压缩或上传失败:', error);
-      alert(`ZIP压缩或上传失败: ${error.message}`);
+      this.menuItemAction.emit({ type: 'upload-error', message: `ZIP压缩或上传失败: ${error.message}` });
     }
   }
 

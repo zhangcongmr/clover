@@ -10,13 +10,14 @@ import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
+import { NotificationComponent } from './shared/notification/notification.component';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent]
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent]
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);

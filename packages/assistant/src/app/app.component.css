@@ -100,8 +100,13 @@
 }
 
 .codigma-notification-cnr {
+  cursor: pointer;
   align-items: center;
   display: flex;
+}
+.codigma-notification-cnr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
 }
 
 /* 侧边栏按钮样式 */

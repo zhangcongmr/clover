@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnChanges, OnInit, SimpleChanges, afterNextRender, inject, output } from '@angular/core';
+import { NotificationService } from '../notification/notification.service';
 
 
 @Component({
@@ -14,6 +15,7 @@ export class FileInputComponent implements OnInit, OnChanges {
     fileNameDisplay: string = 'No file selected';
     isFileSelected = false;
     elementRef = inject(ElementRef);
+    private notificationService = inject(NotificationService);
 
     constructor() {
         let me = this;
@@ -78,6 +80,10 @@ export class FileInputComponent implements OnInit, OnChanges {
     }
 
     async openFileInContent() {
+        if (!('showOpenFilePicker' in window)) {
+            this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
+            return;
+        }
         // Try native file picker first
         try {
             if ('showOpenFilePicker' in window) {
@@ -95,7 +101,7 @@ export class FileInputComponent implements OnInit, OnChanges {
 
     async openFolder(mode: 'read' | 'readwrite' = 'readwrite') {
         if (!('showDirectoryPicker' in window)) {
-            alert('The File System Access API is not supported in this browser.');
+            this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
             return;
         }
         try {
