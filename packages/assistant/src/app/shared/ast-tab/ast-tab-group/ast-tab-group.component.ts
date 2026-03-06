@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, contentChildren, effect, input, model, output, signal, viewChild } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, contentChildren, effect, input, model, output, signal, viewChild } from '@angular/core';
 import {CdkDrag, CdkDragDrop, CdkDropList} from '@angular/cdk/drag-drop';
 import { AstTabComponent, AstTabType } from '../ast-tab.component';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
@@ -10,7 +10,7 @@ import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
   standalone: true,
   imports: [AstMenuComponent, CdkDropList, CdkDrag]
 })
-export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit {
+export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit, OnDestroy {
   topLevelTabs = contentChildren(AstTabComponent)
   tabHeaderListRef = viewChild<ElementRef<HTMLButtonElement>>('tabHeaderListRef');
 
@@ -26,6 +26,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly fobiddenContextMenu = input(false)
   readonly moreButtons = model<Array<{ label: string; action: string }>>([]); //右上角更多操作按钮
 
+  private resizeObserver?: ResizeObserver;
   ulStyle: string = "height: 2rem;"
 
   tabMap: Map<string, boolean> = new Map();
@@ -115,7 +116,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       return;
     }
 
-    const resizeObserver = new ResizeObserver(entries => {
+    this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         this.handleUlResize(entry.target as HTMLElement);
       }
@@ -123,7 +124,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
     const tabList = this.tabHeaderListRef();
     if (tabList) {
-      resizeObserver.observe(tabList.nativeElement);
+      this.resizeObserver.observe(tabList.nativeElement);
       // 保存 observer 以便 ngOnDestroy 中 disconnect（可选）
     }
   }
@@ -182,6 +183,14 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.previousTabCount = this.topLevelTabs().length;
     // 初始设置
     // this.initTabActiveStatus();//注释掉，不在默认设置tab初始状态
+  }
+
+  ngOnDestroy(): void {
+    // 组件销毁时，断开 ResizeObserver 的连接
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = undefined; // 清空引用
+    }
   }
 
   private initTabActiveStatus() {
