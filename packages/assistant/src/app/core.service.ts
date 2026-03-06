@@ -1,13 +1,23 @@
 import { HttpClient, HttpEventType } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { file, write } from 'opfs-tools';
 import { ServiceRouteInfo, AstTreeNode, UserInfo } from './shared/model';
+import { NotificationService } from './shared/notification/notification.service';
+
+// 定义上传任务接口
+interface UploadTask {
+  id: string;
+  fileName: string;
+  progress: WritableSignal<number>; // 0 to 1
+  status: 'pending' | 'uploading' | 'completed' | 'failed';
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class CoreService {
   private http = inject(HttpClient);
+  private notificationService = inject(NotificationService);
 
   // public selectedServerAndServiceInfo: ServerAndServiceInfo = new ServerAndServiceInfo();
 
@@ -43,6 +53,81 @@ export class CoreService {
   currentServer: any;
   isAuthenticated = signal(false);
   userData: UserInfo | undefined;
+
+  // Upload tasks array to track ongoing uploads
+  uploadTasks = signal<UploadTask[]>([]);
+  totalProgress = computed(() => this.getOverallProgress());
+  progressPercentage = computed(() => Math.floor(this.getOverallProgress() * 100));
+  progressDetails = computed(() => {
+    return this.getUploadProgressDetails();
+  });
+
+  // 添加一个方法来显示通知
+  showNotification(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
+    this.notificationService.showNotification(message, type);
+  }
+
+  // 添加上传任务的方法
+  addUploadTask(fileName: string): string {
+    const taskId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newTask: UploadTask = {
+      id: taskId,
+      fileName: fileName,
+      progress: signal<number>(0),
+      status: 'pending'
+    };
+    this.uploadTasks.update(tasks => [...tasks, newTask]);
+    return taskId;
+  }
+
+  // 更新上传任务进度的方法
+  updateUploadProgress(taskId: string, progress: number): void {
+    const task = this.uploadTasks().find(t => t.id === taskId);
+    if (task) {
+      task.progress.set(Math.min(1, Math.max(0, progress))); // 限制在0-1之间
+      if (progress < 1) {
+        task.status = 'uploading';
+      } else {
+        task.status = 'completed';
+      }
+    }
+  }
+
+  // 标记上传任务为失败
+  failUploadTask(taskId: string): void {
+    const task = this.uploadTasks().find(t => t.id === taskId);
+    if (task) {
+      task.status = 'failed';
+    }
+  }
+
+  // 移除上传任务
+  removeUploadTask(taskId: string): void {
+    this.uploadTasks.update(tasks => tasks.filter(t => t.id !== taskId));
+  }
+
+  // 获取总体上传进度
+  getOverallProgress(): number {
+    if (this.uploadTasks().length === 0) return 0;
+
+    const totalProgress = this.uploadTasks().reduce((sum, task) => sum + task.progress(), 0);
+    return totalProgress / this.uploadTasks().length;
+  }
+
+  // 显示上传进度详情
+  getUploadProgressDetails(): string {
+    // 准备要显示的进度详情文本
+    let progressDetails = "";
+    if (this.uploadTasks().length > 0) {
+      progressDetails = this.uploadTasks().map(task =>
+        `${task.fileName}: ${Math.floor(task.progress() * 100)}% (${task.status})`
+      ).join('\n');
+    } else {
+      progressDetails = "No active uploads";
+    }
+
+    return progressDetails;
+  }
 
   initApiUI(spec: any, elementId: string) {
     const selectedServerAndServiceInfo = {

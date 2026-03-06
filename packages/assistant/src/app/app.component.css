@@ -80,9 +80,8 @@
   justify-content: flex-start
 }
 .codigma-justfill-place {
-  align-self: stretch;
   flex: 1 1 0;
-  padding: 10px
+  display: flex;
 }
 
 .codigma-overview-longstrip {
@@ -144,3 +143,52 @@
   --vscode-editorGroup-border: #e7e7e7;
   --vscode-list-hoverBackground: #e8e8e8;
 }
+
+/* 上传进度条样式 */
+.upload-progress-container {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.upload-progress-bar {
+  height: 100%;
+  width: 0;
+  transition: width 0.3s ease, background 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-text {
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.progress-icon {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  font-size: 12px;
+  background: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+

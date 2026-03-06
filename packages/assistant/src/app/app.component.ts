@@ -17,7 +17,7 @@ import { NotificationComponent } from './shared/notification/notification.compon
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent]
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent],
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
@@ -146,6 +146,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   }
 
+
   async fileVist() {
     if(navigator == undefined || navigator.storage === undefined || await navigator.storage.getDirectory === undefined) {
       console.log("OPFS is not supported in this browser.");
@@ -211,6 +212,22 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     let num = new Integer({value: 75889});
     let vi = new Uint8Array(num.toBER());
+  }
+
+  // 显示上传进度详情
+  showUploadProgressDetails(): void {
+    // 准备要显示的进度详情文本
+    let progressDetails = "";
+    if (this.coreService.uploadTasks().length > 0) {
+      progressDetails = this.coreService.uploadTasks().map(task => 
+        `${task.fileName}: ${Math.floor(task.progress() * 100)}% (${task.status})`
+      ).join('\n');
+    } else {
+      progressDetails = "No active uploads";
+    }
+
+    // 使用通知组件显示进度详情
+    this.coreService.showNotification(this.coreService.progressDetails(), 'info');
   }
 
   // 切换主题的方法
@@ -427,6 +444,26 @@ export class AppComponent implements OnInit, AfterViewInit {
       window.location.href = '/signin';
       this.coreService.isAuthenticated.set(false);
     }
+  }
+
+  // 添加上传任务的方法（供外部调用）
+  addUploadTask(fileName: string): string {
+    return this.coreService.addUploadTask(fileName);
+  }
+
+  // 更新上传任务进度的方法（供外部调用）
+  updateUploadProgress(taskId: string, progress: number): void {
+    this.coreService.updateUploadProgress(taskId, progress);
+  }
+
+  // 标记上传任务为失败
+  failUploadTask(taskId: string): void {
+    this.coreService.failUploadTask(taskId);
+  }
+
+  // 移除上传任务
+  removeUploadTask(taskId: string): void {
+    this.coreService.removeUploadTask(taskId);
   }
 
   async cleanUp() {

@@ -265,6 +265,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
    * 处理ZIP压缩上传功能 - 统一处理单个文件和文件夹
    */
   async handleZipUpload(item: AstTreeNode) {
+    // 添加上传任务到主组件
+    const taskId = this.coreService.addUploadTask(`${item.label}.zip`);
     try {
       // 显示上传进度提示
       console.log('开始压缩文件...');
@@ -282,6 +284,9 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
       // 生成ZIP文件
       const zipBlob = await zip.generateAsync({ type: 'blob' }, (metadata: any) => {
+        // ZIP生成进度回调，更新进度
+        const progress = metadata.percent / 100; // 转换为0-1范围
+        this.coreService.updateUploadProgress(taskId, progress * 0.3); // 压缩过程占总进度的30%
       });
 
       // 创建ZIP文件对象
@@ -289,13 +294,21 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
       // 上传ZIP文件
       const directoryPath = this.generateDirectoryPath(item);
-      await this.uploadFileToServer(zipFile, directoryPath);
+      await this.uploadFileToServer(zipFile, directoryPath, taskId);
       
       console.log(`ZIP文件上传成功: ${item.label}.zip`);
-      this.menuItemAction.emit({ type: 'upload-success', message: `成功上传: ${item.label}.zip` });
+      this.coreService.updateUploadProgress(taskId, 1); // 设置为100%
+      setTimeout(() => {
+        this.coreService.removeUploadTask(taskId); // 上传完成后移除任务
+      }, 3000);
+      this.menuItemAction.emit({ type: 'upload-success', message: `Upload successful: ${item.label}.zip` });
     } catch (error: any) {
       console.error('ZIP压缩或上传失败:', error);
-      this.menuItemAction.emit({ type: 'upload-error', message: `ZIP压缩或上传失败: ${error.message}` });
+      this.coreService.failUploadTask(taskId); // 标记为失败
+      setTimeout(() => {
+        this.coreService.removeUploadTask(taskId); // 移除失败任务
+      }, 3000);
+      this.menuItemAction.emit({ type: 'upload-error', message: `Upload failed: ${error.message}` });
     }
   }
 
@@ -390,8 +403,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   /**
    * 将文件上传到服务器
    */
-  async uploadFileToServer(file: File, directoryPath: string): Promise<void> {
-    const chunkSize = 1024 * 1024 * 10; // 10MB per chunk
+  async uploadFileToServer(file: File, directoryPath: string, taskId: string): Promise<void> {
+    const chunkSize = 1024 * 1024 * 1; // 1MB per chunk
     const totalChunks = Math.ceil(file.size / chunkSize);
     const fileId = this.generateUUID();
     const userId = this.coreService.userData?.username || '';
@@ -419,13 +432,15 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       formData.append('directoryPath', directoryPath);
 
       try {
+        // 计算上传进度 (压缩占30%，上传占70%)
+        const uploadProgress = ((i + 1) / totalChunks) * 0.7 + 0.3; // 加上压缩的30%
+        this.coreService.updateUploadProgress(taskId, uploadProgress);
+        
         const response = await this.http.post('/user/api/chunk/upload', formData, {
           reportProgress: true,
           observe: 'events'
         }).toPromise();
 
-        // 可以在这里添加进度提示
-        
       } catch (error) {
         console.error(`Error uploading chunk ${i+1} of file ${file.name}:`, error);
         throw error;
