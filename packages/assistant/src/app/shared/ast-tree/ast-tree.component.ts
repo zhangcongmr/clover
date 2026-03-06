@@ -404,7 +404,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
    * 将文件上传到服务器
    */
   async uploadFileToServer(file: File, directoryPath: string, taskId: string): Promise<void> {
-    const chunkSize = 1024 * 1024 * 1; // 1MB per chunk
+    const chunkSize = 1024 * 1024 * 10; // 10MB per chunk
     const totalChunks = Math.ceil(file.size / chunkSize);
     const fileId = this.generateUUID();
     const userId = this.coreService.userData?.username || '';
