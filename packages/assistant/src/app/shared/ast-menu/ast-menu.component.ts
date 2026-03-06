@@ -1,4 +1,4 @@
-import { afterNextRender, Component, ElementRef, EventEmitter, Input, model, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, model, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 
 @Component({
   selector: 'div[ast-menu]',
@@ -12,7 +12,7 @@ import { afterNextRender, Component, ElementRef, EventEmitter, Input, model, OnC
     '(mouseleave)': 'onMouseleaveMenu($event)'
   },
 })
-export class AstMenuComponent implements OnChanges{
+export class AstMenuComponent implements OnInit, OnChanges{
   isOpen = model<boolean>(false); // 菜单打开状态
   @Input() menuInitiator?: DOMRect; // 菜单触发元素位置信息
   @Output() mouseentermenu = new EventEmitter<MouseEvent>();
@@ -23,31 +23,35 @@ export class AstMenuComponent implements OnChanges{
   display: string | null = null;
 
   constructor(private elementRef: ElementRef) {
+  }
+
+  ngOnInit() {
     let me = this;
-    afterNextRender(() => {
-      // 监听文档点击事件以关闭菜单（如果点击不在菜单上
-      document.addEventListener('click', function (e: any) {
-        if(me.isOpen()) {
-          if (e.target !== me.elementRef.nativeElement && !me.elementRef.nativeElement.contains(e.target)) {
-            me.closeMenu();
-          }
-        }
-      });
-      // 浏览器窗口之外点击鼠标，浏览器内部右键菜单响应关闭事件  
-      window.addEventListener('blur', function (e) {
-        e.preventDefault()
-        if(me.isOpen()) {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+    // 监听文档点击事件以关闭菜单（如果点击不在菜单上
+    document.addEventListener('click', function (e: any) {
+      if (me.isOpen()) {
+        if (e.target !== me.elementRef.nativeElement && !me.elementRef.nativeElement.contains(e.target)) {
           me.closeMenu();
         }
-      });
-      document.addEventListener('keydown', (event) => {
-        const keyName = event.key;
-
-        if (keyName === 'Delete') {
-          return;
-        }
-      }, false);
+      }
     });
+    // 浏览器窗口之外点击鼠标，浏览器内部右键菜单响应关闭事件  
+    window.addEventListener('blur', function (e) {
+      e.preventDefault()
+      if (me.isOpen()) {
+        me.closeMenu();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      const keyName = event.key;
+
+      if (keyName === 'Delete') {
+        return;
+      }
+    }, false);
   }
 
   closeMenu() {

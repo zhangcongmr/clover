@@ -205,8 +205,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     if (action == 'Upload') {
       // 处理上传功能 - 所有上传都使用ZIP压缩方式
       this.handleZipUpload(current.item);
-      this.closeMenu();
-      return;
     } else if (action == 'Delete') {
       if (current.item && current.parentItem) {
         current.parentItem.children = current.parentItem.children.filter((val: any) => val.id != current.item.id)
