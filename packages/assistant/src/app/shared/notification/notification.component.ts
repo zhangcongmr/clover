@@ -19,7 +19,7 @@ import { NotificationService, Notification } from './notification.service';
   styles: [`
     .notifications-container {
       position: fixed;
-      bottom: 26px;
+      bottom: 30px;
       right: 2px;
       z-index: 9999;
       max-width: 400px;
