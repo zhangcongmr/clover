@@ -293,7 +293,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       const zipFile = new File([zipBlob], `${item.label}.zip`, { type: 'application/zip' });
 
       // 上传ZIP文件
-      const directoryPath = this.generateDirectoryPath(item);
+      // const directoryPath = this.generateDirectoryPath(item);
+      const directoryPath = ''
       await this.uploadFileToServer(zipFile, directoryPath, taskId);
       
       console.log(`ZIP文件上传成功: ${item.label}.zip`);
