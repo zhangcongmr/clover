@@ -266,6 +266,16 @@ export class CoreService {
     });
   }
 
+  /**
+ * 通用的文件下载方法
+ * @param url - 文件的 URL
+ */
+  downloadFile(url: string) {
+    return this.http.get(url, {
+      responseType: 'blob' // 关键：将响应类型设置为 blob
+    })
+  }
+
   async setServerToStorage(data: any) {
     const basePath = data.scheme + "://" + data.ip + ":" + data.port;
 

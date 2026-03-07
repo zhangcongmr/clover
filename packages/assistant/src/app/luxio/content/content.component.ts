@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, pickParentObject, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, pickParentObject, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
@@ -221,17 +221,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             
             // If this is a file node, refresh its content from the file system
             if (result.nodeType === 'file' && handle.kind === 'file') {
-              if (!this.coreService.isBinaryName(handle.name)) {
-                try {
-                  const fh = await handle.getFile();
-                  result.content = await fh.text();
-                } catch (err) {
-                  console.warn('failed to read file content ', handle.name, err);
-                  result.content = '';
-                }
-              } else {
-                result.content = 'Binary file - content not loaded';
-              }
+              await this.addProjectComponent()?.setTextContextToNode(handle.name, handle, result);
             }
           }
           // Remove the temporary key reference
@@ -533,7 +523,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     this.openTab(item);
   }
 
-  public openTab(targetTab: any) {
+  public async openTab(targetTab: any) {
     let oldTab = false;
     const openeds = this.openedList()
     reset(openeds);
@@ -550,7 +540,42 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     if (!oldTab) {
       targetTab["isActive"] = true;
-      openeds.push(targetTab);
+
+      // If this is a file node, refresh its content from the file system
+      const handle = targetTab.folderHandle;
+      if (targetTab.nodeType === 'file' && handle && handle.kind === 'file') {
+        await this.addProjectComponent()?.setTextContextToNode(handle.name, handle, targetTab);
+
+        openeds.push(targetTab);
+        this.openedList.update(value => [...openeds]);
+      } else if (targetTab.nodeType === 'file' && (!handle || Object.keys(handle).length === 0)) {
+        // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
+        //TODO to fecth from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
+        const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
+        this.coreService.downloadFile(`/api/storage/download?objectKey=${this.coreService.userData?.username || 'Anonymous'}/` + filePathUrl).subscribe({
+          next: async (res) => {
+            if (!this.coreService.isBinaryName(targetTab.label)) {
+              const response = new Response(res);
+              try {
+                targetTab.content = await response.text();
+              } catch (err) {
+                console.warn('failed to read file content ', handle.name, err);
+                targetTab.content = '';
+              }
+            } else {
+              targetTab.content = 'Binary file - content not loaded';
+            }
+
+            openeds.push(targetTab);
+            this.openedList.update(value => [...openeds]);
+          }
+          , error: (err) => {
+            console.warn('failed to fetch file content from server for path ', filePathUrl, err);
+            openeds.push(targetTab);
+            this.openedList.update(value => [...openeds]);
+          }
+        })
+      }
     }
   }
 

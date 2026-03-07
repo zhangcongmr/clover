@@ -293,7 +293,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       const zipFile = new File([zipBlob], `${item.label}.zip`, { type: 'application/zip' });
 
       // 上传ZIP文件
-      // const directoryPath = generateDirectoryPath(this.data(), item);
+      // const directoryPath = generateDirectoryPath(this.data(), item, false); // 生成目录路径，不包含文件名
       const directoryPath = ''
       await this.uploadFileToServer(zipFile, directoryPath, taskId);
       
@@ -361,7 +361,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     const chunkSize = 1024 * 1024 * 10; // 10MB per chunk
     const totalChunks = Math.ceil(file.size / chunkSize);
     const fileId = this.generateUUID();
-    const userId = this.coreService.userData?.username || '';
+    const userId = this.coreService.userData?.username || 'Anonymous';
 
     // 先获取文件的完整字节数组
     const fileBytes = new Uint8Array(await file.arrayBuffer());
@@ -652,7 +652,7 @@ export function findActiveNode(nodes: AstTreeNode[], targetNodeType?: TargetTree
 /**
  * 生成目录路径
  */
-export function generateDirectoryPath(nodes: AstTreeNode[], node: AstTreeNode): string {
+export function generateDirectoryPath(nodes: AstTreeNode[], node: AstTreeNode, withFileName: boolean = true): string {
   // 从根节点开始查找节点的完整路径
   const pathSegments: string[] = [];
 
@@ -660,8 +660,10 @@ export function generateDirectoryPath(nodes: AstTreeNode[], node: AstTreeNode): 
   const found = findNodePath(nodes, node.id, pathSegments);
 
   if (found && pathSegments.length > 0) {
-    // 移除最后一个元素（即当前文件名），只保留目录路径
-    pathSegments.pop();
+    if (!withFileName) {
+      // 移除最后一个元素（即当前文件名），只保留目录路径
+      pathSegments.pop();
+    }
     return pathSegments.join('/');
   }
 

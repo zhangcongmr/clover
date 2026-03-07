@@ -195,19 +195,23 @@ export class AddProjectComponent implements OnInit {
     } as any;
 
     if (handle.kind === 'file') {
-      if (!this.coreService.isBinaryName(name)) {
-        try {
-          const fh = await handle.getFile();
-          node.content = await fh.text();
-        } catch (err) {
-          console.warn('add-project: failed to read file content', name, err);
-          node.content = '';
-        }
-      } else {
-        node.content = 'Binary file - content not loaded';
-      }
+      await this.setTextContextToNode(name, handle, node);
     }
     return node;
+  }
+
+  public async setTextContextToNode(name: any, handle: any, node: AstTreeNode) {
+    if (!this.coreService.isBinaryName(name)) {
+      try {
+        const fh = await handle.getFile();
+        node.content = await fh.text();
+      } catch (err) {
+        console.warn('add-project: failed to read file content', name, err);
+        node.content = '';
+      }
+    } else {
+      node.content = 'Binary file - content not loaded';
+    }
   }
 
   private uuid(): string {
