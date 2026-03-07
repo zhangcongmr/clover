@@ -776,4 +776,5 @@ export function pick(obj: any, keys: string[]) {
       result[key] = obj[key];
     }
   }
+  return result;
 }
