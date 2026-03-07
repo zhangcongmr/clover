@@ -293,7 +293,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       const zipFile = new File([zipBlob], `${item.label}.zip`, { type: 'application/zip' });
 
       // 上传ZIP文件
-      // const directoryPath = this.generateDirectoryPath(item);
+      // const directoryPath = generateDirectoryPath(this.data(), item);
       const directoryPath = ''
       await this.uploadFileToServer(zipFile, directoryPath, taskId);
       
@@ -352,53 +352,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         }
       }
     }
-  }
-
-  /**
-   * 生成目录路径
-   */
-  generateDirectoryPath(node: AstTreeNode): string {
-    // 从根节点开始查找节点的完整路径
-    const pathSegments: string[] = [];
-    
-    // 查找节点的完整路径
-    const found = this.findNodePath(this.data(), node.id, pathSegments);
-    
-    if (found && pathSegments.length > 0) {
-      // 移除最后一个元素（即当前文件名），只保留目录路径
-      pathSegments.pop();
-      return pathSegments.join('/');
-    }
-    
-    return '';
-  }
-
-  /**
-   * 查找节点路径
-   */
-  private findNodePath(nodes: AstTreeNode[], targetId: string, pathSegments: string[]): boolean {
-    for (const node of nodes) {
-      if (node.id === targetId) {
-        pathSegments.push(node.label);
-        return true;
-      }
-      
-      if (node.children && node.children.length > 0) {
-        // 先将当前节点加入路径
-        const currentPathLength = pathSegments.length;
-        pathSegments.push(node.label);
-        
-        // 在子节点中查找
-        if (this.findNodePath(node.children, targetId, pathSegments)) {
-          return true;
-        }
-        
-        // 如果没找到，回退路径
-        pathSegments.splice(currentPathLength);
-      }
-    }
-    
-    return false;
   }
 
   /**
@@ -694,6 +647,55 @@ export function findActiveNode(nodes: AstTreeNode[], targetNodeType?: TargetTree
   }
   return defaultNode  //如果未找到，则返回指定的默认节点
 }
+
+
+/**
+ * 生成目录路径
+ */
+export function generateDirectoryPath(nodes: AstTreeNode[], node: AstTreeNode): string {
+  // 从根节点开始查找节点的完整路径
+  const pathSegments: string[] = [];
+
+  // 查找节点的完整路径
+  const found = findNodePath(nodes, node.id, pathSegments);
+
+  if (found && pathSegments.length > 0) {
+    // 移除最后一个元素（即当前文件名），只保留目录路径
+    pathSegments.pop();
+    return pathSegments.join('/');
+  }
+
+  return '';
+}
+
+/**
+ * 查找节点路径
+ */
+export function findNodePath(nodes: AstTreeNode[], targetId: string, pathSegments: string[]): boolean {
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      pathSegments.push(node.label);
+      return true;
+    }
+
+    if (node.children && node.children.length > 0) {
+      // 先将当前节点加入路径
+      const currentPathLength = pathSegments.length;
+      pathSegments.push(node.label);
+
+      // 在子节点中查找
+      if (findNodePath(node.children, targetId, pathSegments)) {
+        return true;
+      }
+
+      // 如果没找到，回退路径
+      pathSegments.splice(currentPathLength);
+    }
+  }
+
+  return false;
+}
+
 
 export function deleteParentItemRef(parentItemCopy: any) {
   ['children', //子节点的父节点引用不包含子节点数据，避免循环引用导致数据无法序列化
