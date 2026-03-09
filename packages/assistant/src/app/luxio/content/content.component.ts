@@ -20,6 +20,24 @@ import { NoteBookComponent } from '../../shared/notebook/notebook.component';
 import { NodeDef } from '@luxio/common';
 import { NotificationService } from '../../shared/notification/notification.service';
 
+interface WebSocketRequest {
+  action: string;
+  objectKey: string;
+  requestId?: string;
+}
+
+interface WebSocketResponse {
+  type: string;
+  success: boolean;
+  requestId?: string;
+  objectKey?: string;
+  fileName?: string;
+  contentType?: string;
+  size?: number;
+  data?: string; // Base64 encoded data
+  message?: string;
+}
+
 @Component({
   selector: 'div[ast-content]',
   templateUrl: './content.component.html',
@@ -71,11 +89,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   private savers: AutoSaver[] = [];
   
+  // 添加WebSocket连接管理
+  private wsConnection: WebSocket | null = null;
+  private pendingRequests = new Map<string, (response: WebSocketResponse) => void>();
+  
   // 添加自动刷新定时器
   private refreshIntervalId: any = null;
 
   userResource = resource({
-    // Define a reactive comput`ation.
+    // Define a reactive comput`tion.
     // The params value recomputes whenever any read signals change.
     params: () => (this.dataList().length === 0),
     // Define an async loader that retrieves data.
@@ -151,6 +173,88 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     // 一次性停止所有自动保存
     // this.savers.forEach(saver => saver.stop());
     this.savers = [];
+    
+    // 关闭WebSocket连接
+    if (this.wsConnection) {
+      this.wsConnection.close();
+      this.wsConnection = null;
+    }
+  }
+
+  // 初始化WebSocket连接
+  private initWebSocket(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.wsConnection && this.wsConnection.readyState === WebSocket.OPEN) {
+        resolve();
+        return;
+      }
+
+      // 创建WebSocket连接
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/storage/ws`;
+      this.wsConnection = new WebSocket(wsUrl);
+
+      this.wsConnection.onopen = () => {
+        console.log('Connected to storage WebSocket');
+        resolve();
+      };
+
+      this.wsConnection.onclose = (event) => {
+        console.log('Disconnected from storage WebSocket:', event);
+        // 清空所有待处理的请求
+        this.pendingRequests.clear();
+      };
+
+      this.wsConnection.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        reject(error);
+      };
+
+      this.wsConnection.onmessage = (event) => {
+        try {
+          const response: WebSocketResponse = JSON.parse(event.data);
+          if (response.requestId && this.pendingRequests.has(response.requestId)) {
+            const callback = this.pendingRequests.get(response.requestId)!;
+            callback(response);
+            this.pendingRequests.delete(response.requestId);
+          }
+        } catch (e) {
+          console.error('Error parsing WebSocket response:', e);
+        }
+      };
+    });
+  }
+
+  // 通过WebSocket发送下载请求
+  private async downloadFileViaWebSocket(objectKey: string): Promise<WebSocketResponse> {
+    // 确保WebSocket已连接
+    if (!this.wsConnection || this.wsConnection.readyState !== WebSocket.OPEN) {
+      await this.initWebSocket();
+    }
+
+    return new Promise((resolve, reject) => {
+      // 生成唯一请求ID
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // 创建请求对象
+      const request: WebSocketRequest = {
+        action: 'download',
+        objectKey,
+        requestId
+      };
+
+      // 存储回调函数
+      this.pendingRequests.set(requestId, (response: WebSocketResponse) => {
+        if (response.success) {
+          resolve(response);
+        } else {
+          reject(new Error(response.message || 'Download failed'));
+        }
+      });
+
+      // 发送请求
+      this.wsConnection!.send(JSON.stringify(request));
+    });
   }
 
   // 启动自动刷新
@@ -552,29 +656,33 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
         //TODO to fecth from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
         const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
-        this.coreService.downloadFile(`/api/storage/download?objectKey=${this.coreService.userData?.username || 'Anonymous'}/` + filePathUrl).subscribe({
-          next: async (res) => {
-            if (!this.coreService.isBinaryName(targetTab.label)) {
-              const response = new Response(res);
-              try {
-                targetTab.content = await response.text();
-              } catch (err) {
-                console.warn('failed to read file content ', handle.name, err);
-                targetTab.content = '';
-              }
-            } else {
-              targetTab.content = 'Binary file - content not loaded';
+        const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
+        
+        try {
+          // 使用WebSocket下载文件
+          const response = await this.downloadFileViaWebSocket(objectKey);
+          
+          if (!this.coreService.isBinaryName(targetTab.label)) {
+            // 解码Base64数据
+            const binaryData = atob(response.data!);
+            const bytes = new Uint8Array(binaryData.length);
+            for (let i = 0; i < binaryData.length; i++) {
+              bytes[i] = binaryData.charCodeAt(i);
             }
+            const blob = new Blob([bytes], { type: response.contentType });
+            const textContent = await blob.text();
+            targetTab.content = textContent;
+          } else {
+            targetTab.content = 'Binary file - content not loaded';
+          }
 
-            openeds.push(targetTab);
-            this.openedList.update(value => [...openeds]);
-          }
-          , error: (err) => {
-            console.warn('failed to fetch file content from server for path ', filePathUrl, err);
-            openeds.push(targetTab);
-            this.openedList.update(value => [...openeds]);
-          }
-        })
+          openeds.push(targetTab);
+          this.openedList.update(value => [...openeds]);
+        } catch (error) {
+          console.warn('failed to fetch file content from server via WebSocket for path ', filePathUrl, error);
+          openeds.push(targetTab);
+          this.openedList.update(value => [...openeds]);
+        }
       }
     }
   }
