@@ -645,44 +645,47 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (!oldTab) {
       targetTab["isActive"] = true;
 
+      await this.refreshNodeContent(targetTab);
+      openeds.push(targetTab);
+      this.openedList.update(value => [...openeds]);
+    }
+  }
+
+  /**
+   * Refreshes the content of a node in the UI
+   * @param targetTab 
+   */
+  private async refreshNodeContent(targetTab: any) {
+    const handle = targetTab.folderHandle;
+    if (targetTab.nodeType === 'file' && handle && handle.kind === 'file') {
       // If this is a file node, refresh its content from the file system
-      const handle = targetTab.folderHandle;
-      if (targetTab.nodeType === 'file' && handle && handle.kind === 'file') {
-        await this.addProjectComponent()?.setTextContextToNode(handle.name, handle, targetTab);
+      await this.addProjectComponent()?.setTextContextToNode(handle.name, handle, targetTab);
 
-        openeds.push(targetTab);
-        this.openedList.update(value => [...openeds]);
-      } else if (targetTab.nodeType === 'file' && (!handle || Object.keys(handle).length === 0)) {
-        // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
-        //Fetch from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
-        const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
-        const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
-        
-        try {
-          // 使用WebSocket下载文件
-          const response = await this.downloadFileViaWebSocket(objectKey);
-          
-          if (!this.coreService.isBinaryName(targetTab.label)) {
-            // 解码Base64数据
-            const binaryData = atob(response.data!);
-            const bytes = new Uint8Array(binaryData.length);
-            for (let i = 0; i < binaryData.length; i++) {
-              bytes[i] = binaryData.charCodeAt(i);
-            }
-            const blob = new Blob([bytes], { type: response.contentType });
-            const textContent = await blob.text();
-            targetTab.content = textContent;
-          } else {
-            targetTab.content = 'Binary file - content not loaded';
+    } else if (targetTab.nodeType === 'file' && (!handle || Object.keys(handle).length === 0)) {
+      // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
+      //Fetch from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
+      const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
+      const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
+
+      try {
+        // 使用WebSocket下载文件
+        const response = await this.downloadFileViaWebSocket(objectKey);
+
+        if (!this.coreService.isBinaryName(targetTab.label)) {
+          // 解码Base64数据
+          const binaryData = atob(response.data!);
+          const bytes = new Uint8Array(binaryData.length);
+          for (let i = 0; i < binaryData.length; i++) {
+            bytes[i] = binaryData.charCodeAt(i);
           }
-
-          openeds.push(targetTab);
-          this.openedList.update(value => [...openeds]);
-        } catch (error) {
-          console.warn('failed to fetch file content from server via WebSocket for path ', filePathUrl, error);
-          openeds.push(targetTab);
-          this.openedList.update(value => [...openeds]);
+          const blob = new Blob([bytes], { type: response.contentType });
+          const textContent = await blob.text();
+          targetTab.content = textContent;
+        } else {
+          targetTab.content = 'Binary file - content not loaded';
         }
+      } catch (error) {
+        console.warn('failed to fetch file content from server via WebSocket for path ', filePathUrl, error);
       }
     }
   }
