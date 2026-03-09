@@ -654,7 +654,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         this.openedList.update(value => [...openeds]);
       } else if (targetTab.nodeType === 'file' && (!handle || Object.keys(handle).length === 0)) {
         // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
-        //TODO to fecth from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
+        //Fetch from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
         const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
         const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
         
