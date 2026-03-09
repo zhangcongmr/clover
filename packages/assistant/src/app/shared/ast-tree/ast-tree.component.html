@@ -30,7 +30,7 @@
       }
     </div>
     <div #editorItemRef [attr.contenteditable]="item.rename" class="lyoutlabel-base"
-     [class.lyoutlabel]="item.rename" [class.local]="!item.rename&&(item.nodeType == 'file'||item.nodeType == 'folder')&&(item.isLocal || item.isLocal==null)" 
+     [class.textrenameclass]="item.rename" [class.local]="!item.rename&&(item.isLocal)" 
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: item})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: item})">
       {{ item.label }}
     </div>
@@ -62,7 +62,7 @@
         }
       </div>
       <div #editorItemRef [attr.contenteditable]="childItem.rename" class="lyoutlabel-base"
-       [class.lyoutlabel]="childItem.rename" [class.local]="!childItem.rename&&(childItem.nodeType == 'file'||childItem.nodeType == 'folder')&&(childItem.isLocal || childItem.isLocal==null)"
+       [class.textrenameclass]="childItem.rename"
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: childItem})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: childItem})">
         {{ childItem.label }}
       </div>

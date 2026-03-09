@@ -94,6 +94,12 @@ export class AddProjectComponent implements OnInit {
         this.directoryTreeData.push(...tempTree)
       }
     }
+
+    for (let index = 0; index < this.directoryTreeData.length; index++) {
+      const element = this.directoryTreeData[index];
+      element.isLocal = true; // mark as local file/folder for later use
+      
+    }
   }
 
   clearFileSelected() {
