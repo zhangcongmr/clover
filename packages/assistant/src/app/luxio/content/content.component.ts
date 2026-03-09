@@ -864,6 +864,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         } else if (node.nodeType === 'folder') {
           node.children?.forEach((child: any) => traverse(child));
         }
+        delete node.isLocal
       }
       traverse(copyOfTarget);
       this.shareData.profile = JSON.stringify(copyOfTarget) || "";
