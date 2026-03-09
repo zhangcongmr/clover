@@ -783,9 +783,53 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       } catch (err) {
         console.error('failed to write file', err);
       }
+    } else {
+      // 如果没有folderHandle，则通过WebSocket发送editFile请求到服务端
+      await this.saveFileToServer(evt);
     }
 
     this.storeApi();
+  }
+
+  // 通过WebSocket保存文件到服务器
+  private async saveFileToServer(evt: any) {
+    // 确保WebSocket已连接
+    if (!this.wsConnection || this.wsConnection.readyState !== WebSocket.OPEN) {
+      await this.initWebSocket();
+    }
+
+    return new Promise((resolve, reject) => {
+      // 生成唯一请求ID
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // 计算文件路径
+      const filePathUrl = generateDirectoryPath(this.dataList(), evt);
+      const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
+
+      // 创建请求对象
+      const request = {
+        action: 'editFile',
+        objectKey,
+        content: evt.content || '',
+        requestId
+      };
+
+      // 存储回调函数
+      this.pendingRequests.set(requestId, (response: WebSocketResponse) => {
+        if (response.success) {
+          console.log('File saved to server successfully:', response);
+          this.notificationService.showNotification('File saved to server successfully', 'success');
+          resolve(response);
+        } else {
+          console.error('Failed to save file to server:', response.message);
+          this.notificationService.showNotification(`Failed to save file: ${response.message}`, 'error');
+          reject(new Error(response.message || 'Save failed'));
+        }
+      });
+
+      // 发送请求
+      this.wsConnection!.send(JSON.stringify(request));
+    });
   }
 
   onViewOut(evt: any) {
