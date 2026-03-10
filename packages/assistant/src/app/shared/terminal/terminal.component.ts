@@ -145,7 +145,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       // Send command to server as JSON object
       const message = {
         type: 'input',
-        data: command
+        data: command + '\r'
       };
       this.websocket.send(JSON.stringify(message));
     } else {
