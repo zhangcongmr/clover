@@ -36,4 +36,24 @@ Ready to start writing?  Either start changing stuff on the left or
 [Marked]: https://github.com/markedjs/marked/
 [Markdown]: http://daringfireball.net/projects/markdown/
  -->
-<div #textEditor style="overflow: hidden;height: 100%;width: 100%;"></div>
+<!-- Toolbar -->
+<div class="toolbar">
+  <button type="button" class="preview-toggle-btn" (click)="togglePreviewMode()">
+    {{ isPreviewMode() ? '编辑' : '预览' }}
+  </button>
+</div>
+
+<!-- Editor/Preview Container -->
+<div class="editor-preview-container">
+  <!-- 编辑器 -->
+  <div #textEditor 
+       [style.display]="isPreviewMode() ? 'none' : 'block'" 
+       style="overflow: hidden;height: 100%;width: 100%;">
+  </div>
+  
+  <!-- 预览区域容器 -->
+  <div #previewContainer 
+       [style.display]="isPreviewMode() ? 'block' : 'none'" 
+       class="preview-panel">
+  </div>
+</div>

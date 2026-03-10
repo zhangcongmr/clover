@@ -1,7 +1,8 @@
-import { Component, ElementRef, input, OnInit, output, viewChild } from '@angular/core';
+import { Component, ElementRef, input, OnInit, output, viewChild, signal, ViewChild, TemplateRef, ViewContainerRef, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {EditorView, basicSetup} from "codemirror"
 import {markdown} from "@codemirror/lang-markdown"
+import { marked } from 'marked';
 
 @Component({
     selector: 'markdown',
@@ -14,13 +15,25 @@ import {markdown} from "@codemirror/lang-markdown"
     standalone: true,
     imports: [FormsModule]
 })
-export class MarkdownComponent implements OnInit {
+export class MarkdownComponent implements OnInit, AfterViewInit {
   textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
   textInfo = input<any>();
   readonly saved = output();
   private editorView!: EditorView;
   originalNewlineType!: string;
-  constructor() { }
+  
+  // 添加预览相关属性
+  isPreviewMode = signal(false);
+  previewContent = signal('');
+  
+  @ViewChild('previewContainer', { static: false }) previewContainer!: ElementRef<HTMLDivElement>;
+  
+  constructor(private viewContainerRef: ViewContainerRef) {}
+  
+  ngAfterViewInit() {
+    // 初始化预览内容
+    this.updatePreviewContent();
+  }
 
   ngOnInit() {
     // --- 4. 检测原始换行符 ---
@@ -64,9 +77,198 @@ export class MarkdownComponent implements OnInit {
             borderLeft: "2px solid currentColor", // 改变粗细
             // borderLeft: "solid transparent", // 甚至设为透明也无法变成中划线
           }
+        }),
+        EditorView.updateListener.of((update) => {
+          if(update.docChanged) {
+            this.updatePreviewContent();
+          }
         })
       ]
     })
+    
+    // 初始化预览内容
+    this.updatePreviewContent();
+  }
+
+  // 切换编辑/预览模式
+  togglePreviewMode() {
+    this.isPreviewMode.update(prev => !prev);
+    if (this.isPreviewMode()) {
+      setTimeout(() => {
+        this.createShadowDOM();
+      });
+    }
+  }
+
+  // 创建Shadow DOM
+  private createShadowDOM() {
+    if (!this.previewContainer) return;
+
+    // 清除之前的shadow DOM
+    const container = this.previewContainer.nativeElement;
+    container.innerHTML = ''; // 清除内容
+    
+    // 创建shadow root
+    const shadowRoot = container.attachShadow({ mode: 'open' });
+
+    // 添加基本样式
+    const style = document.createElement('style');
+    style.textContent = `
+      :host {
+        display: block;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        line-height: 1.6;
+        color: var(--vscode-foreground, #616161);
+        background-color: var(--vscode-editor-background, #ffffff);
+      }
+      
+      h1, h2, h3, h4, h5, h6 {
+        margin: 0.83em 0;
+        font-weight: bold;
+      }
+      
+      h1 {
+        font-size: 2em;
+        margin: 0.67em 0;
+      }
+      
+      h2 {
+        font-size: 1.5em;
+        margin: 0.83em 0;
+      }
+      
+      h3 {
+        font-size: 1.17em;
+        margin: 1em 0;
+      }
+      
+      h4 {
+        font-size: 1em;
+        margin: 1.33em 0;
+      }
+      
+      h5 {
+        font-size: 0.83em;
+        margin: 1.67em 0;
+      }
+      
+      h6 {
+        font-size: 0.67em;
+        margin: 2.33em 0;
+      }
+      
+      p {
+        margin: 1em 0;
+      }
+      
+      ul, ol {
+        margin: 1em 0;
+        padding-left: 2em;
+      }
+      
+      li {
+        margin: 0.5em 0;
+      }
+      
+      pre {
+        background-color: var(--vscode-sideBar-background, #f8f8f8);
+        border: 1px solid var(--vscode-editorGroup-border, #e7e7e7);
+        padding: 12px 15px;
+        border-radius: 4px;
+        overflow-x: auto;
+        color: var(--vscode-foreground, #616161);
+        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+      }
+      
+      code {
+        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        background-color: var(--vscode-sideBar-background, #f8f8f8);
+        color: var(--vscode-foreground, #616161);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 0.875em;
+      }
+      
+      blockquote {
+        border-left: 4px solid var(--vscode-editorGroup-border, #e7e7e7);
+        padding-left: 16px;
+        margin-left: 0;
+        color: var(--vscode-foreground, #616161);
+        background-color: var(--vscode-tab-inactiveBackground, #eef0f2);
+      }
+      
+      a {
+        color: var(--vscode-textLink-foreground, #006ab1);
+        text-decoration: underline;
+      }
+      
+      a:hover {
+        color: var(--vscode-textLink-activeForeground, #006ab1);
+      }
+      
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+        background-color: var(--vscode-editor-background, #ffffff);
+      }
+      
+      th, td {
+        border: 1px solid var(--vscode-editorGroup-border, #e7e7e7);
+        padding: 8px 12px;
+        color: var(--vscode-foreground, #616161);
+      }
+      
+      th {
+        background-color: var(--vscode-tab-inactiveBackground, #eef0f2);
+        font-weight: bold;
+      }
+      
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+      
+      hr {
+        height: 1px;
+        border: 0;
+        background-color: var(--vscode-editorGroup-border, #e7e7e7);
+        margin: 20px 0;
+      }
+    `;
+    
+    shadowRoot.appendChild(style);
+    
+    // 添加预览内容
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = this.previewContent();
+    shadowRoot.appendChild(contentDiv);
+  }
+
+  // 更新预览内容
+  async updatePreviewContent() {
+    try {
+      const content = this.getEditorContent();
+      const parsedContent = await marked.parse(content || '');
+      this.previewContent.set(parsedContent || '');
+      
+      // 如果当前处于预览模式，更新shadow dom
+      if (this.isPreviewMode() && this.previewContainer) {
+        this.createShadowDOM();
+      }
+    } catch (error) {
+      console.error('Error parsing markdown:', error);
+      this.previewContent.set('Error rendering markdown');
+    }
+  }
+
+  // 获取编辑器内容并更新预览
+  getEditorContentAndUpdatePreview() {
+    const content = this.getEditorContent();
+    if (this.isPreviewMode()) {
+      this.updatePreviewContent();
+    }
+    return content;
   }
 
   outOfText() {
@@ -81,7 +283,7 @@ export class MarkdownComponent implements OnInit {
       //   return;
       // }
 
-      const contentWithLF = this.getEditorContent()
+      const contentWithLF = this.getEditorContentAndUpdatePreview();
       // 将 \n 转换回我们之前检测到的原始格式
       const contentWithOriginalNewlines = convertToOriginalNewlines(contentWithLF, this.originalNewlineType);
 
