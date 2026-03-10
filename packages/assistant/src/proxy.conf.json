@@ -6,5 +6,9 @@
   "/user/**": {
     "target": "https://localhost:8980",
     "secure": false
+  },
+  "/terminal": {
+    "target": "wss://localhost:8980",
+    "secure": false
   }
 }

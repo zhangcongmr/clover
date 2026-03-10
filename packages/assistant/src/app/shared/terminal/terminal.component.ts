@@ -19,20 +19,22 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private fitAddon!: FitAddon;
   private webLinksAddon!: WebLinksAddon;
   private commandBuffer: string = '';
+  private websocket: WebSocket | null = null;
+  private isConnected: boolean = false;
 
   constructor() {}
 
   ngOnInit(): void {
     // Initialize the terminal
     this.initializeTerminal();
+    // Connect to WebSocket
+    this.connectWebSocket();
   }
 
   ngAfterViewInit(): void {
     // Add welcome message after view initialization
     setTimeout(() => {
-      this.terminal.writeln('Welcome to Luxio Terminal Emulator!');
-      this.terminal.writeln('This is a simulated terminal for demonstration purposes.');
-      this.writePrompt();
+      this.terminal.writeln('Connecting to terminal server...');
     }, 100);
   }
 
@@ -40,6 +42,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // Clean up terminal instance
     if (this.terminal) {
       this.terminal.dispose();
+    }
+    // Close WebSocket connection
+    if (this.websocket) {
+      this.websocket.close();
     }
   }
 
@@ -119,62 +125,36 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
         this.processCommand();
         break;
       case '\u007F': // Backspace key
-        this.terminal.write('\b \b');
+        if (this.commandBuffer.length > 0) {
+          this.commandBuffer = this.commandBuffer.slice(0, -1);
+          this.terminal.write('\b \b');
+        }
         break;
       default:
+        this.commandBuffer += data;
         this.terminal.write(data);
         break;
     }
   }
 
   private processCommand(): void {
-    // Since we can't access the internal buffer directly, we'll use a simpler approach
-    // For now, we'll just execute an empty command which will show the prompt
-    // In a real implementation, we would maintain the command as it's being typed
-    this.executeCommand('');
-  }
+    const command = this.commandBuffer.trim();
+    this.commandBuffer = '';
 
-  private executeCommand(command: string): void {
-    if (!command) {
+    if (this.websocket && this.isConnected) {
+      // Send command to server as JSON object
+      const message = {
+        type: 'input',
+        data: command
+      };
+      this.websocket.send(JSON.stringify(message));
+    } else {
+      this.terminal.writeln('Not connected to server.');
       this.writePrompt();
-      return;
     }
-
-    // Split command and arguments
-    const parts = command.split(' ');
-    const cmd = parts[0].toLowerCase();
-    const args = parts.slice(1);
-
-    switch (cmd) {
-      case 'help':
-        this.terminal.writeln('Available commands: help, echo, clear, date, ls, pwd, whoami');
-        break;
-      case 'echo':
-        this.terminal.writeln(args.join(' '));
-        break;
-      case 'date':
-        this.terminal.writeln(new Date().toString());
-        break;
-      case 'ls':
-        this.terminal.writeln('file1.txt  file2.js  folder1/  folder2/');
-        break;
-      case 'pwd':
-        this.terminal.writeln('/home/user/project');
-        break;
-      case 'whoami':
-        this.terminal.writeln('luxio-user');
-        break;
-      case 'clear':
-        this.terminal.clear();
-        this.writePrompt();
-        return; // Don't add another prompt
-      default:
-        this.terminal.writeln(`Command not found: ${cmd}. Type 'help' for available commands.`);
-    }
-
-    // Show new prompt
-    this.writePrompt();
   }
+
+
 
   private writePrompt(): void {
     this.terminal.write('$ ');
@@ -193,6 +173,36 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       this.terminal.clear();
       this.writePrompt();
     }
+  }
+
+  private connectWebSocket(): void {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/terminal`;
+
+    this.websocket = new WebSocket(wsUrl);
+
+    this.websocket.onopen = (event) => {
+      this.isConnected = true;
+      console.log('WebSocket connected');
+      // Optionally send an initial message or setup
+    };
+
+    this.websocket.onmessage = (event) => {
+      // Write server output to terminal
+      this.terminal.write(event.data);
+    };
+
+    this.websocket.onclose = (event) => {
+      this.isConnected = false;
+      console.log('WebSocket closed');
+      this.terminal.writeln('\r\nConnection closed.');
+    };
+
+    this.websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      this.terminal.writeln('\r\nWebSocket error occurred.');
+    };
   }
 
   // Method to change the theme
