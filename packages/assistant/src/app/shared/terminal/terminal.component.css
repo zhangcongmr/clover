@@ -1,0 +1,64 @@
+/* :host {
+  flex: 1 1 0;
+  align-self: stretch;
+} */
+
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+}
+
+.terminal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn:hover {
+  background-color: #e9e9e9;
+}
+
+.terminal-element {
+  flex: 1;
+  padding: 10px;
+  font-family: 'Courier New', monospace;
+}
+
+/* xterm.js adds its own styles, but we can override or enhance them */
+.xterm-viewport {
+  overflow-y: auto;
+}
+
+/* Ensure the terminal fills its container */
+.xterm-screen {
+  height: 100%;
+}

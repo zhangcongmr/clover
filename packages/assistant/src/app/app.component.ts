@@ -11,13 +11,14 @@ import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
 import { NotificationComponent } from './shared/notification/notification.component';
+import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
     standalone: true,
-    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent],
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent], // Add TerminalComponent to imports
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
@@ -300,6 +301,10 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.currentDisplayViewId = 6;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
+      case 'terminal': // Handle terminal tab activation
+        this.currentDisplayViewId = 7; // Assign a unique ID for terminal
+        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
+        break;
     }
   }
 
@@ -360,11 +365,42 @@ export class AppComponent implements OnInit, AfterViewInit {
           };
           this.openTab(userCenterBar);
           break;
+        case 7: // Terminal view ID
+          const terminalTab: any = {
+            id: 'terminal',
+            title: 'Terminal'
+          };
+          this.openTab(terminalTab);
+          break;
       }
     }
     if(currentDisplayViewId == 5 || currentDisplayViewId == 6) {
       this.closeMenu();
     }
+  }
+
+  // Method to open a new terminal tab
+  openTerminalTab(): void {
+    const terminalTab = {
+      id: 'terminal',
+      title: 'Terminal',
+      isClosable: true
+    };
+
+    // Check if terminal tab is already open
+    const existingTab = this.openedList.find(tab => tab.id === 'terminal');
+    if (!existingTab) {
+      this.openedList.push(terminalTab);
+    }
+
+    // Activate the terminal tab
+    for (const tab of this.openedList) {
+      tab.isActive = (tab.id === 'terminal');
+    }
+
+    this.currentDisplayViewId = 7; // Terminal view ID
+    this.lastSelectedDisplayViewId = this.currentDisplayViewId;
+    this.sideOpen = true;
   }
 
 
