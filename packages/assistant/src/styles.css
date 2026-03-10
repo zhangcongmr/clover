@@ -154,6 +154,7 @@ img, svg {
     color: var(--vscode-icon-foreground);
 }
 
+/* 自定义滚动条样式 */
 .custom-scroll {
   /* Firefox */
   scrollbar-width: thin;
