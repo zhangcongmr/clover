@@ -19,10 +19,12 @@ export class MarkdownComponent implements OnInit {
   textInfo = input<any>();
   readonly saved = output();
   private editorView!: EditorView;
-
+  originalNewlineType!: string;
   constructor() { }
 
   ngOnInit() {
+    // --- 4. 检测原始换行符 ---
+    this.originalNewlineType = detectNewlineType(this.textInfo().content);
 
     const textEditorView = this.textEditorView()
     this.editorView = new EditorView({
@@ -78,14 +80,42 @@ export class MarkdownComponent implements OnInit {
       // if(this.textInfo['saved']) {
       //   return;
       // }
-      const doc = this.getEditorContent()
+
+      const contentWithLF = this.getEditorContent()
+      // 将 \n 转换回我们之前检测到的原始格式
+      const contentWithOriginalNewlines = convertToOriginalNewlines(contentWithLF, this.originalNewlineType);
+
       this.textInfo()['saved'] = true;
-      this.textInfo()['content'] = doc;
+      this.textInfo()['content'] = contentWithOriginalNewlines;
       this.saved.emit(this.textInfo());
     }
   }
 
   getEditorContent(): string {
+    // 无论输入是什么，toString() 都返回 \n 分隔的字符串
     return this.editorView.state.doc.toString();
   }
+}
+
+// --- 1. 只检测，不标准化 ---
+function detectNewlineType(text: string): string {
+  // 检测原始换行符类型
+  if (text.includes('\r\n')) {
+    return '\r\n';
+  } else if (text.includes('\r')) {
+    return '\r';
+  }
+  // 如果没有找到特殊换行符，默认为 \n
+  return '\n';
+}
+
+// --- 2. 将内部的 \n 转换回原始格式 ---
+function convertToOriginalNewlines(value: string, originalNewline: string): string {
+  if (originalNewline === '\r\n') {
+    return value.replace(/\n/g, '\r\n');
+  } else if (originalNewline === '\r') {
+    return value.replace(/\n/g, '\r');
+  }
+  // 如果原始格式就是 \n，直接返回
+  return value;
 }
