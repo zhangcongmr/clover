@@ -36,6 +36,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
+  terminalShow = false;
   sideOpen = true
 
   blurSwitch = true;
@@ -365,13 +366,6 @@ export class AppComponent implements OnInit, AfterViewInit {
           };
           this.openTab(userCenterBar);
           break;
-        case 7: // Terminal view ID
-          const terminalTab: any = {
-            id: 'terminal',
-            title: 'Terminal'
-          };
-          this.openTab(terminalTab);
-          break;
       }
     }
     if(currentDisplayViewId == 5 || currentDisplayViewId == 6) {
@@ -380,27 +374,28 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   // Method to open a new terminal tab
-  openTerminalTab(): void {
-    const terminalTab = {
-      id: 'terminal',
-      title: 'Terminal',
-      isClosable: true
-    };
+  toggleTerminal(): void {
+    // const terminalTab = {
+    //   id: 'terminal',
+    //   title: 'Terminal',
+    //   isClosable: true
+    // };
 
-    // Check if terminal tab is already open
-    const existingTab = this.openedList.find(tab => tab.id === 'terminal');
-    if (!existingTab) {
-      this.openedList.push(terminalTab);
+    // // Check if terminal tab is already open
+    // const existingTab = this.openedList.find(tab => tab.id === 'terminal');
+    // if (!existingTab) {
+    //   this.openedList.push(terminalTab);
+    // }
+
+    // // Activate the terminal tab
+    // for (const tab of this.openedList) {
+    //   tab.isActive = (tab.id === 'terminal');
+    // }
+    if(this.terminalShow) {
+      this.terminalShow = false;
+    } else {
+      this.terminalShow = true;
     }
-
-    // Activate the terminal tab
-    for (const tab of this.openedList) {
-      tab.isActive = (tab.id === 'terminal');
-    }
-
-    this.currentDisplayViewId = 7; // Terminal view ID
-    this.lastSelectedDisplayViewId = this.currentDisplayViewId;
-    this.sideOpen = true;
   }
 
 
