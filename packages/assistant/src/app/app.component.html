@@ -123,7 +123,7 @@
       </div>
       <div class="right-panel">
         <!-- 垂直拖动条 -->
-        <div style="position: absolute;width: 100%;height: 100%;">
+        <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalShow ? 'block' : 'none'">
           <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;"
             [style.top]="dragHeight * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
         </div>
@@ -131,6 +131,7 @@
         <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
           (fileTypeChange)="fileType=$event" (permissionChange)="filePermission=$event" [style.height]="dragHeight * 100 + '%'"></div>
         @if(terminalShow) {
+
           <app-terminal [style.height]="(1 - dragHeight) * 100 + '%'"></app-terminal> <!-- Terminal view when terminalShow is true -->
         }
       </div>

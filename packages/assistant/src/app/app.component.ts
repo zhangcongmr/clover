@@ -379,26 +379,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   // Method to open a new terminal tab
   toggleTerminal(): void {
-    // const terminalTab = {
-    //   id: 'terminal',
-    //   title: 'Terminal',
-    //   isClosable: true
-    // };
-
-    // // Check if terminal tab is already open
-    // const existingTab = this.openedList.find(tab => tab.id === 'terminal');
-    // if (!existingTab) {
-    //   this.openedList.push(terminalTab);
-    // }
-
-    // // Activate the terminal tab
-    // for (const tab of this.openedList) {
-    //   tab.isActive = (tab.id === 'terminal');
-    // }
     if(this.terminalShow) {
       this.terminalShow = false;
+      this.dragHeight = 1; // Reset drag height when closing terminal
     } else {
       this.terminalShow = true;
+      this.dragHeight = 0.75;
     }
   }
 
@@ -506,7 +492,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     await file('/dir/openedList.txt').remove();
   }
 
-  dragHeight: number = 0.6;
+  dragHeight: number = 1;
   active = false;
 
   // 用于存储当前拖动元素的父元素，以便在拖动结束时恢复样式
