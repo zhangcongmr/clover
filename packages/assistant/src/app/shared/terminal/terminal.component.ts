@@ -180,7 +180,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private connectWebSocket(): void {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminal`;
+    const wsUrl = `${protocol}//${host}/terminal/ws`;
 
     this.websocket = new WebSocket(wsUrl);
 
