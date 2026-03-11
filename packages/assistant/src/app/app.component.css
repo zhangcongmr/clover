@@ -87,9 +87,15 @@
 .right-panel {
   flex: 1;
   display: flex;
+  position: relative;
   flex-direction: column;
   min-width: 0;
   height: 100%;
+}
+
+.split-line:hover {
+  cursor: ns-resize;
+  background-color: var(--vscode-statusBar-background);
 }
 
 .codigma-overview-longstrip {

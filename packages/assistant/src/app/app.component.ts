@@ -17,6 +17,10 @@ import { TerminalComponent } from './shared/terminal/terminal.component'; // Imp
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
+    host: {
+      '(mouseup)': 'dragEnd($event)',
+      '(mousemove)': 'whenMouseMove($event)'
+    },
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent], // Add TerminalComponent to imports
 })
@@ -501,4 +505,48 @@ export class AppComponent implements OnInit, AfterViewInit {
     await file('/dir/file.txt').remove();
     await file('/dir/openedList.txt').remove();
   }
+
+  dragHeight: number = 0.6;
+  active = false;
+
+  // 用于存储当前拖动元素的父元素，以便在拖动结束时恢复样式
+  maskLayerElement: any;
+
+  initialY: number = 0;
+  topSectionHeight: number = 0;
+  bottomSectionHeight: number = 0;
+
+  dragStart(evt: any, currentCursorType: string = 'ns') {
+    this.maskLayerElement = evt.target.parentElement; // 获取父元素作为遮罩层
+    evt.target.parentElement.style.zIndex = 90; // 提升遮罩层的 z-index，使其覆盖其他元素
+    document.body.style.cursor = currentCursorType.toLowerCase() + '-resize'; // 更改光标样式
+
+    const currentTarget = evt.currentTarget;
+    const parentParent = currentTarget.parentElement.parentElement.childNodes;
+    this.topSectionHeight = parentParent[1].clientHeight
+    this.bottomSectionHeight = parentParent[2].clientHeight
+    this.initialY = evt.clientY;
+    evt.preventDefault()
+    this.active = true;
+  }
+
+  dragEnd(evt: any) {
+    // initialX = currentX;  
+    // initialY = currentY;  
+    this.active = false;
+    if (this.maskLayerElement) {
+      this.maskLayerElement.style.zIndex = "";
+    }
+    document.body.style.cursor = 'default'; // 恢复默认光标
+  }
+
+  whenMouseMove(evt: any) {
+    if (this.active) {
+      evt.preventDefault()
+      const yOffset = evt.clientY - this.initialY;
+      this.dragHeight = (this.topSectionHeight + yOffset) / (this.topSectionHeight + this.bottomSectionHeight)
+      return;
+    }
+  }
+
 }
