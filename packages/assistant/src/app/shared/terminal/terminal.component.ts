@@ -54,10 +54,12 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.terminal = new Terminal({
       fontSize: this.fontSize,
       cursorBlink: true,
-      rows: 30,
-      cols: 80,
+      // rows: 30,
+      // cols: 80,
       theme: this.getTheme(),
-      allowTransparency: true
+      allowTransparency: true,
+      // Disable the alternative scroll event handler which creates the xterm-helpers div
+      altClickMovesCursor: false,
     });
 
     // Load addons
