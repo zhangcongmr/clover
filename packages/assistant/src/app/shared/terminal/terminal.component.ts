@@ -22,6 +22,8 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private websocket: WebSocket | null = null;
   private isConnected: boolean = false;
 
+  private resizeObserver?: ResizeObserver;
+
   constructor() {}
 
   ngOnInit(): void {
@@ -36,9 +38,27 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     setTimeout(() => {
       this.terminal.writeln('Connecting to terminal server...');
     }, 100);
+
+    this.resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        this.fitAddon.fit();
+      }
+    });
+
+    const terminal = this.terminalElement.nativeElement;
+    if (terminal) {
+      this.resizeObserver.observe(terminal);
+      // 保存 observer 以便 ngOnDestroy 中 disconnect（可选）
+    }
   }
 
   ngOnDestroy(): void {
+    // 组件销毁时，断开 ResizeObserver 的连接
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = undefined; // 清空引用
+    }
+    
     // Clean up terminal instance
     if (this.terminal) {
       this.terminal.dispose();
@@ -59,7 +79,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       theme: this.getTheme(),
       allowTransparency: true,
       // Disable the alternative scroll event handler which creates the xterm-helpers div
-      altClickMovesCursor: false,
+      altClickMovesCursor: true
     });
 
     // Load addons
@@ -74,16 +94,6 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Apply initial theme
     this.applyTheme();
-
-    // Fit the terminal to the container size
-    setTimeout(() => {
-      this.fitAddon.fit();
-    }, 100);
-
-    // Handle window resize events
-    window.addEventListener('resize', () => {
-      this.fitAddon.fit();
-    });
 
     // Handle terminal resize events
     this.terminal.onResize((size) => {

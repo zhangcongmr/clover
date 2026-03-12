@@ -1,16 +1,9 @@
 :host {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
   align-self: stretch;
-}
-
-.terminal-container {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  /* border: 1px solid #ccc; */
-  /* overflow: hidden; */
 }
 
 .terminal-header {
@@ -51,20 +44,15 @@
   flex: 1 1 0;
   /* padding: 10px; */
   font-family: 'Courier New', monospace;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 /* xterm.js adds its own styles, but we can override or enhance them */
-.xterm-viewport {
+/* .xterm-viewport {
   overflow-y: auto;
-}
+} */
 
 /* Ensure the terminal fills its container */
 .xterm-screen {
   height: 100%;
-}
-
-/* Hide the xterm-helpers div which is not needed */
-.xterm-helpers {
-  display: none !important;
 }
