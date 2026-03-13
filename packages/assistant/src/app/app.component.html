@@ -123,9 +123,9 @@
 
         <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
           (fileTypeChange)="fileType=$event" (permissionChange)="filePermission=$event" [style.height]="dragHeight * 100 + '%'"></div>
-        @if(terminalShow) {
+        @if(terminalShow || keepTerminalInstance.value) {
 
-          <app-terminal [style.height]="(1 - dragHeight) * 100 + '%'" [theme]="themeService.getCurrentTheme()"></app-terminal> <!-- Terminal view when terminalShow is true -->
+          <app-terminal [style.height]="(1 - dragHeight) * 100 + '%'" [theme]="themeService.getCurrentTheme()" [style.display]="terminalShow ? '' : 'none'"></app-terminal> <!-- Terminal view when terminalShow is true -->
         }
       </div>
 

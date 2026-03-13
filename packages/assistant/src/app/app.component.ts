@@ -41,6 +41,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   terminalShow = false;
+  keepTerminalInstance = {
+    value: false,
+    dragHeight: 0.75,
+  }
   sideOpen = true
 
   blurSwitch = true;
@@ -379,12 +383,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   // Method to open a new terminal tab
   toggleTerminal(): void {
+    if(!this.keepTerminalInstance.value) {
+      this.keepTerminalInstance.value = true; // Ensure the terminal instance is created and kept alive
+    }
     if(this.terminalShow) {
       this.terminalShow = false;
       this.dragHeight = 1; // Reset drag height when closing terminal
     } else {
       this.terminalShow = true;
       this.dragHeight = 0.75;
+      if(this.keepTerminalInstance.value) {
+        this.dragHeight = this.keepTerminalInstance.dragHeight;
+      }
     }
   }
 
@@ -531,6 +541,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       evt.preventDefault()
       const yOffset = evt.clientY - this.initialY;
       this.dragHeight = (this.topSectionHeight + yOffset) / (this.topSectionHeight + this.bottomSectionHeight)
+      this.keepTerminalInstance.dragHeight = this.dragHeight; // 保存当前拖动高度到 keepTerminalInstance，以便在重新打开终端时恢复
       return;
     }
   }
