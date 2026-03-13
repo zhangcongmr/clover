@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, AfterViewInit, input, effect } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -13,7 +13,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('terminal', { static: true }) terminalElement!: ElementRef;
   
   @Input() fontSize: number = 14;
-  @Input() theme: string = 'light'; // 'dark' or 'light'
+  theme = input<string>('light'); // 'dark' or 'light'
 
   private terminal!: Terminal;
   private fitAddon!: FitAddon;
@@ -24,7 +24,15 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private resizeObserver?: ResizeObserver;
 
-  constructor() {}
+  previousTheme: string = 'light';
+  constructor() {
+    effect(() => {
+      if (this.theme() !== this.previousTheme) {
+        this.applyTheme();
+        this.previousTheme = this.theme();
+      }
+    });
+  }
 
   ngOnInit(): void {
     // Initialize the terminal
@@ -107,20 +115,20 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private getTheme(): any {
-    if (this.theme === 'light') {
-      return {
-        background: '#ffffff',
-        foreground: '#000000',
-        cursor: '#000000',
-        selectionBackground: '#add6ff'
-      };
-    } else {
-      return {
-        background: '#1e1e1e',
-        foreground: '#d4d4d4',
-        cursor: '#d4d4d4',
-        selectionBackground: '#264f78'
-      };
+    // 获取根元素
+    const root = document.documentElement;
+    const computedStyle = getComputedStyle(root);
+    // 获取 CSS 变量值
+    const background = computedStyle.getPropertyValue('--vscode-background')?.trim() || '#0000';
+    const foreground = computedStyle.getPropertyValue('--vscode-foreground')?.trim() || '#616161';
+    const cursor = computedStyle.getPropertyValue('--vscode-cursor')?.trim() || '#616161';
+    const selectionBackground = computedStyle.getPropertyValue('--vscode-selectionBackground')?.trim() || '#0000';
+
+    return {
+      background: background,
+      foreground: foreground,
+      cursor: cursor,
+      selectionBackground: selectionBackground
     }
   }
 
@@ -215,11 +223,5 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       console.error('WebSocket error:', error);
       this.terminal.writeln('\r\nWebSocket error occurred.');
     };
-  }
-
-  // Method to change the theme
-  public changeTheme(theme: string): void {
-    this.theme = theme;
-    this.applyTheme();
   }
 }
