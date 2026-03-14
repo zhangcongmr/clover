@@ -47,8 +47,7 @@
               }
             ],
             "styles": [
-              "src/styles.css",
-              "node_modules/@xterm/xterm/css/xterm.css"
+              "src/styles.css"
             ],
             "scripts": [
               "node_modules/marked/marked.min.js"
@@ -116,8 +115,7 @@
                 }
               ],
               "styles": [
-                "src/styles.css",
-                "node_modules/@xterm/xterm/css/xterm.css"
+                "src/styles.css"
               ],
               "scripts": [
                 "node_modules/marked/marked.min.js"
