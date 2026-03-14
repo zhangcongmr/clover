@@ -251,7 +251,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         if (response.success) {
           resolve(response);
         } else {
-          reject(new Error(response.message || 'Download failed'));
+          reject(response);
         }
       });
 
@@ -294,13 +294,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       
       // 如果是文件节点且有 folderHandle，则更新内容
       if (result.nodeType === 'file' && result.folderHandle && result.folderHandle.kind === 'file') {
-        try {
-          const fileData = await result.folderHandle.getFile();
-          const content = await fileData.text();
-          result.content = content;
-        } catch (error) {
-          console.error(`Failed to read file content for node:`, error);
-        }
+        await this.addProjectComponent()?.setTextContextToNode(result.folderHandle.name, result.folderHandle, result);
       }
       
       // 递归处理子节点
@@ -687,8 +681,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         } else {
           targetTab.content = 'Binary file - content not loaded';
         }
-      } catch (error) {
-        console.warn('failed to fetch file content from server via WebSocket for path ', filePathUrl, error);
+      } catch (error: any) {
+        if (error.success === false && error.message == 'File not found') {
+          targetTab.isDeleted = true; // mark as deleted in UI so user knows it's missing, but keep it visible in case they want to try saving it again which would recreate it on the server
+          console.warn('file not found on server for path ', filePathUrl);
+        } else {
+          console.warn('failed to fetch file content from server via WebSocket for path ', filePathUrl, error);
+        }
       }
     }
   }
