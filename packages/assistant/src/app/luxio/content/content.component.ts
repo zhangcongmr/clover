@@ -126,6 +126,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   async ngOnInit() {
     const doc = this.myConfigService.getDoc();
     if (doc == null || doc === undefined) {
+      setTimeout(() => {
+        this.dataList.set([]);
+      }, 0); // simulate async loading delay
       return;
     }
     let docObj: any = doc;
@@ -907,6 +910,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           node.isParsed = false;
         } else if (node.nodeType === 'folder') {
           node.children?.forEach((child: any) => traverse(child));
+        }
+        if (node.nodeType === 'file') {
+          delete node.content; // remove file content from shared data to avoid bloating the payload, since the content can be fetched separately by the recipient using the object storage
         }
         delete node.isLocal
       }
