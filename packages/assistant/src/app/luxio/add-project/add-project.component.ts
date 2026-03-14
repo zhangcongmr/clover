@@ -211,7 +211,10 @@ export class AddProjectComponent implements OnInit {
       try {
         const fh = await handle.getFile();
         node.content = await fh.text();
-      } catch (err) {
+      } catch (err: any) {
+        if ('name' in err && err.name === 'NotFoundError') {
+          node.isDeleted = true;
+        }
         console.warn('add-project: failed to read file content', name, err);
         node.content = '';
       }
