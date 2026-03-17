@@ -22,6 +22,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private attachAddon!: AttachAddon;
   private commandBuffer: string = '';
   private websocket: WebSocket | null = null;
+  private pid: string | null = null;
   private isConnected: boolean = false;
 
   private resizeObserver?: ResizeObserver;
@@ -39,8 +40,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     // Initialize the terminal
     this.initializeTerminal();
-    // Connect to WebSocket
-    this.connectWebSocket();
+    setTimeout(() => {
+      // Connect to WebSocket
+      this.connectWebSocket();
+    }, 0);
   }
 
   ngAfterViewInit(): void {
@@ -102,18 +105,47 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // Open the terminal in the DOM
     this.terminal.open(this.terminalElement.nativeElement);
 
-    // Apply initial theme
-    this.applyTheme();
-
     // Handle terminal resize events
     this.terminal.onResize((size) => {
-      // Handle terminal resize if needed
-    });
+      if (!this.pid) {
+        return;
+      }
+      const cols = size.cols;
+      const rows = size.rows;
+      const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
+      const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
+      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight;
 
-    // Handle user input
-    this.terminal.onData((data) => {
-      this.handleTerminalInput(data);
+      fetch(url, { method: 'POST' });
     });
+  }
+
+  private async connectWebSocket(): Promise<void> {
+    const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
+    const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
+    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight, { method: 'POST' });
+    const processId = await res.text();
+    this.pid = processId;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/terminals/${this.pid}`;
+
+    this.websocket = new WebSocket(wsUrl);
+
+    this.websocket.onopen = (event) => {
+      this.isConnected = true;
+      console.log('WebSocket connected');
+      // Optionally send an initial message or setup
+      this.attachAddon = new AttachAddon(this.websocket!);
+      this.terminal.loadAddon(this.attachAddon);
+    };
+  }
+
+  private applyTheme(): void {
+    if (this.terminal) {
+      this.terminal.options.theme = this.getTheme();
+    }
   }
 
   private getTheme(): any {
@@ -132,106 +164,5 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       cursor: cursor,
       selectionBackground: selectionBackground
     }
-  }
-
-  private applyTheme(): void {
-    if (this.terminal) {
-      this.terminal.options.theme = this.getTheme();
-    }
-  }
-
-  private handleTerminalInput(data: string): void {
-    switch (data) {
-      case '\r': // Enter key
-        this.terminal.write('\r\n');
-        this.processCommand();
-        break;
-      case '\u007F': // Backspace key
-        if (this.commandBuffer.length > 0) {
-          this.commandBuffer = this.commandBuffer.slice(0, -1);
-          this.terminal.write('\b \b');
-        }
-        break;
-      default:
-        this.commandBuffer += data;
-        this.terminal.write(data);
-        break;
-    }
-  }
-
-  private processCommand(): void {
-    const command = this.commandBuffer.trim();
-    this.commandBuffer = '';
-
-    if (this.websocket && this.isConnected) {
-      // Send command to server as JSON object
-      const message = {
-        type: 'input',
-        data: command + '\r'
-      };
-      this.websocket.send(JSON.stringify(message));
-    } else {
-      this.terminal.writeln('Not connected to server.');
-      this.writePrompt();
-    }
-  }
-
-
-
-  private writePrompt(): void {
-    this.terminal.write('$ ');
-  }
-
-  // Method to send data to the terminal
-  public sendData(data: string): void {
-    if (this.terminal) {
-      this.terminal.write(data);
-    }
-  }
-
-  // Method to clear the terminal
-  public clear(): void {
-    if (this.terminal) {
-      this.terminal.clear();
-      this.writePrompt();
-    }
-  }
-
-  private async connectWebSocket(): Promise<void> {
-    const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
-    const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight, { method: 'POST' });
-    const processId = await res.text();
-    const pid = processId;
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminals/${pid}`;
-
-    this.websocket = new WebSocket(wsUrl);
-
-    this.websocket.onopen = (event) => {
-      this.isConnected = true;
-      console.log('WebSocket connected');
-      // Optionally send an initial message or setup
-      this.attachAddon = new AttachAddon(this.websocket!);
-      this.terminal.loadAddon(this.attachAddon);
-    };
-
-    // this.websocket.onmessage = (event) => {
-    //   // Write server output to terminal
-    //   this.terminal.write(event.data);
-    // };
-
-    // this.websocket.onclose = (event) => {
-    //   this.isConnected = false;
-    //   console.log('WebSocket closed');
-    //   this.terminal.writeln('\r\nConnection closed.');
-    // };
-
-    // this.websocket.onerror = (error) => {
-    //   console.error('WebSocket error:', error);
-    //   this.terminal.writeln('\r\nWebSocket error occurred.');
-    // };
   }
 }
