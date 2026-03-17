@@ -11,7 +11,11 @@
     "target": "https://127.0.0.1:3000",
     "secure": false
   },
-  "/terminals/**": {
+  "/terminals/*/size?**": {
+    "target": "https://127.0.0.1:3000",
+    "secure": false
+  },
+  "/terminals/*": {
     "target": "wss://127.0.0.1:3000",
     "secure": false
   }
