@@ -2,71 +2,71 @@
   <style>
     /* scoped styles for folder selection tree inside the import modal */
     .add-project-tree .child-item {
-      padding: 4px 6px;
-      border-radius: 4px;
-      margin: 2px 0;
-      transition: background-color 0.12s, border-left-color 0.12s;
-    }
-    .add-project-tree .child-item.active {
-      background-color: #e6f7ff; /* light blue */
-      border-left: 3px solid #1890ff; /* primary blue accent */
-      box-shadow: inset 0 0 0 1px rgba(24,144,255,0.06);
-    }
-    .add-project-tree .lyoutlabel-base {
-      padding-left: 6px;
-    }
-    .add-project-tree .btn-item { margin-right: 6px; }
-  </style>
-  <div class="codigma-ast-modal-body">
-    <div data-layer="import-type" class="ImportType codigma-import-type">
-      <div data-layer="from-remote" class="FromRemote codigma-from-remote"
-        [class.selected-imported-type]="importType=='1'" (click)="importTypeChangeFn('1')">
-        <div data-svg-wrapper="" data-layer="remote-icon" class="RemoteIcon">
-          <svg class="icon" width="24" height="26">
-            <use href="#icon-remote-server"></use>
-          </svg>
-        </div>
-        <div data-layer="From Remote Server" class="FromRemoteServer codigma-from-remote-server">From API Definition
-        </div>
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin: 2px 0;
+    transition: background-color 0.12s, border-left-color 0.12s;
+  }
+  .add-project-tree .child-item.active {
+  background-color: #e6f7ff; /* light blue */
+  border-left: 3px solid #1890ff; /* primary blue accent */
+  box-shadow: inset 0 0 0 1px rgba(24,144,255,0.06);
+}
+.add-project-tree .lyoutlabel-base {
+padding-left: 6px;
+}
+.add-project-tree .btn-item { margin-right: 6px; }
+</style>
+<div class="codigma-ast-modal-body">
+  <div data-layer="import-type" class="ImportType codigma-import-type">
+    <div data-layer="from-remote" class="FromRemote codigma-from-remote"
+      [class.selected-imported-type]="importType=='1'" (click)="importTypeChangeFn('1')">
+      <div data-svg-wrapper="" data-layer="remote-icon" class="RemoteIcon">
+        <svg class="icon" width="24" height="26">
+          <use href="#icon-remote-server"></use>
+        </svg>
       </div>
-      <div data-layer="from-ecosystem" class="FromEcosystem codigma-from-local"
-        [class.selected-imported-type]="importType=='2'" (click)="importTypeChangeFn('2')">
-        <div data-svg-wrapper="" data-layer="ecosystem-icon" class="LocalIcon">
-          <svg class="icon" width="24" height="26">
-            <use href="#icon-remote-server"></use>
-          </svg>
-        </div>
-        <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Community</div>
-      </div>
-      <div data-layer="from-local" class="FromLocal codigma-from-local" [class.selected-imported-type]="importType=='3'"
-        (click)="importTypeChangeFn('3')">
-        <div data-svg-wrapper="" data-layer="local-icon" class="LocalIcon">
-          <svg class="icon" width="24" height="24">
-            <use href="#icon-local-res"></use>
-          </svg>
-        </div>
-        <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Local</div>
+      <div data-layer="From Remote Server" class="FromRemoteServer codigma-from-remote-server">From API Definition
       </div>
     </div>
-    <div data-layer="import-content" class="ImportContent codigma-import-content">
-      @if(importType=='1') {
-        <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section">
-          <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
-            <div data-layer="import-desc" class="ImportDesc codigma-import-desc">
-              <div>Import from API Definition</div>
-            </div>
-            <div data-layer="import-desc-details" class="ImportDescDetails codigma-import-desc-details">
-              <div>Paste URL of OpenAPI 2.0, OpenAPI 3.0+ or cURL into the
-                following input box.</div>
-            </div>
+    <div data-layer="from-ecosystem" class="FromEcosystem codigma-from-local"
+      [class.selected-imported-type]="importType=='2'" (click)="importTypeChangeFn('2')">
+      <div data-svg-wrapper="" data-layer="ecosystem-icon" class="LocalIcon">
+        <svg class="icon" width="24" height="26">
+          <use href="#icon-remote-server"></use>
+        </svg>
+      </div>
+      <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Community</div>
+    </div>
+    <div data-layer="from-local" class="FromLocal codigma-from-local" [class.selected-imported-type]="importType=='3'"
+      (click)="importTypeChangeFn('3')">
+      <div data-svg-wrapper="" data-layer="local-icon" class="LocalIcon">
+        <svg class="icon" width="24" height="24">
+          <use href="#icon-local-res"></use>
+        </svg>
+      </div>
+      <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Local</div>
+    </div>
+  </div>
+  <div data-layer="import-content" class="ImportContent codigma-import-content">
+    @if(importType=='1') {
+      <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section">
+        <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
+          <div data-layer="import-desc" class="ImportDesc codigma-import-desc">
+            <div>Import from API Definition</div>
           </div>
-          <div data-layer="input-box-section" class="InputBoxSection codigma-input-box-section">
-              <input type="text" name="ccdd" class="ccdd" [(ngModel)]="importFromApiDefUrl"
-                placeholder="Input url of the api definition to fetch the api data."  class="InputBox codigma-input-box" autocomplete="off">
+          <div data-layer="import-desc-details" class="ImportDescDetails codigma-import-desc-details">
+            <div>Paste URL of OpenAPI 2.0, OpenAPI 3.0+ or cURL into the
+            following input box.</div>
+          </div>
+        </div>
+        <div data-layer="input-box-section" class="InputBoxSection codigma-input-box-section">
+          <input type="text" name="ccdd" class="ccdd" [(ngModel)]="importFromApiDefUrl"
+            placeholder="Input url of the api definition to fetch the api data."  class="InputBox codigma-input-box" autocomplete="off">
           </div>
           <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
             <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importFromApiDef($event)">
-              Import</div>
+            Import</div>
           </div>
         </div>
       } @else if(importType=='2'){
@@ -78,10 +78,12 @@
             <!-- file picker -->
             <file-input (fileContentChanged)="fileContentChangedFn($event)" (clearSelectd)="clearFileSelected()" />
             <!-- show tree if folder selected -->
-            <div *ngIf="directoryTreeData.length>0" class="add-project-tree"
-              style="overflow:auto; border:1px solid #ccc;padding:4px;width: 300px;">
-              <div ast-tree [data]="directoryTreeData" [fobiddenContextMenu]="true"></div>
-            </div>
+            @if (directoryTreeData.length>0) {
+              <div class="add-project-tree"
+                style="overflow:auto; border:1px solid #ccc;padding:4px;width: 300px;">
+                <div ast-tree [data]="directoryTreeData" [fobiddenContextMenu]="true"></div>
+              </div>
+            }
           </div>
           <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
             <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importOutFromLocal()">

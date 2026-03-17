@@ -1,12 +1,12 @@
 import { Component, inject, OnInit } from "@angular/core";
-import { CommonModule } from '@angular/common';
+
 import { CoreService } from '../../core.service';
 import { NotificationService } from '../../shared/notification/notification.service';
 
 @Component({
   selector: 'div[user-center]',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './user-center.component.html',
   styleUrls: ['./user-center.component.css']
 })
