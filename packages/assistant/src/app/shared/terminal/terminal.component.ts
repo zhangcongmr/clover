@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, AfterViewIn
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { AttachAddon } from '@xterm/addon-attach';
 
 @Component({
   selector: 'app-terminal',
@@ -15,9 +16,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() fontSize: number = 14;
   theme = input<string>('light'); // 'dark' or 'light'
 
-  private terminal!: Terminal;
+  private terminal!: Terminal & { dimensions?: { css?: { canvas?: { width: number; height: number } } } };
   private fitAddon!: FitAddon;
   private webLinksAddon!: WebLinksAddon;
+  private attachAddon!: AttachAddon;
   private commandBuffer: string = '';
   private websocket: WebSocket | null = null;
   private isConnected: boolean = false;
@@ -195,10 +197,16 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private connectWebSocket(): void {
+  private async connectWebSocket(): Promise<void> {
+    const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
+    const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
+    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight, { method: 'POST' });
+    const processId = await res.text();
+    const pid = processId;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminal/ws`;
+    const wsUrl = `${protocol}//${host}/terminals/${pid}`;
 
     this.websocket = new WebSocket(wsUrl);
 
@@ -206,22 +214,24 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       this.isConnected = true;
       console.log('WebSocket connected');
       // Optionally send an initial message or setup
+      this.attachAddon = new AttachAddon(this.websocket!);
+      this.terminal.loadAddon(this.attachAddon);
     };
 
-    this.websocket.onmessage = (event) => {
-      // Write server output to terminal
-      this.terminal.write(event.data);
-    };
+    // this.websocket.onmessage = (event) => {
+    //   // Write server output to terminal
+    //   this.terminal.write(event.data);
+    // };
 
-    this.websocket.onclose = (event) => {
-      this.isConnected = false;
-      console.log('WebSocket closed');
-      this.terminal.writeln('\r\nConnection closed.');
-    };
+    // this.websocket.onclose = (event) => {
+    //   this.isConnected = false;
+    //   console.log('WebSocket closed');
+    //   this.terminal.writeln('\r\nConnection closed.');
+    // };
 
-    this.websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      this.terminal.writeln('\r\nWebSocket error occurred.');
-    };
+    // this.websocket.onerror = (error) => {
+    //   console.error('WebSocket error:', error);
+    //   this.terminal.writeln('\r\nWebSocket error occurred.');
+    // };
   }
 }

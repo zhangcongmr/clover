@@ -7,8 +7,8 @@
     "target": "https://localhost:8980",
     "secure": false
   },
-  "/terminal": {
-    "target": "wss://localhost:8980",
+  "/terminals/**": {
+    "target": "wss://localhost:3000",
     "secure": false
   }
 }
