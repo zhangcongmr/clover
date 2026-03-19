@@ -40,10 +40,6 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     // Initialize the terminal
     this.initializeTerminal();
-    setTimeout(() => {
-      // Connect to WebSocket
-      this.connectWebSocket();
-    }, 0);
   }
 
   ngAfterViewInit(): void {
@@ -51,7 +47,8 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     setTimeout(() => {
       this.terminal.writeln('Connecting to terminal server...');
     }, 100);
-
+    // Connect to WebSocket
+    this.connectWebSocket();
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         this.fitAddon.fit();
@@ -87,6 +84,11 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.terminal = new Terminal({
       fontSize: this.fontSize,
       cursorBlink: true,
+      windowsPty: true ? {
+        // In a real scenario, these values should be verified on the backend
+        backend: 'conpty',
+        buildNumber: 22621
+      } : undefined,
       // rows: 30,
       // cols: 80,
       theme: this.getTheme(),
@@ -155,7 +157,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // 获取 CSS 变量值
     const background = computedStyle.getPropertyValue('--vscode-background')?.trim() || '#0000';
     const foreground = computedStyle.getPropertyValue('--vscode-foreground')?.trim() || '#616161';
-    const cursor = computedStyle.getPropertyValue('--vscode-cursor')?.trim() || '#616161';
+    const cursor = computedStyle.getPropertyValue('--vscode-cursor-foreground')?.trim() || '#616161';
     const selectionBackground = computedStyle.getPropertyValue('--vscode-selectionBackground')?.trim() || '#0000';
 
     return {
