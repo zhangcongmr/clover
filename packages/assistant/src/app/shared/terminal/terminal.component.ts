@@ -16,7 +16,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() fontSize: number = 14;
   theme = input<string>('light'); // 'dark' or 'light'
 
-  private terminal!: Terminal & { dimensions?: { css?: { canvas?: { width: number; height: number } } } };
+  private terminal!: Terminal;
   private fitAddon!: FitAddon;
   private webLinksAddon!: WebLinksAddon;
   private attachAddon!: AttachAddon;
@@ -38,11 +38,12 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    // Initialize the terminal
-    this.initializeTerminal();
+
   }
 
   ngAfterViewInit(): void {
+    // Initialize the terminal
+    this.initializeTerminal();
     // Add welcome message after view initialization
     setTimeout(() => {
       this.terminal.writeln('Connecting to terminal server...');
