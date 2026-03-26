@@ -124,9 +124,11 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private async connectWebSocket(): Promise<void> {
+    const customCwd = "/mnt/storage/"
     const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
     const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight, { method: 'POST' });
+    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows
+      + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(customCwd), { method: 'POST' });
     const processId = await res.text();
     this.pid = processId;
 
