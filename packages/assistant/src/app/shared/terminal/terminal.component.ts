@@ -134,7 +134,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '&name=excited-sailfish';
+    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=excited-sailfish';
 
     this.websocket = new WebSocket(wsUrl);
 
