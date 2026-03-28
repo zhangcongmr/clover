@@ -117,7 +117,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       const rows = size.rows;
       const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
       const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight;
+      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=excited-sailfish';
 
       fetch(url, { method: 'POST' });
     });
@@ -127,14 +127,14 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const customCwd = "/mnt/storage/"
     const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
     const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows
+    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=excited-sailfish'
       + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(customCwd), { method: 'POST' });
     const processId = await res.text();
     this.pid = processId;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminals/${this.pid}`;
+    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '&name=excited-sailfish';
 
     this.websocket = new WebSocket(wsUrl);
 
