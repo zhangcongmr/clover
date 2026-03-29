@@ -51,6 +51,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   isOpen = false;
   menuInitiator: DOMRect | undefined;
 
+  dataList: Array<any> = [];
+
   openedList: Array<any> = [
     {
       id: 'editor',

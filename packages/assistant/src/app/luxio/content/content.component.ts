@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, model, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, model, output, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -71,6 +71,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   /** event emitted when selected node's file type changes */
   @Output() fileTypeChange = new EventEmitter<string>();
+  dataListChangeOutput = output<Array<AstTreeNode>>();
 
   // 添加自动刷新控制变量
   autoRefreshEnabled = signal<boolean>(true);
@@ -156,6 +157,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.dataList.set(docObj.profile ? [JSON.parse(docObj.profile)] : []);
       // if the provided object carries permission info, apply it
       this.modifyPermission(docObj);
+      this.dataListChangeOutput.emit(this.dataList());
     }
     if (Object.keys(docObj).length === 0) {
       this.dataList.set([]);

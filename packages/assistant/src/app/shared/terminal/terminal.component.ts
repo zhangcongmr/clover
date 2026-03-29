@@ -15,6 +15,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   
   @Input() fontSize: number = 14;
   theme = input<string>('light'); // 'dark' or 'light'
+  dataList = input<Array<any>>([]);
 
   private terminal!: Terminal;
   private fitAddon!: FitAddon;
@@ -28,6 +29,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private resizeObserver?: ResizeObserver;
 
   previousTheme: string = 'light';
+  userName: string = 'Anonymous';
   constructor() {
     effect(() => {
       if (this.theme() !== this.previousTheme) {
@@ -38,7 +40,11 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-
+    const dataList = this.dataList()
+    if (dataList.length > 0) {
+      const docObj = dataList[0];
+      this.userName = docObj.username || "Anonymous";
+    }
   }
 
   ngAfterViewInit(): void {
@@ -117,7 +123,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       const rows = size.rows;
       const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
       const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=excited-sailfish';
+      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=cnr-' + this.userName;
 
       fetch(url, { method: 'POST' });
     });
@@ -127,14 +133,14 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const customCwd = "/mnt/storage/"
     const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
     const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=excited-sailfish'
+    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=cnr-' + this.userName
       + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(customCwd), { method: 'POST' });
     const processId = await res.text();
     this.pid = processId;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=excited-sailfish';
+    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=cnr-' + this.userName;
 
     this.websocket = new WebSocket(wsUrl);
 
