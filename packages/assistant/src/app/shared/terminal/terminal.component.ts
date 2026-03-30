@@ -52,7 +52,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.initializeTerminal();
     // Add welcome message after view initialization
     setTimeout(() => {
-      this.terminal.writeln('Connecting to terminal server...');
+      // this.terminal.writeln('Connecting to terminal server...');
     }, 100);
     // Connect to WebSocket
     this.connectWebSocket();
