@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { AttachAddon } from '@xterm/addon-attach';
+import { ClipboardAddon } from '@xterm/addon-clipboard';
 
 @Component({
   selector: 'app-terminal',
@@ -21,6 +22,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private fitAddon!: FitAddon;
   private webLinksAddon!: WebLinksAddon;
   private attachAddon!: AttachAddon;
+  private clipboard!: ClipboardAddon;
   private commandBuffer: string = '';
   private websocket: WebSocket | null = null;
   private pid: string | null = null;
@@ -107,10 +109,11 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // Load addons
     this.fitAddon = new FitAddon();
     this.webLinksAddon = new WebLinksAddon();
+    this.clipboard = new ClipboardAddon();
     
     this.terminal.loadAddon(this.fitAddon);
     this.terminal.loadAddon(this.webLinksAddon);
-
+    this.terminal.loadAddon(this.clipboard);
     // Open the terminal in the DOM
     this.terminal.open(this.terminalElement.nativeElement);
 
@@ -167,7 +170,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const background = computedStyle.getPropertyValue('--vscode-background')?.trim() || '#0000';
     const foreground = computedStyle.getPropertyValue('--vscode-foreground')?.trim() || '#616161';
     const cursor = computedStyle.getPropertyValue('--vscode-cursor-foreground')?.trim() || '#616161';
-    const selectionBackground = computedStyle.getPropertyValue('--vscode-selectionBackground')?.trim() || '#0000';
+    const selectionBackground = computedStyle.getPropertyValue('--vscode-text-selectionBackground')?.trim() || '#cce0ff';
 
     return {
       background: background,

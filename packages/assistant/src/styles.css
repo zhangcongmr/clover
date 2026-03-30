@@ -40,6 +40,7 @@
   --vscode-scrollbar-background: #ccc;
   --vscode-tabborder-background: rgb(204, 204, 204);
   --vscode-cursor-foreground: #616161;
+  --vscode-text-selectionBackground: #cce0ff;
 }
 
 /* VS Code Dark Modern theme variables */
@@ -80,6 +81,7 @@
   --vscode-scrollbar-background: #1f1f1f;
   --vscode-tabborder-background: rgba(0, 0, 0, 0);
   --vscode-cursor-foreground: #ffffff;
+  --vscode-text-selectionBackground: #264f78;
 }
 
 html {
