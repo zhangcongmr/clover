@@ -32,6 +32,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
 
   previousTheme: string = 'light';
   userName: string = 'Anonymous';
+  customCwd: string = "/mnt/storage/";
   constructor() {
     effect(() => {
       if (this.theme() !== this.previousTheme) {
@@ -46,6 +47,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     if (dataList.length > 0) {
       const docObj = dataList[0];
       this.userName = docObj.username || "Anonymous";
+      this.customCwd = "/mnt/storage/" + docObj.label;
     }
   }
 
@@ -133,11 +135,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private async connectWebSocket(): Promise<void> {
-    const customCwd = "/mnt/storage/"
     const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
     const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
     const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=cnr-' + this.userName
-      + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(customCwd), { method: 'POST' });
+      + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(this.customCwd), { method: 'POST' });
     const processId = await res.text();
     this.pid = processId;
 
