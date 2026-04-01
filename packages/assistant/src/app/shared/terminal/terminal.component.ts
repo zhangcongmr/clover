@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, AfterViewInit, input, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, AfterViewInit, input, effect, inject } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
+import { CoreService } from '../../core.service';
 
 @Component({
   selector: 'app-terminal',
@@ -15,6 +16,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('terminal', { static: true }) terminalElement!: ElementRef;
   
   @Input() fontSize: number = 14;
+  private coreService = inject(CoreService);
   theme = input<string>('light'); // 'dark' or 'light'
   dataList = input<Array<any>>([]);
 
@@ -46,7 +48,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const dataList = this.dataList()
     if (dataList.length > 0) {
       const docObj = dataList[0];
-      this.userName = docObj.username || "Anonymous";
+      this.userName = this.coreService.userData?.username || "Anonymous";
       this.customCwd = "/mnt/storage/" + docObj.label;
     }
   }
