@@ -7,9 +7,6 @@
             [id]="openedTab.id"  [minWidth]="'150px'"
             role="tabpanel" aria-hidden="false" [(isActivated)]="openedTab.isActive" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTab($event)"
             (onClickTab)="onClickTab($event)">
-            @if(openedTab.id === 'terminal'){
-              <app-terminal></app-terminal>
-            }
           </div>
         }
       }
@@ -125,7 +122,18 @@
           (fileTypeChange)="fileType=$event" (permissionChange)="filePermission=$event" (dataListChangeOutput)="dataList=$event" [style.height]="dragHeight * 100 + '%'"></div>
         @if(terminalShow || keepTerminalInstance.value) {
 
-          <app-terminal [style.height]="(1 - dragHeight) * 100 + '%'" [dataList]="dataList" [theme]="themeService.getCurrentTheme()" [style.display]="terminalShow ? '' : 'none'"></app-terminal> <!-- Terminal view when terminalShow is true -->
+          <div ast-tab-group [fobiddenContextMenu]="true"  [style.display]="terminalShow ? '' : 'none'" [style.height]="(1 - dragHeight) * 100 + '%'" style="position: relative;" [tabType]="{'type':'lightcolorselection', 'height':'42px'}"
+              [addTabEnable]="true"  (addNewTab)="onAddNewTerminalTab($event)">
+            @if (terminalOpenedList.length>0) {
+              @for (openedTab of terminalOpenedList; track openedTab.id) {
+                <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)" [saved]="openedTab['saved']"
+                  [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
+                  (onClickTab)="onClickTerminalTab($event)">
+                  <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
+                </div>
+              }
+            }
+          </div>
         }
       </div>
 

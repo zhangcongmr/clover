@@ -61,6 +61,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   ];
 
+  /**
+   * 终端Tab管理专用列表
+   */
+  terminalOpenedList: Array<any> = [];
+
   constructor(injector: Injector,) {
     let me = this;
     afterNextRender(() => {
@@ -386,16 +391,27 @@ export class AppComponent implements OnInit, AfterViewInit {
   // Method to open a new terminal tab
   toggleTerminal(): void {
     if(!this.keepTerminalInstance.value) {
-      this.keepTerminalInstance.value = true; // Ensure the terminal instance is created and kept alive
+      this.keepTerminalInstance.value = true;
     }
     if(this.terminalShow) {
       this.terminalShow = false;
-      this.dragHeight = 1; // Reset drag height when closing terminal
+      this.dragHeight = 1;
     } else {
       this.terminalShow = true;
       this.dragHeight = 0.75;
       if(this.keepTerminalInstance.value) {
         this.dragHeight = this.keepTerminalInstance.dragHeight;
+      }
+      // 新增：首次打开时自动添加一个终端tab
+      if(this.terminalOpenedList.length === 0) {
+        this.terminalOpenedList.push({
+          id: 'terminal-' + Date.now(),
+          title: '终端',
+          isClosable: true,
+          isActive: true,
+          symbol: '>',
+          saved: true
+        });
       }
     }
   }
@@ -502,6 +518,72 @@ export class AppComponent implements OnInit, AfterViewInit {
   async cleanUp() {
     await file('/dir/file.txt').remove();
     await file('/dir/openedList.txt').remove();
+  }
+
+  /**
+   * 关闭终端Tab
+   */
+  onCloseTerminalTab(evt: any) {
+    let currentIndex = 0;
+    let currentActived = evt.isActivated;
+    for (let index = 0; index < this.terminalOpenedList.length; index++) {
+      if (this.terminalOpenedList[index].id == evt.id) {
+        currentIndex = index;
+        this.terminalOpenedList[currentIndex]["isActive"] = false;
+        this.terminalOpenedList.splice(index, 1);
+        break;
+      }
+    }
+    if(this.terminalOpenedList.length == 0) {
+      this.terminalShow = false;
+      this.dragHeight = 1;
+      this.keepTerminalInstance.value = false;
+      this.keepTerminalInstance.dragHeight = 0.75;
+    }
+    if (currentActived) {
+      if (evt.isFirst) {
+        if (this.terminalOpenedList.length >= 1) {
+          this.terminalOpenedList[0]["isActive"] = true;
+        }
+      } else if (evt.isLast) {
+        if (this.terminalOpenedList.length >= 1) {
+          this.terminalOpenedList[this.terminalOpenedList.length - 1]["isActive"] = true;
+        }
+      } else {
+        this.terminalOpenedList[currentIndex]["isActive"] = true;
+      }
+    }
+  }
+
+  /**
+   * 激活终端Tab
+   */
+  onClickTerminalTab(evt: any) {
+    for (let index = 0; index < this.terminalOpenedList.length; index++) {
+      if (this.terminalOpenedList[index].id == evt.id) {
+        this.terminalOpenedList[index]["isActive"] = true;
+      } else {
+        this.terminalOpenedList[index]["isActive"] = false;
+      }
+    }
+  }
+
+  /**
+   * 新建终端Tab
+   */
+  onAddNewTerminalTab(evt?: any) {
+    // 先全部设为非激活
+    this.terminalOpenedList.forEach(tab => tab.isActive = false);
+    // 新建tab
+    const newTab = {
+      id: 'terminal-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+      title: '终端',
+      isClosable: true,
+      isActive: true,
+      symbol: '>',
+      saved: true
+    };
+    this.terminalOpenedList.push(newTab);
   }
 
   dragHeight: number = 1;
