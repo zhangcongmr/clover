@@ -171,7 +171,7 @@ export class AddProjectComponent implements OnInit {
     } else {
       for await (const [name, handle] of (dirHandle as any).entries()) {
         // don't traverse into node_modules, .git, dist/build, etc. to avoid performance issues
-        const ignoreDirs = new Set(['node_modules', '.git', 'dist', 'build', 'venv', 'bower_components',
+        const ignoreDirs = new Set(['node_modules', 'dist', 'build', 'venv', 'bower_components',
           '.cache', '__pycache__', '.angular', '.vscode', '.idea', '.vs', 'target', 'out', 'coverage',
           'logs', 'log', 'tmp', 'temp', 'cache', 'build', 'bin', 'obj', 'vendor', 'third_party',
           'jspm_packages']);
