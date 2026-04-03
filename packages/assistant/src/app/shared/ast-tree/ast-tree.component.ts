@@ -262,7 +262,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   /**
-   * 处理ZIP压缩上传功能 - 统一处理单个文件和文件夹
+   * 处理 ZIP 压缩上传功能 - 统一处理单个文件和文件夹
    */
   async handleZipUpload(item: AstTreeNode) {
     // 添加上传任务到主组件
@@ -271,40 +271,44 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       // 显示上传进度提示
       console.log('开始压缩文件...');
 
-      // 创建一个新的ZIP实例
+      // 检测根目录是否包含 .git 文件夹（只检查第一层子节点）
+      const hasGitFolder = this.hasGitFolderInRoot(item);
+      console.log('根目录包含 .git 文件夹:', hasGitFolder);
+
+      // 创建一个新的 ZIP 实例
       const zip = new JSZip();
 
       if (item.nodeType === 'file') {
-        // 单个文件：直接添加文件到ZIP
-        await this.addFileToZip(zip, item, '');
+        // 单个文件：直接添加文件到 ZIP（文件节点不需要转换行尾）
+        await this.addFileToZip(zip, item, '', !hasGitFolder);
       } else if (item.nodeType === 'folder') {
-        // 整个文件夹：递归添加所有文件到ZIP
-        await this.addFolderToZip(zip, item, item.label);
+        // 整个文件夹：递归添加所有文件到 ZIP
+        await this.addFolderToZip(zip, item, item.label, hasGitFolder);
       }
 
-      // 生成ZIP文件
+      // 生成 ZIP 文件
       const zipBlob = await zip.generateAsync({ type: 'blob' }, (metadata: any) => {
-        // ZIP生成进度回调，更新进度
-        const progress = metadata.percent / 100; // 转换为0-1范围
-        this.coreService.updateUploadProgress(taskId, progress * 0.3); // 压缩过程占总进度的30%
+        // ZIP 生成进度回调，更新进度
+        const progress = metadata.percent / 100; // 转换为 0-1 范围
+        this.coreService.updateUploadProgress(taskId, progress * 0.3); // 压缩过程占总进度的 30%
       });
 
-      // 创建ZIP文件对象
+      // 创建 ZIP 文件对象
       const zipFile = new File([zipBlob], `${item.label}.zip`, { type: 'application/zip' });
 
-      // 上传ZIP文件
+      // 上传 ZIP 文件
       // const directoryPath = generateDirectoryPath(this.data(), item, false); // 生成目录路径，不包含文件名
       const directoryPath = ''
       await this.uploadFileToServer(zipFile, directoryPath, taskId);
       
-      console.log(`ZIP文件上传成功: ${item.label}.zip`);
-      this.coreService.updateUploadProgress(taskId, 1); // 设置为100%
+      console.log(`ZIP 文件上传成功：${item.label}.zip`);
+      this.coreService.updateUploadProgress(taskId, 1); // 设置为 100%
       setTimeout(() => {
         this.coreService.removeUploadTask(taskId); // 上传完成后移除任务
       }, 3000);
       this.menuItemAction.emit({ type: 'upload-success', message: `Upload successful: ${item.label}.zip` });
     } catch (error: any) {
-      console.error('ZIP压缩或上传失败:', error);
+      console.error('ZIP 压缩或上传失败:', error);
       this.coreService.failUploadTask(taskId); // 标记为失败
       setTimeout(() => {
         this.coreService.removeUploadTask(taskId); // 移除失败任务
@@ -314,9 +318,89 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   /**
-   * 将单个文件添加到ZIP中
+   * 检查根目录下是否包含 .git 文件夹（只检查第一层子节点）
    */
-  async addFileToZip(zip: JSZip, fileNode: AstTreeNode, folderPath: string): Promise<void> {
+  hasGitFolderInRoot(node: AstTreeNode): boolean {
+    if (!node) return false;
+    
+    // 如果是文件节点，检查其父节点的子节点
+    if (node.nodeType === 'file') {
+      const parent = node.parentItem;
+      if (parent && parent.children) {
+        return parent.children.some((child: AstTreeNode) => 
+          child.nodeType === 'folder' && child.label === '.git'
+        );
+      }
+      return false;
+    }
+    
+    // 如果是文件夹节点，直接检查其子节点
+    if (node.nodeType === 'folder' && node.children) {
+      return node.children.some((child: AstTreeNode) => 
+        child.nodeType === 'folder' && child.label === '.git'
+      );
+    }
+    
+    return false;
+  }
+
+  /**
+   * 判断文件是否为文本文件（需要转换行尾）
+   */
+  isTextFile(fileName: string): boolean {
+    // 常见的文本文件扩展名（仅列出最常见的，减少判断开销）
+    const textExtensions = [
+      '.js', '.ts', '.jsx', '.tsx', '.vue', '.py', '.java', '.c', '.cpp',
+      '.h', '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt',
+      '.sh', '.bash', '.ps1', '.bat', '.cmd',
+      '.json', '.xml', '.yaml', '.yml', '.toml', '.ini',
+      '.html', '.css', '.scss', '.less',
+      '.md', '.txt', '.log', '.sql',
+      '.gitignore', '.gitattributes', '.editorconfig'
+    ];
+    
+    const lowerFileName = fileName.toLowerCase();
+    return textExtensions.some(ext => lowerFileName.endsWith(ext));
+  }
+
+  /**
+   * 将 CRLF 转换为 LF（使用高效的 Uint8Array 操作）
+   */
+  convertCRLFtoLF(content: ArrayBuffer): Uint8Array {
+    const bytes = new Uint8Array(content);
+    
+    // 先统计需要替换的数量，避免多次分配内存
+    let crlfCount = 0;
+    for (let i = 0; i < bytes.length - 1; i++) {
+      if (bytes[i] === 0x0D && bytes[i + 1] === 0x0A) { // \r\n
+        crlfCount++;
+      }
+    }
+    
+    // 如果没有 CRLF，直接返回原数据
+    if (crlfCount === 0) {
+      return bytes;
+    }
+    
+    // 创建新数组（长度 = 原长度 - CRLF 数量）
+    const result = new Uint8Array(bytes.length - crlfCount);
+    let writeIndex = 0;
+    
+    for (let i = 0; i < bytes.length; i++) {
+      // 跳过 CR (\r)，保留 LF (\n)
+      if (bytes[i] === 0x0D && i < bytes.length - 1 && bytes[i + 1] === 0x0A) {
+        continue; // 跳过 \r
+      }
+      result[writeIndex++] = bytes[i];
+    }
+    
+    return result;
+  }
+
+  /**
+   * 将单个文件添加到 ZIP 中
+   */
+  async addFileToZip(zip: JSZip, fileNode: AstTreeNode, folderPath: string, shouldConvertLineEndings: boolean = false): Promise<void> {
     if (!fileNode.folderHandle) {
       console.error('No folderHandle for file node');
       return;
@@ -327,9 +411,17 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       const file = await fileHandle.getFile();
       const content = await file.arrayBuffer();
       
-      // 构造文件在ZIP中的路径
+      // 构造文件在 ZIP 中的路径
       const filePath = folderPath ? `${folderPath}/${fileNode.label}` : fileNode.label;
-      zip.file(filePath, content);
+      
+      // 如果需要转换行尾且是文本文件，则进行转换
+      let finalContent: ArrayBuffer | Uint8Array = content;
+      if (shouldConvertLineEndings && this.isTextFile(fileNode.label)) {
+        console.log(`Converting line endings for: ${filePath}`);
+        finalContent = this.convertCRLFtoLF(content);
+      }
+      
+      zip.file(filePath, finalContent);
     } catch (error) {
       console.error('Error adding file to zip:', error);
       throw error;
@@ -337,18 +429,18 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   /**
-   * 将整个文件夹递归添加到ZIP中
+   * 将整个文件夹递归添加到 ZIP 中
    */
-  async addFolderToZip(zip: JSZip, folderNode: AstTreeNode, folderPath: string): Promise<void> {
+  async addFolderToZip(zip: JSZip, folderNode: AstTreeNode, folderPath: string, shouldConvertLineEndings: boolean = false): Promise<void> {
     if (folderNode.children) {
       for (const child of folderNode.children) {
         if (child.nodeType === 'file') {
-          // 文件节点：直接添加到ZIP
-          await this.addFileToZip(zip, child, folderPath);
+          // 文件节点：添加到 ZIP，根据需要转换行尾
+          await this.addFileToZip(zip, child, folderPath, shouldConvertLineEndings);
         } else if (child.nodeType === 'folder') {
           // 文件夹节点：递归处理
           const childFolderPath = `${folderPath}/${child.label}`;
-          await this.addFolderToZip(zip, child, childFolderPath);
+          await this.addFolderToZip(zip, child, childFolderPath, shouldConvertLineEndings);
         }
       }
     }
