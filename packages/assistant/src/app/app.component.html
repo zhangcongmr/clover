@@ -1,6 +1,6 @@
 <div data-layer="app-ui" class="AppUi codigma-app-ui">
   <div data-layer="app-header" class="AppHeader codigma-app-header">
-    <div ast-tab-group [tabsOnlyMode]="true" [fobiddenContextMenu]="true"  [tabType]="{'type':'lightcolorselection', 'height':'42px'}">
+    <div ast-tab-group [headerOnly]="true" [fobiddenContextMenu]="true"  [tabType]="{'type':'lightcolorselection', 'height':'42px'}">
       @if (openedList.length>0) {
         @for (openedTab of openedList; track openedTab.id) {
           <div ast-tab [label]="openedTab.title"

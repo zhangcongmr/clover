@@ -22,7 +22,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
   readonly isDropListDisable = input(true)
   readonly tabGroupResizeObservable = input(false)
-  readonly tabsOnlyMode = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
+  readonly headerOnly = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
   readonly fobiddenContextMenu = input(false)
   readonly moreButtons = model<Array<{ label: string; action: string }>>([]); //右上角更多操作按钮
 
