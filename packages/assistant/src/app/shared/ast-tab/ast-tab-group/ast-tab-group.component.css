@@ -106,7 +106,7 @@ li[data-layer="tab"].active-tab .tab-close {
     background-color: var(--vscode-list-hoverBackground);
 }
 
-.codigma-project {
+.tab-label-area {
     color: var(--vscode-foreground);
     display: flex;
     flex-direction: column;
@@ -116,6 +116,7 @@ li[data-layer="tab"].active-tab .tab-close {
     text-align: center;
     word-wrap: break-word;
     align-self: stretch;
+    flex: 1 1 0;
 }
 
 /**
@@ -132,11 +133,11 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 /* when tabType is 'textbottom'  改为在文字容器上添加底部边框 */
-.textbottom-border-tab .codigma-project {
+.textbottom-border-tab .tab-label-area {
   position: relative; /* 使 ::after 能相对于它定位 */
 }
 
-.textbottom-border-tab .codigma-project::after {
+.textbottom-border-tab .tab-label-area::after {
   content: '';
   position: absolute;
   left: 0;

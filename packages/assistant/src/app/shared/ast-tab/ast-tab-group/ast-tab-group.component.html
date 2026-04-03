@@ -7,7 +7,7 @@
       <li data-layer="tab" data-tab_type="tab_header" (click)="clickTab(tab)" (contextmenu)="showContextMenu($event, tab)" [class]="tab.activeClass()"
         [style.min-width]="tab.minWidth" cdkDrag>
         <div data-layer="padding_left_space" class="padding_left_space"></div>
-        <div class="codigma-project">{{tab['label']()}}</div>
+        <div class="tab-label-area">{{tab['label']()}}</div>
         @if (closable()&&(tab.closable==null||tab.closable==true)) {
           @if(tab['saved']()==false) {
             <div data-svg-wrapper="" data-layer="close-btn" class="CloseBtn tab-dot-or-close" (click)="iconCloseClick($event,tab)"

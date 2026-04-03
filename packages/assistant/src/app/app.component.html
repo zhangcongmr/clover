@@ -126,7 +126,7 @@
               [addTabEnable]="true"  (addNewTab)="onAddNewTerminalTab($event)">
             @if (terminalOpenedList.length>0) {
               @for (openedTab of terminalOpenedList; track openedTab.id) {
-                <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)" [saved]="openedTab['saved']"
+                <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)" [saved]="openedTab['saved']" [minWidth]="'10rem'"
                   [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
                   (onClickTab)="onClickTerminalTab($event)">
                   <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
