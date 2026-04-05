@@ -32,6 +32,7 @@ let config = defineConfig({
   define: commonDefine,
   resolve: commonResolve,
   build: {
+    target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
     sourcemap: true,
     outDir: 'dist',
   },

@@ -35,6 +35,9 @@ export default defineConfig({
     mkcert(),
     mdx({/* jsxImportSource: …, otherOptions… */})
   ],
+  build: {
+    target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4']
+  },
   resolve: {
     alias: {
       // Alias @ to the src directory

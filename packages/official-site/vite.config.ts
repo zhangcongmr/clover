@@ -26,6 +26,7 @@ if (buildMode === 'app') {
     define: commonDefine,
     resolve: commonResolve,
     build: {
+      target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
       sourcemap: true,
       outDir: 'dist-app',
     },
@@ -40,6 +41,7 @@ if (buildMode === 'app') {
     define: commonDefine,
     resolve: commonResolve,
     build: {
+      target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
       sourcemap: 'inline',
       outDir: 'dist-lib',
       lib: {
