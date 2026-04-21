@@ -31,12 +31,55 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
+
+  // Validate username format
+  const validateUsername = (value: string): boolean => {
+    if (!value) {
+      setUsernameError('');
+      return true;
+    }
+
+    // Check for spaces
+    if (/\s/.test(value)) {
+      setUsernameError('Username cannot contain spaces');
+      return false;
+    }
+
+    // Check for special characters (only allow alphanumeric and hyphens)
+    if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+      setUsernameError('Username may only contain alphanumeric characters or single hyphens');
+      return false;
+    }
+
+    // Check if starts or ends with hyphen
+    if (value.startsWith('-') || value.endsWith('-')) {
+      setUsernameError('Username cannot begin or end with a hyphen');
+      return false;
+    }
+
+    setUsernameError('');
+    return true;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    validateUsername(value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    // Validate username before submission
+    if (!validateUsername(username)) {
+      setError('Please fix the username errors');
+      setLoading(false);
+      return;
+    }
 
     // 基本前端校验（可选）
     if (!email || !password || !username) {
@@ -185,13 +228,20 @@ export default function App({baseHref, onAction} : MyReactComponentProps) {
                 type="text"
                 placeholder="Username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={handleUsernameChange}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  usernameError ? 'border-red-500' : 'border-gray-300'
+                }`}
                 required
               />
-              <p className="text-xs text-gray-600">
-                Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.
-              </p>
+              {usernameError && (
+                <p className="text-xs text-red-500">{usernameError}</p>
+              )}
+              {!usernameError && (
+                <p className="text-xs text-gray-600">
+                  Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.
+                </p>
+              )}
             </div>
 
             {/* Country/Region */}
