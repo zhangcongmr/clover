@@ -35,6 +35,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   previousTheme: string = 'light';
   userName: string = 'Anonymous';
   customCwd: string = "/mnt/storage/";
+  containerName: string = "";
   constructor() {
     effect(() => {
       if (this.theme() !== this.previousTheme) {
@@ -50,6 +51,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       const docObj = dataList[0];
       this.userName = this.coreService.userData?.username || "Anonymous";
       this.customCwd = "/mnt/storage/" + docObj.label;
+      this.containerName = 'con-' + this.userName + '-' + docObj.label;
     }
   }
 
@@ -130,7 +132,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       const rows = size.rows;
       const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
       const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=cnr-' + this.userName;
+      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=' + this.containerName;
 
       fetch(url, { method: 'POST' });
     });
@@ -139,14 +141,14 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private async connectWebSocket(): Promise<void> {
     const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
     const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=cnr-' + this.userName
+    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=' + this.containerName
       + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(this.customCwd), { method: 'POST' });
     const processId = await res.text();
     this.pid = processId;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=cnr-' + this.userName;
+    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=' + this.containerName;
 
     this.websocket = new WebSocket(wsUrl);
 
