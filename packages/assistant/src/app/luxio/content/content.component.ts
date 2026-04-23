@@ -65,6 +65,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   folderReadWriteMode: 'read' | 'readwrite' = 'read';
   /***aside */
 
+  nodeDef: NodeDef | null = null;
   /** event emitted when selected node's file type changes */
   @Output() fileTypeChange = new EventEmitter<string>();
   dataListChangeOutput = output<Array<AstTreeNode>>();
@@ -151,11 +152,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.openedList.set(openedListWithHandles);
     } else if ('profile' in docObj) { //NodeDef
       this.dataList.set(docObj.profile ? [JSON.parse(docObj.profile)] : []);
-      this.isLocked = docObj.isLocked;
       if (docObj.isLocked) {
         // 可选：标记模型为只读
         this.dataList().forEach(node => node.isLocked = true);
       }
+      this.isLocked = docObj.isLocked;
+      docObj.profile = undefined; // remove profile from nodeDef since it's now stored in dataList
+      this.nodeDef = docObj;
 
       this.dataListChangeOutput.emit(this.dataList());
     }
@@ -626,7 +629,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
       //Fetch from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
       const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
-      const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
+      const objectKey = `${this.nodeDef?.username || 'Anonymous'}/${filePathUrl}`;
 
       try {
         // 使用WebSocket下载文件
@@ -770,7 +773,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       
       // 计算文件路径
       const filePathUrl = generateDirectoryPath(this.dataList(), evt);
-      const objectKey = `${this.coreService.userData?.username || 'Anonymous'}/${filePathUrl}`;
+      const objectKey = `${this.nodeDef?.username || 'Anonymous'}/${filePathUrl}`;
 
       // 创建请求对象
       const request = {
