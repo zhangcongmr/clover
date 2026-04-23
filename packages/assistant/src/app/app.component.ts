@@ -40,7 +40,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
-  terminalShow = false;
+  terminalBtnShow = true;
+  terminalPanelShow = false;
   keepTerminalInstance = {
     value: false,
     dragHeight: 0.75,
@@ -393,11 +394,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     if(!this.keepTerminalInstance.value) {
       this.keepTerminalInstance.value = true;
     }
-    if(this.terminalShow) {
-      this.terminalShow = false;
+    if(this.terminalPanelShow) {
+      this.terminalPanelShow = false;
       this.dragHeight = 1;
     } else {
-      this.terminalShow = true;
+      this.terminalPanelShow = true;
       this.dragHeight = 0.75;
       if(this.keepTerminalInstance.value) {
         this.dragHeight = this.keepTerminalInstance.dragHeight;
@@ -520,6 +521,18 @@ export class AppComponent implements OnInit, AfterViewInit {
     await file('/dir/openedList.txt').remove();
   }
 
+  onHandleDataListChange(dataList: Array<any>): void {
+    this.dataList = dataList;
+    if (dataList.length > 0) {
+      const docObj = dataList[0];
+      const user = docObj.username;
+      if (user !== this.coreService.userData?.username) {
+        this.terminalBtnShow = false;
+        this.terminalPanelShow = false;
+      }
+    }
+  }
+
   /**
    * 关闭终端Tab
    */
@@ -535,7 +548,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       }
     }
     if(this.terminalOpenedList.length == 0) {
-      this.terminalShow = false;
+      this.terminalPanelShow = false;
       this.dragHeight = 1;
       this.keepTerminalInstance.value = false;
       this.keepTerminalInstance.dragHeight = 0.75;

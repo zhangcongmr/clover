@@ -53,6 +53,10 @@ export interface AstTreeNode {
      * Local properties
      */
     isLocal?: boolean;
+    /**
+     * locked node cannot be edited or deleted, but can be viewed and copied
+     */
+    isLocked?: boolean;
 
     /**
      * node status properties

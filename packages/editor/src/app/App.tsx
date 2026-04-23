@@ -28,6 +28,11 @@ function createPodmanInstance(apiInfoModel: any): void {
       return;
     }
 
+    if(userData.username !== apiInfoModel.username) {
+      console.warn(`Username in API model (${apiInfoModel.username}) does not match logged-in user (${userData.username}), skipping container instantiation`);
+      return;
+    }
+
     // Then create Podman instance
     return fetch(`/user/podman/create-instance?userName=${encodeURIComponent(userData.username)}`, {
       method: 'POST',
@@ -69,7 +74,7 @@ function createPodmanInstance(apiInfoModel: any): void {
   });
 }
 
-function HomePage() {
+function ViewPage() {
   let params = useParams();
 
   const projectDef = (project: any) => {
@@ -128,13 +133,13 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* 首页 */}
-        <Route path="editor" element={<HomePage />} />
+        <Route path="editor" element={<ViewPage />} />
 
         {/* 动态路由：匹配 /view/任意ID */}
-        <Route path="editor/:id" element={<HomePage />} />
+        <Route path="editor/:id" element={<ViewPage />} />
 
         {/* 可选：404 页面 */}
-        {/* <Route path="*" element={<HomePage />} /> */}
+        {/* <Route path="*" element={<ViewPage />} /> */}
       </Routes>
     </BrowserRouter>
   );

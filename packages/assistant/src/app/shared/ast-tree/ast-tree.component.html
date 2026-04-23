@@ -30,7 +30,7 @@
       }
     </div>
     <div #editorItemRef [attr.contenteditable]="item.rename" class="lyoutlabel-base"
-     [class.textrenameclass]="item.rename" [class.local]="!item.rename&&(item.isLocal)" [class.deleted]="item.isDeleted" [style.text-decoration]="item.isDeleted?'line-through':''"
+     [class.textrenameclass]="item.rename" [class.local]="!item.rename&&(item.isLocal)" [class.locked]="!item.rename&&(item.isLocked)" [class.deleted]="item.isDeleted" [style.text-decoration]="item.isDeleted?'line-through':''"
       (input)="onContentChange($event)" (blur)="outOfRename({evt: $event, item: item})"  (keydown.enter)="$event.preventDefault(); outOfRename({evt: $event, item: item})">
       {{ item.label }}
     </div>

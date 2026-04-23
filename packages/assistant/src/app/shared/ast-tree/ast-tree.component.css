@@ -78,6 +78,19 @@
     margin-left: 0.25rem;
     top: 2px;
 }
+/* Style for the locked icon using base64 SVG */
+.lyoutlabel-base.locked::after {
+    position: absolute;
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPjxwYXRoIGQ9Ik0yMzQuNjY2NjY3IDUzMy4zNTQ2NjdWODc0LjY2NjY2N2EyMS4zMzMzMzMgMjEuMzMzMzMzIDAgMCAwIDIxLjMzMzMzMyAyMS4zMzMzMzNoNTEyYzExLjczMzMzMyAwIDIxLjMzMzMzMy05LjYgMjEuMzMzMzMzLTIxLjM1NDY2N1Y1MzMuMzMzMzMzYTIxLjMzMzMzMyAyMS4zMzMzMzMgMCAwIDAtMjEuMzMzMzMzLTIxLjMzMzMzM0gyNTZjLTExLjczMzMzMyAwLTIxLjMzMzMzMyA5LjYtMjEuMzMzMzMzIDIxLjM1NDY2N3pNMjU2IDQyNi42NjY2Njd2LTEyOGMwLTE0MS4zOTczMzMgMTE0LjYwMjY2Ny0yNTYgMjU2LTI1NiAxNDEuNDE4NjY3IDAgMjU2IDExNC41NiAyNTYgMjU2djEyOGExMDYuNjY2NjY3IDEwNi42NjY2NjcgMCAwIDEgMTA2LjY2NjY2NyAxMDYuNjg4Vjg3NC42NjY2NjdhMTA2LjczMDY2NyAxMDYuNzMwNjY3IDAgMCAxLTEwNi42NjY2NjcgMTA2LjY2NjY2NkgyNTZhMTA2LjY2NjY2NyAxMDYuNjY2NjY3IDAgMCAxLTEwNi42NjY2NjctMTA2LjY4OFY1MzMuMzMzMzMzYTEwNi43MzA2NjcgMTA2LjczMDY2NyAwIDAgMSAxMDYuNjY2NjY3LTEwNi42NjY2NjZ6IG04NS4zMzMzMzMgMGgzNDEuMzMzMzM0di0xMjhjMC05NC4zMTQ2NjctNzYuMzczMzMzLTE3MC42NjY2NjctMTcwLjY2NjY2Ny0xNzAuNjY2NjY3YTE3MC42NjY2NjcgMTcwLjY2NjY2NyAwIDAgMC0xNzAuNjY2NjY3IDE3MC42NjY2Njd2MTI4eiI+PC9wYXRoPjwvc3ZnPg==");
+    background-size: contain;
+    background-repeat: no-repeat;
+    margin-left: 0.25rem;
+    top: 2px;
+}
 .textrenameclass {
     width: 100%;
     border: 1px solid #ccc;
