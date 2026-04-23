@@ -78,14 +78,14 @@
   }
 }
 
-@if(dataType() != 'subData' && isOpen) {
+@if(dataType() != 'subData' && isOpen && !isLocked()) {
   <div ast-menu  [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content codigma-right-menu">
-    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'file' && !readOnly()) {
+    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'file') {
       <div data-layer="New Api" class="New codigma-menu-every-item" (click)="menuSelectAction('NewApi')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New Api</span></div>
     }
-    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'folder' && !readOnly()) {
+    @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'folder') {
       <div data-layer="New File" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFile')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New File</span></div>
@@ -103,7 +103,7 @@
          &&(currentContextMenuEvt['item']['nodeType'] == 'bookmark'
          ||currentContextMenuEvt['item']['nodeType'] == 'api'
          ||currentContextMenuEvt['item']['nodeType'] == 'file'
-         ||currentContextMenuEvt['item']['nodeType'] == 'folder') && !readOnly()) {
+         ||currentContextMenuEvt['item']['nodeType'] == 'folder')) {
       <!-- 添加上传菜单项，当右键点击file或folder节点时显示 -->
       @if(currentContextMenuEvt['item']['nodeType'] == 'file' || currentContextMenuEvt['item']['nodeType'] == 'folder') {
         <div data-layer="Upload" class="Upload codigma-menu-every-item" (click)="menuSelectAction('Upload')">

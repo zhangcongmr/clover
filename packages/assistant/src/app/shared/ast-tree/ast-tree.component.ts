@@ -23,8 +23,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly isSearch = input(false);
   readonly dataType = input<string>(); //内部使用，用于区分传入的data是总的数据，还是分数据
   readonly fobiddenContextMenu = input(false)
-  // if true, editing actions (new/delete/rename/duplicate) are disabled
-  readonly readOnly = input<boolean>(false);
+  // 内部使用，标识当前是否处于锁定状态
+  readonly isLocked = input<boolean>(false);
   selectedNodeType = model<string>('') //内部使用，标识当前选中的节点类型  TreeNodeType  暂时闲置未使用
 
   readonly nodeClick = output();

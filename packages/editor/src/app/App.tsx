@@ -30,6 +30,7 @@ function createPodmanInstance(apiInfoModel: any): void {
 
     if(userData.username !== apiInfoModel.username) {
       console.warn(`Username in API model (${apiInfoModel.username}) does not match logged-in user (${userData.username}), skipping container instantiation`);
+      apiInfoModel.isLocked = true; // 可选：标记模型为锁定状态，前端可据此禁用相关功能
       return;
     }
 

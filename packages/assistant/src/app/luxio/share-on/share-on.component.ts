@@ -13,7 +13,7 @@ import { NodeDef } from "@luxio/common";
 })
 export class ShareOnComponent {
   @Input() visible = false;
-  @Input() data: NodeDef = { permission: 'read' };
+  @Input() data: NodeDef = {};
   @Output() close = new EventEmitter<void>();
   @Output() share = new EventEmitter<void>();
 

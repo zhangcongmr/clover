@@ -36,7 +36,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   // current selected file type (extension or nodeType)
   fileType: string = '';
-  filePermission: string = '';
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
@@ -525,8 +524,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.dataList = dataList;
     if (dataList.length > 0) {
       const docObj = dataList[0];
-      const user = docObj.username;
-      if (user !== this.coreService.userData?.username) {
+      if (docObj.isLocked) {
         this.terminalBtnShow = false;
         this.terminalPanelShow = false;
       }

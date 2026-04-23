@@ -55,12 +55,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private coreService = inject(CoreService);
   private notificationService = inject(NotificationService);
 
-  // permission for the currently loaded tree; shared trees may set this to 'read'
-  permission: 'read' | 'readwrite' = 'readwrite';
-  @Output() permissionChange = new EventEmitter<'read' | 'readwrite'>();
-  get isReadOnly() {
-    return this.permission === 'read';
-  }
+  // lock state for the entire content, which can be set based on user permissions or other factors; when true, all nodes are effectively read-only and UI will reflect this state
+  isLocked: boolean = false;
 
   /***aside */
   serverList: Array<any> = [];
@@ -155,12 +151,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.openedList.set(openedListWithHandles);
     } else if ('profile' in docObj) { //NodeDef
       this.dataList.set(docObj.profile ? [JSON.parse(docObj.profile)] : []);
-      if (this.coreService.userData?.username !== docObj.username) {
+      this.isLocked = docObj.isLocked;
+      if (docObj.isLocked) {
         // 可选：标记模型为只读
         this.dataList().forEach(node => node.isLocked = true);
       }
-      // if the provided object carries permission info, apply it
-      this.modifyPermission(docObj);
+
       this.dataListChangeOutput.emit(this.dataList());
     }
     if (Object.keys(docObj).length === 0) {
@@ -349,44 +345,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     return await Promise.all(nodes.map(restoreHandles));
   }
 
-  private modifyPermission(docObj: any) {
-    // if the shared payload carries a username, determine ownership
-    if (docObj && docObj.username) {
-      const fetchProfile = async () => {
-        try {
-          const response = await fetch(`/api/auth/profile`, {
-            credentials: 'include', // 携带 Cookie
-          });
-          this.coreService.userData = await response.json();
-          this.coreService.isAuthenticated.set(true);
-
-
-          const currentUser = this.coreService.userData?.username;
-          if (currentUser && docObj.username === currentUser) {
-            // owner always gets full rights
-            this.permission = 'readwrite';
-          } else {
-            // non-owner falls back to provided permission or default read
-            this.permission = docObj.permission || 'read';
-          }
-          this.permissionChange.emit(this.permission);
-
-        } catch (err) {
-          this.coreService.isAuthenticated.set(false);
-          console.error('获取用户信息失败:', err);
-          // // 可跳转到登录页
-          // window.location.href = '/signin';
-        }
-      };
-
-      fetchProfile();
-    } else if (docObj && docObj.permission) {
-      // not a shared payload, but explicit permission
-      this.permission = docObj.permission;
-      this.permissionChange.emit(this.permission);
-    }
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
   }
 
@@ -418,7 +376,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   newNodeAction(currentSelect: any, action: string) {
-    if (this.isReadOnly) {
+    if (this.isLocked) {
       // ignore attempts to modify when in read-only mode
       console.warn('read-only mode: action', action, 'blocked');
       return;
@@ -716,7 +674,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async storeApi() {
-    if (this.permission === 'read') {
+    if (this.isLocked) {
       return; // don't persist in read-only mode since the data may be shared across multiple users and we don't want one user's edits to overwrite another's; we can consider implementing a separate "Save As" flow for read-only/shared trees if there's demand for it
     }
     
@@ -751,7 +709,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async storeOpenedList() {
-    if(this.permission === 'read') {
+    if(this.isLocked) {
       return; // don't persist opened list in read-only mode since it may be shared across multiple users and we don't want one user's tab actions to affect others
     }
     // --------- Create / Write ---------
@@ -777,7 +735,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async saveText(evt: any) {
-    if (this.isReadOnly) {
+    if (this.isLocked) {
       console.warn('read-only mode: cannot save text');
       return;
     }
@@ -860,7 +818,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   shareOnMenuVisible = false;
-  shareData: NodeDef = { permission: 'read' };
+  shareData: NodeDef = {};
   menuItemAction(evt: any) {
     // Check if this is an upload success or error notification
     if (evt && evt.type) {
@@ -874,7 +832,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     // guard against modifications when in read-only mode
     const modifyingActions = ['Rename','Delete','Duplicate','NewApi','NewFile','NewFolder'];
-    if (this.isReadOnly && modifyingActions.includes(evt.action)) {
+    if (this.isLocked && modifyingActions.includes(evt.action)) {
       // ignore edits in read-only state
       return;
     }
@@ -903,7 +861,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     if (evt.action == 'Share') {
       this.shareOnMenuVisible = true;
-      this.shareData = { permission: 'read' };
+      this.shareData = {};
       this.shareData.name = evt.target.label || "Untitled API"
       this.shareData.username = this.coreService.userData?.username || "Anonymous";
 
@@ -923,10 +881,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       }
       traverse(copyOfTarget);
       this.shareData.profile = JSON.stringify(copyOfTarget) || "";
-      // owners always have full rights when editing their own tree
-      if (!this.shareData.permission) {
-        this.shareData.permission = 'read';
-      }
     }
   }
 
@@ -1142,24 +1096,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // Storing a JSON snapshot of FileSystem handles is forbidden; we now
   // simply serialize the tree (including `content`) via `/dir/file.txt`
   // and read handles on the fly when the user re‑selects a folder.
-
-  private async checkPermission(handle: any, mode: 'read' | 'readwrite' = 'readwrite'): Promise<string> {
-    try {
-      const status = await handle.queryPermission({ mode });
-      return status;
-    } catch {
-      return 'prompt';
-    }
-  }
-
-  private async requestPermission(handle: any, mode: 'read' | 'readwrite' = 'readwrite'): Promise<string> {
-    try {
-      const status = await handle.requestPermission({ mode });
-      return status;
-    } catch {
-      return 'denied';
-    }
-  }
 
 
   // Previously we offered the ability to restore a folder snapshot on
