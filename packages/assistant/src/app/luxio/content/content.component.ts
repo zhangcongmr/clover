@@ -151,10 +151,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.dataList.set(dataListWithHandles);
       this.openedList.set(openedListWithHandles);
     } else if ('profile' in docObj) { //NodeDef
-      this.dataList.set(docObj.profile ? [JSON.parse(docObj.profile)] : []);
-      if (docObj.isLocked) {
-        // 可选：标记模型为只读
-        this.dataList().forEach(node => node.isLocked = true);
+      if(docObj.profile) {
+        const profileObj = JSON.parse(docObj.profile);
+        if(docObj.isLocked) {// 可选：标记模型为只读
+          profileObj.isLocked = true;
+        }
+        this.dataList.set([profileObj]);
       }
       this.isLocked = docObj.isLocked;
       docObj.profile = undefined; // remove profile from nodeDef since it's now stored in dataList
