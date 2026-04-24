@@ -473,6 +473,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     datas.forEach(ele => ele.isExpanded = false);
     this.dataList.update(value => [...datas])
   }
+
+  forkBtn(evt: any) {
+    fetch(`/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
+      method: 'POST'
+    })
+      .then(response => response.json())
+      .then(data => console.log(data));
+
+  }
   MoreBtn(evt: any) {
 
   }
