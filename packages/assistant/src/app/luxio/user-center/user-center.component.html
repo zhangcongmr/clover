@@ -19,7 +19,10 @@
     <!-- 左侧边栏 -->
     <div class="sidebar">
         <div class="user-info">
-            <div class="avatar">{{ userInfo.avatar }}</div>
+            <div class="avatar">
+                            <img src={{ userInfo.avatar }} alt="User"
+                                class="w-full h-full object-cover">
+                </div>
             <div class="username">{{ userInfo.username }}</div>
             <div class="phone">{{ userInfo.phone }}</div>
             <button class="checkin-btn" (click)="checkin()">签到</button>
