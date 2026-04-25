@@ -507,7 +507,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           error: (err) => {
             // 处理保存错误
             if (err.error && err.error.errorCode === 'DUPLICATE_ENTRY') {
-              this.notificationService.showNotification(err.error.message, 'error');
+              this.existingId = err.error.existingId;
+              this.duplicateModalVisible.set(true);
             } else {
               this.notificationService.showNotification('An error occurred while saving.', 'error');
             }
@@ -866,6 +867,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   currentItem: AstTreeNode | null = null;
   shareOnMenuVisible = false;
+  duplicateModalVisible = signal(false);
+  existingId = '';
   menuItemAction(evt: any) {
     // guard against modifications when in read-only mode
     const modifyingActions = ['Rename','Delete','Duplicate','NewApi','NewFile','NewFolder'];
@@ -1071,7 +1074,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         },
         error: err => {
           if (err.error && err.error.errorCode === 'DUPLICATE_ENTRY') {
-            this.notificationService.showNotification(err.error.message, 'error');
+            this.existingId = err.error.existingId;
+            this.duplicateModalVisible.set(true);
           } else {
             this.notificationService.showNotification('An error occurred while saving.', 'error');
           }
@@ -1079,6 +1083,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       });
     }
     this.shareOnMenuVisible = false;
+  }
+
+  confirmDuplicate(): void {
+    window.open(`/editor/${this.existingId}`, '_blank', 'noopener,noreferrer');
+    this.duplicateModalVisible.set(false);
+  }
+
+  cancelDuplicate(): void {
+    this.duplicateModalVisible.set(false);
   }
 
   private buildNodeDef(currentItem: AstTreeNode): NodeDef {

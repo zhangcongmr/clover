@@ -90,6 +90,17 @@
               </div>
             </div>
           </ast-modal>
+          <ast-modal [title]="'Duplicate Entry'" [visible]="duplicateModalVisible()" [modalSize]="'small'" (close)="cancelDuplicate()">
+            <div class="codigma-ast-modal-body">
+              <div class="ShareOnMessage">
+                This name and username combination already exists. Jump to the existing project?
+              </div>
+              <div class="ShareOnActions">
+                <div class="btn cancel" (click)="cancelDuplicate()">Cancel</div>
+                <div class="btn confirm" (click)="confirmDuplicate()">Jump to Project</div>
+              </div>
+            </div>
+          </ast-modal>
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
       } @else if(currentDisplayViewId()==2) {
