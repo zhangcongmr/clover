@@ -255,16 +255,7 @@ export class CoreService {
   }
 
   postData(url: string, data: any) {
-    this.http.post(url, data).subscribe((res: any) => {
-      switch (res.type) {
-        case HttpEventType.UploadProgress:
-          console.log('Uploaded ' + res.loaded + ' out of ' + res.total + ' bytes');
-          break;
-        case HttpEventType.Response:
-          console.log('Finished uploading!');
-          break;
-      }
-    });
+    return this.http.post(url, data);
   }
 
   /**

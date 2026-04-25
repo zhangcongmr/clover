@@ -478,13 +478,29 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   forkBtn(evt: any) {
-    fetch(`/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
-      method: 'POST'
-    })
-      .then(response => response.json())
-      .then(data => console.log(data));
-
+    const dataList = this.dataList();
+    if(dataList.length >= 0 ) {
+      fetch(`/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
+        method: 'POST'
+      })
+        .then(response => response.json())
+        .then(data => {
+          delete dataList[0].isLocked
+          const shareData: NodeDef = this.buildNodeDef(dataList[0]);
+          if (shareData && shareData.profile) {
+            this.coreService.postData('/user/save', shareData).subscribe((data: any) => {
+              if (data.id !== undefined ) {
+                this.notificationService.showNotification('Fork successful', 'success');
+                window.open(`/editor/${data.id}`, '_blank', 'noopener,noreferrer');
+              } else {
+                this.notificationService.showNotification('Fork failed', 'error');
+              }
+            });
+          }
+        });
+    }
   }
+
   MoreBtn(evt: any) {
 
   }
@@ -834,7 +850,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   currentItem: AstTreeNode | null = null;
   shareOnMenuVisible = false;
-  shareData: NodeDef = {};
   menuItemAction(evt: any) {
     // guard against modifications when in read-only mode
     const modifyingActions = ['Rename','Delete','Duplicate','NewApi','NewFile','NewFolder'];
@@ -868,26 +883,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (evt.action == 'Share') {
       this.currentItem = evt.target;
       this.shareOnMenuVisible = true;
-      this.shareData = {};
-      this.shareData.name = evt.target.label || "Untitled API"
-      this.shareData.username = this.coreService.userData?.username || "Anonymous";
-
-      const copyOfTarget = JSON.parse(JSON.stringify(evt.target))
-      // recursively remove the children of any file nodes in the tree that end with '.ospec', since we only want to share the original file content for those files, not the parsed tree
-      const traverse = (node: any) => {
-        if (node.nodeType === 'file' && node.label.endsWith('.ospec')) {
-          node.children = []
-          node.isParsed = false;
-        } else if (node.nodeType === 'folder') {
-          node.children?.forEach((child: any) => traverse(child));
-        }
-        if (node.nodeType === 'file') {
-          delete node.content; // remove file content from shared data to avoid bloating the payload, since the content can be fetched separately by the recipient using the object storage
-        }
-        delete node.isLocal
-      }
-      traverse(copyOfTarget);
-      this.shareData.profile = JSON.stringify(copyOfTarget) || "";
     }
   }
 
@@ -1045,16 +1040,43 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   confirmShare(): void {
-    if (this.shareData && this.shareData.profile) {
-      this.coreService.postData('/user/save', this.shareData);
-
-      if(this.currentItem) {
-        // 处理上传功能 - 所有上传都使用ZIP压缩方式
-        this.coreService.handleZipUpload(this.currentItem);
-      }
-
+    if (!this.currentItem) {
       this.shareOnMenuVisible = false;
+      return;
     }
+
+    const shareData: NodeDef = this.buildNodeDef(this.currentItem);
+    if (shareData && shareData.profile) {
+      this.coreService.postData('/user/save', shareData).subscribe((data: any) => {
+      });
+      // 处理上传功能 - 所有上传都使用ZIP压缩方式
+      this.coreService.handleZipUpload(this.currentItem);
+    }
+    this.shareOnMenuVisible = false;
+  }
+
+  private buildNodeDef(currentItem: AstTreeNode): NodeDef {
+    const shareData: NodeDef = {};
+    shareData.name = currentItem.label || "Untitled API";
+    shareData.username = this.coreService.userData?.username || "Anonymous";
+
+    const copyOfTarget = JSON.parse(JSON.stringify(currentItem));
+    // recursively remove the children of any file nodes in the tree that end with '.ospec', since we only want to share the original file content for those files, not the parsed tree
+    const traverse = (node: any) => {
+      if (node.nodeType === 'file' && node.label.endsWith('.ospec')) {
+        node.children = [];
+        node.isParsed = false;
+      } else if (node.nodeType === 'folder') {
+        node.children?.forEach((child: any) => traverse(child));
+      }
+      if (node.nodeType === 'file') {
+        delete node.content; // remove file content from shared data to avoid bloating the payload, since the content can be fetched separately by the recipient using the object storage
+      }
+      delete node.isLocal;
+    };
+    traverse(copyOfTarget);
+    shareData.profile = JSON.stringify(copyOfTarget) || "";
+    return shareData;
   }
 
   newFileKeyUp(evt: any, newFileName: string) {
