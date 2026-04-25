@@ -79,7 +79,17 @@
             </div>
           </div>
           <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
-          <share-on [visible]="shareOnMenuVisible" (close)="shareOnMenuVisible = false" [data]="shareData"></share-on>
+          <ast-modal [title]="'Share on Community'" [visible]="shareOnMenuVisible" [modalSize]="'small'" (close)="shareOnMenuVisible = false">
+            <div class="codigma-ast-modal-body">
+              <div class="ShareOnMessage">
+                Are you sure to share on Community?
+              </div>
+              <div class="ShareOnActions">
+                <div class="btn cancel" (click)="shareOnMenuVisible = false">Cancel</div>
+                <div class="btn confirm" (click)="confirmShare()">Share</div>
+              </div>
+            </div>
+          </ast-modal>
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
       } @else if(currentDisplayViewId()==2) {

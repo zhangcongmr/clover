@@ -12,13 +12,13 @@ import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
-import { ShareOnComponent } from '../share-on/share-on.component';
 import { MyConfigService } from '../../my-config.service';
 import { AutoSaver } from '../../auto-saver';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { NoteBookComponent } from '../../shared/notebook/notebook.component';
 import { NodeDef } from '@luxio/common';
 import { NotificationService } from '../../shared/notification/notification.service';
+import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 
 interface WebSocketRequest {
   action: string;
@@ -43,7 +43,7 @@ interface WebSocketResponse {
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
-  imports: [FormsModule,ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, ShareOnComponent,
+  imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
     NoteBookComponent
   ]
 })
@@ -1051,6 +1051,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     return apiInfo;
   }
 
+  confirmShare(): void {
+    if (this.shareData && this.shareData.profile) {
+      this.coreService.postData('/user/save', this.shareData);
+      this.shareOnMenuVisible = false;
+    }
+  }
 
   newFileKeyUp(evt: any, newFileName: string) {
     if (evt.keyCode == 13) {
