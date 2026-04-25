@@ -5,62 +5,51 @@ import { Luxio } from 'luxio';
 // 防止重复加载
 let angularLoaded = false;
 
-/**
- * 调用后端API实例化Podman容器
- * @param apiInfoModel API模型数据
- */
-function createPodmanInstance(apiInfoModel: any): void {
-  // First, fetch user profile to get username
-  fetch(`/api/auth/profile`, {
-    credentials: 'include', // 携带 Cookie
-  })
-  .then((response) => {
-    if (!response.ok) {
+
+async function fetchProfile() {
+  try {
+    // First, fetch user profile to get username
+    const profileResponse = await fetch(`/api/auth/profile`, {
+      credentials: 'include', // 携带 Cookie
+    });
+
+    if (!profileResponse.ok) {
       throw new Error('Failed to fetch user profile');
     }
-    return response.json();
-  })
-  .then((userData) => {
+
+    const userData = await profileResponse.json();
     console.log('Creating Podman container instance for user:', userData.username);
-    
-    if (!userData.username) {
-      console.warn('Username not found in user profile, skipping container instantiation');
-      return;
-    }
 
-    if(userData.username !== apiInfoModel.username) {
-      console.warn(`Username in API model (${apiInfoModel.username}) does not match logged-in user (${userData.username}), skipping container instantiation`);
-      apiInfoModel.isLocked = true; // 可选：标记模型为锁定状态，前端可据此禁用相关功能
-      return;
-    }
+    return userData
 
-    // Then create Podman instance
-    return fetch(`/user/podman/create-instance?userName=${encodeURIComponent(userData.username)}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(apiInfoModel),
-    });
+  } catch (error) {
+    console.error('Error creating Podman container instance:', error);
+    // 不抛出错误，避免影响主流程
+  }
+}
+
+function processInstanceContainer(userData: any, apiInfoModel: any) {
+  // Then create Podman instance
+  return fetch(`/user/podman/create-instance?userName=${encodeURIComponent(userData.username)}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(apiInfoModel),
   })
-  .then((response) => {
-    if (!response) {
-      // User profile fetch failed or username missing
-      return;
-    }
-    
-    if (!response.ok) {
-      return response.json().catch(() => ({})).then((errorData) => {
-        throw new Error(`Failed to create Podman instance: ${response.status} ${response.statusText}. ${JSON.stringify(errorData)}`);
+  .then((createResponse) => {
+    if (!createResponse.ok) {
+      return createResponse.json().catch(() => ({})).then((errorData) => {
+        throw new Error(`Failed to create Podman instance: ${createResponse.status} ${createResponse.statusText}. ${JSON.stringify(errorData)}`);
       });
     }
-    return response.json();
+    return createResponse.json();
   })
   .then((result) => {
     if (!result) {
       return;
     }
-    
+
     console.log('Podman instance creation response:', result);
 
     if (result.status === 'SUCCESS') {
@@ -71,8 +60,23 @@ function createPodmanInstance(apiInfoModel: any): void {
   })
   .catch((error) => {
     console.error('Error creating Podman container instance:', error);
-    // 不抛出错误，避免影响主流程
   });
+}
+
+async function afterQueryApiModel(rawData: any): Promise<void> {
+  const userData = await fetchProfile();
+  if (userData.username !== rawData.username) {
+    console.warn(`Username in API model (${rawData.username}) does not match logged-in user (${userData.username}), skipping container instantiation`);
+    rawData.isLocked = true; // 可选：标记模型为锁定状态，前端可据此禁用相关功能
+  } else {
+    processInstanceContainer(userData, rawData);
+  }
+
+  Luxio("coderEditor", rawData, rawData?.name)
+    .catch(err => {
+      console.error('Angular failed to start', err);
+      angularLoaded = false;
+    });
 }
 
 function ViewPage() {
@@ -85,19 +89,9 @@ function ViewPage() {
           throw new Error('Network response was not ok.');
         }
         return response.json()
-      }).then(rawData => {
+      }).then( (rawData: any) => {
         // 查询模型成功后，调用接口实例化容器
-        if (rawData) {
-          createPodmanInstance(rawData);
-        } else {
-          console.warn('API model does not contain username, skipping container instantiation');
-        }
-        
-        Luxio("coderEditor", rawData, rawData?.name)
-          .catch(err => {
-            console.error('Angular failed to start', err);
-            angularLoaded = false; // 可选：允许重试
-          });
+        afterQueryApiModel(rawData);
       });
   }
 
