@@ -39,7 +39,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
-  terminalBtnShow = true;
+  terminalBtnShow = false;
   terminalPanelShow = false;
   keepTerminalInstance = {
     value: false,
@@ -524,10 +524,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.dataList = dataList;
     if (dataList.length > 0) {
       const docObj = dataList[0];
-      if (docObj.isLocked) {
-        this.terminalBtnShow = false;
-        this.terminalPanelShow = false;
-      }
+      setTimeout(() => {
+        this.terminalBtnShow = !docObj.isLocked;
+      }, 0);
     }
   }
 
