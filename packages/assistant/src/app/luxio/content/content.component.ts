@@ -479,25 +479,41 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   forkBtn(evt: any) {
     const dataList = this.dataList();
-    if(dataList.length >= 0 ) {
-      fetch(`/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
-        method: 'POST'
-      })
-        .then(response => response.json())
-        .then(data => {
-          delete dataList[0].isLocked
-          const shareData: NodeDef = this.buildNodeDef(dataList[0]);
-          if (shareData && shareData.profile) {
-            this.coreService.postData('/user/save', shareData).subscribe((data: any) => {
-              if (data.id !== undefined ) {
-                this.notificationService.showNotification('Fork successful', 'success');
-                window.open(`/editor/${data.id}`, '_blank', 'noopener,noreferrer');
-              } else {
-                this.notificationService.showNotification('Fork failed', 'error');
-              }
-            });
+    if (dataList.length >= 0) {
+      // 先构建 shareData
+      const shareData: NodeDef = this.buildNodeDef(dataList[0]);
+      if (shareData && shareData.profile) {
+        // 先发送 /user/save
+        this.coreService.postData('/user/save', shareData).subscribe({
+          next: (saveResponse: any) => {
+            if (saveResponse.id !== undefined) {
+              // 保存成功后，发送 /user/fork
+              fetch(`/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
+                method: 'POST'
+              })
+                .then(response => response.json())
+                .then(forkData => {
+                  // Fork 成功
+                  this.notificationService.showNotification('Fork successful', 'success');
+                  window.open(`/editor/${saveResponse.id}`, '_blank', 'noopener,noreferrer');
+                })
+                .catch(error => {
+                  this.notificationService.showNotification('Fork failed', 'error');
+                });
+            } else {
+              this.notificationService.showNotification('Save failed', 'error');
+            }
+          },
+          error: (err) => {
+            // 处理保存错误
+            if (err.error && err.error.errorCode === 'DUPLICATE_ENTRY') {
+              this.notificationService.showNotification(err.error.message, 'error');
+            } else {
+              this.notificationService.showNotification('An error occurred while saving.', 'error');
+            }
           }
         });
+      }
     }
   }
 
@@ -1045,12 +1061,22 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       return;
     }
 
+    let me = this;
     const shareData: NodeDef = this.buildNodeDef(this.currentItem);
     if (shareData && shareData.profile) {
-      this.coreService.postData('/user/save', shareData).subscribe((data: any) => {
+      this.coreService.postData('/user/save', shareData).subscribe({
+        next: config => {
+          // 处理上传功能 - 所有上传都使用ZIP压缩方式
+          me.coreService.handleZipUpload(me.currentItem!);
+        },
+        error: err => {
+          if (err.error && err.error.errorCode === 'DUPLICATE_ENTRY') {
+            this.notificationService.showNotification(err.error.message, 'error');
+          } else {
+            this.notificationService.showNotification('An error occurred while saving.', 'error');
+          }
+        }
       });
-      // 处理上传功能 - 所有上传都使用ZIP压缩方式
-      this.coreService.handleZipUpload(this.currentItem);
     }
     this.shareOnMenuVisible = false;
   }
@@ -1061,6 +1087,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     shareData.username = this.coreService.userData?.username || "Anonymous";
 
     const copyOfTarget = JSON.parse(JSON.stringify(currentItem));
+    delete copyOfTarget.isLocked
     // recursively remove the children of any file nodes in the tree that end with '.ospec', since we only want to share the original file content for those files, not the parsed tree
     const traverse = (node: any) => {
       if (node.nodeType === 'file' && node.label.endsWith('.ospec')) {
