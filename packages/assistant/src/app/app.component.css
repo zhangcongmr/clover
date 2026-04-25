@@ -98,6 +98,31 @@
   background-color: var(--vscode-statusBar-background);
 }
 
+/* Saving and Forking indicators */
+.saving-indicator, .forking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--vscode-foreground);
+  font-size: 0.9rem;
+  margin-right: 1rem;
+  overflow: hidden; /* Prevent overflow from animation */
+}
+
+.saving-indicator svg, .forking-indicator svg {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0; /* Prevent SVG from shrinking */
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .codigma-overview-longstrip {
   align-items: center;
   align-self: stretch;

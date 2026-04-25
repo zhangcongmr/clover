@@ -58,6 +58,9 @@
                     <use href="#icon-fork"></use>
                   </svg>
                 </div>
+                @if(coreService.forking()) {
+                  <span style="margin-left: 0.5rem; color: var(--vscode-foreground);">Forking...</span>
+                }
               }
 
               <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">

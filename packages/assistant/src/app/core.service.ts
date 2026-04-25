@@ -63,6 +63,12 @@ export class CoreService {
     return this.getUploadProgressDetails();
   });
 
+  // Saving state for save operations
+  saving = signal<boolean>(false);
+
+  // Forking state for fork operations
+  forking = signal<boolean>(false);
+
   // 添加一个方法来显示通知
   showNotification(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
     this.notificationService.showNotification(message, type);

@@ -52,8 +52,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   readonly sideOpen = model<boolean>(true);
   readonly addProjectComponent = viewChild(AddProjectComponent);
   readonly currentDisplayViewId = model<number>(1);
-  private myConfigService = inject(MyConfigService)
-  private coreService = inject(CoreService);
+  public myConfigService = inject(MyConfigService)
+  public coreService = inject(CoreService);
   private notificationService = inject(NotificationService);
 
   // lock state for the entire content, which can be set based on user permissions or other factors; when true, all nodes are effectively read-only and UI will reflect this state
@@ -484,6 +484,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const shareData: NodeDef = this.buildNodeDef(dataList[0]);
       if (shareData && shareData.profile) {
         // 先发送 /user/save
+        this.coreService.forking.set(true);
         this.coreService.postData('/user/save', shareData).subscribe({
           next: (saveResponse: any) => {
             if (saveResponse.id !== undefined) {
@@ -496,15 +497,19 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
                   // Fork 成功
                   this.notificationService.showNotification('Fork successful', 'success');
                   window.open(`/editor/${saveResponse.id}`, '_blank', 'noopener,noreferrer');
+                  this.coreService.forking.set(false);
                 })
                 .catch(error => {
                   this.notificationService.showNotification('Fork failed', 'error');
+                  this.coreService.forking.set(false);
                 });
             } else {
               this.notificationService.showNotification('Save failed', 'error');
+              this.coreService.forking.set(false);
             }
           },
           error: (err) => {
+            this.coreService.forking.set(false);
             // 处理保存错误
             if (err.error && err.error.errorCode === 'DUPLICATE_ENTRY') {
               this.existingId = err.error.existingId;
@@ -1067,12 +1072,15 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     let me = this;
     const shareData: NodeDef = this.buildNodeDef(this.currentItem);
     if (shareData && shareData.profile) {
+      this.coreService.saving.set(true);
       this.coreService.postData('/user/save', shareData).subscribe({
         next: config => {
+          this.coreService.saving.set(false);
           // 处理上传功能 - 所有上传都使用ZIP压缩方式
           me.coreService.handleZipUpload(me.currentItem!);
         },
         error: err => {
+          this.coreService.saving.set(false);
           if (err.error && err.error.errorCode === 'DUPLICATE_ENTRY') {
             this.existingId = err.error.existingId;
             this.duplicateModalVisible.set(true);
