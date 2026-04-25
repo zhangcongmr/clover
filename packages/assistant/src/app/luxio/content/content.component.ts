@@ -7,7 +7,8 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, pickParentObject, expandAncestorsIfActive, findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath } from '../../shared/ast-tree/ast-tree.component';
+import { AstTreeComponent, pickParentObject, expandAncestorsIfActive, 
+  findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
@@ -831,19 +832,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   public afterCloseTab(val: any) {
   }
 
+  currentItem: AstTreeNode | null = null;
   shareOnMenuVisible = false;
   shareData: NodeDef = {};
   menuItemAction(evt: any) {
-    // Check if this is an upload success or error notification
-    if (evt && evt.type) {
-      if (evt.type === 'upload-success') {
-        this.notificationService.showNotification(evt.message, 'success');
-      } else if (evt.type === 'upload-error') {
-        this.notificationService.showNotification(evt.message, 'error');
-      }
-      return; // Exit early if it's an upload notification
-    }
-
     // guard against modifications when in read-only mode
     const modifyingActions = ['Rename','Delete','Duplicate','NewApi','NewFile','NewFolder'];
     if (this.isLocked && modifyingActions.includes(evt.action)) {
@@ -874,6 +866,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       }
     }
     if (evt.action == 'Share') {
+      this.currentItem = evt.target;
       this.shareOnMenuVisible = true;
       this.shareData = {};
       this.shareData.name = evt.target.label || "Untitled API"
@@ -1054,6 +1047,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   confirmShare(): void {
     if (this.shareData && this.shareData.profile) {
       this.coreService.postData('/user/save', this.shareData);
+
+      if(this.currentItem) {
+        // 处理上传功能 - 所有上传都使用ZIP压缩方式
+        this.coreService.handleZipUpload(this.currentItem);
+      }
+
       this.shareOnMenuVisible = false;
     }
   }

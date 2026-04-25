@@ -104,13 +104,6 @@
          ||currentContextMenuEvt['item']['nodeType'] == 'api'
          ||currentContextMenuEvt['item']['nodeType'] == 'file'
          ||currentContextMenuEvt['item']['nodeType'] == 'folder')) {
-      <!-- 添加上传菜单项，当右键点击file或folder节点时显示 -->
-      @if(currentContextMenuEvt['item']['nodeType'] == 'file' || currentContextMenuEvt['item']['nodeType'] == 'folder') {
-        <div data-layer="Upload" class="Upload codigma-menu-every-item" (click)="menuSelectAction('Upload')">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16" fill="currentColor"><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          <span>Upload</span></div>
-      }
-      
       <div data-layer="Delete" class="Delete codigma-menu-every-item" (click)="menuSelectAction('Delete')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"   fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z"></path></svg>
         <span>Delete</span></div>
