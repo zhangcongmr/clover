@@ -104,15 +104,15 @@
               </div>
             </div>
           </ast-modal>
-          <ast-modal [title]="'Select Save Location'" [visible]="showLocationSelector()" [modalSize]="'medium'" (close)="cancelLocation()">
-            <div class="codigma-ast-modal-body">
-              <div style="margin-bottom: 1rem;">
+          <ast-modal [title]="'Select Save Location'" [visible]="showLocationSelector()" [modalSize]="'large'" (close)="cancelLocation()">
+            <div class="codigma-ast-modal-body select-location-modal-body">
+              <div class="select-location-message">
                 Please select a folder in the tree below to save the imported files/folders.
               </div>
-              <div style="max-height: 400px; overflow: auto; border: 1px solid #ccc; padding: 8px;">
-                <div ast-tree [data]="dataList()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
+              <div class="select-location-tree-wrapper">
+                <div ast-tree class="select-location-tree" [data]="dataList()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
               </div>
-              <div class="ShareOnActions" style="margin-top: 1rem;">
+              <div class="ShareOnActions select-location-actions">
                 <div class="btn cancel" (click)="cancelLocation()">Cancel</div>
                 <div class="btn confirm" (click)="confirmLocation()">Save Here</div>
               </div>

@@ -124,6 +124,52 @@ textarea:focus {
     user-select: none;
 }
 
+.select-location-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.codigma-ast-modal-body.select-location-modal-body {
+    align-items: stretch;
+}
+
+.select-location-message {
+    font-size: 14px;
+    color: #333;
+    text-align: center;
+}
+
+.select-location-tree-wrapper {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 220px;
+    max-height: calc(100vh - 260px);
+    overflow: hidden;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px;
+    background: #fff;
+    display: flex;
+}
+
+.select-location-tree {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+.select-location-actions {
+    justify-content: flex-end;
+    width: 100%;
+}
+
 .ShareOnActions .btn.cancel {
     background: #f3f3f3;
     color: #333;
