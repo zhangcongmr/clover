@@ -718,7 +718,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // 确认位置选择
   async confirmLocation() {
     if (!this.selectedParentNode) {
-      this.notificationService.showNotification('Please select a location to save.', 'error');
+      this.notificationService.showNotification('Please select a folder location to save.', 'error');
       return;
     }
 
