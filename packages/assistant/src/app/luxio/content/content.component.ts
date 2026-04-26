@@ -70,7 +70,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // 添加位置选择器相关的属性
   showLocationSelector = signal<boolean>(false);
   pendingNodes: Array<AstTreeNode> = [];
-  selectedParentNode: AstTreeNode | null = null;
+  locationSelectionTree = signal<Array<AstTreeNode>>([]);
+  selectedParentNodeId: string | null = null;
 
   nodeDef: NodeDef | null = null;
   /** event emitted when selected node's file type changes */
@@ -712,25 +713,32 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   async apiSelected(evt: Array<AstTreeNode>) {
     this.pendingNodes = evt;
+    this.locationSelectionTree.set(this.createLocationTreeData(this.dataList()));
+    this.selectedParentNodeId = null;
     this.showLocationSelector.set(true);
   }
 
   // 确认位置选择
   async confirmLocation() {
-    if (!this.selectedParentNode) {
+    if (!this.selectedParentNodeId) {
       this.notificationService.showNotification('Please select a folder location to save.', 'error');
       return;
     }
 
-    const childStartLevel = (this.selectedParentNode.deepLevel ?? 0) + 1;
+    const selectedParentNode = findNodeById(this.dataList(), this.selectedParentNodeId);
+    if (!selectedParentNode) {
+      this.notificationService.showNotification('Selected location is no longer available.', 'error');
+      return;
+    }
+
+    const childStartLevel = (selectedParentNode.deepLevel ?? 0) + 1;
     assignDeepLevel(this.pendingNodes, childStartLevel);
-    this.assignDeepParent(this.pendingNodes, this.selectedParentNode);
+    this.assignDeepParent(this.pendingNodes, selectedParentNode);
 
     // 将pendingNodes添加到selectedParentNode的children
-    this.selectedParentNode.children = this.selectedParentNode.children || [];
-    this.selectedParentNode.children.push(...this.pendingNodes);
-    this.selectedParentNode.isExpanded = true; // 展开父节点
-
+    selectedParentNode.children = selectedParentNode.children || [];
+    selectedParentNode.children.push(...this.pendingNodes);
+    selectedParentNode.isExpanded = true; // 展开父节点
 
     this.storeApi();
     this.currentDisplayViewId.set(1);
@@ -738,17 +746,19 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     // 重置状态
     this.showLocationSelector.set(false);
-    this.resetSelection(this.dataList());
+    this.resetSelection(this.locationSelectionTree());
+    this.locationSelectionTree.set([]);
     this.pendingNodes = [];
-    this.selectedParentNode = null;
+    this.selectedParentNodeId = null;
   }
 
   // 取消位置选择
   cancelLocation() {
     this.showLocationSelector.set(false);
-    this.resetSelection(this.dataList());
+    this.resetSelection(this.locationSelectionTree());
+    this.locationSelectionTree.set([]);
     this.pendingNodes = [];
-    this.selectedParentNode = null;
+    this.selectedParentNodeId = null;
   }
 
   // 处理位置选择器中的节点点击
@@ -756,10 +766,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     // 只允许选择文件夹节点
     if (node.nodeType === 'folder') {
       // 重置之前的选择
-      this.resetSelection(this.dataList());
+      this.resetSelection(this.locationSelectionTree());
       // 设置新选择
       node.isSelected = true;
-      this.selectedParentNode = node;
+      this.selectedParentNodeId = node.id;
     } else {
       this.notificationService.showNotification('Please select a folder to save the files.', 'warning');
     }
@@ -773,6 +783,23 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         this.resetSelection(node.children);
       }
     }
+  }
+
+  private createLocationTreeData(nodes: Array<AstTreeNode>): Array<AstTreeNode> {
+    const cloneNode = (node: AstTreeNode): AstTreeNode => {
+      const cloned: AstTreeNode = {
+        id: node.id,
+        label: node.label,
+        nodeType: node.nodeType,
+        isExpanded: node.isExpanded,
+        children: [],
+      } as AstTreeNode;
+      if (node.children && node.children.length > 0) {
+        cloned.children = node.children.map(cloneNode);
+      }
+      return cloned;
+    };
+    return nodes.map(cloneNode);
   }
 
   async storeApi() {

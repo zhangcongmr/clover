@@ -110,7 +110,7 @@
                 Please select a folder in the tree below to save the imported files/folders.
               </div>
               <div class="select-location-tree-wrapper">
-                <div ast-tree class="select-location-tree" [data]="dataList()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
+                <div ast-tree class="select-location-tree" [data]="locationSelectionTree()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
               </div>
               <div class="ShareOnActions select-location-actions">
                 <div class="btn cancel" (click)="cancelLocation()">Cancel</div>
