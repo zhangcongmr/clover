@@ -7,7 +7,8 @@ import { FormsModule } from '@angular/forms';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
-import { AstTreeComponent, pickParentObject, expandAncestorsIfActive, 
+import {
+  AstTreeComponent, assignDeepLevel, pickParentObject, expandAncestorsIfActive, 
   findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
@@ -65,6 +66,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // folder persistence mode
   folderReadWriteMode: 'read' | 'readwrite' = 'read';
   /***aside */
+
+  // 添加位置选择器相关的属性
+  showLocationSelector = signal<boolean>(false);
+  pendingNodes: Array<AstTreeNode> = [];
+  selectedParentNode: AstTreeNode | null = null;
 
   nodeDef: NodeDef | null = null;
   /** event emitted when selected node's file type changes */
@@ -143,7 +149,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if ('openapi' in docObj && 'paths' in docObj) { //OpenApiV3Document
       const ospecFileName = this.coreService.removeExtension(this.myConfigService.getFileName() || 'Default') + '.ospec'
       let data: AstTreeNode = this.createNewFile(docObj, ospecFileName);
-      this.assignDeepLevel([data]);
+      assignDeepLevel([data]);
       this.dataList.set([data]);
     } else if ('dataList' in docObj || 'openedList' in docObj) { //DocModel
       // Restore folderHandles from IndexedDB for both dataList and openedList and set them only once
@@ -434,21 +440,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
-    for (const node of nodes) {
-      if(!node.deepLevel) {
-        node.deepLevel = level; // 设置当前层级
-      }
-      if (node.children && node.children.length > 0) {
-        this.assignDeepLevel(node.children, node.deepLevel + 1); // 递归处理子节点，层级+1
-      }
-    }
-  }
-
-  private assignDeepParent(evt: AstTreeNode[]) {
+  private assignDeepParent(evt: AstTreeNode[], parentItem: AstTreeNode | null = null) {
     for (let index = 0; index < evt.length; index++) {
       const dataItem = evt[index];
       if (dataItem) {
+        if (parentItem) {
+          dataItem.parentItem = pickParentObject(parentItem);
+        }
+
         const parentItemCopy = pickParentObject(dataItem);
         delete dataItem.isNewData; //子节点的父节点不维护是否新添加节点这个状态
 
@@ -457,7 +456,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           child['parentItem'] = parentItemCopy;
         });
 
-        this.assignDeepParent(dataItem.children);
+        this.assignDeepParent(dataItem.children, null);
       }
     }
   }
@@ -548,7 +547,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       // grab the results from the child component
       const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
-      this.assignDeepLevel(rootNode);
+      assignDeepLevel(rootNode);
       this.assignDeepParent(rootNode);
       this.dataList.set(rootNode);
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
@@ -569,7 +568,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         await addProject.openFileInContent();
         const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
-        this.assignDeepLevel(rootNode);
+        assignDeepLevel(rootNode);
         this.assignDeepParent(rootNode);
         this.dataList.set(rootNode);
         try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
@@ -601,7 +600,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           children: [],
           mode: 'read'
         } as any;
-        this.assignDeepLevel([node]);
+        assignDeepLevel([node]);
         this.dataList.set([node]);
         try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
       };
@@ -630,12 +629,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     this.fileTypeChange.emit(type);
 
     if (item.nodeType == 'file' && item.label.endsWith('.ospec')) {
+      // parse spec file and display APIs in tree view under the spec file node
       const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));
+      // set parentItem for each api node to enable breadcrumb navigation in API details view
       item.children = apiData;
       item.isExpanded = true;
       item.isParsed = true;
       item.servers = apiData.length > 0 ? (apiData[0]['folderInfo'] != null ? apiData[0]['folderInfo']['servers'] : []) : []
-      this.assignDeepLevel([item])
+      assignDeepLevel([item], item.deepLevel);
     }
 
     this.openTab(item);
@@ -710,20 +711,68 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   async apiSelected(evt: Array<AstTreeNode>) {
-    this.assignDeepLevel(evt);
-    this.assignDeepParent(evt);
-    this.dataList.update(value => value.concat(evt));
-    // persist snapshot to OPFS for later restoration
-    // try {
-    //   const snapshot = { name: evt.folderHandle?.name || rootName, mode: evt.mode, tree: evt.tree || [] };
-    //   await this.saveFolderSnapshotToOPFS(snapshot);
-    // } catch (err) {
-    //   console.warn('failed to persist folder snapshot to OPFS', err);
-    // }
+    this.pendingNodes = evt;
+    this.showLocationSelector.set(true);
+  }
+
+  // 确认位置选择
+  async confirmLocation() {
+    if (!this.selectedParentNode) {
+      this.notificationService.showNotification('Please select a location to save.', 'error');
+      return;
+    }
+
+    const childStartLevel = (this.selectedParentNode.deepLevel ?? 0) + 1;
+    assignDeepLevel(this.pendingNodes, childStartLevel);
+    this.assignDeepParent(this.pendingNodes, this.selectedParentNode);
+
+    // 将pendingNodes添加到selectedParentNode的children
+    this.selectedParentNode.children = this.selectedParentNode.children || [];
+    this.selectedParentNode.children.push(...this.pendingNodes);
+    this.selectedParentNode.isExpanded = true; // 展开父节点
+
 
     this.storeApi();
     this.currentDisplayViewId.set(1);
     this.sideOpen.set(true);
+
+    // 重置状态
+    this.showLocationSelector.set(false);
+    this.resetSelection(this.dataList());
+    this.pendingNodes = [];
+    this.selectedParentNode = null;
+  }
+
+  // 取消位置选择
+  cancelLocation() {
+    this.showLocationSelector.set(false);
+    this.resetSelection(this.dataList());
+    this.pendingNodes = [];
+    this.selectedParentNode = null;
+  }
+
+  // 处理位置选择器中的节点点击
+  onLocationNodeClick(node: AstTreeNode) {
+    // 只允许选择文件夹节点
+    if (node.nodeType === 'folder') {
+      // 重置之前的选择
+      this.resetSelection(this.dataList());
+      // 设置新选择
+      node.isSelected = true;
+      this.selectedParentNode = node;
+    } else {
+      this.notificationService.showNotification('Please select a folder to save the files.', 'warning');
+    }
+  }
+
+  // 重置选择状态
+  private resetSelection(nodes: AstTreeNode[]) {
+    for (const node of nodes) {
+      node.isSelected = false;
+      if (node.children) {
+        this.resetSelection(node.children);
+      }
+    }
   }
 
   async storeApi() {

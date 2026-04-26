@@ -64,6 +64,7 @@ export interface AstTreeNode {
     isActive?: boolean;
     hideActiveStatus?: boolean;//当激活了其它的节点的类型为folder的节点被激活时，隐藏非folder节点的激活状态
     isDeleted?: boolean; //当文件被删除时，标记该节点为已删除状态，但不从树中移除，用户可以选择恢复或者永久删除
+    isSelected?: boolean; //用于位置选择器中标记选中的节点
 
     /**
      * New data properties

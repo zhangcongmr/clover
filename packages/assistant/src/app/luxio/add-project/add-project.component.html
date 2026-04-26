@@ -29,15 +29,6 @@ padding-left: 6px;
       <div data-layer="From Remote Server" class="FromRemoteServer codigma-from-remote-server">From API Definition
       </div>
     </div>
-    <div data-layer="from-ecosystem" class="FromEcosystem codigma-from-local"
-      [class.selected-imported-type]="importType=='2'" (click)="importTypeChangeFn('2')">
-      <div data-svg-wrapper="" data-layer="ecosystem-icon" class="LocalIcon">
-        <svg class="icon" width="24" height="26">
-          <use href="#icon-remote-server"></use>
-        </svg>
-      </div>
-      <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Community</div>
-    </div>
     <div data-layer="from-local" class="FromLocal codigma-from-local" [class.selected-imported-type]="importType=='3'"
       (click)="importTypeChangeFn('3')">
       <div data-svg-wrapper="" data-layer="local-icon" class="LocalIcon">

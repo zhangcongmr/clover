@@ -28,6 +28,11 @@
     background-color: var(--vscode-button-background);
 }
 
+.child-item.selected {
+    background-color: var(--vscode-list-activeSelectionBackground);
+    color: var(--vscode-list-activeSelectionForeground);
+}
+
 .child-item:focus {
     background-color: cadetblue;
 }

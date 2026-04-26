@@ -104,6 +104,20 @@
               </div>
             </div>
           </ast-modal>
+          <ast-modal [title]="'Select Save Location'" [visible]="showLocationSelector()" [modalSize]="'medium'" (close)="cancelLocation()">
+            <div class="codigma-ast-modal-body">
+              <div style="margin-bottom: 1rem;">
+                Please select a folder in the tree below to save the imported files/folders.
+              </div>
+              <div style="max-height: 400px; overflow: auto; border: 1px solid #ccc; padding: 8px;">
+                <div ast-tree [data]="dataList()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
+              </div>
+              <div class="ShareOnActions" style="margin-top: 1rem;">
+                <div class="btn cancel" (click)="cancelLocation()">Cancel</div>
+                <div class="btn confirm" (click)="confirmLocation()">Save Here</div>
+              </div>
+            </div>
+          </ast-modal>
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
       } @else if(currentDisplayViewId()==2) {

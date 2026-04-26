@@ -7,6 +7,7 @@
 @for (item of data(); track item.id; let dataIndex = $index) {
   <div class="child-item" (click)="elementClick(item)"
     [class.active]="item['isActive']&&!item['hideActiveStatus']"
+    [class.selected]="item['isSelected']"
     (contextmenu)="showContextMenu({evt: $event, item: item})" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
     <div [style.width.px]="5 + (item.deepLevel || 0) * 10"></div>
     @if (item.nodeType=='folder' || item.label.endsWith('.ospec') || (item.children!=null&&item.children.length>0)) {
@@ -39,6 +40,7 @@
     <div class="child-item"
       [style.display]="item.isExpanded?'flex':'none'"
       (click)="elementClick(childItem);" [class.active]="childItem['isActive']&&!childItem['hideActiveStatus']"
+      [class.selected]="childItem['isSelected']"
       (contextmenu)="showContextMenu({evt: $event, item: childItem})" (mousedown)="forbiddenUserselectText()" (mouseup)="resetUserSelectText()">
       <div [style.width.px]="5 + (childItem.deepLevel || 0) * 10"></div>
       @if (childItem.nodeType=='folder'|| childItem.label.endsWith('.ospec') || (childItem.children!=null&&childItem.children.length>0)) {

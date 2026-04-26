@@ -26,7 +26,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly isLocked = input<boolean>(false);
   selectedNodeType = model<string>('') //内部使用，标识当前选中的节点类型  TreeNodeType  暂时闲置未使用
 
-  readonly nodeClick = output();
+  readonly nodeClick = output<AstTreeNode>();
   readonly showContextMenuClick = output<any>();
   readonly outOfRenameClick = output<any>();
   readonly menuItemAction = output<any>();
@@ -69,7 +69,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     if (changes["data"] && this.data()) {
       if(this.dataType() != 'subData') {
         const newDatas = this.data();
-        this.assignDeepLevel(newDatas);
+        assignDeepLevel(newDatas);
         this.data.set(newDatas);
       }
 
@@ -78,17 +78,6 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       }
     }
   }
-
-  
-  assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
-    for (const node of nodes) {
-      node.deepLevel = level; // 设置当前层级
-      if (node.children && node.children.length > 0) {
-        this.assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
-      }
-    }
-  }
-
 
   elementClick(item: any) {
     if (item['rename']) {
@@ -388,6 +377,15 @@ export enum ResetType {
   brother,
   deepIn, 
   onlyResetFolder
+}
+
+export function assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {
+  for(const node of nodes) {
+    node.deepLevel = level; // 设置当前层级
+    if (node.children && node.children.length > 0) {
+      assignDeepLevel(node.children, level + 1); // 递归处理子节点，层级+1
+    }
+  }
 }
 
 export function reset(data: Array<AstTreeNode>, resetType?: ResetType): void {
