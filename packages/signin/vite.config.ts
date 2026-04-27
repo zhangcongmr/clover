@@ -3,6 +3,7 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import mkcert from 'vite-plugin-mkcert';
+import { createSharedAppProxy, sharedApiProxy } from '../common/vite-proxy'
 
 const buildMode = process.env.BUILD_MODE || 'lib'
 
@@ -19,59 +20,60 @@ const commonDefine = {
 }
 
 const server = {
-    https: true,
+    host: '0.0.0.0',
+    port: 5174,
+    strictPort: true,
+    https: {},
     proxy: {
-      '/api/auth': {
-        target: 'https://localhost:8080',
-        changeOrigin: true,
-        secure: false, // 👈 关键：禁用证书验证（仅开发用！）
-        // 可选：重写路径（如果后端没有 /api 前缀）
-        // rewrite: (path) => path.replace(/^\/api/, '')
-      }
+      ...sharedApiProxy,
+      ...createSharedAppProxy('/signin')
     }
 }
 
-let config
+export default defineConfig(({ command }) => {
+  const isServe = command === 'serve'
+  const base = buildMode === 'app' ? (isServe ? '/signin/' : './') : './'
 
-if (buildMode === 'app') {
-  config = defineConfig({
-    base: './', //Added base configuration  确保编译后index.html中资源引用为 <script src="./assets/script.js"></script>， 而不是<script src="/assets/script.js"></script>
-    plugins: commonPlugins,
-    define: commonDefine,
-    resolve: commonResolve,
-    build: {
-      target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
-      sourcemap: true,
-      outDir: 'dist-app',
-    },
-    server: server,
-  })
-} else if (buildMode === 'lib') {
-  config = defineConfig({
-    plugins: commonPlugins,
-    define: commonDefine,
-    resolve: commonResolve,
-    build: {
-      target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
-      sourcemap: 'inline',
-      outDir: 'dist-lib',
-      lib: {
-        entry: 'src/app/signin-widget-element.tsx',
-        name: 'signinWidget',
-        fileName: 'signin-widget',
-        formats: ['iife'],
+  if (buildMode === 'app') {
+    return {
+      base,
+      plugins: commonPlugins,
+      define: commonDefine,
+      resolve: commonResolve,
+      build: {
+        target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
+        sourcemap: true,
+        outDir: 'dist-app',
       },
-      rollupOptions: {
-        external: [],
-        output: {
-          globals: {},
+      server: server,
+    }
+  }
+
+  if (buildMode === 'lib') {
+    return {
+      plugins: commonPlugins,
+      define: commonDefine,
+      resolve: commonResolve,
+      build: {
+        target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
+        sourcemap: 'inline',
+        outDir: 'dist-lib',
+        lib: {
+          entry: 'src/app/signin-widget-element.tsx',
+          name: 'signinWidget',
+          fileName: 'signin-widget',
+          formats: ['iife'],
+        },
+        rollupOptions: {
+          external: [],
+          output: {
+            globals: {},
+          },
         },
       },
-    },
-    server: server,
-  })
-} else {
-  throw new Error(`Unknown BUILD_MODE: ${buildMode}. Use 'app' or 'lib'.`)
-}
+      server: server,
+    }
+  }
 
-export default config
+  throw new Error(`Unknown BUILD_MODE: ${buildMode}. Use 'app' or 'lib'.`)
+})

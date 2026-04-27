@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { createSharedAppProxy, sharedApiProxy } from '../common/vite-proxy'
 
 const commonPlugins = [react(), tailwindcss()]
 
@@ -16,18 +17,17 @@ const commonDefine = {
 }
 
 const server = {
+    host: '0.0.0.0',
+    port: 5180,
+    strictPort: true,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        // 可选：重写路径（如果后端没有 /api 前缀）
-        // rewrite: (path) => path.replace(/^\/api/, '')
-      }
+      ...sharedApiProxy,
+      ...createSharedAppProxy('/resetpassword')
     }
 }
 
-let config = defineConfig({
-  base: './', //Added base configuration  确保编译后index.html中资源引用为 <script src="./assets/script.js"></script>， 而不是<script src="/assets/script.js"></script>
+export default defineConfig(({ command }) => ({
+  base: command === 'serve' ? '/resetpassword/' : './',
   plugins: commonPlugins,
   define: commonDefine,
   resolve: commonResolve,
@@ -37,5 +37,4 @@ let config = defineConfig({
     outDir: 'dist',
   },
   server: server,
-})
-export default config
+}))
