@@ -104,13 +104,13 @@ class AuthStore {
 
     // Check session validity periodically
     this.sessionCheckTimer = window.setInterval(async () => {
-      await this.validateSession();
+      // await this.validateSession();
     }, SESSION_CHECK_INTERVAL);
 
     // Also check when page becomes visible again
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'visible') {
-        await this.validateSession();
+        // await this.validateSession();
       }
     });
 

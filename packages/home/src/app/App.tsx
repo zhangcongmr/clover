@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { EventsFeed } from "@/app/components/EventsFeed";
 import { Header } from "@/app/components/Header";
 import { Repositories } from "@/app/components/Repositories";
@@ -16,7 +16,8 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
   baseHref = baseHref == null ? "" : baseHref;
   baseHref = baseHref.replace(/\/+$/, '');  //去掉末尾的/
 
-  const isSignInPage = window.location.pathname === '/signin';
+  // 使用 useMemo 缓存 pathname 检查，避免重复执行
+  const isSignInPage = useMemo(() => window.location.pathname === '/signin', []);
 
   // 使用 authStore 的状态（自动初始化，无需手动调用 /api/auth/profile）
   const [state, setState] = useState(authStore.getState());
@@ -60,11 +61,24 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
     }
   };
 
+  // 使用 ref 跟踪是否已经处理过初始认证检查
+  const hasCheckedInitialAuth = useRef(false);
+
   // 监听认证状态变化，处理未认证情况
   useEffect(() => {
-    if (!loading && !isAuthenticated && !isSignInPage) {
-      // AuthStore 已自动验证会话，如果未认证则跳转登录
-      window.location.href = '/signin';
+    // 跳过如果已经检查过初始认证状态
+    if (hasCheckedInitialAuth.current) {
+      return;
+    }
+
+    // 只在首次加载完成时检查
+    if (!loading) {
+      hasCheckedInitialAuth.current = true;
+      
+      // 如果未认证且不在登录页，则跳转
+      if (!isAuthenticated && !isSignInPage) {
+        window.location.href = '/signin';
+      }
     }
   }, [loading, isAuthenticated, isSignInPage]);
 
