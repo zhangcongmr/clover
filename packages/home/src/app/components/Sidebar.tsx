@@ -23,9 +23,10 @@ interface SidebarProps {
   onNavigateToRepositories: () => void;
   onNavigateToDashboard: () => void;
   currentView: "dashboard" | "repositories";
+  userName?: string;
 }
 
-export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, currentView }: SidebarProps) {
+export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, currentView, userName }: SidebarProps) {
   const [repositories, setRepositories] = useState<NodeDef[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +35,9 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/user/briefsByUserName?userName=Jack Mordan');
+        // Use userName from props if available, otherwise fallback to empty string
+        const queryUserName = userName || '';
+        const response = await fetch(`/user/briefsByUserName?userName=${encodeURIComponent(queryUserName)}`);
         
         // Check if response is JSON
         const contentType = response.headers.get('content-type');

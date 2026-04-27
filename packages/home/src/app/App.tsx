@@ -109,6 +109,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
           onNavigateToRepositories={handleNavigateToRepositories}
           onNavigateToDashboard={handleNavigateToDashboard}
           currentView={currentView}
+          userName={user?.name || user?.username || ''}
         />
         {currentView === "dashboard" ? (
           <>
