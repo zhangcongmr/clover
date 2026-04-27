@@ -164,6 +164,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         if(docObj.isLocked) {// 可选：标记模型为只读
           profileObj.isLocked = true;
         }
+        profileObj.isExpanded = true; // 默认展开根节点以显示内容
         this.dataList.set([profileObj]);
       }
       this.isLocked = docObj.isLocked;
