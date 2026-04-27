@@ -6,18 +6,16 @@ interface HeaderProps {
   isAuthenticated: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  onNavigateToProfile: () => void;
 }
 
-export function Header({ isAuthenticated, onLogin, onLogout }: HeaderProps) {
+export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile }: HeaderProps) {
   const handleSignOut = async () => {
     onLogout();
   };
 
   const handleMyProfile = () => {
-    // Navigate to profile page
-    console.log("Navigating to profile...");
-    // window.location.href = '/profile';
-    alert("Navigating to My Profile");
+    onNavigateToProfile();
   };
 
   const handleMyStars = () => {

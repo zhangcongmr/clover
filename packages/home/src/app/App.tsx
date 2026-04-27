@@ -5,6 +5,7 @@ import { Repositories } from "@/app/components/Repositories";
 import { RightSidebar } from "@/app/components/RightSidebar";
 import { Sidebar } from "@/app/components/Sidebar";
 import { authStore } from "@luxio/common";
+import { Profile } from "@/app/components/Profile";
 
 
 interface MyReactComponentProps {
@@ -23,7 +24,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
   const [state, setState] = useState(authStore.getState());
   const { user, isAuthenticated, loading } = state;
 
-  const [currentView, setCurrentView] = useState<"dashboard" | "repositories">("dashboard");
+  const [currentView, setCurrentView] = useState<"dashboard" | "repositories" | "profile">("dashboard");
 
   // 订阅 authStore 状态变化
   useEffect(() => {
@@ -37,6 +38,10 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
   const handleNavigateToDashboard = () => {
     setCurrentView("dashboard");
+  };
+
+  const handleNavigateToProfile = () => {
+    setCurrentView("profile");
   };
 
   const handleLogin = () => {
@@ -103,6 +108,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
         isAuthenticated={isAuthenticated} 
         onLogin={handleLogin}
         onLogout={handleLogout}
+        onNavigateToProfile={handleNavigateToProfile}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar 
@@ -116,8 +122,10 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
             <EventsFeed />
             {/* <RightSidebar /> */}
           </>
-        ) : (
+        ) : currentView === "repositories" ? (
           <Repositories />
+        ) : (
+          <Profile />
         )}
       </div>
     </div>
