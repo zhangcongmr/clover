@@ -26,3 +26,12 @@ export interface OpenApiV3Document {
   tags?: [];
   externalDocs?: any;
 }
+
+export interface User {
+  id?: string;
+  username?: string;
+  name?: string;
+  email?: string;
+  avatar?: string;
+  // 添加其他用户字段根据需要
+}

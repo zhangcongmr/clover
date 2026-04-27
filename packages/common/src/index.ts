@@ -1,4 +1,5 @@
 export * from "./model.js";
+export * from "./auth.js";
 /**
  * A simple greeting utility.
  */

@@ -4,6 +4,7 @@ import { Header } from "@/app/components/Header";
 import { Repositories } from "@/app/components/Repositories";
 import { RightSidebar } from "@/app/components/RightSidebar";
 import { Sidebar } from "@/app/components/Sidebar";
+import { authStore } from "@luxio/common";
 
 
 interface MyReactComponentProps {
@@ -17,10 +18,17 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
   const isSignInPage = window.location.pathname === '/signin';
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(!isSignInPage);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // 使用 authStore 的状态（自动初始化，无需手动调用 /api/auth/profile）
+  const [state, setState] = useState(authStore.getState());
+  const { user, isAuthenticated, loading } = state;
+
   const [currentView, setCurrentView] = useState<"dashboard" | "repositories">("dashboard");
+
+  // 订阅 authStore 状态变化
+  useEffect(() => {
+    const unsubscribe = authStore.subscribe(setState);
+    return unsubscribe;
+  }, []);
 
   const handleNavigateToRepositories = () => {
     setCurrentView("repositories");
@@ -42,51 +50,23 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include' // 确保发送 Cookie
-      });
-      const data = await response.json();
-      if(response.ok) {
-        setIsAuthenticated(false);
-        // Clear any stored user data
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // 清除前端状态（如 Zustand / Redux / Context）
-        // clearAuthState();
-        window.location.href = '/official-site';
-      }
+      // Use the shared authStore which handles both server and client cleanup
+      await authStore.logout();
+      window.location.href = '/official-site';
     } catch (error) {
       console.error('Logout failed:', error);
+      // Still redirect even if logout fails
+      window.location.href = '/official-site';
     }
   };
 
+  // 监听认证状态变化，处理未认证情况
   useEffect(() => {
-    // 如果是 /signin 路径，直接停止认证逻辑
-    if (isSignInPage) {
-      return;
+    if (!loading && !isAuthenticated && !isSignInPage) {
+      // AuthStore 已自动验证会话，如果未认证则跳转登录
+      window.location.href = '/signin';
     }
-
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch(`${baseHref}/api/auth/profile`, {
-          credentials: 'include', // 携带 Cookie
-        });
-        const userData = await response.json();
-        setUser(userData);
-        setIsAuthenticated(true);
-      } catch (err) {
-        console.error('获取用户信息失败:', err);
-        // 可跳转到登录页
-        window.location.href = '/signin';
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [isSignInPage]);
+  }, [loading, isAuthenticated, isSignInPage]);
 
   // 如果是登录页，显示提示
   if (isSignInPage) {
