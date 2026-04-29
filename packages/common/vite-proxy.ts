@@ -15,6 +15,12 @@ export const sharedApiProxy: Record<string, ProxyOptions> = {
     ...defaultProxyOptions,
     secure: false,
   },
+  '/terminals': {
+    target: 'https://192.168.153.129',
+    ...defaultProxyOptions,
+    secure: false,
+    wss: true,
+  },
 }
 
 export const sharedAppProxy: Record<string, ProxyOptions> = {
