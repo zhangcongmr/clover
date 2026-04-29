@@ -28,14 +28,14 @@ async function fetchProfile() {
   }
 }
 
-function processInstanceContainer(userData: any, apiInfoModel: any) {
+function processInstanceContainer(userData: any, nodeDef: any) {
   // Then create Podman instance
   return fetch(`/user/podman/create-instance?userName=${encodeURIComponent(userData.username)}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(apiInfoModel),
+    body: JSON.stringify(nodeDef),
   })
   .then((createResponse) => {
     if (!createResponse.ok) {
@@ -83,7 +83,7 @@ function ViewPage() {
   let params = useParams();
 
   const projectDef = (project: any) => {
-    fetch("/user/apiInfoModel/" + project.id).then(
+    fetch("/user/nodedef/" + project.id).then(
       (response: any) => {
         if (!response.ok) {
           throw new Error('Network response was not ok.');
