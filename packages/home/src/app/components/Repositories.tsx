@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Eye, Star, GitFork, Search as SearchIcon, ChevronDown } from "lucide-react";
 import { NodeDef } from "@luxio/common";
+import { fetchUserRepositories } from "./repositoryService";
 
 interface Repository {
   name: string;
@@ -12,7 +13,11 @@ interface Repository {
   isPrivate?: boolean;
 }
 
-export function Repositories() {
+interface RepositoriesProps {
+  userName?: string;
+}
+
+export function Repositories({ userName }: RepositoriesProps) {
   const [repositories, setRepositories] = useState<NodeDef[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -22,81 +27,18 @@ export function Repositories() {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/user/briefsByUserName?userName=Jack Mordan');
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('API endpoint not available - using mock data');
-        }
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data: Array<NodeDef> = await response.json();
+        const data = await fetchUserRepositories(userName || '');
         // Process data here when API is available
         setRepositories(data);
       } catch (err) {
         console.error('Error fetching repositories:', err);
-        // Use mock data
-        setRepositories([
-          {
-            name: "tyy/clover",
-            lastUpdated: "16 minutes ago",
-            views: 1,
-            stars: 0,
-            forks: 0,
-            isPrivate: false,
-          },
-          {
-            name: "tyy/spring-security-demo",
-            language: "Java",
-            lastUpdated: "yesterday 21:52",
-            views: 1,
-            stars: 0,
-            forks: 0,
-            isPrivate: false,
-          },
-          {
-            name: "tyy/dropwz-example",
-            lastUpdated: "Jan 28 11:21",
-            views: 1,
-            stars: 0,
-            forks: 0,
-            isPrivate: false,
-          },
-          {
-            name: "tyy/fullstack-alipay-demo",
-            lastUpdated: "Jan 13 09:31",
-            views: 1,
-            stars: 0,
-            forks: 0,
-            isPrivate: false,
-          },
-          {
-            name: "tyy/test-simple",
-            lastUpdated: "Jan 8 10:16",
-            views: 1,
-            stars: 0,
-            forks: 0,
-            isPrivate: false,
-          },
-          {
-            name: "tyy/py-demo",
-            lastUpdated: "Jan 3 15:20",
-            views: 1,
-            stars: 0,
-            forks: 0,
-            isPrivate: false,
-          },
-        ]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRepositories();
-  }, []);
+  }, [userName]);
 
   const publicCount = repositories.filter(r => !r.isPrivate).length;
   const privateCount = repositories.filter(r => r.isPrivate).length;

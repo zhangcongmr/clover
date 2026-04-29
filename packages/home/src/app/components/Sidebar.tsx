@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NodeDef } from "@luxio/common";
+import { fetchUserRepositories } from "./repositoryService";
 
 interface Repository {
   name: string;
@@ -35,33 +36,11 @@ export function Sidebar({ onNavigateToRepositories, onNavigateToDashboard, curre
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        // Use userName from props if available, otherwise fallback to empty string
-        const queryUserName = userName || '';
-        const response = await fetch(`/user/briefsByUserName?userName=${encodeURIComponent(queryUserName)}`);
-        
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('API endpoint not available - using mock data');
-        }
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: Array<NodeDef> = await response.json();
+        const data = await fetchUserRepositories(userName || '');
         setRepositories(data);        
         setError(null);
       } catch (err) {
         console.error('Error fetching repositories:', err);
-        // Use mock data if API is not available
-        // setRepositories([
-        //   "tyx/clover",
-        //   "tyx/dropwiz-example",
-        //   "tyx/fullstack-alipay-demo",
-        //   "tyx/test-simple",
-        //   "tyx/spring-security-demo",
-        // ]);
         setError(null); // Don't show error, just use mock data silently
       } finally {
         setLoading(false);

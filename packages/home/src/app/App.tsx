@@ -123,7 +123,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
             {/* <RightSidebar /> */}
           </>
         ) : currentView === "repositories" ? (
-          <Repositories />
+          <Repositories userName={user?.name || user?.username || ''} />
         ) : (
           <Profile />
         )}
