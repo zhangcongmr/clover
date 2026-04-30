@@ -1,3 +1,5 @@
+import "./fetchInterceptor";
+
 import { useEffect, useState, useMemo, useRef } from "react";
 import { EventsFeed } from "@/app/components/EventsFeed";
 import { Header } from "@/app/components/Header";
