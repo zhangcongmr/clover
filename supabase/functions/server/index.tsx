@@ -3,6 +3,7 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import nodeAuthApi from "./node_auth_api.tsx";
+import userApi from "./user_api.tsx";  // 导入新创建的用户API
 
 const app = new Hono();
 
@@ -24,6 +25,7 @@ app.use(
 
 // Register the node and auth APIs
 app.route('/make-server-1334fc59', nodeAuthApi);
+app.route('/make-server-1334fc59', userApi);  // 注册用户API到相同的路由前缀
 
 // Health check endpoint
 app.get("/make-server-1334fc59/health", (c) => {
