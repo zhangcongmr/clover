@@ -5,7 +5,6 @@ import react from '@vitejs/plugin-react'
 import mkcert from 'vite-plugin-mkcert';
 import { createSharedAppProxy, sharedApiProxy } from '../common/vite-proxy'
 
-const buildMode = process.env.BUILD_MODE || 'lib'
 
 const commonPlugins = [react(), tailwindcss(), mkcert()]
 
@@ -32,48 +31,18 @@ const server: import('vite').ServerOptions = {
 
 export default defineConfig(({ command }) => {
   const isServe = command === 'serve'
-  const base = buildMode === 'app' ? (isServe ? '/home/' : './') : './'
+  const base = isServe ? '/home/' : './'
 
-  if (buildMode === 'app') {
-    return {
-      base,
-      plugins: commonPlugins,
-      define: commonDefine,
-      resolve: commonResolve,
-      build: {
-        target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
-        sourcemap: true,
-        outDir: 'dist-app',
-      },
-      server: server,
-    }
+  return {
+    base,
+    plugins: commonPlugins,
+    define: commonDefine,
+    resolve: commonResolve,
+    build: {
+      target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
+      sourcemap: true,
+      outDir: 'dist',
+    },
+    server: server,
   }
-
-  if (buildMode === 'lib') {
-    return {
-      plugins: commonPlugins,
-      define: commonDefine,
-      resolve: commonResolve,
-      build: {
-        target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
-        sourcemap: 'inline',
-        outDir: 'dist-lib',
-        lib: {
-          entry: 'src/app/home-widget-element.tsx',
-          name: 'HomeWidget',
-          fileName: 'home-widget',
-          formats: ['iife'],
-        },
-        rollupOptions: {
-          external: [],
-          output: {
-            globals: {},
-          },
-        },
-      },
-      server: server,
-    }
-  }
-
-  throw new Error(`Unknown BUILD_MODE: ${buildMode}. Use 'app' or 'lib'.`)
 })
