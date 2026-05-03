@@ -27,6 +27,7 @@ export const setupFetchInterceptor = () => {
     // 检查 URL 路径名是否以 "/user" 或 "/api/auth" 开头
     if ((url.pathname.startsWith('/user') || url.pathname.startsWith('/api/auth')) && 
         url.origin === window.location.origin) {
+      console.log('Intercepting request to', url.pathname);
       // 构造新 URL，使用 API_BASE 替换原地址
       const newUrl = API_BASE + url.pathname + url.search;
       
@@ -38,7 +39,7 @@ export const setupFetchInterceptor = () => {
       
       return originalFetch(newUrl, modifiedInit);
     }
-    
+    console.log('Passing through request to', url.pathname);
     // 对于其他请求，按常规方式处理
     return originalFetch(input, init);
   };

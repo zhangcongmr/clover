@@ -27,6 +27,32 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+// 在启动时确保avatars bucket存在
+const initializeStorage = async () => {
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const avatarsBucketExists = buckets?.some(bucket => bucket.name === 'make-1334fc59-avatars');
+
+    if (!avatarsBucketExists) {
+      const { error } = await supabase.storage.createBucket('make-1334fc59-avatars', {
+        public: true,
+        fileSizeLimit: 5242880 // 5MB
+      });
+
+      if (error) {
+        console.error('Error creating avatars bucket:', error);
+      } else {
+        console.log('Avatars bucket created successfully');
+      }
+    }
+  } catch (error) {
+    console.error('Error initializing storage:', error);
+  }
+};
+
+// 初始化存储
+initializeStorage();
+
 // GET /user/info/{id} - 获取用户信息
 app.get("/user/info/:id", async (c) => {
   try {
@@ -83,6 +109,54 @@ app.post("/user/avatar/:id", async (c) => {
   } catch (error) {
     console.log(`Error updating user avatar: ${error}`);
     return c.json({ error: error.message }, 500);
+  }
+});
+
+// POST /user/avatar/signed-url - Generate a signed upload URL for avatar upload
+app.post("/user/avatar/signed-url", async (c) => {
+  try {
+    const { fileName, fileType, userId } = await c.req.json();
+
+    if (!fileName || !fileType) {
+      return c.json({
+        success: false,
+        message: "fileName and fileType are required"
+      }, 400);
+    }
+
+    // 验证文件类型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(fileType)) {
+      return c.json({
+        success: false,
+        message: "Invalid file type. Only images are allowed."
+      }, 400);
+    }
+
+    const bucketName = 'make-1334fc59-avatars';
+    const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+    const uniqueFileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = userId ? `${userId}/${uniqueFileName}` : `avatars/${uniqueFileName}`;
+
+    // 生成上传所需的签名信息
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    return c.json({
+      success: true,
+      uploadUrl: `${supabaseUrl}/storage/v1/upload/resumable`,
+      bucketName: bucketName,
+      filePath: filePath,
+      token: serviceRoleKey, // 使用service role key进行上传
+      publicUrl: `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`
+    });
+
+  } catch (error) {
+    console.error("Error generating signed URL:", error);
+    return c.json({
+      success: false,
+      message: `Failed to generate upload URL: ${error.message}`
+    }, 500);
   }
 });
 
@@ -152,7 +226,7 @@ app.post("/user/api/upload", async (c) => {
             cacheControl: '3600',
             upsert: true
           });
-        
+
         if (retryError) {
           console.error("Error re-uploading file to storage:", retryError);
           return c.json({
@@ -162,7 +236,7 @@ app.post("/user/api/upload", async (c) => {
             filename: null
           }, 500);
         }
-        
+
         data = newData;
       } else {
         console.error("Error uploading file to storage:", uploadError);
@@ -251,12 +325,12 @@ app.get("/user/api/file-info/:fileName", async (c) => {
 
     if (objectError) {
       console.error("Error accessing file:", objectError);
-      return c.json({ 
-        success: false, 
-        message: "File not found", 
-        fileUrl: null, 
-        filename: null, 
-        size: 0 
+      return c.json({
+        success: false,
+        message: "File not found",
+        fileUrl: null,
+        filename: null,
+        size: 0
       }, 404);
     }
 
@@ -275,12 +349,12 @@ app.get("/user/api/file-info/:fileName", async (c) => {
     });
   } catch (error) {
     console.error(`Failed to get file info for fileName: ${fileName}`, error);
-    return c.json({ 
-      success: false, 
-      message: `Error: ${error.message}`, 
-      fileUrl: null, 
-      filename: null, 
-      size: 0 
+    return c.json({
+      success: false,
+      message: `Error: ${error.message}`,
+      fileUrl: null,
+      filename: null,
+      size: 0
     }, 500);
   }
 });
@@ -347,7 +421,7 @@ app.post("/user/api/upload-folder", async (c) => {
     // 生成唯一的文件名
     const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    
+
     // 构建完整的路径
     let filePath = fileName;
     if (userId) {
@@ -377,7 +451,7 @@ app.post("/user/api/upload-folder", async (c) => {
             cacheControl: '3600',
             upsert: true
           });
-        
+
         if (retryError) {
           console.error("Error re-uploading file to storage:", retryError);
           return c.json({
@@ -387,7 +461,7 @@ app.post("/user/api/upload-folder", async (c) => {
             filename: null
           }, 500);
         }
-        
+
         data = newData;
       } else {
         console.error("Error uploading file to storage:", uploadError);

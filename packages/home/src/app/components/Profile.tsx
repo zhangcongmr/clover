@@ -1,5 +1,7 @@
-import { MapPin, Link as LinkIcon, Calendar, Users, Star, GitFork, Book, Mail } from "lucide-react";
-import { useState, useEffect } from "react";
+import { MapPin, Link as LinkIcon, Calendar, Users, Star, GitFork, Book, Mail, Upload, Loader2, Camera } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { authStore } from "@luxio/common";
 
 interface Repository {
   id: number;
@@ -28,27 +30,117 @@ interface UserProfile {
 }
 
 export function Profile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [pinnedRepos, setPinnedRepos] = useState<Repository[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "repositories" | "stars">("overview");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [state, setState] = useState(authStore.getState());
+  const { user, isAuthenticated, loading } = state;
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 验证文件类型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError("Invalid file type. Only images are allowed.");
+      return;
+    }
+
+    // 验证文件大小 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("File size exceeds 5MB limit");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const userId = '9d3b2884-c89a-4be8-a416-b45ae85579f5';
+      const bucketName = 'make-1334fc59-avatars';
+
+      // 生成唯一文件名
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `public/${userId}/${fileName}`;
+
+      // 读取文件内容
+      const fileBuffer = await file.arrayBuffer();
+
+      // 调用Supabase Storage REST API - POST upload/resumable (TUS protocol)
+      const uploadUrl = `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`;
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${publicAnonKey}`,
+          'apikey': publicAnonKey,
+          'x-upsert': 'true',
+          // "priority": "u=1, i",
+          'Content-Type': 'application/offset+octet-stream',
+          "tus-resumable": "1.0.0",
+          'Upload-Length': file.size.toString(),
+          'Upload-Metadata': `bucketName ${btoa(bucketName)},objectName ${btoa(filePath)},contentType ${btoa(file.type)},cacheControl ${btoa('max-age=3600')}`
+        },
+        body: fileBuffer
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error("Storage API error:", errorText);
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
+
+      // 生成公开URL
+      const publicUrl = `https://${projectId}.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
+
+      // 更新profile中的avatar URL
+      if (user) {
+        setUser({
+          ...user,
+          avatar: publicUrl
+        });
+      }
+
+      // 可选：调用后端API更新数据库中的avatar字段
+      try {
+        await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-1334fc59/user/avatar/${userId}`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${publicAnonKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ avatarUrl: publicUrl })
+          }
+        );
+      } catch (dbError) {
+        console.warn('Failed to update avatar in database:', dbError);
+      }
+
+      console.log('Avatar uploaded successfully:', publicUrl);
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      setUploadError(error instanceof Error ? error.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      // 重置file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
 
   useEffect(() => {
-    // Mock user profile data
-    const mockProfile: UserProfile = {
-      name: "Jack Mordan",
-      username: "jackmordan",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-      bio: "Full-stack developer passionate about open source and building great user experiences.",
-      location: "San Francisco, CA",
-      website: "https://jackmordan.dev",
-      email: "jack@example.com",
-      joinDate: "2020-03-15",
-      followers: 1234,
-      following: 567,
-      repositories: 89,
-      stars: 456
-    };
-
     const mockPinnedRepos: Repository[] = [
       {
         id: 1,
@@ -92,11 +184,10 @@ export function Profile() {
       }
     ];
 
-    setProfile(mockProfile);
     setPinnedRepos(mockPinnedRepos);
   }, []);
 
-  if (!profile) {
+  if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="text-gray-500">Loading profile...</div>
@@ -124,52 +215,77 @@ export function Profile() {
           <div className="flex gap-8">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <img
-                src={profile.avatar}
-                alt={profile.name}
-                className="w-32 h-32 rounded-full border-4 border-gray-100"
-              />
+              <div className="relative group">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-32 h-32 rounded-full border-4 border-gray-100 object-cover"
+                />
+                {/* Upload overlay */}
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={uploading}
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full transition-all duration-200 cursor-pointer"
+                  title="Upload new avatar"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              </div>
+              {uploadError && (
+                <p className="mt-2 text-xs text-red-600">{uploadError}</p>
+              )}
             </div>
 
             {/* Profile Info */}
             <div className="flex-1">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-1">{profile.name}</h1>
-                  <p className="text-gray-600">@{profile.username}</p>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h1>
+                  <p className="text-gray-600">@{user.username}</p>
                 </div>
                 <button className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
                   Edit Profile
                 </button>
               </div>
 
-              <p className="text-gray-700 mb-4">{profile.bio}</p>
+              <p className="text-gray-700 mb-4">{user.bio}</p>
 
               {/* Profile Metadata */}
               <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
-                {profile.location && (
+                {user.location && (
                   <div className="flex items-center gap-1">
                     <MapPin className="w-4 h-4" />
-                    <span>{profile.location}</span>
+                    <span>{user.location}</span>
                   </div>
                 )}
-                {profile.email && (
+                {user.email && (
                   <div className="flex items-center gap-1">
                     <Mail className="w-4 h-4" />
-                    <span>{profile.email}</span>
+                    <span>{user.email}</span>
                   </div>
                 )}
-                {profile.website && (
+                {user.website && (
                   <div className="flex items-center gap-1">
                     <LinkIcon className="w-4 h-4" />
-                    <a href={profile.website} className="text-blue-600 hover:underline">
-                      {profile.website.replace('https://', '')}
+                    <a href={user.website} className="text-blue-600 hover:underline">
+                      {user.website.replace('https://', '')}
                     </a>
                   </div>
                 )}
                 <div className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  <span>Joined {new Date(profile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                  <span>Joined {new Date(user.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                 </div>
               </div>
 
@@ -177,21 +293,21 @@ export function Profile() {
               <div className="flex gap-6 text-sm">
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4 text-gray-500" />
-                  <span className="font-semibold">{profile.followers.toLocaleString()}</span>
+                  <span className="font-semibold">{user.followers.toLocaleString()}</span>
                   <span className="text-gray-600">followers</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-semibold">{profile.following.toLocaleString()}</span>
+                  <span className="font-semibold">{user.following.toLocaleString()}</span>
                   <span className="text-gray-600">following</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Book className="w-4 h-4 text-gray-500" />
-                  <span className="font-semibold">{profile.repositories}</span>
+                  <span className="font-semibold">{user.repositories}</span>
                   <span className="text-gray-600">repositories</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-gray-500" />
-                  <span className="font-semibold">{profile.stars}</span>
+                  <span className="font-semibold">{user.stars}</span>
                   <span className="text-gray-600">stars</span>
                 </div>
               </div>
@@ -204,31 +320,28 @@ export function Profile() {
           <div className="flex gap-8">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`pb-3 px-1 text-sm font-medium transition-colors ${
-                activeTab === "overview"
+              className={`pb-3 px-1 text-sm font-medium transition-colors ${activeTab === "overview"
                   ? "text-red-600 border-b-2 border-red-600"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               Overview
             </button>
             <button
               onClick={() => setActiveTab("repositories")}
-              className={`pb-3 px-1 text-sm font-medium transition-colors ${
-                activeTab === "repositories"
+              className={`pb-3 px-1 text-sm font-medium transition-colors ${activeTab === "repositories"
                   ? "text-red-600 border-b-2 border-red-600"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               Repositories
             </button>
             <button
               onClick={() => setActiveTab("stars")}
-              className={`pb-3 px-1 text-sm font-medium transition-colors ${
-                activeTab === "stars"
+              className={`pb-3 px-1 text-sm font-medium transition-colors ${activeTab === "stars"
                   ? "text-red-600 border-b-2 border-red-600"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               Stars
             </button>
