@@ -45,7 +45,7 @@
           aria-expanded="true" data-state="open" aria-controls="radix:1:" (click)="clickMoreBtn($event)"
           (blur)="blurMoreBtn($event)">
           <div class="w-7 h-7 rounded-full overflow-hidden bg-pink-200"><img
-              src="/static/images/photo-1494790108377-be9c29b29330?w=100&amp;h=100&amp;fit=crop" alt="User"
+              src="{{coreService.userData?.avatar}}" alt="User"
               class="w-full h-full object-cover"></div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round" class="lucide lucide-chevron-down w-3 h-3 text-gray-600">
