@@ -384,7 +384,7 @@ app.get("/api/auth/profile", async (c) => {
     "username": "lily",
     "email": "zhangcongmr@outlook.com",
     "id": "9d3b2884-c89a-4be8-a416-b45ae85579f5",
-    "avatar": "/static/images/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+    "avatar": "https://otfghdaafotnopjhqcbc.supabase.co/storage/v1/object/public/make-1334fc59-avatars/public/9d3b2884-c89a-4be8-a416-b45ae85579f5/avatar.jpg"
   });
 });
 

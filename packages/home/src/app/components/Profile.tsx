@@ -38,6 +38,23 @@ export function Profile() {
 
   const [state, setState] = useState(authStore.getState());
   const { user, isAuthenticated, loading } = state;
+  
+  // 订阅authStore的变化
+  useEffect(() => {
+    const unsubscribe = authStore.subscribe((newState) => {
+      setState(newState);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // 创建setUser函数来更新全局用户信息
+  const setUser = (newUser: any) => {
+    // 更新全局状态
+    authStore.setUser(newUser);
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -65,7 +82,7 @@ export function Profile() {
 
       // 生成唯一文件名
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const fileName = `avatar.${fileExt}`;
       const filePath = `public/${userId}/${fileName}`;
 
       // 读取文件内容
@@ -225,13 +242,13 @@ export function Profile() {
                 <button
                   onClick={handleAvatarClick}
                   disabled={uploading}
-                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full transition-all duration-200 cursor-pointer"
+                  className="absolute inset-0 flex items-center justify-center bg-transparent rounded-full transition-all duration-200 cursor-pointer"
                   title="Upload new avatar"
                 >
                   {uploading ? (
                     <Loader2 className="w-8 h-8 text-white animate-spin" />
                   ) : (
-                    <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   )}
                 </button>
                 <input
@@ -291,7 +308,7 @@ export function Profile() {
 
               {/* Stats */}
               <div className="flex gap-6 text-sm">
-                <div className="flex items-center gap-1">
+                {/* <div className="flex items-center gap-1">
                   <Users className="w-4 h-4 text-gray-500" />
                   <span className="font-semibold">{user.followers.toLocaleString()}</span>
                   <span className="text-gray-600">followers</span>
@@ -299,7 +316,7 @@ export function Profile() {
                 <div className="flex items-center gap-1">
                   <span className="font-semibold">{user.following.toLocaleString()}</span>
                   <span className="text-gray-600">following</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-1">
                   <Book className="w-4 h-4 text-gray-500" />
                   <span className="font-semibold">{user.repositories}</span>

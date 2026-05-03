@@ -7,9 +7,14 @@ interface HeaderProps {
   onLogin: () => void;
   onLogout: () => void;
   onNavigateToProfile: () => void;
+  user?: {
+    avatar: string;
+    name?: string;
+    username?: string;
+  };
 }
 
-export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile }: HeaderProps) {
+export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile, user }: HeaderProps) {
   const handleSignOut = async () => {
     onLogout();
   };
@@ -115,7 +120,7 @@ export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile
               <button className="flex items-center gap-1 hover:opacity-80">
                 <div className="w-7 h-7 rounded-full overflow-hidden bg-pink-200">
                   <img
-                    src="/static/images/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+                    src={user?.avatar}
                     alt="User"
                     className="w-full h-full object-cover"
                   />

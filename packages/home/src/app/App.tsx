@@ -111,6 +111,7 @@ export default function App({ baseHref, onAction }: MyReactComponentProps) {
         onLogin={handleLogin}
         onLogout={handleLogout}
         onNavigateToProfile={handleNavigateToProfile}
+        user={user}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar 
