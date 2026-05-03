@@ -956,24 +956,29 @@ export class CoreService {
 
   public parseModel(modelDef: any, apiDef: any) {
     const model: any = {};
-    const bodyName = modelDef.substring(modelDef.lastIndexOf('/') + 1);
-    const def = apiDef[bodyName];
-    const props = def['properties'];
-    if (props) {
-      for (const key in props) {
-        if (Object.prototype.hasOwnProperty.call(props, key)) {
-          const element = props[key];
-          if (element.hasOwnProperty('items') && element['type'] == 'array') {
-            if (element["items"]['$ref']) {
-              model[key] = [this.parseModel(element["items"]['$ref'], apiDef)]
-            } else if (element["items"]['type']) {
-              model[key] = [this.parseElement(element["items"])];
-            }
-          } else if (element.hasOwnProperty('$ref')) {
-            model[key] = this.parseModel(element['$ref'], apiDef)
-          } else {
-            if (element['type']) {
-              model[key] = this.parseElement(element);
+    if((modelDef as string).startsWith('https://') || (modelDef as string).startsWith('http://')) {
+      // fetch model def from remote url when modelDef is a url, currently only support application/json content-type and $ref schema in the url
+      this.fetchModelDef(modelDef, model, apiDef);
+    } else {
+      const bodyName = modelDef.substring(modelDef.lastIndexOf('/') + 1);
+      const def = apiDef[bodyName];
+      const props = def['properties'];
+      if (props) {
+        for (const key in props) {
+          if (Object.prototype.hasOwnProperty.call(props, key)) {
+            const element = props[key];
+            if (element.hasOwnProperty('items') && element['type'] == 'array') {
+              if (element["items"]['$ref']) {
+                model[key] = [this.parseModel(element["items"]['$ref'], apiDef)]
+              } else if (element["items"]['type']) {
+                model[key] = [this.parseElement(element["items"])];
+              }
+            } else if (element.hasOwnProperty('$ref')) {
+              model[key] = this.parseModel(element['$ref'], apiDef)
+            } else {
+              if (element['type']) {
+                model[key] = this.parseElement(element);
+              }
             }
           }
         }
@@ -1078,6 +1083,36 @@ export class CoreService {
       return 'string';
     }
     return 'string';
+  }
+
+  /**
+   "content": {
+        "application/json": {
+            "schema": {
+                "$ref": "https://schemas.example.com/queryVectorBody.json"
+            }
+        }
+    }
+
+    modelDef = "https://schemas.example.com/queryVectorBody.json"
+    
+    处理请求体是外部引用的情况，直接发请求获取模型数据
+    目前仅支持application/json的content-type，且schema必须是$ref引用的形式
+   * @param modelDef 
+   * @param model 
+   * @param apiDef 
+   */
+  public fetchModelDef(modelDef: any, model: any, apiDef: any) {
+    fetch(modelDef).then(res => res.json()).then(data => {
+      const tmpModel = this.parseModel(data, apiDef);
+      for (const key in tmpModel) {
+        if (Object.prototype.hasOwnProperty.call(tmpModel, key)) {
+          model[key] = tmpModel[key];
+        }
+      }
+    }).catch(error => {
+      console.error('Error:', error);
+    });
   }
 
   public getTotal(specDef: any) {
