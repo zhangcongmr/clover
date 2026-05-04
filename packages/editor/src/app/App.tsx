@@ -29,13 +29,25 @@ async function fetchProfile() {
 }
 
 function processInstanceContainer(userData: any, nodeDef: any) {
-  // Then create Podman instance
-  return fetch(`/user/podman/create-instance?userName=${encodeURIComponent(userData.username)}`, {
+  // Create the request body according to the new API spec
+  const requestBody = {
+    "image": "pty-server:1.0.0",
+    "name": `con-${userData.username}-${nodeDef.name}`,
+    "ENV_CERT_ID": "1776521282286",
+    "volumes": [
+        `/opt/paasdata/dropwz-example-app/data/uploads/${userData.username}/${nodeDef.name}:/mnt/storage/${nodeDef.name}`
+    ],
+    "network": "pty-network"
+  };
+
+  // Call the new API endpoint
+  return fetch(`/api/cmn/run`, {
     method: 'POST',
     headers: {
+      'x-api-key': 'secret123',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(nodeDef),
+    body: JSON.stringify(requestBody),
   })
   .then((createResponse) => {
     if (!createResponse.ok) {
