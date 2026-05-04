@@ -562,6 +562,30 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         next: () => {
           this.notificationService.showNotification('Project deleted successfully', 'success');
           this.isMoreMenuOpen = false;
+          
+          // Delete the corresponding container after successful deletion of nodedef
+          const containerName = `con-${this.coreService.userData?.username}-${this.nodeDef?.name}`;
+          fetch('/api/cmn/delete', {
+            method: 'POST',
+            headers: {
+              'x-api-key': 'secret123',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              containerNames: [containerName]
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              console.error('Failed to delete container:', response.status, response.statusText);
+              return;
+            }
+            console.log('Container deleted successfully:', containerName);
+          })
+          .catch(error => {
+            console.error('Error deleting container:', error);
+          });
+
           // 可以在这里添加删除成功后的逻辑，比如跳转到其他页面或刷新列表
           window.location.href = '/home'; // 跳转到首页或其他合适的位置
         },
