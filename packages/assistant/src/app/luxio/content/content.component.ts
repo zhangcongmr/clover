@@ -21,6 +21,7 @@ import { NoteBookComponent } from '../../shared/notebook/notebook.component';
 import { NodeDef } from '@luxio/common';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
+import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';
 
 interface WebSocketRequest {
   action: string;
@@ -45,7 +46,7 @@ interface WebSocketResponse {
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
-  imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
+  imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent, AstMenuComponent,
     NoteBookComponent
   ]
 })
@@ -101,6 +102,11 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   
   // 添加自动刷新定时器
   private refreshIntervalId: any = null;
+
+  // 添加更多按钮菜单相关变量
+  isMoreMenuOpen = false;
+  moreMenuInitiator: DOMRect | undefined;
+  blurSwitch = true;
 
   userResource = resource({
     // Define a reactive comput`tion.
@@ -525,7 +531,46 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   MoreBtn(evt: any) {
+    if (!this.isMoreMenuOpen) {
+      this.isMoreMenuOpen = !this.isMoreMenuOpen;
+      this.moreMenuInitiator = evt.target.getBoundingClientRect();
+    }
+  }
 
+  blurMoreBtn(evt: any) {
+    if (this.blurSwitch) {
+      this.isMoreMenuOpen = false;
+    }
+  }
+
+  mouseentermenu(evt: any) {
+    this.blurSwitch = false;
+  }
+
+  mouseleavemenu(evt: any) {
+    this.blurSwitch = true;
+  }
+
+  deleteProject() {
+    if (!this.nodeDef || !this.nodeDef.id) {
+      this.notificationService.showNotification('No project to delete', 'error');
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      this.coreService.deleteData(`/user/nodedef/${this.nodeDef.id}`).subscribe({
+        next: () => {
+          this.notificationService.showNotification('Project deleted successfully', 'success');
+          this.isMoreMenuOpen = false;
+          // 可以在这里添加删除成功后的逻辑，比如跳转到其他页面或刷新列表
+          window.location.href = '/home'; // 跳转到首页或其他合适的位置
+        },
+        error: (err) => {
+          this.notificationService.showNotification('Failed to delete project', 'error');
+          console.error('Delete project error:', err);
+        }
+      });
+    }
   }
 
   async openFolderInContent(mode: 'read' | 'readwrite' = 'read') {

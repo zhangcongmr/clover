@@ -264,6 +264,10 @@ export class CoreService {
     return this.http.post(url, data);
   }
 
+  deleteData(url: string) {
+    return this.http.delete<any>(url);
+  }
+
   /**
  * 通用的文件下载方法
  * @param url - 文件的 URL
