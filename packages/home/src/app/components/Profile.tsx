@@ -78,69 +78,7 @@ export function Profile() {
 
     try {
       const userId = '9d3b2884-c89a-4be8-a416-b45ae85579f5';
-      const bucketName = 'make-1334fc59-avatars';
-
-      // 生成唯一文件名
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `avatar.${fileExt}`;
-      const filePath = `public/${userId}/${fileName}`;
-
-      // 读取文件内容
-      const fileBuffer = await file.arrayBuffer();
-
-      // 调用Supabase Storage REST API - POST upload/resumable (TUS protocol)
-      const uploadUrl = `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`;
-
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-          'apikey': publicAnonKey,
-          'x-upsert': 'true',
-          // "priority": "u=1, i",
-          'Content-Type': 'application/offset+octet-stream',
-          "tus-resumable": "1.0.0",
-          'Upload-Length': file.size.toString(),
-          'Upload-Metadata': `bucketName ${btoa(bucketName)},objectName ${btoa(filePath)},contentType ${btoa(file.type)},cacheControl ${btoa('max-age=3600')}`
-        },
-        body: fileBuffer
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error("Storage API error:", errorText);
-        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-      }
-
-      // 生成公开URL
-      const publicUrl = `https://${projectId}.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
-
-      // 更新profile中的avatar URL
-      if (user) {
-        setUser({
-          ...user,
-          avatar: publicUrl
-        });
-      }
-
-      // 可选：调用后端API更新数据库中的avatar字段
-      try {
-        await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-1334fc59/user/avatar/${userId}`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${publicAnonKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ avatarUrl: publicUrl })
-          }
-        );
-      } catch (dbError) {
-        console.warn('Failed to update avatar in database:', dbError);
-      }
-
-      console.log('Avatar uploaded successfully:', publicUrl);
+      await fetchSupabaseStorage(userId, file);
     } catch (error) {
       console.error('Avatar upload error:', error);
       setUploadError(error instanceof Error ? error.message : 'Upload failed');
@@ -459,4 +397,70 @@ export function Profile() {
       </div>
     </div>
   );
+
+  async function fetchSupabaseStorage(userId: string, file: File) {
+    const bucketName = 'make-1334fc59-avatars';
+
+    // 生成唯一文件名
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `avatar.${fileExt}`;
+    const filePath = `public/${userId}/${fileName}`;
+
+    // 读取文件内容
+    const fileBuffer = await file.arrayBuffer();
+
+    // 调用Supabase Storage REST API - POST upload/resumable (TUS protocol)
+    const uploadUrl = `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`;
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${publicAnonKey}`,
+        'apikey': publicAnonKey,
+        'x-upsert': 'true',
+        // "priority": "u=1, i",
+        'Content-Type': 'application/offset+octet-stream',
+        "tus-resumable": "1.0.0",
+        'Upload-Length': file.size.toString(),
+        'Upload-Metadata': `bucketName ${btoa(bucketName)},objectName ${btoa(filePath)},contentType ${btoa(file.type)},cacheControl ${btoa('max-age=3600')}`
+      },
+      body: fileBuffer
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error("Storage API error:", errorText);
+      throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+    }
+
+    // 生成公开URL
+    const publicUrl = `https://${projectId}.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
+
+    // 更新profile中的avatar URL
+    if (user) {
+      setUser({
+        ...user,
+        avatar: publicUrl
+      });
+    }
+
+    // 可选：调用后端API更新数据库中的avatar字段
+    try {
+      await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-1334fc59/user/avatar/${userId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ avatarUrl: publicUrl })
+        }
+      );
+    } catch (dbError) {
+      console.warn('Failed to update avatar in database:', dbError);
+    }
+
+    console.log('Avatar uploaded successfully:', publicUrl);
+  }
 }
