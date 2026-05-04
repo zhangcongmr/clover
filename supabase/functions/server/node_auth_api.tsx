@@ -31,6 +31,32 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+// GET /user/info/{id} - 获取用户信息
+app.get("/user/info/:id", async (c) => {
+  try {
+    const { id } = c.req.param();
+
+    // 查询用户信息
+    const { data: user, error } = await supabase
+      .from('userinfo')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') { // Record not found
+        return c.json({});
+      }
+      throw error;
+    }
+
+    return c.json(user);
+  } catch (error) {
+    console.log(`Error fetching user info by ID: ${error}`);
+    return c.json({}, 500);
+  }
+});
+
 // NodeDef相关API（与Java版本保持一致）
 // GET /user/allBriefs - 获取所有节点定义简要信息（分页）
 app.get("/user/allBriefs", async (c) => {
