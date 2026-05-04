@@ -493,4 +493,85 @@ app.get("/api/auth/apple", (c) => {
   return c.json({ redirectUrl: appleAuthUrl });
 });
 
+// POST /user/avatar/{id} - 更新用户头像
+app.post("/user/avatar/:id", async (c) => {
+  try {
+    const { id } = c.req.param();
+    const reqText = await c.req.text(); // 获取纯文本请求体
+    let avatarUrl = reqText;
+
+    // 如果请求体是JSON格式，则解析出avatarUrl
+    try {
+      const parsed = JSON.parse(reqText);
+      avatarUrl = typeof parsed === 'string' ? parsed : parsed.avatarUrl;
+    } catch (e) {
+      // 如果不是JSON格式，保持原始reqText作为avatarUrl
+    }
+
+    // 更新头像
+    const { error } = await supabase
+      .from('userinfo')
+      .update({ avatar: avatarUrl })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating user avatar:", error);
+      return c.json({ error: error.message }, 500);
+    }
+
+    return c.json({ message: "Avatar updated successfully" });
+  } catch (error) {
+    console.log(`Error updating user avatar: ${error}`);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// POST /user/avatar/signed-url - Generate a signed upload URL for avatar upload
+app.post("/user/avatar/signed-url", async (c) => {
+  try {
+    const { fileName, fileType, userId } = await c.req.json();
+
+    if (!fileName || !fileType) {
+      return c.json({
+        success: false,
+        message: "fileName and fileType are required"
+      }, 400);
+    }
+
+    // 验证文件类型
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(fileType)) {
+      return c.json({
+        success: false,
+        message: "Invalid file type. Only images are allowed."
+      }, 400);
+    }
+
+    const bucketName = 'make-1334fc59-avatars';
+    const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+    const uniqueFileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = userId ? `${userId}/${uniqueFileName}` : `avatars/${uniqueFileName}`;
+
+    // 生成上传所需的签名信息
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    return c.json({
+      success: true,
+      uploadUrl: `${supabaseUrl}/storage/v1/upload/resumable`,
+      bucketName: bucketName,
+      filePath: filePath,
+      token: serviceRoleKey, // 使用service role key进行上传
+      publicUrl: `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`
+    });
+
+  } catch (error) {
+    console.error("Error generating signed URL:", error);
+    return c.json({
+      success: false,
+      message: `Failed to generate upload URL: ${error.message}`
+    }, 500);
+  }
+});
+
 export default app;
