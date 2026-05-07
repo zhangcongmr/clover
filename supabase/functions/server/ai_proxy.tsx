@@ -48,9 +48,9 @@ app.post('/ai_proxy', async (c) => {
     const apiKey = Deno.env.get('DEEPSEEK_API_KEY');
     if (!apiKey) {
       console.error('Missing DEEPSEEK_API_KEY environment variable');
-      return c.json({ 
-        success: false, 
-        error: 'Server configuration error: Missing API key' 
+      return c.json({
+        success: false,
+        error: 'Server configuration error: Missing API key'
       }, 500);
     }
 
@@ -67,35 +67,40 @@ app.post('/ai_proxy', async (c) => {
       { role: 'user' as const, content: message }
     ];
 
+    // 设置响应头为 text/plain 以支持流式传输
+    c.header('Content-Type', 'text/plain; charset=utf-8');
+    c.header('Transfer-Encoding', 'chunked');
+
     // 使用 OpenAI 客户端发送请求
-    const response = await openai.chat.completions.create({
+    const stream = await openai.chat.completions.create({
       messages: messages,
       model: 'deepseek-v4-pro',
+      stream: true,
     });
 
-    // 提取AI回复
-    const aiReply = response.choices?.[0]?.message?.content;
-    
-    if (!aiReply) {
-      console.error('Invalid response format from AI API:', response);
-      return c.json({ 
-        success: false, 
-        error: 'Invalid response format from AI service' 
-      }, 500);
-    }
+    // 创建文本编码器，用于将字符串转换为 Uint8Array
+    const encoder = new TextEncoder();
 
-    // 成功返回AI回复
-    const result: AiResponse = {
-      success: true,
-      reply: aiReply
-    };
+    // 创建一个可读流来处理响应
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        for await (const part of stream) {
+          if (part.choices && part.choices[0]?.delta?.content) {
+            // 将接收到的部分响应编码为字节后发送给客户端
+            const content = part.choices[0].delta.content;
+            controller.enqueue(encoder.encode(content));
+          }
+        }
+        controller.close();
+      },
+    });
 
-    return c.json(result);
+    return new Response(readableStream);
   } catch (error) {
     console.error('Unexpected error in AI proxy:', error);
-    return c.json({ 
-      success: false, 
-      error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}` 
+    return c.json({
+      success: false,
+      error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
     }, 500);
   }
 });

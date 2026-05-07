@@ -67,20 +67,49 @@ function App() {
         throw new Error(errorData.error || `API request failed with status ${response.status}`);
       }
 
-      const data = await response.json();
-      
-      if (data.success && data.reply) {
-        const aiMessage: Message = {
-          id: Date.now().toString(),
-          content: data.reply,
-          role: 'assistant',
-          timestamp: new Date(),
-        };
+      // Create assistant message with empty content to start with
+      const aiMessageId = Date.now().toString();
+      const initialAiMessage: Message = {
+        id: aiMessageId,
+        content: '',
+        role: 'assistant',
+        timestamp: new Date(),
+      };
 
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error(data.error || 'Invalid response format from AI API');
+      // Add the initial empty message to the messages array
+      setMessages(prev => [...prev, initialAiMessage]);
+
+      // Process the streamed response
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Could not read response stream');
       }
+
+      let aiContent = '';
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Decode the chunk and append to the AI content
+        const chunk = decoder.decode(value, { stream: true });
+        aiContent += chunk;
+
+        // Update the assistant message with the new content
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === aiMessageId ? { ...msg, content: aiContent } : msg
+          )
+        );
+      }
+
+      // Update the final message content after stream completes
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === aiMessageId ? { ...msg, content: aiContent } : msg
+        )
+      );
     } catch (error) {
       console.error('Error communicating with AI:', error);
       
@@ -152,7 +181,7 @@ function App() {
               <p>开始与 AI 助手对话，分享您的想法或提出问题</p>
               <div className="mt-4 grid grid-cols-2 gap-3 max-w-md">
                 <button 
-                  onClick={() => setInputValue('介绍一下最新的AI技术')}
+                  onClick={() => setInputValue('介绍了最新的AI技术')}
                   className="text-left p-3 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg"
                 >
                   介绍AI技术
