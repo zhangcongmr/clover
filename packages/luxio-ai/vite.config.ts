@@ -2,7 +2,19 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import mkcert from 'vite-plugin-mkcert';
 import { createSharedAppProxy, sharedApiProxy } from '../common/vite-proxy'
+
+const server: import('vite').ServerOptions = {
+  host: '0.0.0.0',
+  port: 5181,
+  strictPort: true,
+  https: {},
+  proxy: {
+    ...sharedApiProxy,
+    ...createSharedAppProxy('/luxio-ai'),
+  }
+}
 
 export default defineConfig(({ command }) => ({
   base: command === 'serve' ? '/luxio-ai/' : './',
@@ -11,6 +23,7 @@ export default defineConfig(({ command }) => ({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
+    mkcert()
   ],
   resolve: {
     alias: {
@@ -18,15 +31,7 @@ export default defineConfig(({ command }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
-    host: '0.0.0.0',
-    port: 5181,
-    strictPort: true,
-    proxy: {
-      ...sharedApiProxy,
-      ...createSharedAppProxy('/luxio-ai'),
-    }
-  },
+  server: server,
   build: {
     target: ['es2022', 'chrome111', 'edge111', 'firefox114', 'safari16.4'],
       sourcemap: true,

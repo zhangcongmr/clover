@@ -4,6 +4,7 @@ import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import nodeAuthApi from "./node_auth_api.tsx";
 import userApi from "./user_api.tsx";
+import aiProxy from "./ai_proxy.tsx"; // Import the new AI proxy function
 
 const app = new Hono();
 
@@ -26,6 +27,9 @@ app.use(
 // Register the node and auth APIs
 app.route('/make-server-1334fc59', nodeAuthApi);
 app.route('/make-server-1334fc59', userApi);
+
+// Register the AI proxy API separately to make it accessible at its own route
+app.route('/make-server-1334fc59', aiProxy);
 
 // Health check endpoint
 app.get("/make-server-1334fc59/health", (c) => {
