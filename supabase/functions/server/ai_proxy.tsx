@@ -76,6 +76,9 @@ app.post('/ai_proxy', async (c) => {
       messages: messages,
       model: 'deepseek-v4-pro',
       stream: true,
+      extra_body: {
+        "thinking": { "type": "disabled" }
+      },
     });
 
     // 创建文本编码器，用于将字符串转换为 Uint8Array
