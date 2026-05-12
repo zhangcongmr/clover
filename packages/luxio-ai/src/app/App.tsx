@@ -28,17 +28,40 @@ interface Message {
   timestamp: Date;
 }
 
+// Model options for the selector
+const modelOptions = [
+  { value: "gpt-4o", label: "GPT-4o" },
+  { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+  { value: "claude-sonnet-4", label: "Claude Sonnet 4" },
+  { value: "deepseek-v3", label: "DeepSeek V3" },
+  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+];
+
 function App() {
   // State for AI chat functionality
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(modelOptions[0].value);
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const modelButtonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownUpward, setDropdownUpward] = useState(false);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Check available space and set dropdown direction when it opens
+  useEffect(() => {
+    if (modelSelectorOpen && modelButtonRef.current) {
+      const rect = modelButtonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const dropdownEstimatedHeight = 200;
+      setDropdownUpward(spaceBelow < dropdownEstimatedHeight);
+    }
+  }, [modelSelectorOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -74,6 +97,7 @@ function App() {
         },
         body: JSON.stringify({
           message: inputValue,
+          model: selectedModel,
           history: messages.map((msg) => ({
             role: msg.role,
             content: msg.content,
@@ -267,45 +291,47 @@ function App() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50 rounded-lg transition-colors">
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 16 16"
-                  fill="none"
+              {/* Model Selector */}
+              <div className="relative">
+                <button
+                  ref={modelButtonRef}
+                  onClick={() => setModelSelectorOpen(!modelSelectorOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
                 >
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="2"
-                    fill="currentColor"
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                  <span>{modelOptions.find(m => m.value === selectedModel)?.label || selectedModel}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                </button>
+                {modelSelectorOpen && (
+                  <div className={`absolute left-0 z-50 min-w-[160px] ${dropdownUpward ? "bottom-full mb-1" : "top-full mt-1"} bg-white border border-gray-200 rounded-lg shadow-lg`}>
+                    {modelOptions.map((model) => (
+                      <button
+                        key={model.value}
+                        onClick={() => {
+                          setSelectedModel(model.value);
+                          setModelSelectorOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                          selectedModel === model.value ? 'bg-purple-50 text-purple-700 font-medium' : ''
+                        } ${model === modelOptions[0] ? "rounded-t-lg" : ""} ${
+                          model === modelOptions[modelOptions.length - 1] ? 'rounded-b-lg' : ''
+                        }`}
+                      >
+                        {model.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Click outside to close */}
+                {modelSelectorOpen && (
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setModelSelectorOpen(false)}
                   />
-                  <circle
-                    cx="4"
-                    cy="4"
-                    r="1.5"
-                    fill="currentColor"
-                  />
-                  <circle
-                    cx="12"
-                    cy="4"
-                    r="1.5"
-                    fill="currentColor"
-                  />
-                  <circle
-                    cx="4"
-                    cy="12"
-                    r="1.5"
-                    fill="currentColor"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="1.5"
-                    fill="currentColor"
-                  />
-                </svg>
-                <span>深度思考</span>
-              </button>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
