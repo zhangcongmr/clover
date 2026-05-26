@@ -22,7 +22,7 @@ import { NodeDef } from '@luxio/common';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';
-
+import { normalizeApiSpec } from "api-render-ui"
 interface WebSocketRequest {
   action: string;
   objectKey: string;
@@ -701,7 +701,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     if (item.nodeType == 'file' && item.label.endsWith('.ospec')) {
       // parse spec file and display APIs in tree view under the spec file node
-      const apiData = this.coreService.parseOpenApiSpec(JSON.parse(item.content || ''));
+      const normalSpec = await normalizeApiSpec(item.content)
+      const apiData = this.coreService.parseOpenApiSpec(normalSpec);
       // set parentItem for each api node to enable breadcrumb navigation in API details view
       item.children = apiData;
       item.isExpanded = true;

@@ -800,7 +800,11 @@ export class CoreService {
   }
 
   public parseOpenApiSpec(rawSpecDef: any, currentServer?: any, serviceName?: string) {
-    let apiInfos: any = [];
+    let apiInfos: AstTreeNode[] = [];
+    if (rawSpecDef && !rawSpecDef.paths) {
+      return [];
+    }
+
     const paths = rawSpecDef.paths;
     for (const pathKey in paths) {
       if (Object.prototype.hasOwnProperty.call(paths, pathKey)) {

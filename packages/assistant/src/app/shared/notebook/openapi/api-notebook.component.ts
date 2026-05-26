@@ -15,11 +15,6 @@ export class ApiNoteBookComponent implements OnInit {
 
     ngOnInit(): void {
         let data = this.data();
-        const openapiSpec: any = data?.content != null ? JSON.parse(data?.content) : {}
-        if (!openapiSpec || !openapiSpec.paths) {
-            // alert('⚠️ Please define `openapiSpec` in the script tag.');
-            return;
-        }
         requestAnimationFrame(()=> {
         //    initNotebook();
             const apiOperatorListView = this.apiOperatorListView()
@@ -27,7 +22,7 @@ export class ApiNoteBookComponent implements OnInit {
                 mountPoint: apiOperatorListView?.nativeElement, // 可以是选择器字符串
             });
             // 执行渲染
-            apiRenderer.render(openapiSpec);
+            apiRenderer.render(data?.content ?? '');
         })
     }
 }

@@ -6,7 +6,7 @@ import { ServerManagerComponent } from '../server-manager/server-manager.compone
 import { ServiceManagerComponent } from '../service-manager/service-manager.component';
 import { FormsModule } from '@angular/forms';
 import { AstMenuComponent } from '../ast-menu/ast-menu.component';
-import { TreeNodeType } from '../model';
+import { AstTreeNode, TreeNodeType } from '../model';
 
 @Component({
     selector: 'server-tree',
@@ -22,7 +22,7 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   readonly dataOutput = output<Array<any>>();
   readonly rawDataOutput = output<Array<any>>();
   readonly clickRoot = output();
-  data = [];
+  data: AstTreeNode[] = [];
 
   serverList: Array<any> = [];
   currentServer: any = {};
