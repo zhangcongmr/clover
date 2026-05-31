@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/**)",
+      "Bash(node \"D:\\\\programs\\\\node-v24.16.0-win-x64\\\\node_modules\\\\pnpm\\\\bin\\\\pnpm.mjs\" install --no-frozen-lockfile)",
+      "Bash(mkdir -p \"D:\\\\code\\\\web\\\\assistant\\\\packages\\\\assistant/.understand-anything/intermediate\")",
+      "Bash(mkdir -p \"D:\\\\code\\\\web\\\\assistant\\\\packages\\\\assistant/.understand-anything/tmp\")",
+      "Bash(npx pnpm:*)",
+      "Bash(node -e \"const p = require\\(''./packages/core/package.json''\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(npx tsc:*)",
+      "Read(//c/Users/zhang/.claude/**)",
+      "Read(//c/Users/zhang/**)",
+      "Bash(find D:/code/web/assistant/packages/assistant -maxdepth 2 -type f -not -path */node_modules/* -not -path */.git/* -not -path */dist/*)",
+      "Bash(node -e \":*)",
+      "Bash(ls -la ~/.claude/skills/understand-anything*/)",
+      "Bash(npm root:*)",
+      "Bash(npx --yes @anthropic-ai/claude-code --help)",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/scan-project.mjs\" --ignore-file \".understand-anything/.understandignore\" --output \".understand-anything/intermediate/scan-result.json\" .)",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/scan-project.mjs\" \".\" \".understand-anything/intermediate/scan-result.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-import-map.mjs\" --input \".understand-anything/intermediate/scan-result.json\" --output \".understand-anything/intermediate/import-map.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-import-map.mjs\" \".understand-anything/intermediate/scan-result.json\" \".understand-anything/intermediate/import-map.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-import-map.mjs\" \".understand-anything/intermediate/import-map-input.json\" \".understand-anything/intermediate/import-map.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/compute-batches.mjs\" \".\")",
+      "Bash(ls:*)",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-1.json\" \".understand-anything/tmp/extract-output-1.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-2.json\" \".understand-anything/tmp/extract-output-2.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-3.json\" \".understand-anything/tmp/extract-output-3.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-4.json\" \".understand-anything/tmp/extract-output-4.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-5.json\" \".understand-anything/tmp/extract-output-5.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-6.json\" \".understand-anything/tmp/extract-output-6.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-7.json\" \".understand-anything/tmp/extract-output-7.json\")",
+      "Bash(node \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/extract-structure.mjs\" \".understand-anything/tmp/extract-input-8.json\" \".understand-anything/tmp/extract-output-8.json\")",
+      "Bash(python \"C:/Users/zhang/.claude/plugins/marketplaces/understand-anything/understand-anything-plugin/skills/understand/merge-batch-graphs.py\" \".\")",
+      "Bash(node:*)",
+      "Bash(GRAPH_DIR=\"D:/code/web/assistant/packages/assistant\" npx vite --host 127.0.0.1)"
+    ]
+  }
+}

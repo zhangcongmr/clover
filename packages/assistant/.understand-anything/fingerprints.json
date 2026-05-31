@@ -1,0 +1,5584 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "091918b5645e396125bf3b41c82ee2c10f53a424",
+  "generatedAt": "2026-05-31T10:26:28.081Z",
+  "files": {
+    ".browserslistrc": {
+      "filePath": ".browserslistrc",
+      "contentHash": "f977ec874562a4b77b5112d1feecc4a03d8a4ae0e80ccb2d1595995e24a932b0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": false
+    },
+    ".claude/settings.local.json": {
+      "filePath": ".claude/settings.local.json",
+      "contentHash": "032acb1c353de11b967b8dcceef10694fd8b2cfb64e2700a2b55d6d36f850e3c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    ".postcssrc.json": {
+      "filePath": ".postcssrc.json",
+      "contentHash": "706a68c60fde523e72f0d01859203f3b6ee7d9046bf7e340f194cc5fc88638ed",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/.understandignore": {
+      "filePath": ".understand-anything/.understandignore",
+      "contentHash": "00330fa3448246241c1f51cb250ba12b5b0b85dde3ee55792208c6cf0614ed8a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 51,
+      "hasStructuralAnalysis": false
+    },
+    ".understand-anything/intermediate/arch-all-edges.json": {
+      "filePath": ".understand-anything/intermediate/arch-all-edges.json",
+      "contentHash": "cecdaa03d2f9d7847bf3dea9f09ef97b606416a28a61c22a9332e1c191252ac4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 968,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/arch-file-nodes.json": {
+      "filePath": ".understand-anything/intermediate/arch-file-nodes.json",
+      "contentHash": "a0007f9da3fb37f33f4d282ed9d5334376a4d94c21d49716014561085130a294",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1735,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/arch-import-edges.json": {
+      "filePath": ".understand-anything/intermediate/arch-import-edges.json",
+      "contentHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/assemble-review.json": {
+      "filePath": ".understand-anything/intermediate/assemble-review.json",
+      "contentHash": "c11bdf03a07f9808455c20cfcc8e4e746a86a5f4246a5c950bb0e60bceb02b4f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/assembled-graph.json": {
+      "filePath": ".understand-anything/intermediate/assembled-graph.json",
+      "contentHash": "2869646c5f7d32dafe1f34b2c323b0cc389cc7bcf52bf849f6b2d5eb6c48313f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3675,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-1.json": {
+      "filePath": ".understand-anything/intermediate/batch-1.json",
+      "contentHash": "05ed5c386a4f93128925dc7a43442127a93875e39ee46b1150d21fa5b658f20f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 137,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-2.json": {
+      "filePath": ".understand-anything/intermediate/batch-2.json",
+      "contentHash": "1157c698e51868cb82b7b2bcdb0512494a3450ab201383bb1f34b158afc09146",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-3.json": {
+      "filePath": ".understand-anything/intermediate/batch-3.json",
+      "contentHash": "19988bfb4b8cb89e3571e3a0e64a03c81eaaf0b815d72780af494f45509fec9c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 588,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-4.json": {
+      "filePath": ".understand-anything/intermediate/batch-4.json",
+      "contentHash": "9a2c93b2231dd4f4dea5c86c8ecacd3600e2df77b9d034c09f3c1c1d921386ac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 527,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-5.json": {
+      "filePath": ".understand-anything/intermediate/batch-5.json",
+      "contentHash": "58b815901db5bc86b722b08952dc43f32ed106f9fe78530bf818bb2969eb9a13",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 850,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-6.json": {
+      "filePath": ".understand-anything/intermediate/batch-6.json",
+      "contentHash": "93619fe956d0c06974a8d6ba89f8015106c97ca9c25599541e3679c8aac2357e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 656,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-7.json": {
+      "filePath": ".understand-anything/intermediate/batch-7.json",
+      "contentHash": "375f4e35d1905cdd086892b65ca71e071a50ca562a2e94d7a39db61e8da96de7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 563,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batch-8.json": {
+      "filePath": ".understand-anything/intermediate/batch-8.json",
+      "contentHash": "108881f85f3e285a74f2130cbbf37ef2f8262a33c61e75aa67c9f95b827a0210",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 264,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batches.json": {
+      "filePath": ".understand-anything/intermediate/batches.json",
+      "contentHash": "4dc533088998bd1493c643d46198948f5ed2c4e20526a745776047c72c44f3e4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1371,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/import-map-input.json": {
+      "filePath": ".understand-anything/intermediate/import-map-input.json",
+      "contentHash": "83766b5502baccc054181f55f04ab978fe159adc6a696e8f11bf6d5b72aaea8a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 195,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/import-map.json": {
+      "filePath": ".understand-anything/intermediate/import-map.json",
+      "contentHash": "49de8bfaf50e82db477ac3cadc436fc1715496077378e95e39efcf0ec74056da",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 352,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/scan-result.json": {
+      "filePath": ".understand-anything/intermediate/scan-result.json",
+      "contentHash": "4d010324986b5f6ee9709fad640c5682fd96fa25500e36600029f10ad54deb8e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1490,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-1.json": {
+      "filePath": ".understand-anything/tmp/extract-input-1.json",
+      "contentHash": "a508ce5b56f0f2ff5ac916ac2e6dddf29249f28a7d622d35d5061cff6b60e584",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 84,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-2.json": {
+      "filePath": ".understand-anything/tmp/extract-input-2.json",
+      "contentHash": "6dad9e793e1ca53bd91715b3aeddf7fdad98e6f0bdd15f1a8e9bb0192e55cff6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-3.json": {
+      "filePath": ".understand-anything/tmp/extract-input-3.json",
+      "contentHash": "592e7191cdd414beb0f49c611ee28153281bb19069ccc480f0625ddc97d37145",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-4.json": {
+      "filePath": ".understand-anything/tmp/extract-input-4.json",
+      "contentHash": "840af6ae449634941565b49d7b8aac6b3495b74e0a1734dfc1d37660103eba4e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-5.json": {
+      "filePath": ".understand-anything/tmp/extract-input-5.json",
+      "contentHash": "eb5b261e06e53361edca3cc7d39253594336ab88e1dd046c83b080971dd08061",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-6.json": {
+      "filePath": ".understand-anything/tmp/extract-input-6.json",
+      "contentHash": "e3b18052ba48cc613b31e56b887bb372a0f8a8d4dc7d0f13058456ea1a75ad8a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-7.json": {
+      "filePath": ".understand-anything/tmp/extract-input-7.json",
+      "contentHash": "1e120ca34a60aa5dbe082f4897af52fe36435c8ee1a661581c72c4102b2ce9eb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 182,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-input-8.json": {
+      "filePath": ".understand-anything/tmp/extract-input-8.json",
+      "contentHash": "65418155edc682df7f0f6fc645cf36823926cf070059fbb07a14708cf2a7e581",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 84,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-1.json": {
+      "filePath": ".understand-anything/tmp/extract-output-1.json",
+      "contentHash": "f73b8b45ee7d240d6920156828c038cd519fce588066f4b0fde72e19e7d7ad44",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 395,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-2.json": {
+      "filePath": ".understand-anything/tmp/extract-output-2.json",
+      "contentHash": "df39358a8bbc012374db0883c21f7c8271686b8b08c552ef4d29bded11763764",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 247,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-3.json": {
+      "filePath": ".understand-anything/tmp/extract-output-3.json",
+      "contentHash": "023f80c02bb5f50d5bab19a360dc21e90552ee2daa85445328b4568b06121c2a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5089,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-4.json": {
+      "filePath": ".understand-anything/tmp/extract-output-4.json",
+      "contentHash": "d7f856938f33657178686ea9b70cac33c133b3788b7a3810759d663ef2d7e664",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1597,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-5.json": {
+      "filePath": ".understand-anything/tmp/extract-output-5.json",
+      "contentHash": "1911fb5a965292a09fbcd8babad9c681de7f307e33c7d84733a132f2798ba7c2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2330,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-6.json": {
+      "filePath": ".understand-anything/tmp/extract-output-6.json",
+      "contentHash": "5a33dd8792acc69b8bf4910a05aaf6add29ceee315642338057ed826fc5f8e9c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1162,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-7.json": {
+      "filePath": ".understand-anything/tmp/extract-output-7.json",
+      "contentHash": "fd8d1b5ae639e0214f33d0fb607b5c991770bc785e82f3303f17111443fd9ecd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1402,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/tmp/extract-output-8.json": {
+      "filePath": ".understand-anything/tmp/extract-output-8.json",
+      "contentHash": "2abbdd58868dfb0af82a0377807db2fb0a64b1018e35cdd51b4f217889a32ab5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 452,
+      "hasStructuralAnalysis": true
+    },
+    "angular.json": {
+      "filePath": "angular.json",
+      "contentHash": "7f08dd7edc760e00d4b3725abf8ca7a3ee41c484760a6bdddbb7130f39c61a2e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 214,
+      "hasStructuralAnalysis": true
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "contentHash": "449ae772e6266511e99bcc678acebd79fa981a47968012aced45cfa2d7bb7dbc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "README.en.md": {
+      "filePath": "README.en.md",
+      "contentHash": "2dc5f06b0bcd37fd23c6a54246f26ed8c156d467689c1dc4006d7cf5f4192066",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "dcf993dc109663383928aec5b2cb089430fd34b15c37f44a12398ddbbfb936cd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/inline-styles.mjs": {
+      "filePath": "scripts/inline-styles.mjs",
+      "contentHash": "0ec17ba26d07bb684b16a776e94f7bb9e08226014e03d51862879d9e0061aeab",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "node:fs/promises",
+          "specifiers": [
+            "readFile",
+            "writeFile"
+          ]
+        },
+        {
+          "source": "node:url",
+          "specifiers": [
+            "fileURLToPath"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "dirname",
+            "join"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "src/apioperatorlist.html": {
+      "filePath": "src/apioperatorlist.html",
+      "contentHash": "b768e080c0eb3cc07574d668ea68f6895308c6b63677fc2f38cf8dbb0c5b519d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 206,
+      "hasStructuralAnalysis": false
+    },
+    "src/apiunit.html": {
+      "filePath": "src/apiunit.html",
+      "contentHash": "106558b2c4344720cb63a50dd701bd97d6c13c169b55f1fb6420a184cce2dda9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 585,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/app-http-interceptors.service.ts": {
+      "filePath": "src/app/app-http-interceptors.service.ts",
+      "contentHash": "7ecb23c8ac5007a39078d103d6abecaa9ee7b77735844e45eff28f40707a846d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AppHttpInterceptorsService",
+          "methods": [
+            "constructor",
+            "intercept"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpEvent",
+            "HttpHandler",
+            "HttpInterceptor",
+            "HttpRequest"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Injectable"
+          ]
+        },
+        {
+          "source": "rxjs",
+          "specifiers": [
+            "Observable"
+          ]
+        }
+      ],
+      "exports": [
+        "AppHttpInterceptorsService"
+      ],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/app.component.css": {
+      "filePath": "src/app/app.component.css",
+      "contentHash": "6e94dd9b1060e9cc98f914f8d78484d42c89e0ace98e8974df4fcab6596846f7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 234,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/app.component.html": {
+      "filePath": "src/app/app.component.html",
+      "contentHash": "ba44c05e3a81fd81ef054324e92bdcffb43bee9d04a0baf85cf52ef3c76ccc02",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 199,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/app.component.spec.ts": {
+      "filePath": "src/app/app.component.spec.ts",
+      "contentHash": "c819b52d17b82c52714d06be1966262df2f01c9070d483915761f97d03d609da",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/router/testing",
+          "specifiers": [
+            "RouterTestingModule"
+          ]
+        },
+        {
+          "source": "./app.component",
+          "specifiers": [
+            "AppComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/app.component.ts": {
+      "filePath": "src/app/app.component.ts",
+      "contentHash": "cdfd053ec6ccbfe43a7709ba587898826b0a3f4f17bab42c6ed3c28637c0784f",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AppComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "fileVist",
+            "ngAfterViewInit",
+            "showUploadProgressDetails",
+            "toggleTheme",
+            "onCloseTab",
+            "onClickTab",
+            "activeMainPanel",
+            "onExplorerClickTab",
+            "addTexts",
+            "toggleDisplayViewId",
+            "toggleTerminal",
+            "openTab",
+            "closeMenu",
+            "clickMoreBtn",
+            "blurMoreBtn",
+            "mouseentermenu",
+            "mouseleavemenu",
+            "redirectToLogin",
+            "handleSignOut",
+            "addUploadTask",
+            "updateUploadProgress",
+            "failUploadTask",
+            "removeUploadTask",
+            "cleanUp",
+            "onHandleDataListChange",
+            "onCloseTerminalTab",
+            "onClickTerminalTab",
+            "onAddNewTerminalTab",
+            "dragStart",
+            "dragEnd",
+            "whenMouseMove"
+          ],
+          "properties": [
+            "coreService",
+            "themeService",
+            "contentComp",
+            "http",
+            "title",
+            "luxioAppTabId",
+            "textArr",
+            "fileType",
+            "lastSelectedDisplayViewId",
+            "currentDisplayViewId",
+            "terminalBtnShow",
+            "terminalPanelShow",
+            "keepTerminalInstance",
+            "sideOpen",
+            "blurSwitch",
+            "isOpen",
+            "menuInitiator",
+            "dataList",
+            "openedList",
+            "terminalOpenedList",
+            "dragHeight",
+            "active",
+            "maskLayerElement",
+            "initialY",
+            "topSectionHeight",
+            "bottomSectionHeight"
+          ],
+          "exported": true,
+          "lineCount": 617
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpClient"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewInit",
+            "Component",
+            "Injector",
+            "OnInit",
+            "afterNextRender",
+            "inject",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "asn1js",
+          "specifiers": [
+            "Integer",
+            "Sequence",
+            "Utf8String"
+          ]
+        },
+        {
+          "source": "./core.service",
+          "specifiers": [
+            "ConfigService",
+            "CoreService"
+          ]
+        },
+        {
+          "source": "./shared/ast-tab/ast-tab.component",
+          "specifiers": [
+            "AstTabComponent"
+          ]
+        },
+        {
+          "source": "./shared/ast-tab/ast-tab-group/ast-tab-group.component",
+          "specifiers": [
+            "AstTabGroupComponent"
+          ]
+        },
+        {
+          "source": "./luxio/content/content.component",
+          "specifiers": [
+            "ContentComponent"
+          ]
+        },
+        {
+          "source": "./shared/ast-menu/ast-menu.component",
+          "specifiers": [
+            "AstMenuComponent"
+          ]
+        },
+        {
+          "source": "./luxio/settings/settings.component",
+          "specifiers": [
+            "SettingsComponent"
+          ]
+        },
+        {
+          "source": "./luxio/user-center/user-center.component",
+          "specifiers": [
+            "UserCenterComponent"
+          ]
+        },
+        {
+          "source": "opfs-tools",
+          "specifiers": [
+            "file"
+          ]
+        },
+        {
+          "source": "./theme.service",
+          "specifiers": [
+            "ThemeService"
+          ]
+        },
+        {
+          "source": "./shared/notification/notification.component",
+          "specifiers": [
+            "NotificationComponent"
+          ]
+        },
+        {
+          "source": "./shared/terminal/terminal.component",
+          "specifiers": [
+            "TerminalComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "AppComponent"
+      ],
+      "totalLines": 643,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/app.routes.server.ts": {
+      "filePath": "src/app/app.routes.server.ts",
+      "contentHash": "f0e1b8d3125c9e08033c41fc565674fc76b2e6ebd58cb25feae87dd79e24a82f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/ssr",
+          "specifiers": [
+            "RenderMode",
+            "ServerRoute"
+          ]
+        }
+      ],
+      "exports": [
+        "serverRoutes"
+      ],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/app.routes.ts": {
+      "filePath": "src/app/app.routes.ts",
+      "contentHash": "e9dae25e22d9fe37472c3d164f53e36ea1eb00ffe8fe2e5d5a0225b927d86e46",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/router",
+          "specifiers": [
+            "Routes"
+          ]
+        }
+      ],
+      "exports": [
+        "routes"
+      ],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/auto-saver.ts": {
+      "filePath": "src/app/auto-saver.ts",
+      "contentHash": "934278c3ccf1fceace9b0a467edafc34c107196ce2a16e34e332813047949755",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AutoSaver",
+          "methods": [
+            "constructor",
+            "start",
+            "stop",
+            "save"
+          ],
+          "properties": [
+            "intervalId",
+            "filePath",
+            "getData",
+            "intervalMs"
+          ],
+          "exported": true,
+          "lineCount": 52
+        }
+      ],
+      "imports": [
+        {
+          "source": "./core.service",
+          "specifiers": [
+            "queuedWrite"
+          ]
+        }
+      ],
+      "exports": [
+        "AutoSaver"
+      ],
+      "totalLines": 55,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/core.service.ts": {
+      "filePath": "src/app/core.service.ts",
+      "contentHash": "e019aab8578e2ac2cf407f2cbd6771c073b3a75470491f0790304fa87b012f39",
+      "functions": [
+        {
+          "name": "queuedWrite",
+          "params": [
+            "path",
+            "data"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "processQueue",
+          "params": [
+            "path"
+          ],
+          "exported": false,
+          "lineCount": 20
+        }
+      ],
+      "classes": [
+        {
+          "name": "CoreService",
+          "methods": [
+            "showNotification",
+            "addUploadTask",
+            "updateUploadProgress",
+            "failUploadTask",
+            "removeUploadTask",
+            "getOverallProgress",
+            "getUploadProgressDetails",
+            "initApiUI",
+            "clearApiUI",
+            "initApiUIX",
+            "clearApiUIX",
+            "findPageNumberByPathKey",
+            "goToPage",
+            "initService",
+            "getData",
+            "postData",
+            "deleteData",
+            "downloadFile",
+            "setServerToStorage",
+            "getServersFromStorage",
+            "deleteServerFromStorage",
+            "convertServers",
+            "getMicroserviceDataStatusFlagFromStorage",
+            "setMicroserviceDataToStorage",
+            "isContain",
+            "resetMicroserviceDataToStorage",
+            "getMicroserviceDataFromStorage",
+            "deleteServiceFromStorage",
+            "getServiceData",
+            "idbPut",
+            "idbGet",
+            "idbDelete",
+            "openDBInternal",
+            "isBinaryName",
+            "splitSpec",
+            "doAuthorize",
+            "checkIfHasMatchAccessToken",
+            "clearAuthorize",
+            "clearAllAuthorize",
+            "constructUpdateRuleOptions",
+            "getRandId",
+            "handlePrivacyError",
+            "extractBasePath",
+            "extractIp",
+            "getPreviousUrl",
+            "getAuthorizeUrl",
+            "getSpecUrl",
+            "getSpecUrlByServerAndServiceInfo",
+            "getBasePath",
+            "reset",
+            "parseOpenApiSpec",
+            "getSymbolColor",
+            "parseParaModel",
+            "parseModel",
+            "parseFormDataModel",
+            "parseFormDataParaModel",
+            "parseElement",
+            "parseElementType",
+            "fetchModelDef",
+            "getTotal",
+            "removeExtension",
+            "isBrowserEnvironment",
+            "fullTextSearch",
+            "handleZipUpload",
+            "hasGitFolderInRoot",
+            "isTextFile",
+            "convertCRLFtoLF",
+            "addFileToZip",
+            "addFolderToZip",
+            "uploadFileToServer",
+            "generateUUID",
+            "uuid"
+          ],
+          "properties": [
+            "http",
+            "notificationService",
+            "chooseSpecDef",
+            "privacyErrorSettingWindow",
+            "ui",
+            "choosingApiLoading",
+            "toStoreAccessTokenMap",
+            "serverList",
+            "currentServerIndex",
+            "currentServer",
+            "isAuthenticated",
+            "userData",
+            "uploadTasks",
+            "totalProgress",
+            "progressPercentage",
+            "progressDetails",
+            "saving",
+            "forking"
+          ],
+          "exported": true,
+          "lineCount": 1427
+        },
+        {
+          "name": "ConfigService",
+          "methods": [],
+          "properties": [
+            "microserviceListUrl",
+            "authorizedUrl",
+            "zAccesstokenHeaderName",
+            "modifyHeaderUrlFlag",
+            "cookieHeaderName",
+            "dialogHttpsInterruptId",
+            "dialogAuthorizeId",
+            "dialogTipId",
+            "dialogServerManagerId",
+            "dialogServiceManagerId",
+            "luxioAppTabIdList",
+            "privacyErrorDialogFlag",
+            "ipAndPort",
+            "microserviceDataStatusFlag",
+            "microserviceData",
+            "addServer",
+            "deleteServer",
+            "addService",
+            "deleteService",
+            "resetService",
+            "prefix",
+            "apiVersion"
+          ],
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "EventItem",
+          "methods": [],
+          "properties": [
+            "eventType",
+            "data"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpClient",
+            "HttpEventType"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Injectable",
+            "Signal",
+            "WritableSignal",
+            "computed",
+            "inject",
+            "signal"
+          ]
+        },
+        {
+          "source": "opfs-tools",
+          "specifiers": [
+            "file",
+            "write"
+          ]
+        },
+        {
+          "source": "./shared/model",
+          "specifiers": [
+            "ServiceRouteInfo",
+            "AstTreeNode",
+            "UserInfo"
+          ]
+        },
+        {
+          "source": "./shared/notification/notification.service",
+          "specifiers": [
+            "NotificationService"
+          ]
+        },
+        {
+          "source": "jszip",
+          "specifiers": [
+            "JSZip"
+          ]
+        }
+      ],
+      "exports": [
+        "CoreService",
+        "ConfigService",
+        "EventItem",
+        "queuedWrite"
+      ],
+      "totalLines": 1549,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/luxio/add-project/add-project.component.css": {
+      "filePath": "src/app/luxio/add-project/add-project.component.css",
+      "contentHash": "385f6af063e33c435bb515124b1421f20ec0a928e89b3ff75a3d4031eead8aae",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 366,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/add-project/add-project.component.html": {
+      "filePath": "src/app/luxio/add-project/add-project.component.html",
+      "contentHash": "76e581bf9822670cf45b46d040771657f59f6f94a6109b8c260974f1dd7886f8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 87,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/add-project/add-project.component.spec.ts": {
+      "filePath": "src/app/luxio/add-project/add-project.component.spec.ts",
+      "contentHash": "a0bb6554abc8bb82d6f7cb5669cf52ee08610d0e52bba8d01594fba3cc312c9a",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./add-project.component",
+          "specifiers": [
+            "AddProjectComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/luxio/add-project/add-project.component.ts": {
+      "filePath": "src/app/luxio/add-project/add-project.component.ts",
+      "contentHash": "b7e752ccf609ba21bd1a0f02f2957ebfcadefeef126f41d18a03cc6a3c7d434c",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AddProjectComponent",
+          "methods": [
+            "ngOnInit",
+            "openAddDlg",
+            "close",
+            "confirmSelected",
+            "importTypeChangeFn",
+            "reset",
+            "fileContentChangedFn",
+            "clearFileSelected",
+            "importFromApiDef",
+            "importOutFromEcosystem",
+            "importOutFromLocal",
+            "openFolder",
+            "openFileInContent",
+            "clearFolderSelection",
+            "buildTreeFromDirectory",
+            "createAstTreeNode",
+            "setTextContextToNode",
+            "uuid"
+          ],
+          "properties": [
+            "coreService",
+            "notificationService",
+            "confirmed",
+            "apiInfoSelected",
+            "visible",
+            "importType",
+            "fileName",
+            "content",
+            "importFromApiDefUrl",
+            "directoryTreeData",
+            "folderReadWriteMode"
+          ],
+          "exported": true,
+          "lineCount": 219
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit",
+            "inject",
+            "output"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        },
+        {
+          "source": "../../shared/ast-table/ast-table.component",
+          "specifiers": [
+            "AstTableComponent"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../../shared/ast-tree/ast-tree.component",
+          "specifiers": [
+            "AstTreeComponent"
+          ]
+        },
+        {
+          "source": "../../shared/model",
+          "specifiers": [
+            "AstTreeNode"
+          ]
+        },
+        {
+          "source": "../../shared/notification/notification.service",
+          "specifiers": [
+            "NotificationService"
+          ]
+        },
+        {
+          "source": "../../shared/ast-modal/ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        },
+        {
+          "source": "../../shared/server-tree/server.tree.component",
+          "specifiers": [
+            "ServerTreeComponent"
+          ]
+        },
+        {
+          "source": "../../shared/file-input/file-input.component",
+          "specifiers": [
+            "FileInputComponent"
+          ]
+        },
+        {
+          "source": "../../shared/explorer/explorer.component",
+          "specifiers": [
+            "ExplorerComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "AddProjectComponent"
+      ],
+      "totalLines": 242,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/luxio/content/content.component.css": {
+      "filePath": "src/app/luxio/content/content.component.css",
+      "contentHash": "4bd8854feaef9c66748a197960e192dcabc661938567e4adecfec3a9a9998826",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 181,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/content/content.component.html": {
+      "filePath": "src/app/luxio/content/content.component.html",
+      "contentHash": "ed20a4326a01f1eb415452215ee00b436edb058252836291dba2092cb7aa1518",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 176,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/content/content.component.spec.ts": {
+      "filePath": "src/app/luxio/content/content.component.spec.ts",
+      "contentHash": "fd07fc9136571c2f0251e299764e8fb3db149f22e5244984ae1ee58cb2a87802",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./user-component.component",
+          "specifiers": [
+            "ApiComponentComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/luxio/content/content.component.ts": {
+      "filePath": "src/app/luxio/content/content.component.ts",
+      "contentHash": "bbfed669ed5ebd5d05ea986d4e00b90843ae4f7365edf9c978efbd827046e881",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ContentComponent",
+          "methods": [
+            "ngOnInit",
+            "ngOnDestroy",
+            "initWebSocket",
+            "downloadFileViaWebSocket",
+            "startAutoRefresh",
+            "stopAutoRefresh",
+            "updateFileContent",
+            "restoreHandles",
+            "ngOnChanges",
+            "startAutoSave",
+            "isPromiseLike",
+            "newNodeAction",
+            "assignDeepParent",
+            "importBtn",
+            "LocationBtn",
+            "ExpandBtn",
+            "CollapseBtn",
+            "forkBtn",
+            "MoreBtn",
+            "blurMoreBtn",
+            "mouseentermenu",
+            "mouseleavemenu",
+            "deleteProject",
+            "openFolderInContent",
+            "openFileInContent",
+            "listClick",
+            "openTab",
+            "refreshNodeContent",
+            "apiSelected",
+            "confirmLocation",
+            "cancelLocation",
+            "onLocationNodeClick",
+            "resetSelection",
+            "createLocationTreeData",
+            "storeApi",
+            "storeOpenedList",
+            "saveApi",
+            "saveText",
+            "saveFileToServer",
+            "onViewOut",
+            "openAddDlg",
+            "afterClickTab",
+            "afterCloseTab",
+            "menuItemAction",
+            "ngAfterViewInit",
+            "addApi",
+            "addMarked",
+            "dragDrop",
+            "onCloseTab",
+            "onClickTab",
+            "onAddNewTab",
+            "createNewFolder",
+            "createNewFile",
+            "createNewApi",
+            "confirmShare",
+            "confirmDuplicate",
+            "cancelDuplicate",
+            "buildNodeDef",
+            "newFileKeyUp",
+            "searchText",
+            "uuid",
+            "isBinaryName",
+            "getRandomInt",
+            "toggleAutoRefresh",
+            "deleteHandlesForNodeAndDescendants"
+          ],
+          "properties": [
+            "sideOpen",
+            "addProjectComponent",
+            "currentDisplayViewId",
+            "myConfigService",
+            "coreService",
+            "notificationService",
+            "isLocked",
+            "serverList",
+            "dataList",
+            "folderReadWriteMode",
+            "showLocationSelector",
+            "pendingNodes",
+            "locationSelectionTree",
+            "selectedParentNodeId",
+            "nodeDef",
+            "fileTypeChange",
+            "dataListChangeOutput",
+            "autoRefreshEnabled",
+            "refreshIntervalMs",
+            "openedList",
+            "addMarkFile",
+            "newFileName",
+            "searchKeyword",
+            "searchResults",
+            "moreButtons",
+            "savers",
+            "wsConnection",
+            "pendingRequests",
+            "refreshIntervalId",
+            "isMoreMenuOpen",
+            "moreMenuInitiator",
+            "blurSwitch",
+            "userResource",
+            "showButtonPlaceholder",
+            "currentItem",
+            "shareOnMenuVisible",
+            "duplicateModalVisible",
+            "existingId"
+          ],
+          "exported": true,
+          "lineCount": 1328
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewInit",
+            "Component",
+            "EventEmitter",
+            "OnChanges",
+            "OnDestroy",
+            "OnInit",
+            "Output",
+            "SimpleChanges",
+            "computed",
+            "inject",
+            "model",
+            "output",
+            "resource",
+            "signal",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        },
+        {
+          "source": "../../shared/ast-api/ast-api.component",
+          "specifiers": [
+            "AstApiComponent"
+          ]
+        },
+        {
+          "source": "../../shared/ast-tab/ast-tab.component",
+          "specifiers": [
+            "AstTabComponent"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../../shared/ast-tab/ast-tab-group/ast-tab-group.component",
+          "specifiers": [
+            "AstTabGroupComponent"
+          ]
+        },
+        {
+          "source": "opfs-tools",
+          "specifiers": [
+            "file",
+            "write"
+          ]
+        },
+        {
+          "source": "../../shared/ast-tree/ast-tree.component",
+          "specifiers": [
+            "AstTreeComponent",
+            "assignDeepLevel",
+            "pickParentObject",
+            "expandAncestorsIfActive",
+            "findActiveNode",
+            "findNodeById",
+            "reset",
+            "ResetType",
+            "generateDirectoryPath"
+          ]
+        },
+        {
+          "source": "../add-project/add-project.component",
+          "specifiers": [
+            "AddProjectComponent"
+          ]
+        },
+        {
+          "source": "../../shared/ast-draggable/ast-draggable.component",
+          "specifiers": [
+            "AstDraggableComponent"
+          ]
+        },
+        {
+          "source": "../../shared/model",
+          "specifiers": [
+            "AstTreeNode",
+            "NoN_SELECTION"
+          ]
+        },
+        {
+          "source": "../../shared/explorer/explorer.component",
+          "specifiers": [
+            "ExplorerComponent"
+          ]
+        },
+        {
+          "source": "../../my-config.service",
+          "specifiers": [
+            "MyConfigService"
+          ]
+        },
+        {
+          "source": "../../auto-saver",
+          "specifiers": [
+            "AutoSaver"
+          ]
+        },
+        {
+          "source": "@angular/cdk/drag-drop",
+          "specifiers": [
+            "CdkDragDrop",
+            "moveItemInArray"
+          ]
+        },
+        {
+          "source": "../../shared/notebook/notebook.component",
+          "specifiers": [
+            "NoteBookComponent"
+          ]
+        },
+        {
+          "source": "@luxio/common",
+          "specifiers": [
+            "NodeDef"
+          ]
+        },
+        {
+          "source": "../../shared/notification/notification.service",
+          "specifiers": [
+            "NotificationService"
+          ]
+        },
+        {
+          "source": "../../shared/ast-modal/ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        },
+        {
+          "source": "../../shared/ast-menu/ast-menu.component",
+          "specifiers": [
+            "AstMenuComponent"
+          ]
+        },
+        {
+          "source": "api-render-ui",
+          "specifiers": [
+            "normalizeApiSpec"
+          ]
+        }
+      ],
+      "exports": [
+        "ContentComponent"
+      ],
+      "totalLines": 1380,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/luxio/settings/settings.component.css": {
+      "filePath": "src/app/luxio/settings/settings.component.css",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/settings/settings.component.html": {
+      "filePath": "src/app/luxio/settings/settings.component.html",
+      "contentHash": "62dc58d2909897986a904ad082c7d555ae751c03247903a2a686dfc05cddc508",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/settings/settings.component.ts": {
+      "filePath": "src/app/luxio/settings/settings.component.ts",
+      "contentHash": "340da1f23a3a0f9ad4b6051d92d22f333c3a4b109fa57e6d2c9ab2b828e1dcc9",
+      "functions": [],
+      "classes": [
+        {
+          "name": "SettingsComponent",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component"
+          ]
+        }
+      ],
+      "exports": [
+        "SettingsComponent"
+      ],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/luxio/user-center/user-center.component.css": {
+      "filePath": "src/app/luxio/user-center/user-center.component.css",
+      "contentHash": "b12a86e4e49b7bdd8a742d928c4b21883ed1d33b036827ecd1e72954c7394723",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 273,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/user-center/user-center.component.html": {
+      "filePath": "src/app/luxio/user-center/user-center.component.html",
+      "contentHash": "dea4a265c330db36503a54e336509a8c9411b5bd582a3a403966b054950d14a7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 140,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/luxio/user-center/user-center.component.ts": {
+      "filePath": "src/app/luxio/user-center/user-center.component.ts",
+      "contentHash": "df3e2862de567237215b8d7accabf9a3d96e1bf27c19f0e0daf943f987af2308",
+      "functions": [],
+      "classes": [
+        {
+          "name": "UserCenterComponent",
+          "methods": [
+            "ngOnInit",
+            "checkin"
+          ],
+          "properties": [
+            "coreService",
+            "notificationService",
+            "userInfo",
+            "menuItems",
+            "products",
+            "statistics"
+          ],
+          "exported": true,
+          "lineCount": 72
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "inject",
+            "OnInit"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        },
+        {
+          "source": "../../shared/notification/notification.service",
+          "specifiers": [
+            "NotificationService"
+          ]
+        }
+      ],
+      "exports": [
+        "UserCenterComponent"
+      ],
+      "totalLines": 84,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/my-config.providers.ts": {
+      "filePath": "src/app/my-config.providers.ts",
+      "contentHash": "0107d921848917733604d18d0095368ab1a102eb2fc4330fbfd18df9e61b7970",
+      "functions": [
+        {
+          "name": "provideMyConfig",
+          "params": [
+            "config"
+          ],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "makeEnvironmentProviders"
+          ]
+        },
+        {
+          "source": "./my-config.service",
+          "specifiers": [
+            "MyConfig"
+          ]
+        },
+        {
+          "source": "./tokens",
+          "specifiers": [
+            "MY_CONFIG"
+          ]
+        }
+      ],
+      "exports": [
+        "provideMyConfig"
+      ],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/my-config.service.ts": {
+      "filePath": "src/app/my-config.service.ts",
+      "contentHash": "5d93fc2cfd6d669ce318cd5315a164db6d69e3b5a46181e68d4e245cf4addc85",
+      "functions": [],
+      "classes": [
+        {
+          "name": "MyConfigService",
+          "methods": [
+            "constructor",
+            "getApiUrl",
+            "getTimeout",
+            "getDoc",
+            "getFileName"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Inject",
+            "Injectable"
+          ]
+        },
+        {
+          "source": "./tokens",
+          "specifiers": [
+            "MY_CONFIG"
+          ]
+        },
+        {
+          "source": "./shared/model",
+          "specifiers": [
+            "DocModelType"
+          ]
+        }
+      ],
+      "exports": [
+        "MyConfigService"
+      ],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-api/ast-api.component.css": {
+      "filePath": "src/app/shared/ast-api/ast-api.component.css",
+      "contentHash": "ebdbab85e71bee1db59feb3fa59acf4d776667b247bc30b477f4839472d3d479",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 375,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-api/ast-api.component.html": {
+      "filePath": "src/app/shared/ast-api/ast-api.component.html",
+      "contentHash": "da37d28eb6078ec03a65b62c3d82b8ab100f4eff9081db8c21144c936496660c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 361,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-api/ast-api.component.spec.ts": {
+      "filePath": "src/app/shared/ast-api/ast-api.component.spec.ts",
+      "contentHash": "878499ddca504737e519f2f367291be2e508749d4ae9d5e1ef9a530725db6797",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-api.component",
+          "specifiers": [
+            "AstApiComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-api/ast-api.component.ts": {
+      "filePath": "src/app/shared/ast-api/ast-api.component.ts",
+      "contentHash": "60b0ba9397ce35ead51eeac1ce6b0ea8a8b6be7f5610922827c76800099c3e87",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstApiComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "methodChange",
+            "authTypeChange",
+            "grantTypeChange",
+            "clientAuthenticationChange",
+            "generateOAuth2Token",
+            "multiInputfocusFn",
+            "multiInputblurFn",
+            "addParaValue",
+            "deleteParaValue",
+            "addCustomParams",
+            "deleteCustomParams",
+            "customParamKeyFocus",
+            "customParamKeyBlur",
+            "customParamValueFocus",
+            "customParamValueBlur",
+            "consumeChange",
+            "updateReqEditorContainerView",
+            "getAccessToken",
+            "getEditorContent",
+            "sendRequest",
+            "formatDuration",
+            "clickAbortRequest",
+            "getRequestUrl",
+            "addAuthHeader",
+            "getHeadersParams",
+            "getQueryParams",
+            "getRequestFormData",
+            "ngAfterViewInit",
+            "onChange",
+            "onParamsClickTab",
+            "onBodyClickTab",
+            "onHeadersClickTab",
+            "onAuthClickTab",
+            "inputValueChange",
+            "queryparamKeypress",
+            "headerparamKeypress",
+            "dragStart",
+            "dragEnd",
+            "whenMouseMove",
+            "saveApi",
+            "setEditStatus",
+            "editApiSourceCodeFn",
+            "createEscHint",
+            "removeEscHint",
+            "apiBackFn",
+            "apiSaveFn"
+          ],
+          "properties": [
+            "reqEditorContainerView",
+            "editApiSourceCodeContainerView",
+            "apiInfo",
+            "saved",
+            "editBtnVisible",
+            "editBtnHideTimer",
+            "auths",
+            "grantTypes",
+            "clientAuthenticationOpts",
+            "consumeOpts",
+            "rawQueryOrPathParasCount",
+            "rawHeaderParasCount",
+            "editorView",
+            "gotResponse",
+            "ifSendingRequest",
+            "requestDuration",
+            "response",
+            "controller",
+            "editApiSourceCodeEnable",
+            "ifChangedFlag",
+            "methodOptions",
+            "dragHeight",
+            "active",
+            "maskLayerElement",
+            "initialY",
+            "topSectionHeight",
+            "bottomSectionHeight",
+            "removeTimer",
+            "showEscHint"
+          ],
+          "exported": true,
+          "lineCount": 861
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewInit",
+            "Component",
+            "ElementRef",
+            "Input",
+            "OnInit",
+            "afterNextRender",
+            "output",
+            "viewChild",
+            "HostListener"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        },
+        {
+          "source": "../ast-tab/ast-tab.component",
+          "specifiers": [
+            "AstTabComponent"
+          ]
+        },
+        {
+          "source": "../ast-tab/ast-tab-group/ast-tab-group.component",
+          "specifiers": [
+            "AstTabGroupComponent"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../ast-select/ast-select.component",
+          "specifiers": [
+            "AstSelectComponent"
+          ]
+        },
+        {
+          "source": "codemirror",
+          "specifiers": [
+            "basicSetup"
+          ]
+        },
+        {
+          "source": "@codemirror/view",
+          "specifiers": [
+            "EditorView"
+          ]
+        },
+        {
+          "source": "@codemirror/lang-json",
+          "specifiers": [
+            "json"
+          ]
+        }
+      ],
+      "exports": [
+        "AstApiComponent"
+      ],
+      "totalLines": 886,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-draggable/ast-draggable.component.css": {
+      "filePath": "src/app/shared/ast-draggable/ast-draggable.component.css",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-draggable/ast-draggable.component.html": {
+      "filePath": "src/app/shared/ast-draggable/ast-draggable.component.html",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-draggable/ast-draggable.component.ts": {
+      "filePath": "src/app/shared/ast-draggable/ast-draggable.component.ts",
+      "contentHash": "8908292b94e805f73bba69bc553b262dd347caa7413c80f26a5f0f6509d63756",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstDraggableComponent",
+          "methods": [
+            "dragStart",
+            "dragEnd",
+            "whenMouseMove"
+          ],
+          "properties": [
+            "leftWidth",
+            "active",
+            "maskLayerElement"
+          ],
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component"
+          ]
+        }
+      ],
+      "exports": [
+        "AstDraggableComponent"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-menu/ast-menu.component.css": {
+      "filePath": "src/app/shared/ast-menu/ast-menu.component.css",
+      "contentHash": "584c4ade9bbce8ff7a8aa5b51962d869612bfadc96ef5bde5704ab2016182303",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-menu/ast-menu.component.html": {
+      "filePath": "src/app/shared/ast-menu/ast-menu.component.html",
+      "contentHash": "0b53dd429837d8272e0483c9715b4fe8360f6bcb3cfdd59201efbd72196d22f7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-menu/ast-menu.component.ts": {
+      "filePath": "src/app/shared/ast-menu/ast-menu.component.ts",
+      "contentHash": "9fbcad69484be333de4a40a2b64e6ff2d39350f32a099e18d0193acb9d17b02c",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstMenuComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "closeMenu",
+            "ngOnChanges",
+            "getHorizontalComputed",
+            "getVerticalComputed",
+            "onMouseenterMenu",
+            "onMouseleaveMenu",
+            "ngOnDestroy"
+          ],
+          "properties": [
+            "isOpen",
+            "menuInitiator",
+            "mouseentermenu",
+            "mouseleavemenu",
+            "positionStyle",
+            "width",
+            "display",
+            "documentClickHandler",
+            "windowBlurHandler"
+          ],
+          "exported": true,
+          "lineCount": 90
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "ElementRef",
+            "EventEmitter",
+            "Input",
+            "model",
+            "OnChanges",
+            "OnDestroy",
+            "OnInit",
+            "Output",
+            "SimpleChanges"
+          ]
+        }
+      ],
+      "exports": [
+        "AstMenuComponent"
+      ],
+      "totalLines": 105,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-modal/ast-modal.component.css": {
+      "filePath": "src/app/shared/ast-modal/ast-modal.component.css",
+      "contentHash": "1983a65c9afa4f98abb0b1e8652178793a3b344f330d6d0d0bc6a7abe055c14f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 150,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-modal/ast-modal.component.html": {
+      "filePath": "src/app/shared/ast-modal/ast-modal.component.html",
+      "contentHash": "1d4c7e137d533d32b154da5647b0f310f1339e2c689d96d64248a1bce191e83d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-modal/ast-modal.component.spec.ts": {
+      "filePath": "src/app/shared/ast-modal/ast-modal.component.spec.ts",
+      "contentHash": "b51c3beeefb5ee4be568713602c71b8f22913bf68a2f1ba4b0ab604dfda6d0d5",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-modal/ast-modal.component.ts": {
+      "filePath": "src/app/shared/ast-modal/ast-modal.component.ts",
+      "contentHash": "a00da547d38b42c2bc405c57ed32ba0d0385331d15b86b68fb51a4841056eb6e",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstModalComponent",
+          "methods": [
+            "constructor",
+            "ngOnChanges",
+            "ngOnInit",
+            "ngAfterViewInit",
+            "centerInViewport",
+            "closeDlg",
+            "startDrag",
+            "onMouseMove",
+            "onMouseUp",
+            "uuid"
+          ],
+          "properties": [
+            "visible",
+            "title",
+            "modalSize",
+            "close",
+            "modalRef",
+            "visibleChange",
+            "elementId",
+            "dragHandle",
+            "dialogContainer",
+            "isDragging",
+            "offsetX",
+            "offsetY"
+          ],
+          "exported": true,
+          "lineCount": 134
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewInit",
+            "Component",
+            "ElementRef",
+            "OnChanges",
+            "OnInit",
+            "SimpleChanges",
+            "ViewEncapsulation",
+            "afterNextRender",
+            "input",
+            "output",
+            "viewChild"
+          ]
+        }
+      ],
+      "exports": [
+        "AstModalComponent"
+      ],
+      "totalLines": 144,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-select/ast-select.component.css": {
+      "filePath": "src/app/shared/ast-select/ast-select.component.css",
+      "contentHash": "8fa616595537b254cce2e74f400daf1bd8d6f3dcbe060caf91f9aab09a13af09",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-select/ast-select.component.html": {
+      "filePath": "src/app/shared/ast-select/ast-select.component.html",
+      "contentHash": "d5b6391e86a31c4ba2143fe00a0b77ad32f4ad42e326f6fc0d25dafc67bfca17",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-select/ast-select.component.spec.ts": {
+      "filePath": "src/app/shared/ast-select/ast-select.component.spec.ts",
+      "contentHash": "b4988c43595d0f31e019d622b6f8c2c558f5c29f390bf18bad3b680c63f0e81d",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-select.component",
+          "specifiers": [
+            "AstSelectComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-select/ast-select.component.ts": {
+      "filePath": "src/app/shared/ast-select/ast-select.component.ts",
+      "contentHash": "2bf12538e2b29e1852ebc6376821f0ecef2bf469e539f950f0da7f59e1d4d5ef",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstSelectComponent",
+          "methods": [
+            "constructor",
+            "ngOnChanges",
+            "ngOnInit",
+            "clickSelectInput",
+            "whenBlur",
+            "enterSelectArea",
+            "leaveSelectArea",
+            "selectedItem",
+            "keyUpSearch",
+            "pasteSearch",
+            "cutSearch",
+            "search"
+          ],
+          "properties": [
+            "selected",
+            "focus",
+            "blur",
+            "opened",
+            "data",
+            "inputValue",
+            "width",
+            "readonly",
+            "selectedOption",
+            "dataBackUp",
+            "dropdownWidth",
+            "dropdownLeft",
+            "dropdownTop",
+            "displayItems",
+            "currentTarget",
+            "selectContentArea",
+            "isOpen",
+            "blurSwitch",
+            "lastInput"
+          ],
+          "exported": true,
+          "lineCount": 156
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "Input",
+            "OnChanges",
+            "OnInit",
+            "SimpleChanges",
+            "computed",
+            "input",
+            "output"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        }
+      ],
+      "exports": [
+        "AstSelectComponent"
+      ],
+      "totalLines": 168,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.css": {
+      "filePath": "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.css",
+      "contentHash": "6da5a2e0420a2c8f4a933494fd7c25a59602b05fe86adb50b816a935c87e1877",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 255,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.html": {
+      "filePath": "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.html",
+      "contentHash": "1e70fb504706b6ccafe1d120d674131ef9eadf9db5bfafbe58af112805decd74",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 93,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.spec.ts": {
+      "filePath": "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.spec.ts",
+      "contentHash": "a25ac76bf23ab78f8f29f851ebe3a5ead43c8636a284ac12bb4918d0fe5442a7",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-tab-group.component",
+          "specifiers": [
+            "AstTabGroupComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.ts": {
+      "filePath": "src/app/shared/ast-tab/ast-tab-group/ast-tab-group.component.ts",
+      "contentHash": "f932d966401575339bcbee24113b9c8eca8a2131a909d251460cec30698eca87",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstTabGroupComponent",
+          "methods": [
+            "layoutChangeSignal",
+            "scheduleScrollbarRecalculation",
+            "recalculateScrollbarNow",
+            "constructor",
+            "ngOnChanges",
+            "ngOnInit",
+            "ngAfterViewInit",
+            "handleUlResize",
+            "ngAfterContentInit",
+            "ngOnDestroy",
+            "initTabActiveStatus",
+            "iconCloseClick",
+            "clickTab",
+            "activateAndScrollToTab",
+            "ensureTabVisible",
+            "whenMouseEnterTabContainer",
+            "whenMouseLeaveTabContainer",
+            "onTabWheel",
+            "whenMouseEnterTabCloseCnr",
+            "whenMouseLeaveTabCloseCnr",
+            "getTotalLiWidth",
+            "showContextMenu",
+            "closeTabs",
+            "addTab",
+            "dblclickAddTab",
+            "onDownButtonClick",
+            "blurDownBtn",
+            "mouseentermenu",
+            "mouseleavemenu",
+            "clickOpenedTab",
+            "onMoreButtonClick",
+            "drop",
+            "calculateHiddenTabs"
+          ],
+          "properties": [
+            "topLevelTabs",
+            "tabHeaderListRef",
+            "addTabEnable",
+            "closable",
+            "tabType",
+            "addNewTab",
+            "dragDrop",
+            "isDropListDisable",
+            "tabGroupResizeObservable",
+            "headerOnly",
+            "fobiddenContextMenu",
+            "moreButtons",
+            "resizeObserver",
+            "ulStyle",
+            "tabMap",
+            "previousTabCount",
+            "_layoutChangeSignal",
+            "recalcDebounceTimer",
+            "showButtonAdded",
+            "computedScrollBarLength",
+            "computedScrollBarLengthNum",
+            "topScroll",
+            "leftScroll",
+            "scrollBarTop",
+            "scrollBarLeft",
+            "mode",
+            "scrollToRightEnable",
+            "scrollToLeftEnable",
+            "currentContextMenuEvt",
+            "menuInitiator",
+            "isOpen",
+            "blurSwitch",
+            "downMenuInitiator",
+            "downMenuOpen",
+            "hiddenTabs"
+          ],
+          "exported": true,
+          "lineCount": 598
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterContentInit",
+            "AfterViewInit",
+            "Component",
+            "ElementRef",
+            "Input",
+            "OnChanges",
+            "OnDestroy",
+            "OnInit",
+            "SimpleChanges",
+            "contentChildren",
+            "effect",
+            "input",
+            "model",
+            "output",
+            "signal",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "@angular/cdk/drag-drop",
+          "specifiers": [
+            "CdkDrag",
+            "CdkDragDrop",
+            "CdkDropList"
+          ]
+        },
+        {
+          "source": "../ast-tab.component",
+          "specifiers": [
+            "AstTabComponent",
+            "AstTabType"
+          ]
+        },
+        {
+          "source": "../../ast-menu/ast-menu.component",
+          "specifiers": [
+            "AstMenuComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "AstTabGroupComponent"
+      ],
+      "totalLines": 611,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-tab/ast-tab.component.css": {
+      "filePath": "src/app/shared/ast-tab/ast-tab.component.css",
+      "contentHash": "2976402f7b0268f5c09095a96ab9122fb6aeb0ede31712d9a4603825b3381b57",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-tab/ast-tab.component.html": {
+      "filePath": "src/app/shared/ast-tab/ast-tab.component.html",
+      "contentHash": "c10a8959de23c54de5f9ca1b2382d3ff6b505e427d4a7cad0d4d314344020ca0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-tab/ast-tab.component.spec.ts": {
+      "filePath": "src/app/shared/ast-tab/ast-tab.component.spec.ts",
+      "contentHash": "b3520eccaed130a38a3038625976c09f1637505abc1b35d3681aa02ef447d62f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-tab.component",
+          "specifiers": [
+            "AstTabComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-tab/ast-tab.component.ts": {
+      "filePath": "src/app/shared/ast-tab/ast-tab.component.ts",
+      "contentHash": "4deff94b80c753a738d81dbe4b4fb4ba9fbd38d65c3a2554d26c697678d3ad0a",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstTabComponent",
+          "methods": [
+            "constructor",
+            "ngOnChanges",
+            "ngOnInit",
+            "computeTabClass",
+            "refreshData",
+            "ngAfterViewInit",
+            "createElement",
+            "uuid"
+          ],
+          "properties": [
+            "label",
+            "id",
+            "minWidth",
+            "closable",
+            "saved",
+            "onCloseTab",
+            "onClickTab",
+            "dotOrClose",
+            "isOld",
+            "isActivated",
+            "tabType",
+            "activeClass",
+            "previousEle",
+            "queryApibtnText",
+            "showWidget",
+            "targetPageNumber",
+            "ariaHidden"
+          ],
+          "exported": true,
+          "lineCount": 108
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewInit",
+            "Component",
+            "HostBinding",
+            "Input",
+            "OnChanges",
+            "OnInit",
+            "Signal",
+            "SimpleChanges",
+            "computed",
+            "input",
+            "model",
+            "output"
+          ]
+        }
+      ],
+      "exports": [
+        "AstTabComponent"
+      ],
+      "totalLines": 135,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-table/ast-table.component.css": {
+      "filePath": "src/app/shared/ast-table/ast-table.component.css",
+      "contentHash": "5c1e6504904ba5f704b08c49aca69162c75e4e2ed3c0897945ee768a93a4cd17",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 48,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-table/ast-table.component.html": {
+      "filePath": "src/app/shared/ast-table/ast-table.component.html",
+      "contentHash": "2a9c842879443425597e84bf89dc5a97fdbb0be1ba777f813ac723845039c566",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-table/ast-table.component.spec.ts": {
+      "filePath": "src/app/shared/ast-table/ast-table.component.spec.ts",
+      "contentHash": "18e0aa44a549b946c19571af1629b511e1d5139957ecfde1331c3330d8360503",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-table.component",
+          "specifiers": [
+            "AstTableComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-table/ast-table.component.ts": {
+      "filePath": "src/app/shared/ast-table/ast-table.component.ts",
+      "contentHash": "83979fefd8e1c32c8f7ec8a08a38e93a853613d66e6b2ae8b5722bef930eb391",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AstTableComponent",
+          "methods": [
+            "constructor",
+            "ngOnChanges",
+            "ngOnInit",
+            "clickTableRow",
+            "onCheckboxChange",
+            "onAllCheckboxChange"
+          ],
+          "properties": [
+            "columns",
+            "data",
+            "headerSticky",
+            "showNo",
+            "showCheckBox",
+            "columnArray",
+            "dataArray",
+            "selected",
+            "selectedArr"
+          ],
+          "exported": true,
+          "lineCount": 86
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnChanges",
+            "OnInit",
+            "SimpleChanges",
+            "input",
+            "output"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        }
+      ],
+      "exports": [
+        "AstTableComponent"
+      ],
+      "totalLines": 98,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-tree/ast-tree.component.css": {
+      "filePath": "src/app/shared/ast-tree/ast-tree.component.css",
+      "contentHash": "d8c703c0d651c80f41c2787c3b47c22e1c061ddf44b46773795c0b5a33903d93",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 106,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-tree/ast-tree.component.html": {
+      "filePath": "src/app/shared/ast-tree/ast-tree.component.html",
+      "contentHash": "fc8049e607375ed4aaab910ad205c1125be5f718720d40b823ce9187a3121758",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 126,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/ast-tree/ast-tree.component.spec.ts": {
+      "filePath": "src/app/shared/ast-tree/ast-tree.component.spec.ts",
+      "contentHash": "480e477053c6b064e44d2954ffd4fad01bc1e0170eb0e53a1a4edae39c18ddcc",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./ast-tree.component",
+          "specifiers": [
+            "AstTreeComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/ast-tree/ast-tree.component.ts": {
+      "filePath": "src/app/shared/ast-tree/ast-tree.component.ts",
+      "contentHash": "8c7211e113b050e6f7b149e0a479edd2c5717f32a5a46680c3abc47960f35783",
+      "functions": [
+        {
+          "name": "assignDeepLevel",
+          "params": [
+            "nodes",
+            "level"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "reset",
+          "params": [
+            "data",
+            "resetType"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "resetHideActiveStatus",
+          "params": [
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "resetRenameStatus",
+          "params": [
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "findNodeById",
+          "params": [
+            "nodes",
+            "targetId",
+            "deepIn"
+          ],
+          "returnType": "AstTreeNode | undefined",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "findActiveNode",
+          "params": [
+            "nodes",
+            "targetNodeType",
+            "defaultNode"
+          ],
+          "returnType": "AstTreeNode | undefined",
+          "exported": true,
+          "lineCount": 27
+        },
+        {
+          "name": "generateDirectoryPath",
+          "params": [
+            "nodes",
+            "node",
+            "withFileName"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "findNodePath",
+          "params": [
+            "nodes",
+            "targetId",
+            "pathSegments"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 24
+        },
+        {
+          "name": "deleteParentItemRef",
+          "params": [
+            "parentItemCopy"
+          ],
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "buildIdToNodeMap",
+          "params": [
+            "nodes",
+            "map"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "expandAncestorsIfActive",
+          "params": [
+            "item",
+            "datas"
+          ],
+          "exported": true,
+          "lineCount": 27
+        },
+        {
+          "name": "pickParentObject",
+          "params": [
+            "obj"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "pick",
+          "params": [
+            "obj",
+            "keys"
+          ],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "classes": [
+        {
+          "name": "AstTreeComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "ngOnChanges",
+            "elementClick",
+            "expandCollapseClick",
+            "forbiddenUserselectText",
+            "resetUserSelectText",
+            "showContextMenu",
+            "menuSelectAction",
+            "closeMenu",
+            "onContentChange",
+            "outOfRename",
+            "selectAllText",
+            "ngAfterViewInit",
+            "uuid",
+            "keyUpSearch",
+            "pasteSearch",
+            "cutSearch",
+            "search"
+          ],
+          "properties": [
+            "editorItemRefs",
+            "data",
+            "isSearch",
+            "dataType",
+            "fobiddenContextMenu",
+            "isLocked",
+            "selectedNodeType",
+            "nodeClick",
+            "showContextMenuClick",
+            "outOfRenameClick",
+            "menuItemAction",
+            "dataBackUp",
+            "searchValue",
+            "http",
+            "coreService",
+            "currentContextMenuEvt",
+            "menuInitiator",
+            "isOpen",
+            "lastInput"
+          ],
+          "exported": true,
+          "lineCount": 356
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewInit",
+            "Component",
+            "ElementRef",
+            "OnChanges",
+            "OnInit",
+            "SimpleChanges",
+            "afterNextRender",
+            "effect",
+            "input",
+            "model",
+            "output",
+            "viewChild",
+            "viewChildren"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../model",
+          "specifiers": [
+            "AstTreeNode",
+            "NoN_SELECTION",
+            "TargetTreeNodeType"
+          ]
+        },
+        {
+          "source": "../ast-menu/ast-menu.component",
+          "specifiers": [
+            "AstMenuComponent"
+          ]
+        },
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpClient",
+            "HttpEventType"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "inject"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        }
+      ],
+      "exports": [
+        "AstTreeComponent",
+        "assignDeepLevel",
+        "reset",
+        "findNodeById",
+        "findActiveNode",
+        "generateDirectoryPath",
+        "findNodePath",
+        "deleteParentItemRef",
+        "expandAncestorsIfActive",
+        "pickParentObject",
+        "pick"
+      ],
+      "totalLines": 627,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/authorize/authorize.component.css": {
+      "filePath": "src/app/shared/authorize/authorize.component.css",
+      "contentHash": "95e7c424dbcd1cc2e8fe4dcc688691e2dbd90471a9e67bac3ae8121f93704a5d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 65,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/authorize/authorize.component.html": {
+      "filePath": "src/app/shared/authorize/authorize.component.html",
+      "contentHash": "6633a43ccc34459d9cd69bc28b54249840e846b26d7b8967c41fcfb47462bc8f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/authorize/authorize.component.spec.ts": {
+      "filePath": "src/app/shared/authorize/authorize.component.spec.ts",
+      "contentHash": "f6b712775475b46c1175ea8bd055d776e6d1e74996411ed0676e2722fe6db93f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./authorize.component",
+          "specifiers": [
+            "AuthorizeComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/authorize/authorize.component.ts": {
+      "filePath": "src/app/shared/authorize/authorize.component.ts",
+      "contentHash": "154fae6b6bbdb99ab4190b33cb0632aee5c171fb89301b1150ff35b9994c500d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AuthorizeComponent",
+          "methods": [
+            "close",
+            "ngOnInit",
+            "confirm",
+            "cancel",
+            "cancelTipDlg",
+            "closeTipDlg"
+          ],
+          "properties": [
+            "coreService",
+            "http",
+            "visible",
+            "url",
+            "data",
+            "isShowTip",
+            "contentTip",
+            "beforeClose",
+            "beforeCloseTipDlg"
+          ],
+          "exported": true,
+          "lineCount": 78
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpClient"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "EventEmitter",
+            "OnInit",
+            "Output",
+            "inject"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "ConfigService",
+            "CoreService"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../ast-modal/ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "AuthorizeComponent"
+      ],
+      "totalLines": 92,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/elementid.directive.ts": {
+      "filePath": "src/app/shared/elementid.directive.ts",
+      "contentHash": "62528fa03194c76cc49b28180dbda6a92c5dc271fad097a68c39d99441b2923f",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ElementIdDirective",
+          "methods": [
+            "ngOnChanges"
+          ],
+          "properties": [
+            "el",
+            "elementId"
+          ],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Directive",
+            "ElementRef",
+            "Input",
+            "OnChanges",
+            "SimpleChanges",
+            "inject"
+          ]
+        }
+      ],
+      "exports": [
+        "ElementIdDirective"
+      ],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/elementindex.directive.ts": {
+      "filePath": "src/app/shared/elementindex.directive.ts",
+      "contentHash": "b648910af3fb170610bc36e01ff8362db3263217e69ac6a2175701d8035dfa1d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ElementIndexDirective",
+          "methods": [
+            "ngOnChanges"
+          ],
+          "properties": [
+            "el",
+            "elementIndex"
+          ],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Directive",
+            "ElementRef",
+            "Input",
+            "OnChanges",
+            "SimpleChanges",
+            "inject"
+          ]
+        }
+      ],
+      "exports": [
+        "ElementIndexDirective"
+      ],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/example/ContentChildrenComp.ts": {
+      "filePath": "src/app/shared/example/ContentChildrenComp.ts",
+      "contentHash": "61582c559461d06a3386aaf371daea210194c9e284b71542dd8b29b6fe50d0e8",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Pane",
+          "methods": [],
+          "properties": [
+            "id"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "Tab",
+          "methods": [
+            "serializedPanes",
+            "serializedNestedPanes"
+          ],
+          "properties": [
+            "topLevelPanes",
+            "arbitraryNestedPanes"
+          ],
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "ContentChildrenComp",
+          "methods": [
+            "show"
+          ],
+          "properties": [
+            "shouldShow"
+          ],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "ContentChildren",
+            "Directive",
+            "Input",
+            "QueryList"
+          ]
+        }
+      ],
+      "exports": [
+        "Pane",
+        "Tab",
+        "ContentChildrenComp"
+      ],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/explorer/explorer.component.css": {
+      "filePath": "src/app/shared/explorer/explorer.component.css",
+      "contentHash": "796cccb153a97c434c36f06a0f96eec9ea9251ef67b254bc50e75f018faa5d24",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 223,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/explorer/explorer.component.html": {
+      "filePath": "src/app/shared/explorer/explorer.component.html",
+      "contentHash": "d0e15cc40c02bf57cdce19bc236c92150d710ea5d616e4ab1addbe971831ad3f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/explorer/explorer.component.spec.ts": {
+      "filePath": "src/app/shared/explorer/explorer.component.spec.ts",
+      "contentHash": "eadf5c98b38319436e0f64c9b5d91092dfa778e27fb6e5d431e335fc0ba3dfcc",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./explorer.component",
+          "specifiers": [
+            "ExplorerComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/explorer/explorer.component.ts": {
+      "filePath": "src/app/shared/explorer/explorer.component.ts",
+      "contentHash": "704c05cc9edfca0c238b2828146b37b01b4a642f58433354c19b89c264146c71",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ExplorerComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "ngAfterViewChecked",
+            "ngAfterViewInit",
+            "serviceApis",
+            "apiCheckedFun",
+            "onWidgetAction",
+            "showPreviewOrCodeFn",
+            "backFn"
+          ],
+          "properties": [
+            "coreService",
+            "importOut",
+            "viewOut",
+            "currentDisplayViewId",
+            "apiSourceCodeContainerView",
+            "columns",
+            "data",
+            "rawSpecDef",
+            "rawSpecBriefDefs",
+            "dragSideWidth",
+            "dragSideRigthWidth",
+            "labels",
+            "label",
+            "previousEle",
+            "queryApibtnText",
+            "showWidget",
+            "targetPageNumber",
+            "condition",
+            "apiSourceView",
+            "baseHref",
+            "showPreviewOrCode",
+            "content",
+            "subPanelType"
+          ],
+          "exported": true,
+          "lineCount": 121
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "AfterViewChecked",
+            "AfterViewInit",
+            "CUSTOM_ELEMENTS_SCHEMA",
+            "Component",
+            "ElementRef",
+            "OnInit",
+            "inject",
+            "input",
+            "output",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "../server-tree/server.tree.component",
+          "specifiers": [
+            "ServerTreeComponent"
+          ]
+        },
+        {
+          "source": "../ast-table/ast-table.component",
+          "specifiers": [
+            "AstTableComponent"
+          ]
+        },
+        {
+          "source": "../privacy-error-dialog/privacy-error-dialog.component",
+          "specifiers": [
+            "PrivacyErrorDialogComponent"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        },
+        {
+          "source": "codemirror",
+          "specifiers": [
+            "basicSetup",
+            "EditorView"
+          ]
+        },
+        {
+          "source": "@codemirror/lang-json",
+          "specifiers": [
+            "json"
+          ]
+        }
+      ],
+      "exports": [
+        "ExplorerComponent"
+      ],
+      "totalLines": 138,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/file-input/file-input.component.css": {
+      "filePath": "src/app/shared/file-input/file-input.component.css",
+      "contentHash": "3fcf31dd18fad2d33ac322b554c8e3bb4f68d940a2cb70b99505f6cc9ae60975",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 67,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/file-input/file-input.component.html": {
+      "filePath": "src/app/shared/file-input/file-input.component.html",
+      "contentHash": "2152bdaad2f387a1769abd7810e8c07e35a6c1cd61d95b6d4dc63dde9fc25fb2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/file-input/file-input.component.ts": {
+      "filePath": "src/app/shared/file-input/file-input.component.ts",
+      "contentHash": "0aeeeaee4ea743e2f3741ed6cfd39cca84ceb241ef2186c37abdf13517dd8177",
+      "functions": [],
+      "classes": [
+        {
+          "name": "FileInputComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "ngOnChanges",
+            "openFileInContent",
+            "openFolder",
+            "onFileSelected",
+            "handleFileSelection",
+            "clearFileSelect"
+          ],
+          "properties": [
+            "fileContentChanged",
+            "clearSelectd",
+            "fileNameDisplay",
+            "isFileSelected",
+            "elementRef",
+            "notificationService"
+          ],
+          "exported": true,
+          "lineCount": 135
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "ElementRef",
+            "OnChanges",
+            "OnInit",
+            "SimpleChanges",
+            "afterNextRender",
+            "inject",
+            "output"
+          ]
+        },
+        {
+          "source": "../notification/notification.service",
+          "specifiers": [
+            "NotificationService"
+          ]
+        }
+      ],
+      "exports": [
+        "FileInputComponent"
+      ],
+      "totalLines": 145,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/highlight.directive.ts": {
+      "filePath": "src/app/shared/highlight.directive.ts",
+      "contentHash": "f04e1b03c99492978c690219607046ada3031dc34efe895bbd240e2be7c6cc66",
+      "functions": [],
+      "classes": [
+        {
+          "name": "HighlightDirective",
+          "methods": [
+            "constructor"
+          ],
+          "properties": [
+            "el"
+          ],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Directive",
+            "ElementRef",
+            "inject"
+          ]
+        }
+      ],
+      "exports": [
+        "HighlightDirective"
+      ],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/model.ts": {
+      "filePath": "src/app/shared/model.ts",
+      "contentHash": "4b10a76e4d9fa72a4605c5a15d03b6fc385e2c12783d842a0270f54234ec7b6d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ServiceRouteInfo",
+          "methods": [],
+          "properties": [
+            "namespace",
+            "serviceName",
+            "serviceVersion",
+            "publishProtocol",
+            "publishPort",
+            "routeType",
+            "routeName",
+            "routeVersion",
+            "publishUrl",
+            "specUrl",
+            "id",
+            "label"
+          ],
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "BaseModel",
+          "methods": [],
+          "properties": [
+            "first",
+            "second",
+            "third",
+            "additional",
+            "value"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "ServerAndServiceInfo",
+          "methods": [],
+          "properties": [
+            "server",
+            "serviceRoute"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "@luxio/common",
+          "specifiers": [
+            "NodeDef",
+            "OpenApiV3Document"
+          ]
+        }
+      ],
+      "exports": [
+        "ServiceRouteInfo",
+        "BaseModel",
+        "ServerAndServiceInfo",
+        "NoN_SELECTION"
+      ],
+      "totalLines": 136,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/notebook/markdown/markdown.component.css": {
+      "filePath": "src/app/shared/notebook/markdown/markdown.component.css",
+      "contentHash": "ad296a6a335dd9c66f22dd520943daf026cd9ec68d968f8ce5a594769cbc10d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 48,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/notebook/markdown/markdown.component.html": {
+      "filePath": "src/app/shared/notebook/markdown/markdown.component.html",
+      "contentHash": "ed80cedb4cb3f77f89fab26f60bcb1398c864880ae9a1e6017fa87e753f42e37",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 60,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/notebook/markdown/markdown.component.ts": {
+      "filePath": "src/app/shared/notebook/markdown/markdown.component.ts",
+      "contentHash": "795967282a62b09596b956cc1fcca9456c08847a1e2fc2d77d1d92394497090c",
+      "functions": [
+        {
+          "name": "detectNewlineType",
+          "params": [
+            "text"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "convertToOriginalNewlines",
+          "params": [
+            "value",
+            "originalNewline"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 9
+        }
+      ],
+      "classes": [
+        {
+          "name": "MarkdownComponent",
+          "methods": [
+            "constructor",
+            "ngAfterViewInit",
+            "ngOnInit",
+            "togglePreviewMode",
+            "createShadowDOM",
+            "updatePreviewContent",
+            "getEditorContentAndUpdatePreview",
+            "outOfText",
+            "saveText",
+            "getEditorContent"
+          ],
+          "properties": [
+            "textEditorView",
+            "textInfo",
+            "saved",
+            "editorView",
+            "originalNewlineType",
+            "isPreviewMode",
+            "previewContent",
+            "previewContainer"
+          ],
+          "exported": true,
+          "lineCount": 283
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "ElementRef",
+            "input",
+            "OnInit",
+            "output",
+            "viewChild",
+            "signal",
+            "ViewChild",
+            "TemplateRef",
+            "ViewContainerRef",
+            "AfterViewInit"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "codemirror",
+          "specifiers": [
+            "EditorView",
+            "basicSetup"
+          ]
+        },
+        {
+          "source": "@codemirror/lang-markdown",
+          "specifiers": [
+            "markdown"
+          ]
+        },
+        {
+          "source": "marked",
+          "specifiers": [
+            "marked"
+          ]
+        }
+      ],
+      "exports": [
+        "MarkdownComponent"
+      ],
+      "totalLines": 323,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/notebook/notebook.component.css": {
+      "filePath": "src/app/shared/notebook/notebook.component.css",
+      "contentHash": "3f595fe1806249be660b242ef6077fbcf187cfa6d2e9e62ba45c7d5753e75f42",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/notebook/notebook.component.html": {
+      "filePath": "src/app/shared/notebook/notebook.component.html",
+      "contentHash": "4c2deb30bddddc3520786b1c3c42544904c6b67fd221b2c6298ecc136e0fb3e8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/notebook/notebook.component.ts": {
+      "filePath": "src/app/shared/notebook/notebook.component.ts",
+      "contentHash": "692d76087da9484ab6af62a0ba38da0144c8712e968a83fbd22a0d5721fcf8a1",
+      "functions": [],
+      "classes": [
+        {
+          "name": "NoteBookComponent",
+          "methods": [
+            "ngOnInit",
+            "saveText"
+          ],
+          "properties": [
+            "data",
+            "saved",
+            "fileType"
+          ],
+          "exported": true,
+          "lineCount": 28
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "computed",
+            "model",
+            "OnInit",
+            "output",
+            "Signal"
+          ]
+        },
+        {
+          "source": "../model",
+          "specifiers": [
+            "AstTreeNode"
+          ]
+        },
+        {
+          "source": "./openapi/api-notebook.component",
+          "specifiers": [
+            "ApiNoteBookComponent"
+          ]
+        },
+        {
+          "source": "./markdown/markdown.component",
+          "specifiers": [
+            "MarkdownComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "NoteBookComponent"
+      ],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/notebook/openapi/api-notebook.component.css": {
+      "filePath": "src/app/shared/notebook/openapi/api-notebook.component.css",
+      "contentHash": "3f595fe1806249be660b242ef6077fbcf187cfa6d2e9e62ba45c7d5753e75f42",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/notebook/openapi/api-notebook.component.html": {
+      "filePath": "src/app/shared/notebook/openapi/api-notebook.component.html",
+      "contentHash": "88637d8afdd7aa0639ef31851869d4855e5f5ddbb7e76121ac10606f8f954d3d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/notebook/openapi/api-notebook.component.ts": {
+      "filePath": "src/app/shared/notebook/openapi/api-notebook.component.ts",
+      "contentHash": "3ef3091d1812f0c661404cffec9084adc2611fc4a78380f953c48f6addac81cd",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ApiNoteBookComponent",
+          "methods": [
+            "ngOnInit"
+          ],
+          "properties": [
+            "apiOperatorListView",
+            "data"
+          ],
+          "exported": true,
+          "lineCount": 18
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "ElementRef",
+            "model",
+            "OnInit",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "api-render-ui",
+          "specifiers": [
+            "ApiRenderer"
+          ]
+        },
+        {
+          "source": "../../model",
+          "specifiers": [
+            "AstTreeNode"
+          ]
+        }
+      ],
+      "exports": [
+        "ApiNoteBookComponent"
+      ],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/notification/notification.component.ts": {
+      "filePath": "src/app/shared/notification/notification.component.ts",
+      "contentHash": "4c2c1c28afe23efd13f1532b07745f992782044413d4b5fdec21e64739cd0a7a",
+      "functions": [],
+      "classes": [
+        {
+          "name": "NotificationComponent",
+          "methods": [
+            "trackById",
+            "removeNotification"
+          ],
+          "properties": [
+            "notificationService"
+          ],
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "inject"
+          ]
+        },
+        {
+          "source": "@angular/common",
+          "specifiers": [
+            "CommonModule"
+          ]
+        },
+        {
+          "source": "./notification.service",
+          "specifiers": [
+            "NotificationService",
+            "Notification"
+          ]
+        }
+      ],
+      "exports": [
+        "NotificationComponent"
+      ],
+      "totalLines": 105,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/notification/notification.service.ts": {
+      "filePath": "src/app/shared/notification/notification.service.ts",
+      "contentHash": "dd2978258096887a56d3cd3ab7c006a257a69918b15d052c65574321fa9ef281",
+      "functions": [],
+      "classes": [
+        {
+          "name": "NotificationService",
+          "methods": [
+            "showNotification",
+            "removeNotification",
+            "showUploadSuccess",
+            "showUploadError"
+          ],
+          "properties": [
+            "notifications"
+          ],
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Injectable",
+            "signal"
+          ]
+        }
+      ],
+      "exports": [
+        "NotificationService"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.css": {
+      "filePath": "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.css",
+      "contentHash": "41b74ca42af9c62eb865a6bc155fdc91e62b3a9a33120309a78411cc56624372",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.html": {
+      "filePath": "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.html",
+      "contentHash": "52055f9e5af018fac247609eac30c78817d85983d050b18c7f85ffe83f37ad9f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.spec.ts": {
+      "filePath": "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.spec.ts",
+      "contentHash": "c26638d260a11ec5cf09d2487842d5e2f9236b4be264e74a68155983a2af140c",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./privacy-error-dialog.component",
+          "specifiers": [
+            "PrivacyErrorDialogComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.ts": {
+      "filePath": "src/app/shared/privacy-error-dialog/privacy-error-dialog.component.ts",
+      "contentHash": "f7007d539208d444414f4344c697d77dcaa1fc0bbb658341c6fdf6465f989c97",
+      "functions": [],
+      "classes": [
+        {
+          "name": "PrivacyErrorDialogComponent",
+          "methods": [
+            "close",
+            "ngOnInit",
+            "goToPrivacySettingPage",
+            "cancel",
+            "getStrWindowFeatures"
+          ],
+          "properties": [
+            "coreService",
+            "astModal",
+            "visible",
+            "url",
+            "beforeClose"
+          ],
+          "exported": true,
+          "lineCount": 73
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit",
+            "inject",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "../ast-modal/ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "ConfigService",
+            "CoreService"
+          ]
+        }
+      ],
+      "exports": [
+        "PrivacyErrorDialogComponent"
+      ],
+      "totalLines": 86,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/server-manager/server-manager.component.css": {
+      "filePath": "src/app/shared/server-manager/server-manager.component.css",
+      "contentHash": "2c0ef90cc8cb1270995ea30d582554c00e80316dbdf815d202fcc8375c8fc62f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/server-manager/server-manager.component.html": {
+      "filePath": "src/app/shared/server-manager/server-manager.component.html",
+      "contentHash": "4e30b9d1f90a571eeac3a93c814455cc1669f2fe6ecf4875d79241021e54063b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 47,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/server-manager/server-manager.component.spec.ts": {
+      "filePath": "src/app/shared/server-manager/server-manager.component.spec.ts",
+      "contentHash": "4b6a61ffc19f653fff57b355bc65080d7267d6d58e306f6597b13a1b42597b51",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./server-manager.component",
+          "specifiers": [
+            "ServerManagerComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/server-manager/server-manager.component.ts": {
+      "filePath": "src/app/shared/server-manager/server-manager.component.ts",
+      "contentHash": "199ae982e55f220ac2fad496c4857dccff254a82daaf4eb6510c4eeee29ef213",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ServerManagerComponent",
+          "methods": [
+            "ngOnInit",
+            "visibleChangeDeleteDlg",
+            "initServer",
+            "deleteAction",
+            "close",
+            "confirm",
+            "cancel"
+          ],
+          "properties": [
+            "coreService",
+            "http",
+            "type",
+            "addServerVisible",
+            "deleteServerVisible",
+            "data",
+            "servers",
+            "dataList",
+            "beforeClose"
+          ],
+          "exported": true,
+          "lineCount": 98
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpClient"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit",
+            "inject"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "ConfigService",
+            "CoreService"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../ast-modal/ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        },
+        {
+          "source": "../ast-select/ast-select.component",
+          "specifiers": [
+            "AstSelectComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "ServerManagerComponent"
+      ],
+      "totalLines": 114,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/server-tree/server.tree.component.css": {
+      "filePath": "src/app/shared/server-tree/server.tree.component.css",
+      "contentHash": "b3bbbbfaf36e4efade0abf0cbdfbf31ca06f6ebe282c5bb8ae870a2aac6d129f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 39,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/server-tree/server.tree.component.html": {
+      "filePath": "src/app/shared/server-tree/server.tree.component.html",
+      "contentHash": "ce16923f1be5add3e4d61cf6da345973c43de640b53177600cad49c449002cf9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 61,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/server-tree/server.tree.component.ts": {
+      "filePath": "src/app/shared/server-tree/server.tree.component.ts",
+      "contentHash": "ca65b6db83bf0ecb5b5c78c9d27ef9c44b5d21c0f6cc1c8f8cf006033f3c3420",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ServerTreeComponent",
+          "methods": [
+            "ngOnInit",
+            "init",
+            "listClick",
+            "checkIfShouldAuthorize",
+            "getSpecUrlByServerAndServiceInfo",
+            "setService",
+            "addServerDlg",
+            "deleteServerDlg",
+            "addServiceDlg",
+            "deleteServiceDlg",
+            "resetServiceDlg",
+            "confirmAuthorize",
+            "clearAuthorize",
+            "closeMenu",
+            "clickMoreBtn",
+            "blurMoreBtn",
+            "mouseentermenu",
+            "mouseleavemenu",
+            "ngAfterViewInit"
+          ],
+          "properties": [
+            "serverManagerComponent",
+            "serviceManagerComponent",
+            "coreService",
+            "dataOutput",
+            "rawDataOutput",
+            "clickRoot",
+            "data",
+            "serverList",
+            "currentServer",
+            "authorizeBtnLabel",
+            "exitAuthorizeLabel",
+            "shouldAuthorize",
+            "blurSwitch",
+            "isOpen",
+            "menuInitiator"
+          ],
+          "exported": true,
+          "lineCount": 220
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit",
+            "AfterViewInit",
+            "inject",
+            "output",
+            "viewChild"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "ConfigService",
+            "CoreService"
+          ]
+        },
+        {
+          "source": "../../shared/ast-tree/ast-tree.component",
+          "specifiers": [
+            "AstTreeComponent"
+          ]
+        },
+        {
+          "source": "../authorize/authorize.component",
+          "specifiers": [
+            "AuthorizeComponent"
+          ]
+        },
+        {
+          "source": "../server-manager/server-manager.component",
+          "specifiers": [
+            "ServerManagerComponent"
+          ]
+        },
+        {
+          "source": "../service-manager/service-manager.component",
+          "specifiers": [
+            "ServiceManagerComponent"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../ast-menu/ast-menu.component",
+          "specifiers": [
+            "AstMenuComponent"
+          ]
+        },
+        {
+          "source": "../model",
+          "specifiers": [
+            "AstTreeNode",
+            "TreeNodeType"
+          ]
+        }
+      ],
+      "exports": [
+        "ServerTreeComponent"
+      ],
+      "totalLines": 238,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/service-manager/service-manager.component.css": {
+      "filePath": "src/app/shared/service-manager/service-manager.component.css",
+      "contentHash": "43e6629df4700f3de164fd9f2daba9c66da8666e8d8c15c84d34985528200a34",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/service-manager/service-manager.component.html": {
+      "filePath": "src/app/shared/service-manager/service-manager.component.html",
+      "contentHash": "ea7448f5c968b5c2da0d3324e9fc0f08406efad0321b61de06ec265776647fe5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 80,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/service-manager/service-manager.component.spec.ts": {
+      "filePath": "src/app/shared/service-manager/service-manager.component.spec.ts",
+      "contentHash": "261d15154bb2fc9363ea4276054aafaf7356b0a539876f41ef793b9aba11ed05",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./service-manager.component",
+          "specifiers": [
+            "ServiceManagerComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/service-manager/service-manager.component.ts": {
+      "filePath": "src/app/shared/service-manager/service-manager.component.ts",
+      "contentHash": "033926eda7bda8d1d4483af92d360759cf6c28449a68534b5df842b52158256d",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ServiceManagerComponent",
+          "methods": [
+            "ngOnInit",
+            "initService",
+            "initResetService",
+            "deleteAction",
+            "close",
+            "confirm",
+            "cancel"
+          ],
+          "properties": [
+            "coreService",
+            "http",
+            "type",
+            "addServiceVisible",
+            "deleteServiceVisible",
+            "resetServiceVisible",
+            "data",
+            "services",
+            "beforeClose"
+          ],
+          "exported": true,
+          "lineCount": 114
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "HttpClient"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit",
+            "inject"
+          ]
+        },
+        {
+          "source": "../model",
+          "specifiers": [
+            "ServiceRouteInfo"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "ConfigService",
+            "CoreService",
+            "MicroserviceDataStatus"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule"
+          ]
+        },
+        {
+          "source": "../ast-modal/ast-modal.component",
+          "specifiers": [
+            "AstModalComponent"
+          ]
+        }
+      ],
+      "exports": [
+        "ServiceManagerComponent"
+      ],
+      "totalLines": 131,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/terminal/terminal.component.css": {
+      "filePath": "src/app/shared/terminal/terminal.component.css",
+      "contentHash": "21634fdd7b68c4ceb83a8d61a7aace670f5be030d6e04148fb960b7c3c601749",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 59,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/terminal/terminal.component.html": {
+      "filePath": "src/app/shared/terminal/terminal.component.html",
+      "contentHash": "a57f2b3a68584cf5f5d0d167c48995c0beb6467e16fe250c5f5fc795636a4188",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/shared/terminal/terminal.component.spec.ts": {
+      "filePath": "src/app/shared/terminal/terminal.component.spec.ts",
+      "contentHash": "09c6eadba9b476e3f13c8151586978dbc41e63ad74b43e7cc17c4f98341df374",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "./terminal.component",
+          "specifiers": [
+            "TerminalComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/terminal/terminal.component.ts": {
+      "filePath": "src/app/shared/terminal/terminal.component.ts",
+      "contentHash": "021edb1eb4f15f2df7f20a6f68adf2af9f08de0d4325581b6e3eb5d91de409c5",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TerminalComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "ngAfterViewInit",
+            "ngOnDestroy",
+            "initializeTerminal",
+            "connectWebSocket",
+            "applyTheme",
+            "getTheme"
+          ],
+          "properties": [
+            "terminalElement",
+            "fontSize",
+            "coreService",
+            "theme",
+            "dataList",
+            "terminal",
+            "fitAddon",
+            "webLinksAddon",
+            "attachAddon",
+            "clipboard",
+            "commandBuffer",
+            "websocket",
+            "pid",
+            "isConnected",
+            "resizeObserver",
+            "previousTheme",
+            "userName",
+            "customCwd",
+            "containerName"
+          ],
+          "exported": true,
+          "lineCount": 173
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit",
+            "OnDestroy",
+            "ViewChild",
+            "ElementRef",
+            "Input",
+            "AfterViewInit",
+            "input",
+            "effect",
+            "inject"
+          ]
+        },
+        {
+          "source": "@xterm/xterm",
+          "specifiers": [
+            "Terminal"
+          ]
+        },
+        {
+          "source": "@xterm/addon-fit",
+          "specifiers": [
+            "FitAddon"
+          ]
+        },
+        {
+          "source": "@xterm/addon-web-links",
+          "specifiers": [
+            "WebLinksAddon"
+          ]
+        },
+        {
+          "source": "@xterm/addon-attach",
+          "specifiers": [
+            "AttachAddon"
+          ]
+        },
+        {
+          "source": "@xterm/addon-clipboard",
+          "specifiers": [
+            "ClipboardAddon"
+          ]
+        },
+        {
+          "source": "../../core.service",
+          "specifiers": [
+            "CoreService"
+          ]
+        }
+      ],
+      "exports": [
+        "TerminalComponent"
+      ],
+      "totalLines": 187,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/terminal/terminal.service.ts": {
+      "filePath": "src/app/shared/terminal/terminal.service.ts",
+      "contentHash": "a54ac996a73811732c34697f4afb6c501498a5bf963f4f771319fb1453c945ca",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TerminalService",
+          "methods": [
+            "constructor",
+            "connect",
+            "disconnect",
+            "sendCommand",
+            "resizeTerminal",
+            "isConnected"
+          ],
+          "properties": [
+            "socket",
+            "messageSubject",
+            "errorSubject",
+            "onMessage",
+            "onError"
+          ],
+          "exported": true,
+          "lineCount": 65
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Injectable"
+          ]
+        }
+      ],
+      "exports": [
+        "TerminalService"
+      ],
+      "totalLines": 75,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/unless.directive.ts": {
+      "filePath": "src/app/shared/unless.directive.ts",
+      "contentHash": "d0b10026abbac2aafcf24483866685137cb37398d81583c93864f45a6c9c1d70",
+      "functions": [],
+      "classes": [
+        {
+          "name": "UnlessDirective",
+          "methods": [
+            "appUnless"
+          ],
+          "properties": [
+            "templateRef",
+            "viewContainer",
+            "hasView"
+          ],
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Directive",
+            "Input",
+            "TemplateRef",
+            "ViewContainerRef",
+            "inject"
+          ]
+        }
+      ],
+      "exports": [
+        "UnlessDirective"
+      ],
+      "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/shared/viewscroll.directive.ts": {
+      "filePath": "src/app/shared/viewscroll.directive.ts",
+      "contentHash": "809242e8aa86668d4c14d7ea0d2f1ec5389bfbfc7b47c82c89f4fab550f6cdae",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ViewscrollDirective",
+          "methods": [
+            "ngOnChanges"
+          ],
+          "properties": [
+            "el",
+            "viewscroll",
+            "previousEle"
+          ],
+          "exported": true,
+          "lineCount": 68
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Directive",
+            "ElementRef",
+            "Input",
+            "SimpleChanges",
+            "TemplateRef",
+            "ViewContainerRef",
+            "inject"
+          ]
+        }
+      ],
+      "exports": [
+        "ViewscrollDirective"
+      ],
+      "totalLines": 75,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/theme.service.ts": {
+      "filePath": "src/app/theme.service.ts",
+      "contentHash": "0e95993cf100c81d81b90c3dda88b8eaaa1fae31f52b3b4ebb438a648a827764",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ThemeService",
+          "methods": [
+            "constructor",
+            "toggleTheme",
+            "setTheme",
+            "getCurrentTheme",
+            "applyTheme",
+            "saveTheme",
+            "loadTheme"
+          ],
+          "properties": [
+            "THEME_KEY",
+            "currentTheme"
+          ],
+          "exported": true,
+          "lineCount": 48
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Injectable",
+            "Inject",
+            "PLATFORM_ID"
+          ]
+        },
+        {
+          "source": "@angular/common",
+          "specifiers": [
+            "isPlatformBrowser"
+          ]
+        }
+      ],
+      "exports": [
+        "ThemeService"
+      ],
+      "totalLines": 54,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/tokens.ts": {
+      "filePath": "src/app/tokens.ts",
+      "contentHash": "ed6314095c4160e6cc9cb9546a395c654a69e233e3910e29e6d0e4c34be28677",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "InjectionToken"
+          ]
+        },
+        {
+          "source": "./my-config.service",
+          "specifiers": [
+            "MyConfig"
+          ]
+        }
+      ],
+      "exports": [
+        "MY_CONFIG"
+      ],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/webllm/webllm.component.css": {
+      "filePath": "src/app/webllm/webllm.component.css",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/webllm/webllm.component.html": {
+      "filePath": "src/app/webllm/webllm.component.html",
+      "contentHash": "39607219ad1a3e8debddc271f02d77befb51007512727995df8ea367b3cbd9d2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "src/app/webllm/webllm.component.spec.ts": {
+      "filePath": "src/app/webllm/webllm.component.spec.ts",
+      "contentHash": "ab15df37b4cec3006ba37690495870182124daadd4d572406e81c5fb921c2ba7",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "async",
+            "ComponentFixture",
+            "TestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "By"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "DebugElement"
+          ]
+        },
+        {
+          "source": "./webllm.component",
+          "specifiers": [
+            "WebllmComponent"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "src/app/webllm/webllm.component.ts": {
+      "filePath": "src/app/webllm/webllm.component.ts",
+      "contentHash": "f03aad20578d49fa5f9a22cd36bbbb53f96b01b7c4ed531f8d49bc74cd51ad05",
+      "functions": [],
+      "classes": [
+        {
+          "name": "WebllmComponent",
+          "methods": [
+            "constructor",
+            "ngOnInit",
+            "createEngine"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "Component",
+            "OnInit"
+          ]
+        },
+        {
+          "source": "@mlc-ai/web-llm",
+          "specifiers": [
+            "CreateMLCEngine"
+          ]
+        }
+      ],
+      "exports": [
+        "WebllmComponent"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "src/assets/.gitkeep": {
+      "filePath": "src/assets/.gitkeep",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/assets/conf/microserviceList.json": {
+      "filePath": "src/assets/conf/microserviceList.json",
+      "contentHash": "77cbeba1700209ac90d8dad4ecba65397d79ef46e24c1fcd36fca7620321279a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "src/assets/conf/mlc-chat-config.json": {
+      "filePath": "src/assets/conf/mlc-chat-config.json",
+      "contentHash": "746ffa1bf963def8a143fa707a0ce948fcdd5c9051776ff4f52b789de02d0a8b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "src/assets/lib/css/custom.css": {
+      "filePath": "src/assets/lib/css/custom.css",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/background.js": {
+      "filePath": "src/background.js",
+      "contentHash": "7130baae71852e6b9fbdc9e1168a87d2746dace7bbe1141a9761565bb570ea00",
+      "functions": [
+        {
+          "name": "clearAllAuthorize",
+          "params": [],
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "extractBasePath",
+          "params": [
+            "url"
+          ],
+          "exported": false,
+          "lineCount": 17
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 253,
+      "hasStructuralAnalysis": true
+    },
+    "src/environments/environment.common.ts": {
+      "filePath": "src/environments/environment.common.ts",
+      "contentHash": "e45cbeac797985daee4fe58ed53d7d864e27829dfbb4ce6f0bc871fd7e10af60",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "environment"
+      ],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "src/environments/environment.prod.ts": {
+      "filePath": "src/environments/environment.prod.ts",
+      "contentHash": "114878d3d24941e41f547ca6ea5545e645ace4b763a06ae4a585c5d4f741ecdd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "environment"
+      ],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "src/environments/environment.ts": {
+      "filePath": "src/environments/environment.ts",
+      "contentHash": "1bec8838bba6c1e090a6553168c114605c379b52f4e1b7a719ec32586ec99d60",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "environment"
+      ],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "src/index.html": {
+      "filePath": "src/index.html",
+      "contentHash": "ff4061205d9d36e731e8055eeb005f47bd0c6631ee98bd1a50a3f7de58db304a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": false
+    },
+    "src/index.ts": {
+      "filePath": "src/index.ts",
+      "contentHash": "741886ad0e0c3563fd68693fcfc5087390024fe89679ebe3b9b346350a800e49",
+      "functions": [
+        {
+          "name": "appendInlineStyle",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "createAppRoot",
+          "params": [
+            "domId"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "Luxio",
+          "params": [
+            "domId",
+            "doc",
+            "fileName"
+          ],
+          "exported": true,
+          "lineCount": 18
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./app/shared/model",
+          "specifiers": [
+            "DocModelType"
+          ]
+        },
+        {
+          "source": "./inlined-styles",
+          "specifiers": [
+            "GLOBAL_STYLES"
+          ]
+        }
+      ],
+      "exports": [
+        "Luxio"
+      ],
+      "totalLines": 49,
+      "hasStructuralAnalysis": true
+    },
+    "src/inlined-styles.ts": {
+      "filePath": "src/inlined-styles.ts",
+      "contentHash": "2dee126ca8c81dccc257547ce77912f1b8a3a52d5292d2409ebd417c8733f593",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "GLOBAL_STYLES"
+      ],
+      "totalLines": 871,
+      "hasStructuralAnalysis": true
+    },
+    "src/main.common.ts": {
+      "filePath": "src/main.common.ts",
+      "contentHash": "a28408b52823ae9857d38d8700aaecd7bfa65fad21353d9a91082438627d3ddb",
+      "functions": [
+        {
+          "name": "startAngularApp",
+          "params": [
+            "doc",
+            "fileName"
+          ],
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "importProvidersFrom",
+            "provideZonelessChangeDetection"
+          ]
+        },
+        {
+          "source": "./app/app.component",
+          "specifiers": [
+            "AppComponent"
+          ]
+        },
+        {
+          "source": "@angular/forms",
+          "specifiers": [
+            "FormsModule",
+            "ReactiveFormsModule"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "BrowserModule",
+            "bootstrapApplication",
+            "provideClientHydration",
+            "withEventReplay"
+          ]
+        },
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "withInterceptorsFromDi",
+            "provideHttpClient",
+            "withFetch"
+          ]
+        },
+        {
+          "source": "./app/my-config.providers",
+          "specifiers": [
+            "provideMyConfig"
+          ]
+        },
+        {
+          "source": "./svg-sprite.const",
+          "specifiers": [
+            "injectSvgSprite"
+          ]
+        },
+        {
+          "source": "@luxio/community-widget",
+          "specifiers": [
+            "loadCommunityWidget"
+          ]
+        },
+        {
+          "source": "./app/shared/model",
+          "specifiers": [
+            "DocModelType"
+          ]
+        }
+      ],
+      "exports": [
+        "startAngularApp"
+      ],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
+    "src/main.server.ts": {
+      "filePath": "src/main.server.ts",
+      "contentHash": "21d445468e3e46697363af85df614bfa2f9655e4af2ca68d84240e0b9494e903",
+      "functions": [
+        {
+          "name": "bootstrap",
+          "params": [
+            "context"
+          ],
+          "exported": false,
+          "lineCount": 2
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/common/http",
+          "specifiers": [
+            "provideHttpClient",
+            "withFetch",
+            "withInterceptorsFromDi"
+          ]
+        },
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "ApplicationConfig",
+            "provideZonelessChangeDetection"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser",
+          "specifiers": [
+            "BootstrapContext",
+            "bootstrapApplication"
+          ]
+        },
+        {
+          "source": "@angular/router",
+          "specifiers": [
+            "provideRouter"
+          ]
+        },
+        {
+          "source": "@angular/ssr",
+          "specifiers": [
+            "provideServerRendering",
+            "withRoutes"
+          ]
+        },
+        {
+          "source": "./app/app.component",
+          "specifiers": [
+            "AppComponent"
+          ]
+        },
+        {
+          "source": "./app/app.routes",
+          "specifiers": [
+            "routes"
+          ]
+        },
+        {
+          "source": "./app/app.routes.server",
+          "specifiers": [
+            "serverRoutes"
+          ]
+        },
+        {
+          "source": "./app/my-config.providers",
+          "specifiers": [
+            "provideMyConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "src/main.ts": {
+      "filePath": "src/main.ts",
+      "contentHash": "35e4b8d051e6f36813a514dd0ed41edce6884e4c3828d83c282063553991d5d6",
+      "functions": [
+        {
+          "name": "initData",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core",
+          "specifiers": [
+            "enableProdMode"
+          ]
+        },
+        {
+          "source": "./environments/environment",
+          "specifiers": [
+            "environment"
+          ]
+        },
+        {
+          "source": "opfs-tools",
+          "specifiers": [
+            "file",
+            "write"
+          ]
+        },
+        {
+          "source": "./main.common",
+          "specifiers": [
+            "startAngularApp"
+          ]
+        },
+        {
+          "source": "./app/shared/model",
+          "specifiers": [
+            "DocModel"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": true
+    },
+    "src/manifest.json": {
+      "filePath": "src/manifest.json",
+      "contentHash": "fe063edc5d62a68d6855de2d529e7ad59c078b76d485792b2210c58df941f191",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 47,
+      "hasStructuralAnalysis": true
+    },
+    "src/polyfills.ts": {
+      "filePath": "src/polyfills.ts",
+      "contentHash": "f33c730e0e97ad2f582bec3a6982f6e4b7c9d2120b5b526b0619655452e8869b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 54,
+      "hasStructuralAnalysis": true
+    },
+    "src/proxy.conf_1.json": {
+      "filePath": "src/proxy.conf_1.json",
+      "contentHash": "2b6d848de7565c8ec1bd5c004b6ffa9e78b009b4d843954f7876a5e136abc0c7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "src/proxy.conf.json": {
+      "filePath": "src/proxy.conf.json",
+      "contentHash": "42a412416eadbc653cf8e6da80834ebb268baa310aea256bb749bc2ec6e6206f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "src/server.ts": {
+      "filePath": "src/server.ts",
+      "contentHash": "240d3ace4e190118578e56403e61f39698d9d6548258354171ce8a7f462bd509",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/ssr/node",
+          "specifiers": [
+            "AngularNodeAppEngine",
+            "createNodeRequestHandler",
+            "isMainModule",
+            "writeResponseToNodeResponse"
+          ]
+        },
+        {
+          "source": "express",
+          "specifiers": [
+            "express"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "join"
+          ]
+        }
+      ],
+      "exports": [
+        "reqHandler"
+      ],
+      "totalLines": 71,
+      "hasStructuralAnalysis": true
+    },
+    "src/styles.css": {
+      "filePath": "src/styles.css",
+      "contentHash": "4ee4b7d25edd2df3396ad9a492ec6557c917e58c0f34a5bb6962f3ef5165f1b9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 192,
+      "hasStructuralAnalysis": false
+    },
+    "src/svg-sprite.const.ts": {
+      "filePath": "src/svg-sprite.const.ts",
+      "contentHash": "bd33da2c5363fbd1711147e3fbe939b9b749eba1bc24038401ee9585310428f6",
+      "functions": [
+        {
+          "name": "injectSvgSprite",
+          "params": [],
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "SVG_SPRITE_CONTENT",
+        "injectSvgSprite"
+      ],
+      "totalLines": 122,
+      "hasStructuralAnalysis": true
+    },
+    "src/test.ts": {
+      "filePath": "src/test.ts",
+      "contentHash": "36d5aa1c5a1af74ea09ad5a125070f0440bc2e420c646a66128495854806bd34",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@angular/core/testing",
+          "specifiers": [
+            "getTestBed"
+          ]
+        },
+        {
+          "source": "@angular/platform-browser-dynamic/testing",
+          "specifiers": [
+            "BrowserDynamicTestingModule",
+            "platformBrowserDynamicTesting"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "src/testdata.sql": {
+      "filePath": "src/testdata.sql",
+      "contentHash": "bbd5f4ef4e226d05449715851b97e0aa26e30089e10cafe30c9fe5cf7882236a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "src/typings.d.ts": {
+      "filePath": "src/typings.d.ts",
+      "contentHash": "5ad2a7889f348ec60fc5dd3704b6301a26a7322ae3caf4a96ad97d7b87c199cd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "src/utmsource.json": {
+      "filePath": "src/utmsource.json",
+      "contentHash": "65b858e141ae79e311987fbc63323943da0b7b450d6d8784167400167d2f5a8f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "styles.css": {
+      "filePath": "styles.css",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "testdata.sql": {
+      "filePath": "testdata.sql",
+      "contentHash": "bbd5f4ef4e226d05449715851b97e0aa26e30089e10cafe30c9fe5cf7882236a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "tsconfig.app.json": {
+      "filePath": "tsconfig.app.json",
+      "contentHash": "e5fafdda15fbe81023d99ebc4b1e84171247521454a9a12b5b6471c18a73cd50",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "tsconfig.declaration.json": {
+      "filePath": "tsconfig.declaration.json",
+      "contentHash": "b687b4979dee1227c7b5e82d0e27b74b498429f33ee785c094794b18d53ecb78",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "tsconfig.json": {
+      "filePath": "tsconfig.json",
+      "contentHash": "c443639f70a75b670fac402bd7491a8919e8d7f25daffa405793bfb068fa09e3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "tsconfig.spec.json": {
+      "filePath": "tsconfig.spec.json",
+      "contentHash": "6af0f2d4063a7f44109b6eb41666b95d6ca8ed14ac4efd2eb3f8131da88c1f53",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": true
+    }
+  }
+}
