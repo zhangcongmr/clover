@@ -4,17 +4,16 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/luxio-common/index.js",
-      "require": "./dist/luxio-common/index.cjs"
+      "import": "./dist/luxio/index.js",
+      "require": "./dist/luxio/index.cjs"
     }
   },
-  "types": "./dist/luxio-common/index.d.ts",
+  "types": "./dist/luxio/index.d.ts",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host=0.0.0.0 --ssl",
-    "build:app": "ng build",
-    "build:common": "ng build --configuration=common && node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
-    "build": "pnpm run build:common && pnpm run build:app",
+    "build": "ng build &&  node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
+
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:luxio": "node dist/luxio/server/server.mjs"

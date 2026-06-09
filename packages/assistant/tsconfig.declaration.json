@@ -5,7 +5,7 @@
     "target": "ES2022",
     "module": "ES2022",          // 👈 关键：输出 ESM
     "esModuleInterop": false,    // ESM 不需要 interop
-    "outDir": "./dist/luxio-common",
+    "outDir": "./dist/luxio",
     "rootDir": "./src",
     "strict": false,
     // 👇 确保动态 import 不被转换
