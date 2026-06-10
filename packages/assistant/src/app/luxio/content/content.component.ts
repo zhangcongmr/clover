@@ -418,7 +418,23 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
         newNode['deepLevel'] = currentSelect.deepLevel + 1;
         newNode['rename'] = true;
         newNode['parentItem'] = parentItemCopy;
-        currentSelect.children.splice(0, 0, newNode);
+        //当newNode的节点类型是folder节点时，把此节点插入到currentSelect.children的首位
+        //当newNode的节点类型不是folder节点时，把此节点插入到currentSelect.children的从首到尾遍历的第一个不是folder节点的节点的前面，如果currentSelect.children的所有节点都是folder节点，则把newNode插入到currentSelect.children的末尾
+        if (newNode.nodeType === 'folder') {
+          currentSelect.children.splice(0, 0, newNode);
+        } else {
+          let inserted = false;
+          for (let i = 0; i < currentSelect.children.length; i++) {
+            if (currentSelect.children[i].nodeType !== 'folder') {
+              currentSelect.children.splice(i, 0, newNode);
+              inserted = true;
+              break;
+            }
+          }
+          if (!inserted) {
+            currentSelect.children.push(newNode);
+          }
+        }
       }
     } else {
       if(action == 'NewFolder') {
