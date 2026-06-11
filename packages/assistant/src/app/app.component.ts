@@ -41,6 +41,11 @@ export class AppComponent implements OnInit, AfterViewInit {
   currentDisplayViewId: number = 1;
   terminalBtnShow = false;
   terminalPanelShow = false;
+  themePromptOpen = false;
+  themePromptText = '';
+  themePromptLoading = false;
+  themePromptError: string | null = null;
+  themePromptResult: Record<string, string> | null = null;
   keepTerminalInstance = {
     value: false,
     dragHeight: 0.75,
@@ -255,6 +260,194 @@ export class AppComponent implements OnInit, AfterViewInit {
     } else {
       document.body.classList.remove('vscode-dark-theme');
     }
+  }
+
+  openThemePrompt(): void {
+    this.themePromptOpen = true;
+    this.themePromptError = null;
+    this.themePromptResult = null;
+  }
+
+  closeThemePrompt(): void {
+    if (this.themePromptLoading) {
+      return;
+    }
+    this.themePromptOpen = false;
+    this.themePromptError = null;
+  }
+
+  async submitThemePrompt(): Promise<void> {
+    const trimmedPrompt = this.themePromptText.trim();
+    if (!trimmedPrompt) {
+      this.themePromptError = '请输入风格描述';
+      return;
+    }
+    await this.generateThemeFromPrompt(trimmedPrompt);
+  }
+
+  private async generateThemeFromPrompt(prompt: string): Promise<void> {
+    this.themePromptLoading = true;
+    this.themePromptError = null;
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: prompt,
+          tools: [
+            {
+              name: 'ui_background',
+              description: 'The main app background color for large page surfaces and the overall background.',
+            },
+            {
+              name: 'ui_primary_color',
+              description: 'The primary accent color used for buttons, active controls, and call-to-action elements.',
+            },
+            {
+              name: 'ui_text_color',
+              description: 'The primary readable text color used for body copy, labels, and headings.',
+            },
+            {
+              name: 'ui_surface',
+              description: 'The surface color for panels, cards, and secondary containers.',
+            },
+            {
+              name: 'ui_accent',
+              description: 'The highlight color used for links, focus states, and subtle accents.',
+            },
+            {
+              name: 'ui_border',
+              description: 'The border or divider color used for edges and separators.',
+            },
+          ],
+          model: 'gpt-4o-mini',
+          history: [],
+          autoCreate: true,
+        }),
+        credentials: 'include',
+      });
+
+      const rawText = await response.text();
+      if (!response.ok) {
+        throw new Error(`请求失败 ${response.status}，请稍后重试`);
+      }
+
+      let payload: any = null;
+      try {
+        payload = JSON.parse(rawText);
+      } catch {
+        payload = null;
+      }
+
+      const themeData = this.extractThemeVariables(payload, rawText);
+      const cssVars = this.mapThemeKeysToCss(themeData);
+
+      if (!cssVars || Object.keys(cssVars).length === 0) {
+        throw new Error('未能从响应中解析出主题变量');
+      }
+
+      this.themeService.setThemeVariables(cssVars);
+      this.themePromptResult = cssVars;
+      this.themePromptOpen = false;
+    } catch (err: any) {
+      console.error('生成主题失败', err);
+      this.themePromptError = err?.message || '生成主题失败，请重试';
+    } finally {
+      this.themePromptLoading = false;
+    }
+  }
+
+  private extractThemeVariables(payload: any, rawText: string): Record<string, string> {
+    const theme: Record<string, string> = {};
+    const normalized = payload && typeof payload === 'object'
+      ? payload.theme && typeof payload.theme === 'object'
+        ? payload.theme
+        : payload
+      : null;
+
+    if (normalized) {
+      for (const key of Object.keys(normalized)) {
+        const value = normalized[key];
+        if (typeof value === 'string' && value.trim()) {
+          theme[key.trim()] = value.trim();
+        }
+      }
+    }
+
+    if (Object.keys(theme).length === 0) {
+      const jsonMatch = rawText.match(/({[\s\S]*})/m);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1]);
+          for (const key of Object.keys(parsed)) {
+            const value = parsed[key];
+            if (typeof value === 'string' && value.trim()) {
+              theme[key.trim()] = value.trim();
+            }
+          }
+        } catch {
+          // ignore JSON parse failure
+        }
+      }
+    }
+
+    if (Object.keys(theme).length === 0) {
+      const aliasMap: Record<string, string> = {
+        ui_background: 'background',
+        background: 'background',
+        ui_primary_color: 'primary',
+        primary: 'primary',
+        ui_text_color: 'text',
+        text: 'text',
+        ui_surface: 'surface',
+        surface: 'surface',
+        ui_accent: 'accent',
+        accent: 'accent',
+        ui_border: 'border',
+        border: 'border',
+      };
+
+      for (const [alias, canonical] of Object.entries(aliasMap)) {
+        const regex = new RegExp(`${alias}\\s*[:=]\\s*(#[0-9a-fA-F]{3,8}|rgba?\\([^)]*\\)|[a-zA-Z]+)`, 'i');
+        const match = rawText.match(regex);
+        if (match) {
+          theme[canonical] = match[1];
+        }
+      }
+    }
+
+    return theme;
+  }
+
+  private mapThemeKeysToCss(themeVars: Record<string, string>): Record<string, string> {
+    const keyMap: Record<string, string> = {
+      background: '--vscode-editor-background',
+      surface: '--vscode-sideBar-background',
+      primary: '--vscode-button-background',
+      text: '--vscode-foreground',
+      accent: '--vscode-focusBorder',
+      border: '--vscode-editorGroup-border',
+    };
+    const cssVars: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(themeVars)) {
+      const normalizedKey = key.toLowerCase().replace(/[\s_-]/g, '');
+      let canonical = '';
+      if (['uibackground', 'background'].includes(normalizedKey)) canonical = 'background';
+      else if (['uiprimarycolor', 'primarycolor', 'primary'].includes(normalizedKey)) canonical = 'primary';
+      else if (['uitextcolor', 'textcolor', 'text'].includes(normalizedKey)) canonical = 'text';
+      else if (['uisurface', 'surface'].includes(normalizedKey)) canonical = 'surface';
+      else if (['uiaccent', 'accent'].includes(normalizedKey)) canonical = 'accent';
+      else if (['uiborder', 'border'].includes(normalizedKey)) canonical = 'border';
+
+      if (canonical && keyMap[canonical]) {
+        cssVars[keyMap[canonical]] = value;
+      }
+    }
+    return cssVars;
   }
 
   onCloseTab(evt: any) {

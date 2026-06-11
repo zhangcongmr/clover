@@ -13,7 +13,6 @@
     "ng": "ng",
     "start": "ng serve --host=0.0.0.0 --ssl",
     "build": "ng build &&  node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
-
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:luxio": "node dist/luxio/server/server.mjs"

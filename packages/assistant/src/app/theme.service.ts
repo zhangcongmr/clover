@@ -7,6 +7,7 @@ import { isPlatformBrowser } from '@angular/common';
 export class ThemeService {
   private readonly THEME_KEY = 'vscode-theme';
   private currentTheme: string;
+  private generatedVariables: Record<string, string> = {};
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     this.currentTheme = this.loadTheme();
@@ -32,12 +33,43 @@ export class ThemeService {
   private applyTheme(): void {
     if (isPlatformBrowser(this.platformId)) {
       document.documentElement.setAttribute('data-theme', this.currentTheme);
+      this.applyThemeVariables();
     }
   }
 
   private saveTheme(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem(this.THEME_KEY, this.currentTheme);
+    }
+  }
+
+  setThemeVariables(vars: Record<string, string>): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.generatedVariables = {
+        ...this.generatedVariables,
+        ...vars,
+      };
+      this.applyTheme();
+      this.applyThemeVariables();
+    }
+  }
+
+  clearThemeVariables(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const root = document.documentElement;
+      for (const key of Object.keys(this.generatedVariables)) {
+        root.style.removeProperty(key);
+      }
+      this.generatedVariables = {};
+    }
+  }
+
+  private applyThemeVariables(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const root = document.documentElement;
+      for (const [key, value] of Object.entries(this.generatedVariables)) {
+        root.style.setProperty(key, value);
+      }
     }
   }
 
