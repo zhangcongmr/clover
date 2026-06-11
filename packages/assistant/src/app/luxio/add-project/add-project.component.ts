@@ -133,33 +133,6 @@ export class AddProjectComponent implements OnInit {
     }
   }
 
-
-  async openFolder(mode: 'read' | 'readwrite' = 'readwrite') {
-    if (!('showDirectoryPicker' in window)) {
-      this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
-      return;
-    }
-    try {
-      const folderHandle = await (window as any).showDirectoryPicker({ mode });
-      await this.fileContentChangedFn([folderHandle]);
-    } catch (err) {
-      console.error('openFolder error', err);
-    }
-  }
-
-  async openFileInContent() {
-    if (!('showOpenFilePicker' in window)) {
-      this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
-      return;
-    }
-    try {
-      const folderHandle = await (window as any).showOpenFilePicker({ multiple: true });
-      await this.fileContentChangedFn(folderHandle);
-    } catch (err) {
-      console.error('openFolder error', err);
-    }
-  }
-
   private clearFolderSelection() {
     this.directoryTreeData = [];
   }

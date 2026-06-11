@@ -628,9 +628,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
 
     try {
-      // Reuse AddProjectComponent.openFolder which populates its folderHandle
-      // and directoryTreeData using its own buildTreeFromDirectory implementation.
-      await addProject.openFolder(mode as any);
+      // Keep the directory picker call in the direct click handler stack
+      const folderHandle: any = await (window as any).showDirectoryPicker({ mode });
+      if (!folderHandle) {
+        return;
+      }
+
+      await addProject.fileContentChangedFn([folderHandle]);
       // grab the results from the child component
       const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
@@ -652,7 +656,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     // Try native file picker first
     try {
       if ('showOpenFilePicker' in window) {
-        await addProject.openFileInContent();
+        const folderHandle = await (window as any).showOpenFilePicker({ multiple: true });
+        await addProject.fileContentChangedFn(folderHandle);
         const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
 
         assignDeepLevel(rootNode);
