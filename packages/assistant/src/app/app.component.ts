@@ -288,6 +288,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   private async generateThemeFromPrompt(prompt: string): Promise<void> {
     this.themePromptLoading = true;
     this.themePromptError = null;
+    this.themePromptResult = null;
 
     try {
       const response = await fetch('/api/chat', {
@@ -297,52 +298,229 @@ export class AppComponent implements OnInit, AfterViewInit {
         },
         body: JSON.stringify({
           message: prompt,
+          model: 'deepseek-v4-flash',
+          history: [],
+          autoCreate: true,
           tools: [
             {
               name: 'ui_background',
-              description: 'The main app background color for large page surfaces and the overall background.',
+              description: 'Main application background color for page surfaces and the app canvas.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  color: {
+                    type: 'string',
+                    description: 'Background color value for the main app background.',
+                  },
+                },
+                required: ['color'],
+              },
             },
             {
               name: 'ui_primary_color',
-              description: 'The primary accent color used for buttons, active controls, and call-to-action elements.',
+              description: 'Primary accent color for buttons, active controls, and call-to-action elements.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  color: {
+                    type: 'string',
+                    description: 'Accent color value for primary UI controls.',
+                  },
+                },
+                required: ['color'],
+              },
             },
             {
               name: 'ui_text_color',
-              description: 'The primary readable text color used for body copy, labels, and headings.',
+              description: 'Primary readable text color for body copy, headings, and labels.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  color: {
+                    type: 'string',
+                    description: 'Text color value for readable copy.',
+                  },
+                },
+                required: ['color'],
+              },
             },
             {
               name: 'ui_surface',
-              description: 'The surface color for panels, cards, and secondary containers.',
+              description: 'Surface color for cards, panels, sidebars, and secondary containers.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  color: {
+                    type: 'string',
+                    description: 'Color value for secondary surface backgrounds.',
+                  },
+                },
+                required: ['color'],
+              },
             },
             {
               name: 'ui_accent',
-              description: 'The highlight color used for links, focus states, and subtle accents.',
+              description: 'Accent color for links, focus indicators, and subtle highlights.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  color: {
+                    type: 'string',
+                    description: 'Color value for accent highlights.',
+                  },
+                },
+                required: ['color'],
+              },
             },
             {
               name: 'ui_border',
-              description: 'The border or divider color used for edges and separators.',
+              description: 'Border or divider color for separators and container edges.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  color: {
+                    type: 'string',
+                    description: 'Color value for borders and dividers.',
+                  },
+                },
+                required: ['color'],
+              },
             },
           ],
-          model: 'gpt-4o-mini',
-          history: [],
-          autoCreate: true,
         }),
         credentials: 'include',
       });
 
-      const rawText = await response.text();
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('无法获取数据流');
+      }
+
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+      let payload: any = null;
+      let assistantText = '';
+      let done = false;
+      const toolCallsByIndex: Record<string, { index: number; id?: string; name?: string; arguments?: string }> = {};
+
+      while (!done) {
+        const result = await reader.read();
+        if (result.done) {
+          break;
+        }
+
+        const chunk = decoder.decode(result.value, { stream: true });
+        accumulatedText += chunk;
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data:')) {
+            continue;
+          }
+
+          const data = line.slice(6).trim();
+          if (!data) {
+            continue;
+          }
+          if (data === '[DONE]') {
+            done = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              assistantText += parsed.content;
+            }
+
+            const entries = Array.isArray(parsed.toolCalls) ? parsed.toolCalls : Array.isArray(parsed.tool_calls) ? parsed.tool_calls : [];
+            for (const toolCall of entries) {
+              if (!toolCall || typeof toolCall !== 'object') {
+                continue;
+              }
+
+              const callIndex = toolCall.index !== undefined ? String(toolCall.index) : undefined;
+              if (!callIndex) {
+                continue;
+              }
+
+              const existing = toolCallsByIndex[callIndex] || { index: toolCall.index };
+              const fn = toolCall.function && typeof toolCall.function === 'object' ? toolCall.function : null;
+
+              if (typeof toolCall.id === 'string' && toolCall.id) {
+                existing.id = toolCall.id;
+              }
+              if (typeof toolCall.name === 'string' && toolCall.name) {
+                existing.name = toolCall.name;
+              }
+              if (fn) {
+                if (typeof fn.name === 'string' && fn.name) {
+                  existing.name = fn.name;
+                }
+                if (fn.arguments !== undefined) {
+                  if (typeof fn.arguments === 'string') {
+                    existing.arguments = (existing.arguments ?? '') + fn.arguments;
+                  } else {
+                    existing.arguments = JSON.stringify(fn.arguments);
+                  }
+                }
+              }
+              if (toolCall.arguments !== undefined) {
+                if (typeof toolCall.arguments === 'string') {
+                  existing.arguments = (existing.arguments ?? '') + toolCall.arguments;
+                } else {
+                  existing.arguments = JSON.stringify(toolCall.arguments);
+                }
+              }
+
+              toolCallsByIndex[callIndex] = existing;
+            }
+
+            if (parsed.theme && typeof parsed.theme === 'object') {
+              payload = {
+                ...payload,
+                ...parsed.theme,
+              };
+            } else if (parsed.content && typeof parsed.content === 'object') {
+              payload = {
+                ...payload,
+                ...parsed.content,
+              };
+            } else if (typeof parsed === 'object') {
+              payload = {
+                ...payload,
+                ...parsed,
+              };
+            }
+            if (parsed.sessionId) {
+              // Keep sessionId for future use if the backend returns it
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (window as any).currentSessionId = parsed.sessionId;
+            }
+          } catch {
+            // ignore invalid JSON fragments
+          }
+        }
+      }
+
       if (!response.ok) {
         throw new Error(`请求失败 ${response.status}，请稍后重试`);
       }
 
-      let payload: any = null;
-      try {
-        payload = JSON.parse(rawText);
-      } catch {
-        payload = null;
-      }
-
-      const themeData = this.extractThemeVariables(payload, rawText);
+      const toolCalls = Object.values(toolCallsByIndex);
+      const themeData = this.extractThemeVariables(payload, accumulatedText, toolCalls);
       const cssVars = this.mapThemeKeysToCss(themeData);
 
       if (!cssVars || Object.keys(cssVars).length === 0) {
@@ -360,7 +538,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private extractThemeVariables(payload: any, rawText: string): Record<string, string> {
+  private extractThemeVariables(payload: any, rawText: string, toolCalls: any[] = []): Record<string, string> {
     const theme: Record<string, string> = {};
     const normalized = payload && typeof payload === 'object'
       ? payload.theme && typeof payload.theme === 'object'
@@ -376,6 +554,21 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
       }
     }
+
+    const aliasMap: Record<string, string> = {
+      ui_background: 'background',
+      background: 'background',
+      ui_primary_color: 'primary',
+      primary: 'primary',
+      ui_text_color: 'text',
+      text: 'text',
+      ui_surface: 'surface',
+      surface: 'surface',
+      ui_accent: 'accent',
+      accent: 'accent',
+      ui_border: 'border',
+      border: 'border',
+    };
 
     if (Object.keys(theme).length === 0) {
       const jsonMatch = rawText.match(/({[\s\S]*})/m);
@@ -395,26 +588,99 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     if (Object.keys(theme).length === 0) {
-      const aliasMap: Record<string, string> = {
-        ui_background: 'background',
-        background: 'background',
-        ui_primary_color: 'primary',
-        primary: 'primary',
-        ui_text_color: 'text',
-        text: 'text',
-        ui_surface: 'surface',
-        surface: 'surface',
-        ui_accent: 'accent',
-        accent: 'accent',
-        ui_border: 'border',
-        border: 'border',
-      };
-
       for (const [alias, canonical] of Object.entries(aliasMap)) {
         const regex = new RegExp(`${alias}\\s*[:=]\\s*(#[0-9a-fA-F]{3,8}|rgba?\\([^)]*\\)|[a-zA-Z]+)`, 'i');
         const match = rawText.match(regex);
         if (match) {
           theme[canonical] = match[1];
+        }
+      }
+    }
+
+    if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+      const indexedCalls: Record<string, { name?: string; arguments?: unknown }> = {};
+
+      for (const toolCall of toolCalls) {
+        if (!toolCall || typeof toolCall !== 'object') {
+          continue;
+        }
+
+        const fn = toolCall.function && typeof toolCall.function === 'object' ? toolCall.function : null;
+        const callIndex = toolCall.index !== undefined ? String(toolCall.index) : undefined;
+        const entryKey = callIndex ?? String(toolCall.id ?? toolCall.name ?? '');
+        if (!entryKey) {
+          continue;
+        }
+
+        const existing = indexedCalls[entryKey] || {};
+
+        if (toolCall.name && typeof toolCall.name === 'string') {
+          existing.name = toolCall.name;
+        }
+
+        if (fn) {
+          if (typeof fn.name === 'string' && fn.name) {
+            existing.name = fn.name;
+          }
+          if (fn.arguments !== undefined) {
+            existing.arguments = fn.arguments;
+          }
+        }
+
+        if (toolCall.arguments !== undefined) {
+          existing.arguments = toolCall.arguments;
+        }
+
+        indexedCalls[entryKey] = existing;
+      }
+
+      for (const entry of Object.values(indexedCalls)) {
+        if (!entry.name) {
+          continue;
+        }
+
+        const toolName = entry.name.toLowerCase();
+        const canonicalToolName = aliasMap[toolName] || aliasMap[toolName.replace(/[-_\s]/g, '')];
+        let toolArgs: any = entry.arguments;
+
+        if (typeof toolArgs === 'string') {
+          const trimmed = toolArgs.trim();
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            try {
+              toolArgs = JSON.parse(trimmed);
+            } catch {
+              toolArgs = { value: trimmed };
+            }
+          } else {
+            toolArgs = { value: trimmed };
+          }
+        }
+
+        if (canonicalToolName) {
+          if (typeof toolArgs === 'string') {
+            theme[canonicalToolName] = toolArgs;
+          } else if (toolArgs && typeof toolArgs === 'object') {
+            if (typeof toolArgs.color === 'string') {
+              theme[canonicalToolName] = toolArgs.color;
+            } else if (typeof toolArgs.value === 'string') {
+              theme[canonicalToolName] = toolArgs.value;
+            } else {
+              for (const value of Object.values(toolArgs)) {
+                if (typeof value === 'string' && value.trim()) {
+                  theme[canonicalToolName] = value.trim();
+                  break;
+                }
+              }
+            }
+          }
+        } else if (toolArgs && typeof toolArgs === 'object') {
+          for (const [innerKey, innerValue] of Object.entries(toolArgs)) {
+            const normalizedInnerKey = innerKey.toLowerCase().replace(/[-_\s]/g, '');
+            const canonicalInner = aliasMap[normalizedInnerKey] || normalizedInnerKey;
+            if (typeof innerValue === 'string' && innerValue.trim()) {
+              theme[canonicalInner] = innerValue.trim();
+            }
+          }
         }
       }
     }
