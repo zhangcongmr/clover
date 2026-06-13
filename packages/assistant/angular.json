@@ -88,6 +88,55 @@
                 "styles": false,
                 "vendor": true
               }
+            },
+            "common": {
+              "browser": "src/main.common.ts",
+              "outputPath": "dist/luxio-common",
+              "optimization": false,
+              "outputHashing": "none",
+              "sourceMap": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "src/assets/",
+                  "output": "/assets/"
+                },
+                {
+                  "glob": "favicon.svg",
+                  "input": "src/",
+                  "output": "/"
+                },
+                {
+                  "glob": "manifest.json",
+                  "input": "src/",
+                  "output": "/"
+                },
+                {
+                  "glob": "background.js",
+                  "input": "src/",
+                  "output": "/"
+                },
+                {
+                  "glob": "utmsource.json",
+                  "input": "src/",
+                  "output": "/"
+                }
+              ],
+              "styles": [
+                "src/styles.css"
+              ],
+              "scripts": [
+                "node_modules/marked/marked.min.js"
+              ],
+              "polyfills": [],
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.common.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "development"
