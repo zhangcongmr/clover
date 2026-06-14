@@ -735,19 +735,67 @@ Rules:
   }
 
   private mapThemeKeysToCss(themeVars: Record<string, string>): Record<string, string> {
-    const keyMap: Record<string, string> = {
-      background: '--vscode-editor-background',
-      surface: '--vscode-sideBar-background',
-      primary: '--vscode-button-background',
-      text: '--vscode-foreground',
-      accent: '--vscode-focusBorder',
-      border: '--vscode-editorGroup-border',
+    const keyMap: Record<string, string[]> = {
+      background: [
+        '--vscode-background',
+        '--vscode-editor-background',
+        '--vscode-panel-background',
+        '--vscode-input-background',
+        '--vscode-titleBar-activeBackground',
+        '--vscode-titleBar-inactiveBackground',
+        '--vscode-scrollbar-track',
+        '--vscode-editorWidget-background',
+        '--vscode-tabborder-background',
+      ],
+      surface: [
+        '--vscode-sideBar-background',
+        '--vscode-activityBar-background',
+        '--vscode-tab-inactiveBackground',
+        '--vscode-tab-activeBackground',
+        '--vscode-list-inactiveSelectionBackground',
+        '--vscode-list-hoverBackground',
+        '--vscode-panel-background',
+        '--vscode-editorWidget-background',
+        '--vscode-input-background',
+      ],
+      primary: [
+        '--vscode-button-background',
+        '--vscode-statusBar-background',
+        '--vscode-activityBarBadge-background',
+        '--vscode-list-activeSelectionBackground',
+        '--vscode-tab-activeBackground',
+      ],
+      text: [
+        '--vscode-foreground',
+        '--vscode-button-foreground',
+        '--vscode-activityBar-foreground',
+        '--vscode-activityBarBadge-foreground',
+        '--vscode-list-activeSelectionForeground',
+        '--vscode-icon-foreground',
+        '--vscode-statusBar-foreground',
+      ],
+      accent: [
+        '--vscode-focusBorder',
+        '--vscode-textLink-foreground',
+        '--vscode-textLink-activeForeground',
+        '--vscode-list-hoverBackground',
+        '--vscode-text-selectionBackground',
+      ],
+      border: [
+        '--vscode-editorGroup-border',
+        '--vscode-input-border',
+        '--vscode-tab-border',
+        '--vscode-textSeparator-foreground',
+        '--vscode-tabborder-background',
+      ],
     };
+
     const cssVars: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(themeVars)) {
       const normalizedKey = key.toLowerCase().replace(/[\s_-]/g, '');
       let canonical = '';
+
       if (['uibackground', 'background'].includes(normalizedKey)) canonical = 'background';
       else if (['uiprimarycolor', 'primarycolor', 'primary'].includes(normalizedKey)) canonical = 'primary';
       else if (['uitextcolor', 'textcolor', 'text'].includes(normalizedKey)) canonical = 'text';
@@ -756,9 +804,12 @@ Rules:
       else if (['uiborder', 'border'].includes(normalizedKey)) canonical = 'border';
 
       if (canonical && keyMap[canonical]) {
-        cssVars[keyMap[canonical]] = value;
+        for (const cssVar of keyMap[canonical]) {
+          cssVars[cssVar] = value;
+        }
       }
     }
+
     return cssVars;
   }
 
