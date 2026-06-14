@@ -572,6 +572,7 @@ Rules:
         throw new Error('未能从响应中解析出主题变量');
       }
 
+      this.themeService.setTheme('custom');
       this.themeService.setThemeVariables(cssVars);
       this.themePromptResult = cssVars;
       this.themePromptOpen = false;
