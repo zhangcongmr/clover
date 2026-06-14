@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, viewChild } from '@angular/core';
+import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -46,6 +46,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   themePromptLoading = false;
   themePromptError: string | null = null;
   themePromptResult: Record<string, string> | null = null;
+  themeIconPath = signal<string | null>(null);
+  private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly emotionThemeSystemPrompt = `
 You are a UI theme generation assistant. Your task is to analyze the user input and generate a matching UI theme color palette based on the expressed emotion.
 
@@ -184,6 +186,11 @@ Rules:
       } else {
         document.body.classList.remove('vscode-dark-theme');
       }
+      // 从 localStorage 恢复主题图标
+      const saved = this.loadThemeIcon();
+      if (saved) {
+        this.themeIconPath.set(saved);
+      }
     }
   }
 
@@ -271,11 +278,31 @@ Rules:
     this.coreService.showNotification(this.coreService.progressDetails(), 'info');
   }
 
+  private saveThemeIcon(): void {
+    if (typeof window !== 'undefined') {
+      const path = this.themeIconPath();
+      if (path) {
+        localStorage.setItem(this.THEME_ICON_KEY, path);
+      } else {
+        localStorage.removeItem(this.THEME_ICON_KEY);
+      }
+    }
+  }
+
+  private loadThemeIcon(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(this.THEME_ICON_KEY);
+    }
+    return null;
+  }
+
   // 恢复默认主题
   toggleTheme() {
     this.themeService.clearThemeVariables();
     this.themeService.setTheme('default');
     document.body.classList.remove('vscode-dark-theme');
+    this.themeIconPath.set(null);
+    this.saveThemeIcon();
   }
 
   openThemePrompt(): void {
@@ -426,6 +453,22 @@ Always output the theme colors using the provided tools in hex format.
                 required: ['color'],
               },
             },
+            {
+              name: 'ui_theme_icon',
+              description: 'Generate an SVG icon path that visually represents the current emotion, mood, or style theme. The icon must be a simple, recognizable symbol related to the emotion (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm).',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  svgPath: {
+                    type: 'string',
+                    description: 'The SVG <path> d attribute value for the icon. Use a standard 24x24 viewBox.',
+                  },
+                },
+                required: ['svgPath'],
+              },
+            },
           ],
         }),
         credentials: 'include',
@@ -549,6 +592,13 @@ Always output the theme colors using the provided tools in hex format.
 
       const toolCalls = Object.values(toolCallsByIndex);
       const themeData = this.extractThemeVariables(payload, accumulatedText, toolCalls);
+
+      if (themeData['theme_icon']) {
+        this.themeIconPath.set(themeData['theme_icon']);
+        this.saveThemeIcon();
+        delete themeData['theme_icon'];
+      }
+
       const cssVars = this.mapThemeKeysToCss(themeData);
 
       if (!cssVars || Object.keys(cssVars).length === 0) {
@@ -597,6 +647,8 @@ Always output the theme colors using the provided tools in hex format.
       accent: 'accent',
       ui_border: 'border',
       border: 'border',
+      ui_theme_icon: 'theme_icon',
+      theme_icon: 'theme_icon',
     };
 
     if (Object.keys(theme).length === 0) {
