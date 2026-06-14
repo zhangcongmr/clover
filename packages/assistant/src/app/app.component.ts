@@ -46,6 +46,25 @@ export class AppComponent implements OnInit, AfterViewInit {
   themePromptLoading = false;
   themePromptError: string | null = null;
   themePromptResult: Record<string, string> | null = null;
+  private readonly emotionThemeSystemPrompt = `
+You are a UI theme generation assistant. Your task is to analyze the user input and generate a matching UI theme color palette based on the expressed emotion.
+
+Rules:
+1. First analyze the user input for emotion or mood (for example angry, happy, sad, calm, anxious, excited, fearful, surprised).
+2. Choose a matching color scheme based on the emotion:
+   - Angry/Tense → warm tones (red/orange/deep red), high contrast, intense.
+   - Happy/Excited → bright tones (yellow/orange/light blue), high saturation, energetic.
+   - Sad/Downcast → cool tones (blue/gray/indigo), low saturation, soft.
+   - Calm/Relaxed → neutral tones (green/beige/gray-blue), low contrast, comfortable.
+   - Fearful/Anxious → dark tones (deep purple/dark gray/forest green), low brightness, moody.
+   - Surprised/Curious → vivid tones (purple/pink/bright blue), high contrast, playful.
+   - Loving/Warm → warm soft tones (pink/red/gold), medium-high saturation, gentle.
+   - For other emotions, match based on the emotion characteristics.
+3. If the user input is a style description rather than an emotional expression, ignore emotion analysis and generate the theme directly from the style description.
+4. Use the provided tools to output color values, with each tool returning one color.
+5. Color values must use hexadecimal format (e.g. #FF6B6B).
+6. Ensure the six colors (background, primary, text, surface, accent, border) are visually harmonious and form a complete theme.
+`;
   keepTerminalInstance = {
     value: false,
     dragHeight: 0.75,
@@ -279,16 +298,41 @@ export class AppComponent implements OnInit, AfterViewInit {
   async submitThemePrompt(): Promise<void> {
     const trimmedPrompt = this.themePromptText.trim();
     if (!trimmedPrompt) {
-      this.themePromptError = '请输入风格描述';
+      this.themePromptError = 'Tell me how you feel or describe the style you want, and I will create a matching theme for you.';
       return;
     }
-    await this.generateThemeFromPrompt(trimmedPrompt);
+    const isEmotionMode = this.detectEmotionMode(trimmedPrompt);
+    await this.generateThemeFromPrompt(trimmedPrompt, isEmotionMode);
   }
 
-  private async generateThemeFromPrompt(prompt: string): Promise<void> {
+  private detectEmotionMode(prompt: string): boolean {
+    const emotionKeywords = [
+      'angry', 'angry', 'happy', 'sad', 'calm', 'anxious', 'excited', 'fearful', 'surprised', 'curious', 'love', 'warm', 'down', 'furious', 'depressed', 'lost', 'joyful', 'irritated', 'excited', 'desperate', 'nervous'
+    ];
+    const normalized = prompt.toLowerCase();
+    return emotionKeywords.some(keyword => normalized.includes(keyword.toLowerCase()));
+  }
+
+  private getThemeSystemPrompt(isEmotionMode: boolean): string {
+    if (isEmotionMode) {
+      return this.emotionThemeSystemPrompt;
+    }
+    return `
+You are a UI theme generation assistant. Your task is to generate a matching UI theme color palette based on the user's style description.
+
+Rules:
+1. Ignore emotion analysis and generate the theme directly from the provided style description.
+2. Use the provided tools to output color values, with each tool returning one color.
+3. Color values must use hexadecimal format (e.g. #FF6B6B).
+4. Ensure the six colors (background, primary, text, surface, accent, border) are visually harmonious and form a complete theme.
+`;
+  }
+
+  private async generateThemeFromPrompt(prompt: string, isEmotionMode: boolean = false): Promise<void> {
     this.themePromptLoading = true;
     this.themePromptError = null;
     this.themePromptResult = null;
+    const systemPrompt = this.getThemeSystemPrompt(isEmotionMode);
 
     try {
       const response = await fetch('/api/chat', {
@@ -300,6 +344,7 @@ export class AppComponent implements OnInit, AfterViewInit {
           message: prompt,
           model: 'deepseek-v4-flash',
           history: [],
+          system: systemPrompt,
           autoCreate: true,
           tools: [
             {

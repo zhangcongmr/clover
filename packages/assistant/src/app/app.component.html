@@ -204,26 +204,27 @@
     <div class="theme-prompt-overlay" (click)="closeThemePrompt()">
       <div class="theme-prompt-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
         <div class="theme-prompt-header">
-          <div>输入一种风格</div>
-          <button type="button" class="close-btn" title="关闭" (click)="closeThemePrompt()">×</button>
+          <div>Enter a theme or emotion</div>
+          <button type="button" class="close-btn" title="Close" (click)="closeThemePrompt()">×</button>
         </div>
         <textarea
           class="theme-prompt-textarea"
           [value]="themePromptText"
           (input)="themePromptText = $any($event.target).value"
-          placeholder="例如：未来派深色界面，带霓虹蓝、墨灰与柔和高亮"
+          placeholder="For example: I am very angry today / describe the style you like"
           rows="4"></textarea>
+        <div class="theme-prompt-hint">💡 Enter an emotion (like "happy") to automatically match an emotional theme, or describe the style you want directly.</div>
         <div class="theme-prompt-actions">
-          <button type="button" class="theme-prompt-cancel" (click)="closeThemePrompt()">取消</button>
+          <button type="button" class="theme-prompt-cancel" (click)="closeThemePrompt()">Cancel</button>
           <button type="button" class="theme-prompt-submit" [disabled]="themePromptLoading" (click)="submitThemePrompt()">
-            {{ themePromptLoading ? '生成中...' : '生成主题' }}
+            {{ themePromptLoading ? 'Generating...' : 'Generate Theme' }}
           </button>
         </div>
         <div class="theme-prompt-status">
           @if(themePromptError) {
             <span class="error">{{ themePromptError }}</span>
           } @else if(!themePromptLoading && themePromptResult) {
-            <span class="success">主题已应用</span>
+            <span class="success">Theme applied</span>
           }
         </div>
       </div>
