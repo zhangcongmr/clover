@@ -271,14 +271,11 @@ Rules:
     this.coreService.showNotification(this.coreService.progressDetails(), 'info');
   }
 
-  // 切换主题的方法
+  // 恢复默认主题
   toggleTheme() {
-    this.themeService.toggleTheme();
-    if (this.themeService.getCurrentTheme() === 'dark') {
-      document.body.classList.add('vscode-dark-theme');
-    } else {
-      document.body.classList.remove('vscode-dark-theme');
-    }
+    this.themeService.clearThemeVariables();
+    this.themeService.setTheme('default');
+    document.body.classList.remove('vscode-dark-theme');
   }
 
   openThemePrompt(): void {
