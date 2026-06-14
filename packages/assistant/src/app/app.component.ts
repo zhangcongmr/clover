@@ -301,38 +301,24 @@ Rules:
       this.themePromptError = 'Tell me how you feel or describe the style you want, and I will create a matching theme for you.';
       return;
     }
-    const isEmotionMode = this.detectEmotionMode(trimmedPrompt);
-    await this.generateThemeFromPrompt(trimmedPrompt, isEmotionMode);
+    await this.generateThemeFromPrompt(trimmedPrompt);
   }
 
-  private detectEmotionMode(prompt: string): boolean {
-    const emotionKeywords = [
-      'angry', 'angry', 'happy', 'sad', 'calm', 'anxious', 'excited', 'fearful', 'surprised', 'curious', 'love', 'warm', 'down', 'furious', 'depressed', 'lost', 'joyful', 'irritated', 'excited', 'desperate', 'nervous'
-    ];
-    const normalized = prompt.toLowerCase();
-    return emotionKeywords.some(keyword => normalized.includes(keyword.toLowerCase()));
-  }
-
-  private getThemeSystemPrompt(isEmotionMode: boolean): string {
-    if (isEmotionMode) {
-      return this.emotionThemeSystemPrompt;
-    }
+  private getThemeSystemPrompt(): string {
     return `
-You are a UI theme generation assistant. Your task is to generate a matching UI theme color palette based on the user's style description.
-
-Rules:
-1. Ignore emotion analysis and generate the theme directly from the provided style description.
-2. Use the provided tools to output color values, with each tool returning one color.
-3. Color values must use hexadecimal format (e.g. #FF6B6B).
-4. Ensure the six colors (background, primary, text, surface, accent, border) are visually harmonious and form a complete theme.
+You are a UI theme generation assistant.
+When the user's prompt expresses feeling, mood, emotion, or atmosphere, generate a mood-driven UI palette.
+When the user's prompt describes style, texture, or design, generate a style-driven palette.
+This applies to any language.
+Always output the theme colors using the provided tools in hex format.
 `;
   }
 
-  private async generateThemeFromPrompt(prompt: string, isEmotionMode: boolean = false): Promise<void> {
+  private async generateThemeFromPrompt(prompt: string): Promise<void> {
     this.themePromptLoading = true;
     this.themePromptError = null;
     this.themePromptResult = null;
-    const systemPrompt = this.getThemeSystemPrompt(isEmotionMode);
+    const systemPrompt = this.getThemeSystemPrompt();
 
     try {
       const response = await fetch('/api/chat', {
