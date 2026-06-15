@@ -1328,6 +1328,7 @@ export class CoreService {
     }
 
     try {
+      await this.verifyPermission(fileNode.folderHandle, true);
       const fileHandle = fileNode.folderHandle as unknown as FileSystemFileHandle;
       const file = await fileHandle.getFile();
       const content = await file.arrayBuffer();
@@ -1413,6 +1414,27 @@ export class CoreService {
         throw error;
       }
     }
+  }
+
+  async verifyPermission(fileHandle: any, withWrite = false) {
+    const options = { mode: withWrite ? 'readwrite' : 'read' };
+
+    // 1. 先查询当前权限状态
+    const permissionStatus = await fileHandle.queryPermission(options);
+    if (permissionStatus === 'granted') {
+      console.log("query granted")
+      return true; // 已有权限，直接放行
+    }
+
+    // 2. 如果没有权限，则主动请求权限
+    const requestPermission = await fileHandle.requestPermission(options);
+    if (requestPermission === 'granted') {
+      console.log("request granted")
+      return true; // 用户授予了权限
+    }
+
+    // 3. 用户拒绝了权限请求
+    return false;
   }
 
   /**

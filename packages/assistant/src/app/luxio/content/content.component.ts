@@ -316,7 +316,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       
       // 如果是文件节点且有 folderHandle，则更新内容
       if (result.nodeType === 'file' && result.folderHandle && result.folderHandle.kind === 'file') {
-        await this.addProjectComponent()?.setTextContextToNode(result.folderHandle.name, result.folderHandle, result);
+        // await this.addProjectComponent()?.setTextContextToNode(result.folderHandle.name, result.folderHandle, result);
       }
       
       // 递归处理子节点
@@ -341,11 +341,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
           const handle: any = await this.coreService.idbGet(node.folderHandleKey);
           if (handle) {
             result.folderHandle = handle;
-            
-            // If this is a file node, refresh its content from the file system
-            if (result.nodeType === 'file' && handle.kind === 'file') {
-              await this.addProjectComponent()?.setTextContextToNode(handle.name, handle, result);
-            }
           }
           // Remove the temporary key reference
           // delete result.folderHandleKey;
@@ -732,6 +727,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       assignDeepLevel([item], item.deepLevel);
     }
 
+    await this.coreService.verifyPermission(item.folderHandle, true);
     this.openTab(item);
   }
 

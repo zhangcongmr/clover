@@ -173,15 +173,13 @@ export class AddProjectComponent implements OnInit {
       mode: this.folderReadWriteMode
     } as any;
 
-    if (handle.kind === 'file') {
-      await this.setTextContextToNode(name, handle, node);
-    }
     return node;
   }
 
   public async setTextContextToNode(name: any, handle: any, node: AstTreeNode) {
     if (!this.coreService.isBinaryName(name)) {
       try {
+        await this.coreService.verifyPermission(handle, true);
         const fh = await handle.getFile();
         node.content = await fh.text();
       } catch (err: any) {
