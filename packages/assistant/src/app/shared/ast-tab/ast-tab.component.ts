@@ -82,7 +82,7 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
     } else if (tabType['type'] == 'textbottom') {
       return isActivated ? 'active-tab textbottom-border-tab' : 'borderless-tab';
     } else if (tabType['type'] == 'lightcolorselection') {
-      return isActivated ? 'active-tab lightcolorselection-tab' : 'bottom-border-tab';
+      return isActivated ? 'active-tab lightcolorselection-tab' : 'borderless-tab';
     } else {
       return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
     }

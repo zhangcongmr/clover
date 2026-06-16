@@ -31,7 +31,7 @@
       </li>
       }
       <div data-layer="remaining_space" class="RemainingSpace codigma-remaining-space" (dblclick)="dblclickAddTab()" [style.cursor]="addTabEnable()?'pointer': ''"
-        [style.border-bottom]="tabType() && (tabType()['type']=='bilateral' || tabType()['type']=='lightcolorselection')?'1px var(--vscode-tabborder-background) solid':''">
+        [style.border-bottom]="tabType() && (tabType()['type']=='bilateral')?'1px var(--vscode-tabborder-background) solid':''">
       </div>
 
     </ul>
