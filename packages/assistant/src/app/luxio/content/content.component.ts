@@ -727,7 +727,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       assignDeepLevel([item], item.deepLevel);
     }
 
-    await this.coreService.verifyPermission(item.folderHandle, true);
+    if (item.folderHandle && Object.keys(item.folderHandle).length > 0 && item.folderHandle.kind === 'file') {
+      try {
+        await this.coreService.verifyPermission(item.folderHandle, false);
+      } catch (error) {
+        this.notificationService.showNotification('No read permission for this file. Please grant permission to view the content.', 'error');
+        return;
+      }
+    }
     this.openTab(item);
   }
 
