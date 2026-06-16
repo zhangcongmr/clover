@@ -167,17 +167,6 @@ li[data-layer="tab"].active-tab .tab-close {
 .bilateral-border-tab .padding_right_space {
     border-right: 1px var(--vscode-tabborder-background) solid;
 }
-/* === 特殊位置处理 === */
-
-/* 如果激活项是第一个 <li> → 移除左边框 */
-li[data-layer="tab"]:first-child.bilateral-border-tab .padding_left_space {
-  border-left: none;
-}
-
-/* 如果激活项是最后一个 <li>（即倒数第二个子元素，因 RemainingSpace 在最后）→ 移除右边框 */
-/* li[data-layer="tab"]:nth-last-child(2).bilateral-border-tab .padding_right_space {
-  border-right: none;
-} */
 
 /**
  * when tabType is 'lightcolorselection'
