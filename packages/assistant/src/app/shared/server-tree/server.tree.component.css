@@ -7,7 +7,7 @@
     align-self: stretch;
     display: inline-flex;
     gap: 25px;
-    height: 25px;
+    height: 2rem;
     width: 100%;
     justify-content: space-between;
 }

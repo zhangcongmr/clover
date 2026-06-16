@@ -21,7 +21,7 @@
     background: var(--vscode-sideBar-background);
     display: inline-flex;
     gap: 25px;
-    height: 25px;
+    height: 2rem;
     width: 100%;
     justify-content: space-between;
     border-bottom: 1px solid var(--vscode-editorGroup-border);
