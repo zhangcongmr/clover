@@ -62,14 +62,13 @@ export class MarkdownComponent implements OnInit, AfterViewInit {
           ".cm-gutters": {
             backgroundColor: "var(--vscode-editor-background)",
             color: "var(--vscode-foreground)",
-            border: "none", 
-            "&:not(.cm-activeLineGutter)": { // 对非当前行的 gutter 应用样式
-              backgroundColor: "var(--vscode-sideBar-background)",
-              color: "var(--vscode-foreground)",
-            },
+            border: "none"
           },  
+          ".cm-activeLine": {
+            backgroundColor: "var(--vscode-sideBar-background)",
+          },
           ".cm-activeLineGutter": { // 当前行在 gutter 上的高亮样式
-            backgroundColor: "var(--vscode-editor-background)", // 当前行号所在 gutter 的背景色
+            backgroundColor: "var(--vscode-sideBar-background)", // 当前行号所在 gutter 的背景色
             color: "var(--vscode-textLink-activeForeground)", // 当前行号的颜色
           },
           '.cm-cursor': {
