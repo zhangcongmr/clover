@@ -24,15 +24,6 @@
     background-color: transparent;
 }
 
-.codigma-edit-btn.visible {
-    right: 2%;
-    opacity: 1;
-    pointer-events: auto;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    border-radius: 4px;
-    background-color: transparent;
-}
-
 .codigma-edit {
     color: var(--primary-color, rgb(103, 137, 186));
     display: flex;
