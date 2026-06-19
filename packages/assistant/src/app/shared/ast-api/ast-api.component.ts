@@ -28,10 +28,6 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   @Input() apiInfo: any;
   readonly saved = output();
 
-  // whether the floating edit button is currently shown (mouse near right edge)
-  editBtnVisible = false;
-  private editBtnHideTimer: any = null;
-
   auths = [
     {
       value: "No Auth"
@@ -99,6 +95,10 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   controller: AbortController | undefined;
   
   editApiSourceCodeEnable = false;
+
+  // whether the floating edit button is currently shown (mouse near right edge)
+  showEditBtn: string = 'inset(0 0 0 100%)';
+  private editBtnHideTimer: any = null;
 
   /**
    * 标志API内容是否发生了改变， 用于保存时做判断
@@ -764,15 +764,12 @@ export class AstApiComponent implements OnInit, AfterViewInit {
         clearTimeout(this.editBtnHideTimer);
         this.editBtnHideTimer = null;
       }
-      if (!this.editBtnVisible) {
-        this.editBtnVisible = true;
+      if (this.showEditBtn == 'inset(0 0 0 100%)') {
+        this.showEditBtn = 'inset(0 0 0 0%)';
       }
     } else {
-      if (this.editBtnVisible && this.editBtnHideTimer == null) {
-        this.editBtnHideTimer = setTimeout(() => {
-          this.editBtnVisible = false;
-          this.editBtnHideTimer = null;
-        }, 3000);
+      if (this.showEditBtn == 'inset(0 0 0 0%)') {
+        this.showEditBtn = 'inset(0 0 0 100%)';
       }
     }
   }

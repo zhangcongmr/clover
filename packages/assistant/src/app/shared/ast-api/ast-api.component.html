@@ -1,7 +1,6 @@
 @if(editApiSourceCodeEnable == false) {
   <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
-    <div data-layer="edit-btn" class="EditBtn codigma-edit-btn" [class.visible]="editBtnVisible && !editApiSourceCodeEnable" (click)="editApiSourceCodeFn($event)"
-         style="pointer-events: auto;cursor: pointer;">
+    <div data-layer="edit-btn" class="EditBtn codigma-edit-btn" [style.clip-path]="showEditBtn" [style.display]="!editApiSourceCodeEnable?'inline-flex':'none'" (click)="editApiSourceCodeFn($event)">
       <div data-svg-wrapper="" data-layer="Frame" class="Frame">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
