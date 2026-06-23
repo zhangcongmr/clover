@@ -8,7 +8,9 @@ import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@luxio/community-widget';
 import { DocModelType } from './app/shared/model';
-import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog} from '@a2ui/angular/v0_9';
+import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog, provideMarkdownRenderer} from '@a2ui/angular/v0_9';
+import { IMAGE_CONFIG } from '@angular/common';
+import {renderMarkdown} from '@a2ui/markdown-it';
 
 //svg sprite 注入到 DOM
 injectSvgSprite();
@@ -43,6 +45,14 @@ export function startAngularApp(doc?: DocModelType, fileName?: string) {
         },
       },
       A2uiRendererService,
+    provideMarkdownRenderer(renderMarkdown as any),
+    {
+      provide: IMAGE_CONFIG,
+      useValue: {
+        disableImageSizeWarning: true,
+        disableImageLazyLoadWarning: true,
+      },
+    },
     ]
   }).catch(err => {
     console.log("00000000000000000000");

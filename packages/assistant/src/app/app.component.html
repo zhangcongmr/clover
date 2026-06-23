@@ -240,7 +240,7 @@
     <div class="testSurface-overlay">
       <div class="testSurface-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
         <div class="testSurface-header">
-          <div>Test Surface</div>
+          <div class="testSurface-title">Restaurant Finder</div>
           <button type="button" class="close-btn" title="Close" (click)="testSurfaceComponent = false">×</button>
         </div>
         <div class="testSurface-content">
@@ -265,8 +265,6 @@
           }
         </div>
         <form (submit)="handleSubmit($event)">
-
-          <h1 class="app-title">Restaurant Finder</h1>
           <div>
             <input
               required
