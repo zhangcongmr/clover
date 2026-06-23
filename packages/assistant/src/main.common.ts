@@ -8,6 +8,7 @@ import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@luxio/community-widget';
 import { DocModelType } from './app/shared/model';
+import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog} from '@a2ui/angular/v0_9';
 
 //svg sprite 注入到 DOM
 injectSvgSprite();
@@ -31,7 +32,17 @@ export function startAngularApp(doc?: DocModelType, fileName?: string) {
       provideZonelessChangeDetection(),
       importProvidersFrom(BrowserModule, FormsModule, ReactiveFormsModule),
       provideHttpClient(withFetch(), withInterceptorsFromDi()),
-      provideClientHydration(withEventReplay())
+      provideClientHydration(withEventReplay()),
+      {
+        provide: A2UI_RENDERER_CONFIG,
+        useValue: {
+          catalogs: [new BasicCatalog()],
+          actionHandler: (action: any) => {
+            console.log('Action received:', action);
+          },
+        },
+      },
+      A2uiRendererService,
     ]
   }).catch(err => {
     console.log("00000000000000000000");

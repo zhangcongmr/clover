@@ -21,6 +21,7 @@
   },
   "public": true,
   "dependencies": {
+    "@a2a-js/sdk": "^0.3.13",
     "@angular/animations": "^21.2.4",
     "@angular/cdk": "^20.2.14",
     "@angular/common": "^21.2.4",
@@ -57,7 +58,10 @@
     "marked": "^14.1.4",
     "opfs-tools": "^0.6.2",
     "tailwindcss": "^4.1.18",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "@a2ui/angular": "^0.9.1",
+    "@a2ui/web_core": "^0.9.2",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@angular/build": "^21.2.2",

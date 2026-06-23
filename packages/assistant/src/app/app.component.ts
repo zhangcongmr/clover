@@ -12,6 +12,9 @@ import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
+import * as Types from '@a2ui/web_core/types/types';
+import { A2uiRendererService, ComponentHostComponent, SurfaceComponent } from '@a2ui/angular/v0_9';
+import { Client } from './client';
 
 @Component({
     selector: 'app-root',
@@ -22,7 +25,7 @@ import { TerminalComponent } from './shared/terminal/terminal.component'; // Imp
       '(mousemove)': 'whenMouseMove($event)'
     },
     standalone: true,
-    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent], // Add TerminalComponent to imports
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, SurfaceComponent, ComponentHostComponent], // Add TerminalComponent to imports
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
@@ -71,6 +74,12 @@ Rules:
     value: false,
     dragHeight: 0.75,
   }
+
+  testSurfaceComponent = false
+  protected client = inject(Client);
+  protected renderer = inject(A2uiRendererService);
+
+
   sideOpen = true
 
   blurSwitch = true;
@@ -1231,4 +1240,26 @@ Always output the theme colors using the provided tools in hex format.
     }
   }
 
+  testSurface() {
+    this.testSurfaceComponent = !this.testSurfaceComponent;
+  }
+
+  protected async handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    if (!(event.target instanceof HTMLFormElement)) {
+      return;
+    }
+
+    const data = new FormData(event.target);
+    const body = data.get('body') ?? null;
+
+    if (body) {
+      // this.startLoadingAnimation();
+      const message = body as Types.A2UIClientEventMessage | string;
+      // this.hasData.set(true);
+      await this.client.makeRequest(message);
+      // this.stopLoadingAnimation();
+    }
+  }
 }

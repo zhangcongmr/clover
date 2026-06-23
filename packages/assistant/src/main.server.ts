@@ -7,6 +7,7 @@ import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { serverRoutes } from './app/app.routes.server';
 import { provideMyConfig } from './app/my-config.providers';
+import { A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog } from '@a2ui/angular/v0_9';
 
 const serverConfig: ApplicationConfig = {
     providers: [
@@ -17,7 +18,17 @@ const serverConfig: ApplicationConfig = {
         provideHttpClient(withFetch(), withInterceptorsFromDi()),
         provideZonelessChangeDetection(),
         provideRouter(routes),
-        provideServerRendering(withRoutes(serverRoutes))
+        provideServerRendering(withRoutes(serverRoutes)),
+        {
+            provide: A2UI_RENDERER_CONFIG,
+            useValue: {
+                catalogs: [new BasicCatalog()],
+                actionHandler: (action: any) => {
+                    console.log('Action received:', action);
+                },
+            },
+        },
+        A2uiRendererService,
     ]
 };
 
