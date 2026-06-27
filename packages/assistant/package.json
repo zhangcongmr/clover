@@ -11,7 +11,7 @@
   "types": "./dist/luxio-common/index.d.ts",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --host=0.0.0.0 --ssl",
+    "start": "ng serve --host=0.0.0.0",
     "build:app": "ng build",
     "build:common": "ng build --configuration=common && node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
     "build": "pnpm run build:common && pnpm run build:app",

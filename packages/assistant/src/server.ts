@@ -14,7 +14,7 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine({
-  allowedHosts: ['localhost', '192.168.153.1', '127.0.0.1'],
+  allowedHosts: ['localhost', '192.168.153.1', '127.0.0.1', '192.168.253.110'],
 });
 let client: A2AClient | null = null;
 const enableStreaming = process.env['ENABLE_STREAMING'] !== 'false';

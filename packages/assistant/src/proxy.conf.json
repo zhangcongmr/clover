@@ -18,5 +18,9 @@
   "/terminals/*": {
     "target": "wss://127.0.0.1:3000",
     "secure": false
+  },
+  "/api/chat/**": {
+    "target": "http://192.168.163.1:3000/",
+    "secure": false
   }
 }

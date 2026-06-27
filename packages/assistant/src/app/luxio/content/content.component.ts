@@ -85,6 +85,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   openedList = signal<Array<any>>([]);
 
+  welcomeTip = signal<string>('');
+  welcomeIconPath = signal<string>('');
+
   addMarkFile = false;
   newFileName: string = '';
   searchKeyword = ''
@@ -182,6 +185,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (Object.keys(docObj).length === 0) {
       this.dataList.set([]);
     }
+
+    this.generateWelcomeContent();
 
     // 启动自动刷新功能
     // this.startAutoRefresh();
@@ -361,6 +366,99 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+  }
+
+  private async generateWelcomeContent(): Promise<void> {
+    const systemPrompt = `You are a welcome assistant for Luxio, a web-based editor.
+Generate a short welcome tip and a matching SVG icon path.
+The tip should be 2-10 words, friendly, and related to editing, creativity, or productivity.
+The icon should be a simple 24x24 SVG path representing the tip theme.
+Always use the welcome_greeting tool.`;
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Generate a welcome greeting for the Luxio editor',
+          model: 'deepseek-v4-flash',
+          history: [],
+          system: systemPrompt,
+          autoCreate: true,
+          tools: [{
+            name: 'welcome_greeting',
+            description: 'Generate a welcome tip and matching SVG icon path',
+            parameters: {
+              $schema: 'https://json-schema.org/draft/2020-12/schema',
+              type: 'object',
+              properties: {
+                tipText: { type: 'string', description: 'Short welcome tip (max 40 chars)' },
+                svgPath: { type: 'string', description: 'SVG <path> d attribute for 24x24 icon' },
+              },
+              required: ['tipText', 'svgPath'],
+              additionalProperties: false,
+            },
+          }],
+        }),
+        credentials: 'include',
+      });
+
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      const decoder = new TextDecoder();
+      let done = false;
+      const toolCallsByIndex: Record<string, any> = {};
+
+      while (!done) {
+        const { value, done: streamDone } = await reader.read();
+        if (streamDone) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data:')) continue;
+          const data = line.slice(6).trim();
+          if (!data || data === '[DONE]') {
+            if (data === '[DONE]') done = true;
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            const entries = parsed.toolCalls || parsed.tool_calls || [];
+            for (const tc of entries) {
+              if (!tc) continue;
+              const idx = tc.index !== undefined ? String(tc.index) : undefined;
+              if (!idx) continue;
+              const existing = toolCallsByIndex[idx] || { index: tc.index };
+              if (tc.id) existing.id = tc.id;
+              if (tc.name) existing.name = tc.name;
+              const fn = tc.function;
+              if (fn) {
+                if (fn.name) existing.name = fn.name;
+                if (fn.arguments !== undefined) {
+                  existing.arguments = (existing.arguments ?? '') + (typeof fn.arguments === 'string' ? fn.arguments : '');
+                }
+              }
+              if (tc.arguments !== undefined) {
+                existing.arguments = (existing.arguments ?? '') + (typeof tc.arguments === 'string' ? tc.arguments : '');
+              }
+              toolCallsByIndex[idx] = existing;
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+      for (const tc of Object.values(toolCallsByIndex) as any[]) {
+        if (tc.name === 'welcome_greeting' && tc.arguments) {
+          try {
+            const args = JSON.parse(tc.arguments);
+            if (args.svgPath) this.welcomeIconPath.set(args.svgPath);
+            if (args.tipText) this.welcomeTip.set(args.tipText);
+          } catch { /* ignore */ }
+        }
+      }
+    } catch (err) {
+      console.warn('generateWelcomeContent failed', err);
+    }
   }
 
   private startAutoSave() {
