@@ -2,12 +2,23 @@ import { Component, ElementRef, input, OnInit, output, viewChild, signal, ViewCh
 import { FormsModule } from '@angular/forms';
 import {EditorView, basicSetup} from "codemirror"
 import {markdown} from "@codemirror/lang-markdown"
+import {html} from "@codemirror/lang-html"
+import {css} from "@codemirror/lang-css"
+import {cpp} from "@codemirror/lang-cpp"
+import {go} from "@codemirror/lang-go"
+import {java} from "@codemirror/lang-java"
+import {javascript} from "@codemirror/lang-javascript"
+import {json} from "@codemirror/lang-json"
+import {python} from "@codemirror/lang-python"
+import {sql} from "@codemirror/lang-sql"
+import {yaml} from "@codemirror/lang-yaml"
+import { rust } from "@codemirror/lang-rust"
 import { marked } from 'marked';
 
 @Component({
-    selector: 'markdown',
-    templateUrl: './markdown.component.html',
-    styleUrls: ['./markdown.component.css'],
+    selector: 'ast-editor',
+    templateUrl: './editor.component.html',
+    styleUrls: ['./editor.component.css'],
     host: {
         '[tabIndex]': '-1',
         '(keydown)': 'saveText($event)',
@@ -15,13 +26,14 @@ import { marked } from 'marked';
     standalone: true,
     imports: [FormsModule]
 })
-export class MarkdownComponent implements OnInit, AfterViewInit {
+export class EditorComponent implements OnInit, AfterViewInit {
   textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
   textInfo = input<any>();
   readonly saved = output();
   private editorView!: EditorView;
   originalNewlineType!: string;
   
+  showToolbar = signal(false);
   // 添加预览相关属性
   isPreviewMode = signal(false);
   previewContent = signal('');
@@ -36,6 +48,7 @@ export class MarkdownComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
+    const parser = this.getParser();
     // --- 4. 检测原始换行符 ---
     this.originalNewlineType = detectNewlineType(this.textInfo().content);
 
@@ -43,7 +56,7 @@ export class MarkdownComponent implements OnInit, AfterViewInit {
     this.editorView = new EditorView({
       parent: textEditorView?.nativeElement,
       doc: this.textInfo().content,
-      extensions: [basicSetup, markdown(), EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
+      extensions: [basicSetup, parser, EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
         EditorView.theme({
           '&': {
             height: '100%',
@@ -89,6 +102,40 @@ export class MarkdownComponent implements OnInit, AfterViewInit {
     
     // 初始化预览内容
     this.updatePreviewContent();
+  }
+
+  private getParser() {
+    const langType = this.textInfo().label.substring(this.textInfo().label.lastIndexOf('.') + 1);
+    switch (langType) {
+      case 'md':
+        this.showToolbar.set(true);
+        return markdown();
+      case 'python':
+        return python();
+      case 'rust':
+        return rust();
+      case 'sql':
+        return sql();
+      case 'yaml':
+        return yaml();
+      case 'c++':
+      case 'cpp':
+        return cpp();
+      case 'html':
+        return html();
+      case 'java':
+        return java();
+      case 'javascript':
+        return javascript();
+      case 'css':
+        return css();
+      case 'json':
+        return json();
+      case 'go':
+        return go();
+      default:
+        return html();
+    }
   }
 
   // 切换编辑/预览模式

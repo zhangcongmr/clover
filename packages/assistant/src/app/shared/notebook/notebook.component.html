@@ -1,5 +1,5 @@
 @if(fileType()=='ospec') {
     <div api-notebook [data]="data()"></div>
 } @else if(fileType()=='text') {
-    <markdown [textInfo]="data()" (saved)="saveText($event)"></markdown>
+    <ast-editor [textInfo]="data()" (saved)="saveText($event)" />
 }

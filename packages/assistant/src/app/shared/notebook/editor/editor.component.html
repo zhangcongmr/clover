@@ -36,12 +36,14 @@ Ready to start writing?  Either start changing stuff on the left or
 [Marked]: https://github.com/markedjs/marked/
 [Markdown]: http://daringfireball.net/projects/markdown/
  -->
+@if(showToolbar()) {
 <!-- Toolbar -->
-<div class="toolbar">
-  <button type="button" class="preview-toggle-btn" (click)="togglePreviewMode()">
-    {{ isPreviewMode() ? '编辑' : '预览' }}
-  </button>
-</div>
+  <div class="toolbar">
+    <button type="button" class="preview-toggle-btn" (click)="togglePreviewMode()">
+      {{ isPreviewMode() ? '编辑' : '预览' }}
+    </button>
+  </div>
+}
 
 <!-- Editor/Preview Container -->
 <div class="editor-preview-container">

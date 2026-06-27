@@ -1,7 +1,7 @@
 import { Component, computed, model, OnInit, output, Signal } from "@angular/core";
 import { AstTreeNode } from "../model";
 import { ApiNoteBookComponent } from "./openapi/api-notebook.component";
-import { MarkdownComponent } from "./markdown/markdown.component";
+import { EditorComponent } from "./editor/editor.component";
 
 
 @Component({
@@ -9,7 +9,7 @@ import { MarkdownComponent } from "./markdown/markdown.component";
     templateUrl: './notebook.component.html',
     styleUrls: ['./notebook.component.css'],
     standalone: true,
-    imports: [MarkdownComponent, ApiNoteBookComponent]
+    imports: [EditorComponent, ApiNoteBookComponent]
 })
 export class NoteBookComponent implements OnInit {
 
