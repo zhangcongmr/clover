@@ -110,9 +110,10 @@ export class EditorComponent implements OnInit, AfterViewInit {
       case 'md':
         this.showToolbar.set(true);
         return markdown();
-      case 'python':
+      case 'py':
+      case 'pyc':
         return python();
-      case 'rust':
+      case 'rs':
         return rust();
       case 'sql':
         return sql();
@@ -125,8 +126,12 @@ export class EditorComponent implements OnInit, AfterViewInit {
         return html();
       case 'java':
         return java();
-      case 'javascript':
+      case 'js':
         return javascript();
+      case 'ts':
+        return javascript({ typescript: true });
+      case 'jsx':
+        return javascript({ jsx: true });
       case 'css':
         return css();
       case 'json':
