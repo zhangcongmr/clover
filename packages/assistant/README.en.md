@@ -1,36 +1,45 @@
-# luxio
+# packages/assistant agent guidance
 
-#### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+This is a package-level AI instruction file for the `packages/assistant` workspace package.
 
-#### Software Architecture
-Software architecture description
+## What this package is
 
-#### Installation
+- Angular 21 application / library package with server-side rendering support.
+- Package name is `luxio` in `packages/assistant/package.json`.
+- Built output is `dist/luxio`.
+- Intended to run as both a web app and an embeddable library via `src/index.ts`.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Key behaviors
 
-#### Instructions
+- `pnpm --filter ./packages/assistant start` runs `ng serve --host=0.0.0.0 --ssl`.
+- `pnpm --filter ./packages/assistant build` runs `ng build`, then `node scripts/inline-styles.mjs`, then `tsc -p tsconfig.declaration.json`.
+- `pnpm --filter ./packages/assistant test` runs `ng test`.
+- `pnpm --filter ./packages/assistant serve:ssr:luxio` starts the SSR server from `dist/luxio/server/server.mjs`.
+- `src/main.ts` initializes the browser app and reads initial data via `opfs-tools`.
+- `src/main.server.ts` and `src/server.ts` implement SSR rendering and an Express server.
+- `src/index.ts` exports `Luxio(domId, doc?, fileName?)` for third-party embedding.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Important files
 
-#### Contribution
+- `package.json` — package metadata, workspace dependencies, and scripts.
+- `angular.json` — Angular CLI project configuration, build targets, and dev server proxy.
+- `src/main.common.ts` — shared bootstrap logic for browser + SSR.
+- `src/main.ts` — client initialization flow.
+- `src/main.server.ts` / `src/server.ts` — SSR and Node request handling.
+- `src/index.ts` — embeddable public export entrypoint.
+- `src/app` — main application components, shared UI widgets, and services.
+- `scripts/inline-styles.mjs` — build-time inline CSS step.
+- `src/proxy.conf_1.json` — development proxy configuration.
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+## Agent guidance
 
+- Preserve the Angular SSR hydration setup and existing bootstrap providers.
+- Avoid changing `scripts/inline-styles.mjs` or `tsconfig.declaration.json` unless the build is explicitly failing and the fix is validated.
+- If adding or updating features, keep in mind the package is part of a pnpm workspace and depends on other workspace packages such as `@luxio/common` and `@luxio/community-widget`.
+- Prefer using `ng` / Angular CLI for application changes and `pnpm` from the repo root for install/build/test commands.
+- When refactoring, prioritize `src/app` shared components and token/provider patterns rather than creating unrelated new runtime globals.
+- There is no existing package-specific documentation beyond a placeholder README; rely on code and package manifests.
 
-#### Gitee Feature
+## Useful note
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+- This package uses both a browser entrypoint and a public library export. Changes to `src/index.ts` or `src/main.common.ts` may affect embedded consumers.
