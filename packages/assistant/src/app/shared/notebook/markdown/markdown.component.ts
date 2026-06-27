@@ -64,17 +64,19 @@ export class MarkdownComponent implements OnInit, AfterViewInit {
             color: "var(--vscode-foreground)",
             border: "none"
           },  
-          ".cm-activeLine": {
-            backgroundColor: "var(--vscode-sideBar-background)",
+          ".cm-selectionBackground": {
+            backgroundColor: "var(--vscode-text-selectionBackground) !important",
           },
           ".cm-activeLineGutter": { // 当前行在 gutter 上的高亮样式
             backgroundColor: "var(--vscode-sideBar-background)", // 当前行号所在 gutter 的背景色
             color: "var(--vscode-textLink-activeForeground)", // 当前行号的颜色
           },
           '.cm-cursor': {
-            caretColor: "#ff0000", // 改变颜色
-            borderLeft: "2px solid currentColor", // 改变粗细
-            // borderLeft: "solid transparent", // 甚至设为透明也无法变成中划线
+            caretColor: "#ff0000",
+            borderLeft: "2px solid currentColor",
+          },
+          "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
+            backgroundColor: "var(--vscode-editor-selectionBackground, #add6ff) !important",
           }
         }),
         EditorView.updateListener.of((update) => {
