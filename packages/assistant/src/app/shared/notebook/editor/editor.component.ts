@@ -44,7 +44,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   
   ngAfterViewInit() {
     // 初始化预览内容
-    this.updatePreviewContent();
+    this.getEditorContentAndUpdatePreview()
   }
 
   ngOnInit() {
@@ -94,14 +94,14 @@ export class EditorComponent implements OnInit, AfterViewInit {
         }),
         EditorView.updateListener.of((update) => {
           if(update.docChanged) {
-            this.updatePreviewContent();
+            this.getEditorContentAndUpdatePreview()
           }
         })
       ]
     })
     
     // 初始化预览内容
-    this.updatePreviewContent();
+    this.getEditorContentAndUpdatePreview()
   }
 
   private getParser() {
