@@ -102,6 +102,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     
     // 初始化预览内容
     this.getEditorContentAndUpdatePreview()
+    // this.updatePreviewContent();
   }
 
   private getParser() {
@@ -148,7 +149,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     this.isPreviewMode.update(prev => !prev);
     if (this.isPreviewMode()) {
       setTimeout(() => {
-        this.createShadowDOM();
+        this.updatePreviewContent();
       });
     }
   }
