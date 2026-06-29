@@ -148,7 +148,7 @@
   color: var(--vscode-foreground);
 }
 
-.notification-panel {
+.indicator-panel {
   position: fixed;
     bottom: 30px;
     right: 2px;
@@ -159,10 +159,10 @@
   border-radius: 16px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
   padding: 1.25rem;
-  animation: notificationPanelFade 180ms ease;
+  animation: indicatorPanelFade 180ms ease;
 }
 
-.notification-panel-header {
+.indicator-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -172,19 +172,19 @@
   font-weight: 600;
 }
 
-.notification-panel-content {
+.indicator-panel-content {
   max-height: 300px;
   overflow-y: auto;
 }
 
-.no-notifications {
+.no-indicator {
   color: var(--vscode-foreground);
   font-size: 0.95rem;
   text-align: center;
   padding: 1rem;
 }
 
-.notification-item {
+.indicator-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -192,12 +192,12 @@
   border-bottom: 1px solid var(--vscode-editorGroup-border);
 }
 
-.notification-message {
+.indicator-message {
   color: var(--vscode-foreground);
   font-size: 0.95rem;
 }
 
-.notification-timestamp {
+.indicator-timestamp {
   color: var(--vscode-foreground);
   font-size: 0.75rem;
   margin-left: 0.5rem;

@@ -81,9 +81,9 @@ Rules:
   }
 
   /**
-   * This is a flag to control the visibility of the notification panel. When true, the panel is visible; when false, it is hidden.
+   * This property indicates the type of detail panel to show in the indicator panel. It can be one of the following values:
    */
-  notificationPanelOpen = false;
+  indicatorDetailType: number | 'none' = 'none'; // 1 - notification, 2 - saving, 3 - progress, 'none' - close the detail panel
 
   testSurfaceComponent = false
   protected client = inject(Client);
@@ -1250,8 +1250,17 @@ Always output the theme colors using the provided tools in hex format.
     }
   }
 
-  toggleNotificationPanel() {
-    this.notificationPanelOpen = !this.notificationPanelOpen;
+  /**
+   * indicatorDetailType: 
+   * 1 - notification
+   * 2 - saving
+   * 3 - progress
+   * none - close the detail panel
+   * 
+   * @param indicatorDetailType
+   */
+  toggleIndicatorDetailPanel(indicatorDetailType: number | 'none') {
+    this.indicatorDetailType = indicatorDetailType;
   }
 
   testSurface() {
