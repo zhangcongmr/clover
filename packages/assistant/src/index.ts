@@ -19,7 +19,6 @@ const createAppRoot = (domId: string) => {
   }
 
   const container = document.createElement('app-root');
-  container.style.display = 'block';
   container.style.height = '100vh';
 
   const parent = document.getElementById(domId);

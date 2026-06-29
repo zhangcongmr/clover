@@ -124,14 +124,14 @@ function ViewPage() {
   }, []);
 
   return (
-    <div>
+    <>
       {/* <h1>React App</h1> */}
       {/* 使用 Angular Web Component */}
       {/* <app-root style={{ height: '100vh', display: 'block' }}></app-root> */}
       <div id="coderEditor"></div>
       {/* <p>Back to React</p> */}
       {/* <Example /> */}
-    </div>
+    </>
   );
 }
 
