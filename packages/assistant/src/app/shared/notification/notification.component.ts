@@ -5,19 +5,17 @@ import { NotificationService, Notification } from './notification.service';
 @Component({
   selector: 'app-notification',
   template: `
-    <div class="notifications-container">
-      @for (notification of notificationService.notifications(); track notification.id) {
-        <div class="notification-item" [ngClass]="notification.type">
-          <div class="notification-content">
-            <span class="notification-message">{{ notification.message }}</span>
-            <button class="close-btn" (click)="removeNotification(notification.id)">×</button>
-          </div>
+    @for (notification of notificationService.notifications(); track notification.id) {
+      <div class="notification-item" [ngClass]="notification.type">
+        <div class="notification-content">
+          <span class="notification-message">{{ notification.message }}</span>
+          <button class="close-btn" (click)="removeNotification(notification.id)">×</button>
         </div>
-      }
-    </div>
+      </div>
+    }
   `,
   styles: [`
-    .notifications-container {
+    :host {
       position: fixed;
       bottom: 30px;
       right: 2px;

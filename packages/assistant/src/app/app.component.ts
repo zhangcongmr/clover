@@ -15,6 +15,8 @@ import { TerminalComponent } from './shared/terminal/terminal.component'; // Imp
 import * as Types from '@a2ui/web_core/types/types';
 import { A2uiRendererService, ComponentHostComponent, SurfaceComponent } from '@a2ui/angular/v0_9';
 import { Client } from './client';
+import { NotificationService } from './shared/notification/notification.service';
+import { DatePipe } from '@angular/common';
 
 @Component({
     selector: 'app-root',
@@ -25,11 +27,14 @@ import { Client } from './client';
       '(mousemove)': 'whenMouseMove($event)'
     },
     standalone: true,
-    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent, AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, SurfaceComponent, ComponentHostComponent], // Add TerminalComponent to imports
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent,
+      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
+       SurfaceComponent, ComponentHostComponent], // Add TerminalComponent to imports
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
   protected themeService = inject(ThemeService);
+  protected notificationService = inject(NotificationService);
   contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
 
@@ -74,6 +79,11 @@ Rules:
     value: false,
     dragHeight: 0.75,
   }
+
+  /**
+   * This is a flag to control the visibility of the notification panel. When true, the panel is visible; when false, it is hidden.
+   */
+  notificationPanelOpen = false;
 
   testSurfaceComponent = false
   protected client = inject(Client);
@@ -1238,6 +1248,10 @@ Always output the theme colors using the provided tools in hex format.
       this.keepTerminalInstance.dragHeight = this.dragHeight; // 保存当前拖动高度到 keepTerminalInstance，以便在重新打开终端时恢复
       return;
     }
+  }
+
+  toggleNotificationPanel() {
+    this.notificationPanelOpen = !this.notificationPanelOpen;
   }
 
   testSurface() {

@@ -148,6 +148,61 @@
   color: var(--vscode-foreground);
 }
 
+.notification-panel {
+  position: fixed;
+    bottom: 30px;
+    right: 2px;
+    z-index: 9999;
+  width: min(400px, 100%);
+  background: var(--vscode-panel-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  padding: 1.25rem;
+  animation: notificationPanelFade 180ms ease;
+}
+
+.notification-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}
+
+.notification-panel-content {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-notifications {
+  color: var(--vscode-foreground);
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+}
+
+.notification-message {
+  color: var(--vscode-foreground);
+  font-size: 0.95rem;
+}
+
+.notification-timestamp {
+  color: var(--vscode-foreground);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
 /* 侧边栏按钮样式 */
 .ProjectFolderBtn:hover,
 .SearchBtn:hover,

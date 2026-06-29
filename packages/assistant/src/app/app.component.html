@@ -192,13 +192,13 @@
       <div data-layer="status-cnr" class="StatusCnr codigma-methodtype">
         <div data-layer="Status" class="Status codigma-projectname">Status</div>
       </div>
-      <div data-layer="notification-cnr" class="NotificationCnr codigma-notification-cnr">
+      <div data-layer="notification-cnr" class="NotificationCnr codigma-notification-cnr" (click)="toggleNotificationPanel()">
         <div data-svg-wrapper="" data-layer="notification" class="Notification">
           <svg class="icon" width="20" height="21">
             <use href="#icon-notification"></use>
           </svg>
         </div>
-        <div data-layer="0" class="codigma-projectname">0</div>
+        <div data-layer="0" class="codigma-projectname">{{ notificationService.notificationCount() }}</div>
       </div>
     } @else {
       <div data-layer="just-fill-cnr" class="JustFillCnr codigma-justfill-place"></div>
@@ -283,3 +283,24 @@
   </div>
 }
 <app-notification></app-notification>
+
+@if(notificationPanelOpen) {
+    <div class="notification-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="notification-panel-header">
+        <div>Notifications</div>
+        <button type="button" class="close-btn" title="Close" (click)="toggleNotificationPanel()">×</button>
+      </div>
+      <div class="notification-panel-content">
+        @if (notificationService.notifications().length === 0) {
+        <div class="no-notifications">No notifications</div>
+        } @else {
+        @for (notification of notificationService.notifications(); track notification.id) {
+        <div class="notification-item">
+          <div class="notification-message">{{ notification.message }}</div>
+          <div class="notification-timestamp">{{ notification.timestamp | date:'short' }}</div>
+        </div>
+        }
+        }
+      </div>
+    </div>
+}

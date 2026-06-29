@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 
 export interface Notification {
   id: string;
@@ -12,6 +12,8 @@ export interface Notification {
 })
 export class NotificationService {
   public notifications = signal<Notification[]>([]);
+
+  public notificationCount = computed(() => this.notifications().length);
 
   showNotification(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
     const notification: Notification = {
