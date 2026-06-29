@@ -26,7 +26,7 @@
         </div>
       } @else if(item.nodeType=='file') {
         <svg class="icon" width="16" height="16">
-          <use href="#icon-file"></use>
+          <use [attr.href]="'#' + (item.fileIcon || 'icon-file')"></use>
         </svg>
       }
     </div>
@@ -59,7 +59,7 @@
           </div>
         } @else if(childItem.nodeType=='file') {
           <svg class="icon" width="16" height="16">
-            <use href="#icon-file"></use>
+            <use [attr.href]="'#' + (childItem.fileIcon || 'icon-file')"></use>
           </svg>
         }
       </div>

@@ -70,6 +70,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
       if(this.dataType() != 'subData') {
         const newDatas = this.data();
         assignDeepLevel(newDatas);
+        computeFileIcons(newDatas);
         this.data.set(newDatas);
       }
 
@@ -377,6 +378,70 @@ export enum ResetType {
   brother,
   deepIn, 
   onlyResetFolder
+}
+
+const FILE_ICON_MAP: Record<string, string> = {
+  js: 'icon-file-js', mjs: 'icon-file-js', cjs: 'icon-file-js',
+  ts: 'icon-file-ts', tsx: 'icon-file-ts', mts: 'icon-file-ts', cts: 'icon-file-ts',
+  json: 'icon-file-json', jsonc: 'icon-file-json', json5: 'icon-file-json',
+  html: 'icon-file-html', htm: 'icon-file-html', xhtml: 'icon-file-html',
+  css: 'icon-file-css', scss: 'icon-file-css', sass: 'icon-file-css', less: 'icon-file-css',
+  md: 'icon-file-md', mdx: 'icon-file-md',
+  png: 'icon-file-image', jpg: 'icon-file-image', jpeg: 'icon-file-image', gif: 'icon-file-image',
+  svg: 'icon-file-image', webp: 'icon-file-image', ico: 'icon-file-image', bmp: 'icon-file-image',
+  pdf: 'icon-file-pdf',
+  zip: 'icon-file-zip', tar: 'icon-file-zip', gz: 'icon-file-zip', rar: 'icon-file-zip', '7z': 'icon-file-zip',
+  py: 'icon-file-py', pyc: 'icon-file-py',
+  java: 'icon-file-java', jar: 'icon-file-java', class: 'icon-file-java',
+  c: 'icon-file-cpp', cpp: 'icon-file-cpp', h: 'icon-file-cpp', hpp: 'icon-file-cpp',
+  cc: 'icon-file-cpp', cxx: 'icon-file-cpp', cuh: 'icon-file-cpp', cu: 'icon-file-cpp',
+  xml: 'icon-file-xml', xsl: 'icon-file-xml', xslt: 'icon-file-xml', xsd: 'icon-file-xml',
+  txt: 'icon-file-txt',
+  yaml: 'icon-file-config', yml: 'icon-file-config', toml: 'icon-file-config',
+  ini: 'icon-file-config', cfg: 'icon-file-config', conf: 'icon-file-config',
+  sh: 'icon-file-sh', bash: 'icon-file-sh', zsh: 'icon-file-sh',
+  bat: 'icon-file-bat', cmd: 'icon-file-bat', ps1: 'icon-file-bat',
+  go: 'icon-file-go',
+  rs: 'icon-file-rs',
+  php: 'icon-file-php', phtml: 'icon-file-php',
+  rb: 'icon-file-rb', erb: 'icon-file-rb',
+  swift: 'icon-file-swift',
+  kt: 'icon-file-kt', kts: 'icon-file-kt',
+  dart: 'icon-file-dart',
+  svelte: 'icon-file-svelte',
+  vue: 'icon-file-vue',
+  sql: 'icon-file-sql',
+  csv: 'icon-file-csv', tsv: 'icon-file-csv',
+  lock: 'icon-file-lock',
+  env: 'icon-file-env',
+  gitignore: 'icon-file-git', gitattributes: 'icon-file-git', gitmodules: 'icon-file-git',
+  sol: 'icon-file-sol',
+  gradle: 'icon-file-gradle',
+  npmrc: 'icon-file-npm',
+  node: 'icon-file-node',
+  lua: 'icon-file-lua',
+  hs: 'icon-file-haskell', lhs: 'icon-file-haskell',
+  ex: 'icon-file-elixir', exs: 'icon-file-elixir',
+  graphql: 'icon-file-graphql', gql: 'icon-file-graphql',
+};
+
+export function getFileIcon(label: string): string {
+  const idx = label.lastIndexOf('.');
+  if (idx === -1 || idx === label.length - 1) return 'icon-file';
+  const ext = label.slice(idx + 1).toLowerCase();
+  const icon = FILE_ICON_MAP[ext];
+  return icon || 'icon-file';
+}
+
+export function computeFileIcons(nodes: AstTreeNode[]): void {
+  for (const node of nodes) {
+    if (node.nodeType === 'file') {
+      node.fileIcon = getFileIcon(node.label);
+    }
+    if (node.children && node.children.length > 0) {
+      computeFileIcons(node.children);
+    }
+  }
 }
 
 export function assignDeepLevel(nodes: AstTreeNode[], level: number = 0): void {

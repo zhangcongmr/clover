@@ -105,6 +105,203 @@ export const SVG_SPRITE_CONTENT = `
           <path d="M384 334.08V512h128a128 128 0 0 0 128-128V334.08a128.042667 128.042667 0 1 1 85.333333 0V384a213.333333 213.333333 0 0 1-213.333333 213.333333H384v92.586667a128.042667 128.042667 0 1 1-85.333333 0V334.08a128.042667 128.042667 0 1 1 85.333333 0zM341.333333 853.333333a42.666667 42.666667 0 1 0 0-85.333333 42.666667 42.666667 0 0 0 0 85.333333z m341.333334-597.333333a42.666667 42.666667 0 1 0 0-85.333333 42.666667 42.666667 0 0 0 0 85.333333zM341.333333 256a42.666667 42.666667 0 1 0 0-85.333333 42.666667 42.666667 0 0 0 0 85.333333z" fill="currentColor" p-id="2129">
           </path>
      </symbol>
+   <!-- ===================== File Type Icons ===================== -->
+   <symbol id="icon-file-js" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">JS</text>
+   </symbol>
+   <symbol id="icon-file-ts" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">TS</text>
+   </symbol>
+   <symbol id="icon-file-json" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">{ }</text>
+   </symbol>
+   <symbol id="icon-file-html" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="8" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">&lt;/&gt;</text>
+   </symbol>
+   <symbol id="icon-file-css" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">#</text>
+   </symbol>
+   <symbol id="icon-file-md" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">MD</text>
+   </symbol>
+   <symbol id="icon-file-image" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M8 15l2.5-4 2.5 3 2-2.5L18 15v1H8v-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="10" cy="10" r="1" fill="currentColor" opacity="0.5"/>
+   </symbol>
+   <symbol id="icon-file-pdf" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M9 10a1 1 0 0 1 1-1h1.5c.8 0 1.5.7 1.5 1.5v0c0 .8-.7 1.5-1.5 1.5H10v2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13 12v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M14 12h.5c.8 0 1.5.7 1.5 1.5v1c0 .8-.7 1.5-1.5 1.5H14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+   </symbol>
+   <symbol id="icon-file-zip" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M10 8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10 11h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10 14l4-2v4l-4-2z" fill="currentColor" opacity="0.5"/>
+   </symbol>
+   <symbol id="icon-file-py" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M10 8c0-.5.5-1 1-1h2c.5 0 1 .5 1 1v2c0 .5-.5 1-1 1h-2c-.5 0-1 .5-1 1v2c0 .5.5 1 1 1h2c.5 0 1-.5 1-1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13 8V7M11 16v-1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-java" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M10 12c-.5.5-1 .8-1.5 1.2-.5.4-.5 1.3 0 1.8.5.5 1.3.5 1.8 0s.8-1 1.2-1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M14 11c.7.5 1 1.2 1 2 0 .8-.5 1.5-1.5 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 8h8v3H8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+   </symbol>
+   <symbol id="icon-file-cpp" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="8" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">C++</text>
+   </symbol>
+   <symbol id="icon-file-xml" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="8" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">&lt;&gt;</text>
+   </symbol>
+   <symbol id="icon-file-txt" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M8 9h8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 12h8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 15h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-config" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <circle cx="12" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M12 7v2M12 15v2M7 12h2M15 12h2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-sh" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">$_</text>
+   </symbol>
+   <symbol id="icon-file-bat" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">BAT</text>
+   </symbol>
+   <symbol id="icon-file-go" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">Go</text>
+   </symbol>
+   <symbol id="icon-file-rs" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">RS</text>
+   </symbol>
+   <symbol id="icon-file-php" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">PHP</text>
+   </symbol>
+   <symbol id="icon-file-rb" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M9 11v5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M9 11h1.5c.8 0 1.5.7 1.5 1.5v0c0 .8-.7 1.5-1.5 1.5H9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13 11l2 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-swift" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">SW</text>
+   </symbol>
+   <symbol id="icon-file-kt" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M8 8v8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M16 8l-6 5 6 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+   </symbol>
+   <symbol id="icon-file-dart" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">DA</text>
+   </symbol>
+   <symbol id="icon-file-svelte" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="9" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">SV</text>
+   </symbol>
+   <symbol id="icon-file-vue" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M5 8l7 10 7-10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M8 8l4 6 4-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+   </symbol>
+   <symbol id="icon-file-sql" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <ellipse cx="12" cy="10" rx="3.5" ry="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M8.5 10v4c0 .8 1.6 1.5 3.5 1.5s3.5-.7 3.5-1.5v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-csv" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M8 8h8v8H8z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M8 11h8M11 8v8" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+   </symbol>
+   <symbol id="icon-file-lock" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <rect x="9" y="11" width="6" height="5" rx="0.8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M10 11V9.5a2 2 0 0 1 4 0V11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-env" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M8 9h8M8 12h8M8 15h8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10 7v2M14 11v2M12 14v2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-git" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M9 8v8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M15 8v8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M9 12h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="9" cy="8" r="1.5" fill="none" stroke="currentColor" stroke-width="1"/>
+      <circle cx="15" cy="8" r="1.5" fill="none" stroke="currentColor" stroke-width="1"/>
+   </symbol>
+   <symbol id="icon-file-docker" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M10 10h1v-1h-1v1zM12 10h1v-1h-1v1zM14 10h1v-1h-1v1z" fill="currentColor" opacity="0.4"/>
+      <path d="M9 11h1v-1H9v1zM11 11h1v-1h-1v1zM13 11h1v-1h-1v1zM15 11h1v-1h-1v1z" fill="currentColor" opacity="0.4"/>
+      <path d="M8 12h1v-1H8v1zM10 12h1v-1h-1v1zM12 12h1v-1h-1v1z" fill="currentColor" opacity="0.4"/>
+      <path d="M7 14c2.5 0 4.5-.5 6-2 1-1 1.5-2.5 1.5-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+   </symbol>
+   <symbol id="icon-file-sol" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="8" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">SOL</text>
+   </symbol>
+   <symbol id="icon-file-gradle" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">GR</text>
+   </symbol>
+   <symbol id="icon-file-yarn" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">YA</text>
+   </symbol>
+   <symbol id="icon-file-npm" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">NP</text>
+   </symbol>
+   <symbol id="icon-file-node" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">ND</text>
+   </symbol>
+   <symbol id="icon-file-rust" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">RU</text>
+   </symbol>
+   <symbol id="icon-file-haskell" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M8 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+   </symbol>
+   <symbol id="icon-file-lua" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">LU</text>
+   </symbol>
+   <symbol id="icon-file-elixir" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <text x="12" y="16" font-size="10" font-weight="bold" fill="currentColor" text-anchor="middle" font-family="Arial,sans-serif">EX</text>
+   </symbol>
+   <symbol id="icon-file-graphql" viewBox="0 0 24 24">
+      <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="currentColor" opacity="0.06"/>
+      <path d="M12 7l-4.5 2.5v5L12 17l4.5-2.5v-5L12 7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 7v10" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+   </symbol>
 </svg>
 `.trim();
 

@@ -67,6 +67,11 @@ export interface AstTreeNode {
     isSelected?: boolean; //用于位置选择器中标记选中的节点
 
     /**
+     * Icon identifier for file type (e.g. 'icon-file', 'icon-file-js', 'icon-file-json')
+     */
+    fileIcon?: string;
+
+    /**
      * New data properties
      */
     isNewData?: boolean;
