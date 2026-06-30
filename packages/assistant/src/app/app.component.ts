@@ -10,6 +10,9 @@ import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
+import { customFileIcons } from './shared/ast-tree/ast-tree.component';
+import { computeFileIcons } from './shared/ast-tree/ast-tree.component';
+import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import * as Types from '@a2ui/web_core/types/types';
@@ -56,25 +59,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   themePromptResult: Record<string, string> | null = null;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
-  private readonly emotionThemeSystemPrompt = `
-You are a UI theme generation assistant. Your task is to analyze the user input and generate a matching UI theme color palette based on the expressed emotion.
 
-Rules:
-1. First analyze the user input for emotion or mood (for example angry, happy, sad, calm, anxious, excited, fearful, surprised).
-2. Choose a matching color scheme based on the emotion:
-   - Angry/Tense → warm tones (red/orange/deep red), high contrast, intense.
-   - Happy/Excited → bright tones (yellow/orange/light blue), high saturation, energetic.
-   - Sad/Downcast → cool tones (blue/gray/indigo), low saturation, soft.
-   - Calm/Relaxed → neutral tones (green/beige/gray-blue), low contrast, comfortable.
-   - Fearful/Anxious → dark tones (deep purple/dark gray/forest green), low brightness, moody.
-   - Surprised/Curious → vivid tones (purple/pink/bright blue), high contrast, playful.
-   - Loving/Warm → warm soft tones (pink/red/gold), medium-high saturation, gentle.
-   - For other emotions, match based on the emotion characteristics.
-3. If the user input is a style description rather than an emotional expression, ignore emotion analysis and generate the theme directly from the style description.
-4. Use the provided tools to output color values, with each tool returning one color.
-5. Color values must use hexadecimal format (e.g. #FF6B6B).
-6. Ensure the six colors (background, primary, text, surface, accent, border) are visually harmonious and form a complete theme.
-`;
   keepTerminalInstance = {
     value: false,
     dragHeight: 0.75,
@@ -349,11 +334,18 @@ Rules:
 
   private getThemeSystemPrompt(): string {
     return `
-You are a UI theme generation assistant.
-When the user's prompt expresses feeling, mood, emotion, or atmosphere, generate a mood-driven UI palette.
-When the user's prompt describes style, texture, or design, generate a style-driven palette.
-This applies to any language.
-Always output the theme colors using the provided tools in hex format.
+You are a UI theme generation assistant. You MUST ALWAYS follow these steps in order. Do not skip any step.
+
+STEP 1 - Theme colors (MANDATORY): Call ui_theme_colors ONCE with all 6 color values (background, primary, text, surface, accent, border) in hex format, matching the user's input. This tool accepts all colors in one call.
+
+STEP 2 - Theme icon (MANDATORY): Call ui_theme_icon ONCE with an svgPath that represents the emotion/mood.
+
+STEP 3 - File icons (MANDATORY): Call ui_file_icon ONCE with a complete icons array. This is required for every response. Include entries for all common file extensions: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, swift, kt, dart, svelte, sql, yaml, sh, bat, txt, csv, lock, env, gradle, lua, hs, ex, graphql, png, jpg, svg, pdf, zip.
+
+Each entry in the icons array MUST contain:
+- extension: the file extension without dot
+- iconId: choose from icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-config, icon-file-image, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-npm, icon-file-node, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-swift, icon-file-kt, icon-file-dart, icon-file-svelte, icon-file-csv, icon-file-gradle, icon-file-lua, icon-file-haskell, icon-file-elixir, icon-file-graphql, icon-file-sol, icon-file-php, icon-file-bat
+- svgPath: SVG path d attribute for a 24x24 icon. Examples: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" (circle), "M12 2L2 22h20L12 2z" (triangle), "M6 2h8l6 6v14H6V2z" (document). Design paths that reflect both the file type and the theme mood.
 `;
   }
 
@@ -377,99 +369,39 @@ Always output the theme colors using the provided tools in hex format.
           autoCreate: true,
           tools: [
             {
-              name: 'ui_background',
-              description: 'Main application background color for page surfaces and the app canvas.',
+              name: 'ui_theme_colors',
+              description: 'Output the complete theme color palette. Provide all 6 color values in one call.',
               parameters: {
                 $schema: 'https://json-schema.org/draft/2020-12/schema',
                 additionalProperties: false,
                 type: 'object',
                 properties: {
-                  color: {
+                  background: {
                     type: 'string',
-                    description: 'Background color value for the main app background.',
+                    description: 'Main application background color in hex format (e.g., #1e1e1e).',
+                  },
+                  primary: {
+                    type: 'string',
+                    description: 'Primary accent color for buttons and controls in hex format.',
+                  },
+                  text: {
+                    type: 'string',
+                    description: 'Primary readable text color in hex format.',
+                  },
+                  surface: {
+                    type: 'string',
+                    description: 'Surface color for cards, panels, sidebars in hex format.',
+                  },
+                  accent: {
+                    type: 'string',
+                    description: 'Accent color for links and highlights in hex format.',
+                  },
+                  border: {
+                    type: 'string',
+                    description: 'Border or divider color in hex format.',
                   },
                 },
-                required: ['color'],
-              },
-            },
-            {
-              name: 'ui_primary_color',
-              description: 'Primary accent color for buttons, active controls, and call-to-action elements.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  color: {
-                    type: 'string',
-                    description: 'Accent color value for primary UI controls.',
-                  },
-                },
-                required: ['color'],
-              },
-            },
-            {
-              name: 'ui_text_color',
-              description: 'Primary readable text color for body copy, headings, and labels.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  color: {
-                    type: 'string',
-                    description: 'Text color value for readable copy.',
-                  },
-                },
-                required: ['color'],
-              },
-            },
-            {
-              name: 'ui_surface',
-              description: 'Surface color for cards, panels, sidebars, and secondary containers.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  color: {
-                    type: 'string',
-                    description: 'Color value for secondary surface backgrounds.',
-                  },
-                },
-                required: ['color'],
-              },
-            },
-            {
-              name: 'ui_accent',
-              description: 'Accent color for links, focus indicators, and subtle highlights.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  color: {
-                    type: 'string',
-                    description: 'Color value for accent highlights.',
-                  },
-                },
-                required: ['color'],
-              },
-            },
-            {
-              name: 'ui_border',
-              description: 'Border or divider color for separators and container edges.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  color: {
-                    type: 'string',
-                    description: 'Color value for borders and dividers.',
-                  },
-                },
-                required: ['color'],
+                required: ['background', 'primary', 'text', 'surface', 'accent', 'border'],
               },
             },
             {
@@ -486,6 +418,40 @@ Always output the theme colors using the provided tools in hex format.
                   },
                 },
                 required: ['svgPath'],
+              },
+            },
+            {
+              name: 'ui_file_icon',
+              description: 'Generate the complete set of file type icons for the file tree panel that match the theme mood. Return an array of icon mappings covering all common file extensions (js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, swift, kt, dart, svelte, sql, yaml, sh, bat, txt, csv, lock, env, gradle, lua, hs, ex, graphql, png, jpg, svg, pdf, zip). Each entry maps an extension to an iconId that best fits the theme.',
+              parameters: {
+                $schema: 'https://json-schema.org/draft/2020-12/schema',
+                additionalProperties: false,
+                type: 'object',
+                properties: {
+                  icons: {
+                    type: 'array',
+                    description: 'Array of file type icon mappings for the theme. Include entries for all common file extensions.',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        extension: {
+                          type: 'string',
+                          description: 'File extension without the dot (e.g., js, ts, json, html, css, py, md, vue, go, rs).',
+                        },
+                        iconId: {
+                          type: 'string',
+                          description: 'Identifier of an existing file icon from the sprite (icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-config, icon-file-image, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-npm, icon-file-node, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-swift, icon-file-kt, icon-file-dart, icon-file-svelte, icon-file-csv, icon-file-gradle, icon-file-lua, icon-file-haskell, icon-file-elixir, icon-file-graphql, icon-file-sol, icon-file-php, icon-file-bat). Pick the one that best reflects the theme mood.',
+                        },
+                        svgPath: {
+                          type: 'string',
+                          description: 'SVG path d attribute for a 24x24 icon. Use simple geometric shapes (circles, squares, triangles, lines, curves) that reflect the theme mood and the file type purpose.',
+                        },
+                      },
+                      required: ['extension', 'iconId', 'svgPath'],
+                    },
+                  },
+                },
+                required: ['icons'],
               },
             },
           ],
@@ -618,6 +584,23 @@ Always output the theme colors using the provided tools in hex format.
         delete themeData['theme_icon'];
       }
 
+      let hasFileIcons = false;
+      for (const tc of toolCalls) {
+        if (tc.name !== 'ui_file_icon') continue;
+        let args: any = tc.arguments;
+        if (typeof args === 'string') {
+          try { args = JSON.parse(args); } catch { continue; }
+        }
+        if (!args || !Array.isArray(args.icons)) continue;
+        for (const entry of args.icons) {
+          if (!entry.extension || !entry.svgPath) continue;
+          const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
+          const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
+          customFileIcons[ext] = symbolId;
+          hasFileIcons = true;
+        }
+      }
+
       const cssVars = this.mapThemeKeysToCss(themeData);
 
       if (!cssVars || Object.keys(cssVars).length === 0) {
@@ -626,6 +609,16 @@ Always output the theme colors using the provided tools in hex format.
 
       this.themeService.setTheme('custom');
       this.themeService.setThemeVariables(cssVars);
+
+      if (hasFileIcons) {
+        const content = this.contentComp();
+        if (content) {
+          const data = content.dataList();
+          computeFileIcons(data);
+          content.dataList.set([...data]);
+        }
+      }
+
       this.themePromptResult = cssVars;
       this.themePromptOpen = false;
     } catch (err: any) {

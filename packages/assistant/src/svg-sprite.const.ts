@@ -308,6 +308,7 @@ export const SVG_SPRITE_CONTENT = `
 
 // svg-injector.ts
 let hasInjected = false;
+let dynamicSvgContainer: SVGElement | null = null;
 
 export function injectSvgSprite() {
   if (hasInjected || typeof document === 'undefined') return;
@@ -317,5 +318,31 @@ export function injectSvgSprite() {
   container.style.display = 'none';
   document.body.appendChild(container);
 
+  const svg = container.querySelector('svg');
+  if (svg) {
+    dynamicSvgContainer = svg;
+  }
+
   hasInjected = true;
+}
+
+export function addDynamicFileIconSymbol(extension: string, svgPath: string): string {
+  const symbolId = `icon-file-theme-${extension}`;
+  if (typeof document === 'undefined') return symbolId;
+  if (!dynamicSvgContainer) {
+    dynamicSvgContainer = document.querySelector('svg[style*="display: none"]') as SVGElement;
+  }
+  if (!dynamicSvgContainer) return symbolId;
+  const existing = dynamicSvgContainer.querySelector(`#${CSS.escape(symbolId)}`);
+  if (existing) {
+    existing.innerHTML = `<path d="${svgPath}" fill="currentColor"/>`;
+    return symbolId;
+  }
+  const symbol = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
+  symbol.setAttribute('id', symbolId);
+  symbol.setAttribute('viewBox', '0 0 24 24');
+  symbol.setAttribute('fill', 'currentColor');
+  symbol.innerHTML = `<path d="${svgPath}" fill="currentColor"/>`;
+  dynamicSvgContainer.appendChild(symbol);
+  return symbolId;
 }

@@ -380,6 +380,8 @@ export enum ResetType {
   onlyResetFolder
 }
 
+export const customFileIcons: Record<string, string> = {};
+
 const FILE_ICON_MAP: Record<string, string> = {
   js: 'icon-file-js', mjs: 'icon-file-js', cjs: 'icon-file-js',
   ts: 'icon-file-ts', tsx: 'icon-file-ts', mts: 'icon-file-ts', cts: 'icon-file-ts',
@@ -429,6 +431,7 @@ export function getFileIcon(label: string): string {
   const idx = label.lastIndexOf('.');
   if (idx === -1 || idx === label.length - 1) return 'icon-file';
   const ext = label.slice(idx + 1).toLowerCase();
+  if (customFileIcons[ext]) return customFileIcons[ext];
   const icon = FILE_ICON_MAP[ext];
   return icon || 'icon-file';
 }
