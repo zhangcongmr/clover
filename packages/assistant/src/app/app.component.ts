@@ -392,9 +392,23 @@ STEP 1 - Theme colors (MANDATORY): Call ui_theme_colors ONCE with all 6 color va
 
 STEP 2 - Theme icon (MANDATORY): Call ui_theme_icon ONCE with an svgPath that represents the emotion/mood.
 
-STEP 3 - File icons (MANDATORY): Call ui_file_icon ONCE with a complete icons array. This is required for every response. Include entries for all common file extensions: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, swift, kt, dart, svelte, sql, yaml, sh, bat, txt, csv, lock, env, gradle, lua, hs, ex, graphql, png, jpg, svg, pdf, zip.
+STEP 3 - File icons (MANDATORY): At the very end of your response, output a JSON code block containing ALL file icon definitions. The JSON block must be wrapped in triple backticks with "json" language identifier, in exactly this format:
 
-Each entry in the icons array MUST contain:
+\`\`\`json
+{
+  "fileIcons": [
+    {
+      "extension": "js",
+      "iconId": "icon-file-js",
+      "svgPath": "M...Z"
+    }
+  ]
+}
+\`\`\`
+
+Include ALL of these extensions: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, swift, kt, dart, svelte, sql, yaml, sh, bat, txt, csv, lock, env, gradle, lua, hs, ex, graphql, png, jpg, svg, pdf, zip.
+
+For each entry:
 - extension: the file extension without dot
 - iconId: choose from icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-config, icon-file-image, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-npm, icon-file-node, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-swift, icon-file-kt, icon-file-dart, icon-file-svelte, icon-file-csv, icon-file-gradle, icon-file-lua, icon-file-haskell, icon-file-elixir, icon-file-graphql, icon-file-sol, icon-file-php, icon-file-bat
 - svgPath: SVG path d attribute for a 24x24 icon. Examples: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" (circle), "M12 2L2 22h20L12 2z" (triangle), "M6 2h8l6 6v14H6V2z" (document). Design paths that reflect both the file type and the theme mood. Prefer using the file extension text string, its abbreviation, or related file type characteristics as the basis for svgPath generation. For example: "JS" text for .js files, "TS" text for .ts files, "{ }" brace shape for .json files, "#" hash shape for .css files, "</>" tag shape for .html/.xml files, "PY" text for .py files, "MD" text for .md files, "GO" text for .go files, "RS" text for .rs files, "VUE" or "V" shape for .vue files, "SQL" or database cylinder for .sql files, "TXT" text for .txt files, "SH" text for .sh files, "BAT" text for .bat files, gear shape for .yml/.yaml files, lock shape for .env files, branch shape for .git files, lock shape for .lock files, document shape for .pdf files, archive shape for .zip files, image shape for image files, "CPP" text for .cpp files, "JAVA" or coffee shape for .java files, "PHP" text for .php files. Use fill="currentColor" and simple, clean geometric paths that form recognizable text or symbols.
@@ -470,40 +484,6 @@ Each entry in the icons array MUST contain:
                   },
                 },
                 required: ['svgPath'],
-              },
-            },
-            {
-              name: 'ui_file_icon',
-              description: 'Generate the complete set of file type icons for the file tree panel that match the theme mood. Return an array of icon mappings covering all common file extensions (js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, swift, kt, dart, svelte, sql, yaml, sh, bat, txt, csv, lock, env, gradle, lua, hs, ex, graphql, png, jpg, svg, pdf, zip). Each entry maps an extension to an iconId that best fits the theme.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  icons: {
-                    type: 'array',
-                    description: 'Array of file type icon mappings for the theme. Include entries for all common file extensions.',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        extension: {
-                          type: 'string',
-                          description: 'File extension without the dot (e.g., js, ts, json, html, css, py, md, vue, go, rs).',
-                        },
-                        iconId: {
-                          type: 'string',
-                          description: 'Identifier of an existing file icon from the sprite (icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-config, icon-file-image, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-npm, icon-file-node, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-swift, icon-file-kt, icon-file-dart, icon-file-svelte, icon-file-csv, icon-file-gradle, icon-file-lua, icon-file-haskell, icon-file-elixir, icon-file-graphql, icon-file-sol, icon-file-php, icon-file-bat). Pick the one that best reflects the theme mood.',
-                        },
-                        svgPath: {
-                          type: 'string',
-                          description: 'SVG path d attribute for a 24x24 icon. Use simple geometric shapes (circles, squares, triangles, lines, curves) that reflect the theme mood and the file type purpose.',
-                        },
-                      },
-                      required: ['extension', 'iconId', 'svgPath'],
-                    },
-                  },
-                },
-                required: ['icons'],
               },
             },
           ],
@@ -636,21 +616,23 @@ Each entry in the icons array MUST contain:
         delete themeData['theme_icon'];
       }
 
-      let hasFileIcons = false;
-      for (const tc of toolCalls) {
-        if (tc.name !== 'ui_file_icon') continue;
-        let args: any = tc.arguments;
-        if (typeof args === 'string') {
-          try { args = JSON.parse(args); } catch { continue; }
-        }
-        if (!args || !Array.isArray(args.icons)) continue;
-        for (const entry of args.icons) {
-          if (!entry.extension || !entry.svgPath) continue;
-          const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
-          const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
-          customFileIcons[ext] = symbolId;
-          customFileIconPaths[ext] = entry.svgPath;
-          hasFileIcons = true;
+      let hasFileIcons = this.parseFileIconsFromContent(assistantText);
+      if (!hasFileIcons) {
+        for (const tc of toolCalls) {
+          if (tc.name !== 'ui_file_icon') continue;
+          let args: any = tc.arguments;
+          if (typeof args === 'string') {
+            try { args = JSON.parse(args); } catch { continue; }
+          }
+          if (!args || !Array.isArray(args.icons)) continue;
+          for (const entry of args.icons) {
+            if (!entry.extension || !entry.svgPath) continue;
+            const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
+            const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
+            customFileIcons[ext] = symbolId;
+            customFileIconPaths[ext] = entry.svgPath;
+            hasFileIcons = true;
+          }
         }
       }
       if (hasFileIcons) {
@@ -683,6 +665,28 @@ Each entry in the icons array MUST contain:
     } finally {
       this.themePromptLoading = false;
     }
+  }
+
+  private parseFileIconsFromContent(text: string): boolean {
+    const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
+    let match;
+    let hasFileIcons = false;
+    while ((match = jsonBlockRegex.exec(text)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        const icons = parsed.fileIcons || parsed.icons || parsed;
+        if (!Array.isArray(icons)) continue;
+        for (const entry of icons) {
+          if (!entry.extension || !entry.svgPath) continue;
+          const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
+          const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
+          customFileIcons[ext] = symbolId;
+          customFileIconPaths[ext] = entry.svgPath;
+          hasFileIcons = true;
+        }
+      } catch { /* continue searching */ }
+    }
+    return hasFileIcons;
   }
 
   private extractThemeVariables(payload: any, rawText: string, toolCalls: any[] = []): Record<string, string> {
