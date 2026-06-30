@@ -381,6 +381,7 @@ export enum ResetType {
 }
 
 export const customFileIcons: Record<string, string> = {};
+export const customFileIconPaths: Record<string, string> = {};
 
 const FILE_ICON_MAP: Record<string, string> = {
   js: 'icon-file-js', mjs: 'icon-file-js', cjs: 'icon-file-js',

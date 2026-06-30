@@ -10,7 +10,7 @@ import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
-import { customFileIcons } from './shared/ast-tree/ast-tree.component';
+import { customFileIcons, customFileIconPaths } from './shared/ast-tree/ast-tree.component';
 import { computeFileIcons } from './shared/ast-tree/ast-tree.component';
 import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
@@ -59,6 +59,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   themePromptResult: Record<string, string> | null = null;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
+  private readonly FILE_ICONS_KEY = 'vscode-file-icons';
 
   keepTerminalInstance = {
     value: false,
@@ -195,6 +196,8 @@ export class AppComponent implements OnInit, AfterViewInit {
       if (saved) {
         this.themeIconPath.set(saved);
       }
+      // 从 localStorage 恢复文件图标
+      this.loadSavedFileIcons();
     }
   }
 
@@ -264,6 +267,20 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     let num = new Integer({value: 75889});
     let vi = new Uint8Array(num.toBER());
+
+    // 将已保存的文件图标应用到当前树数据
+    if (Object.keys(customFileIcons).length > 0) {
+      afterNextRender(() => {
+        const content = this.contentComp();
+        if (content) {
+          const data = content.dataList();
+          if (data && data.length > 0) {
+            computeFileIcons(data);
+            content.dataList.set([...data]);
+          }
+        }
+      });
+    }
   }
 
   // 显示上传进度详情
@@ -300,6 +317,31 @@ export class AppComponent implements OnInit, AfterViewInit {
     return null;
   }
 
+  private saveFileIcons(): void {
+    if (typeof window !== 'undefined') {
+      if (Object.keys(customFileIconPaths).length > 0) {
+        localStorage.setItem(this.FILE_ICONS_KEY, JSON.stringify(customFileIconPaths));
+      }
+    }
+  }
+
+  private loadSavedFileIcons(): void {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(this.FILE_ICONS_KEY);
+      if (!saved) return;
+      try {
+        const paths = JSON.parse(saved);
+        if (typeof paths !== 'object' || paths === null) return;
+        for (const [ext, svgPath] of Object.entries(paths)) {
+          if (typeof svgPath !== 'string' || !svgPath) continue;
+          const symbolId = addDynamicFileIconSymbol(ext, svgPath);
+          customFileIcons[ext] = symbolId;
+          customFileIconPaths[ext] = svgPath;
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
   // 恢复默认主题
   toggleTheme() {
     this.themeService.clearThemeVariables();
@@ -307,6 +349,16 @@ export class AppComponent implements OnInit, AfterViewInit {
     document.body.classList.remove('vscode-dark-theme');
     this.themeIconPath.set(null);
     this.saveThemeIcon();
+    // 清除自定义文件图标
+    for (const key of Object.keys(customFileIcons)) {
+      delete customFileIcons[key];
+    }
+    for (const key of Object.keys(customFileIconPaths)) {
+      delete customFileIconPaths[key];
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(this.FILE_ICONS_KEY);
+    }
   }
 
   openThemePrompt(): void {
@@ -597,8 +649,12 @@ Each entry in the icons array MUST contain:
           const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
           const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
           customFileIcons[ext] = symbolId;
+          customFileIconPaths[ext] = entry.svgPath;
           hasFileIcons = true;
         }
+      }
+      if (hasFileIcons) {
+        this.saveFileIcons();
       }
 
       const cssVars = this.mapThemeKeysToCss(themeData);
