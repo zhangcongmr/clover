@@ -15,7 +15,7 @@
     /* 关键：允许鼠标事件穿透到下层元素 */
     /* 背景颜色 */
     background-color: transparent;
-    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.2);
+    box-shadow: var(--vscode-shadow-md, 0 0 15px 0 rgba(0, 0, 0, 0.2));
 }
 
 

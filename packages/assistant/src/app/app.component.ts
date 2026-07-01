@@ -429,6 +429,11 @@ RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped i
     "md": "8px",
     "lg": "16px"
   },
+  "shadow": {
+    "sm": "0 2px 8px rgba(0,0,0,0.1)",
+    "md": "0 8px 24px rgba(0,0,0,0.15)",
+    "lg": "0 18px 50px rgba(0,0,0,0.22)"
+  },
   "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
@@ -467,6 +472,12 @@ For radius: generate border-radius values (px units) that match the user's descr
 - md: medium radius for buttons, inputs, select menus, modals. Range: 4px-16px.
 - lg: large radius for panels, dialogs, cards. Range: 8px-24px.
 The pill value (9999px) is fixed and should not be included. Match the emotional mood: intense/angry/tech styles use sharper corners (sm:2, md:4, lg:8), calm/soft/friendly styles use rounder corners (sm:6, md:12, lg:20), balanced/professional styles use moderate values (sm:4, md:8, lg:16).
+
+For shadow: generate box-shadow values (full CSS value string) for 3 elevation levels that match the user's described mood, emotion, or style. Each value should be a valid CSS box-shadow string (e.g., "0 2px 8px rgba(0,0,0,0.1)").
+- sm: small elevation for menus, dropdowns, cards on hover
+- md: medium elevation for modals, floating windows
+- lg: large elevation for dialogs, panels, overlays
+Match the emotional mood: flat/minimal styles use no or very subtle shadows (small offset, low opacity), deep/pronounced styles use larger offsets and blur with higher opacity, playful/creative styles can use colored shadows (e.g., rgba with a tint). Use rgba(0,0,0,X) as the default color.
 
 For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
 
@@ -652,6 +663,13 @@ For each fileIcons entry:
       Object.assign(cssVars, radiusCssVars);
     }
 
+    // Process shadow
+    const shadow = parsed.shadow;
+    if (shadow && typeof shadow === 'object') {
+      const shadowCssVars = this.mapShadowToCss(shadow);
+      Object.assign(cssVars, shadowCssVars);
+    }
+
     // Process googleFonts
     const googleFonts: string[] = [];
     if (Array.isArray(parsed.googleFonts)) {
@@ -771,6 +789,26 @@ For each fileIcons entry:
       if (typeof value !== 'string' || !value.trim()) continue;
       const normalizedKey = key.replace(/[\s_-]/g, '');
       const targets = keyMap[normalizedKey];
+      if (targets) {
+        for (const cssVar of targets) {
+          cssVars[cssVar] = value;
+        }
+      }
+    }
+    return cssVars;
+  }
+
+  private mapShadowToCss(shadow: Record<string, string>): Record<string, string> {
+    const keyMap: Record<string, string[]> = {
+      sm: ['--vscode-shadow-sm'],
+      md: ['--vscode-shadow-md'],
+      lg: ['--vscode-shadow-lg'],
+    };
+
+    const cssVars: Record<string, string> = {};
+    for (const [key, value] of Object.entries(shadow)) {
+      if (typeof value !== 'string' || !value.trim()) continue;
+      const targets = keyMap[key];
       if (targets) {
         for (const cssVar of targets) {
           cssVars[cssVar] = value;

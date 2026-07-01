@@ -413,3 +413,79 @@ system prompt 约束：
 | `ast-tree.component.css` | 3 | 过滤输入框 + 2 个徽章 |
 | `terminal.component.css` | 1 | 控制按钮 |
 | `ast-modal.component.css` | 1 | 提交按钮 |
+
+---
+
+# 动态阴影（Box-Shadow / Elevation）方案
+
+## 目标
+
+通过 LLM 驱动 `submitThemePrompt()` 流程，在生成颜色/字体/圆角的同时动态生成 UI 阴影/提升感，支持扁平/适中/深邃等不同风格。
+
+## 阴影 CSS 变量
+
+| 变量名 | 默认值 | 适用范围 |
+|--------|--------|----------|
+| `--vscode-shadow-sm` | `0 2px 8px rgba(0,0,0,0.1)` | 小弹出层、菜单、下拉框、卡片悬停 |
+| `--vscode-shadow-md` | `0 8px 24px rgba(0,0,0,0.15)` | 模态框、浮动窗口 |
+| `--vscode-shadow-lg` | `0 18px 50px rgba(0,0,0,0.22)` | 大型面板、对话框、覆盖层 |
+
+## JSON Schema 扩展
+
+LLM 响应 JSON 新增 `shadow` 字段：
+
+```json
+{
+  "shadow": {
+    "sm": "0 2px 8px rgba(0,0,0,0.1)",
+    "md": "0 8px 24px rgba(0,0,0,0.15)",
+    "lg": "0 18px 50px rgba(0,0,0,0.22)"
+  }
+}
+```
+
+system prompt 约束：
+- 每个值是完整的 CSS `box-shadow` 值字符串
+- `sm` = 小提升（菜单、下拉层），`md` = 中提升（模态框、卡片），`lg` = 大提升（面板、弹窗）
+- 情绪映射：`flat/minimal` → 极小或无阴影；`deep/pronounced` → 大偏移+大模糊；`playful` → 可使用有色阴影替代纯黑 rgba
+- 默认使用 `rgba(0,0,0,X)` 作为阴影色
+
+## 映射函数 mapShadowToCss()
+
+| LLM key | CSS 变量 |
+|---------|----------|
+| sm | `--vscode-shadow-sm` |
+| md | `--vscode-shadow-md` |
+| lg | `--vscode-shadow-lg` |
+
+## 集成点
+
+| 位置 | 操作 |
+|------|------|
+| `styles.css :root` | 添加 3 个 `--vscode-shadow-*` 变量默认值 |
+| `styles.css [data-theme="dark"]` | 添加相同默认值 |
+| `AppComponent.getThemeSystemPrompt()` | JSON schema 增加 `shadow` + 生成规则 |
+| `AppComponent.parseUnifiedThemeContent()` | 解析 `shadow` → 调用 `mapShadowToCss()` 合并到 cssVars |
+| `ThemeService` | 无改动 |
+
+### 不纳入替换的阴影类型
+
+以下阴影保持硬编码，不接入 CSS 变量体系：
+
+| 类型 | 原因 |
+|------|------|
+| `inset` 内阴影（进度条） | 语义特殊，非 elevation |
+| 多层 Material 阴影（tab 拖拽预览） | 结构复杂，LLM 难以生成 |
+| 有色交互态阴影（file-input focus 蓝色阴影） | 属于焦点反馈而非 elevation |
+| feature 组件阴影（user-center、ast-api 等） | 延至后续阶段 |
+| `@a2ui` 组件库阴影（restaurant-theme.css） | 组件库自有变量体系 |
+
+## Phase 1 范围
+
+仅替换 body 级浮层面板、菜单、模态框，共 **5 处**。
+
+| 文件 | 替换数 | 位置 |
+|------|--------|------|
+| `app.component.css` | 3 | `.indicator-panel` / `.theme-prompt-panel` / `.testSurface-panel` |
+| `ast-menu.component.css` | 1 | `:host(.codigma-right-menu)` |
+| `ast-modal.component.css` | 1 | `.ast-modal-overlay` |

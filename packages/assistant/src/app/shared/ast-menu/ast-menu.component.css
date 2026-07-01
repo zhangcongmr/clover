@@ -7,7 +7,7 @@
   align-items: flex-start;
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorGroup-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--vscode-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
   border-radius: var(--vscode-radius-sm, 4px);
   min-width: 160px;
   font-size: var(--vscode-menu-font-size, 13px);

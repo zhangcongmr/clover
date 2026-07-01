@@ -39,6 +39,11 @@
   --vscode-radius-lg: 16px;
   --vscode-radius-pill: 9999px;
 
+  /* Box shadow / elevation */
+  --vscode-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --vscode-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --vscode-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.22);
+
   /* Background and UI colors */
   --vscode-background: #ffffff;
   --vscode-foreground: #616161;
@@ -172,6 +177,11 @@
   --vscode-radius-md: 10px;
   --vscode-radius-lg: 16px;
   --vscode-radius-pill: 9999px;
+
+  /* Box shadow / elevation */
+  --vscode-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --vscode-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --vscode-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.22);
 
   /* Background and UI colors */
   --vscode-background: #1f1f1f;

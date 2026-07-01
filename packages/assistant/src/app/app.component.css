@@ -157,7 +157,7 @@
   background: var(--vscode-panel-background);
   border: 1px solid var(--vscode-editorGroup-border);
   border-radius: var(--vscode-radius-lg, 16px);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
   padding: 1.25rem;
   animation: indicatorPanelFade 180ms ease;
 }
@@ -229,7 +229,7 @@
   background: var(--vscode-panel-background);
   border: 1px solid var(--vscode-editorGroup-border);
   border-radius: var(--vscode-radius-lg, 16px);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
   padding: 1.25rem;
   animation: themePromptFade 180ms ease;
 }
@@ -368,7 +368,7 @@
   background: var(--vscode-panel-background);
   border: 1px solid var(--vscode-editorGroup-border);
   border-radius: var(--vscode-radius-lg, 16px);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
   padding: 1.25rem;
   animation: testSurfaceFade 180ms ease;
 }
