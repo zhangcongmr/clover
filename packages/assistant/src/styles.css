@@ -48,6 +48,10 @@
   --vscode-motion-duration: 0.3s;
   --vscode-motion-easing: ease;
 
+  /* Background gradient overlay */
+  --vscode-bg-gradient: none;
+  --vscode-editor-bg-gradient: none;
+
   /* Background and UI colors */
   --vscode-background: #ffffff;
   --vscode-foreground: #616161;
@@ -121,29 +125,6 @@
   --bb-grid-size-14: calc(var(--bb-grid-size) * 14);
   --bb-grid-size-15: calc(var(--bb-grid-size) * 15);
   --bb-grid-size-16: calc(var(--bb-grid-size) * 16);
-
-  --background:
-    radial-gradient(
-      at 0% 0%,
-      light-dark(rgba(161, 196, 253, 0.3), rgba(6, 182, 212, 0.15)) 0px,
-      transparent 50%
-    ),
-    radial-gradient(
-      at 100% 0%,
-      light-dark(rgba(255, 226, 226, 0.3), rgba(59, 130, 246, 0.15)) 0px,
-      transparent 50%
-    ),
-    radial-gradient(
-      at 100% 100%,
-      light-dark(rgba(162, 210, 255, 0.3), rgba(20, 184, 166, 0.15)) 0px,
-      transparent 50%
-    ),
-    radial-gradient(
-      at 0% 100%,
-      light-dark(rgba(255, 200, 221, 0.3), rgba(99, 102, 241, 0.15)) 0px,
-      transparent 50%
-    ),
-    linear-gradient(120deg, light-dark(#f0f4f8, #0f172a) 0%, light-dark(#e2e8f0, #1e293b) 100%);
 }
 
 /* VS Code Dark Modern theme variables */
@@ -190,6 +171,10 @@
   /* Motion / animation */
   --vscode-motion-duration: 0.3s;
   --vscode-motion-easing: ease;
+
+  /* Background gradient overlay */
+  --vscode-bg-gradient: none;
+  --vscode-editor-bg-gradient: none;
 
   /* Background and UI colors */
   --vscode-background: #1f1f1f;
@@ -249,8 +234,17 @@ body::after {
     font-size: var(--vscode-font-size, 14px);
     font-weight: var(--vscode-font-weight, 400);
     line-height: var(--vscode-line-height, 1.5);
-    background-color: var(--vscode-background);
     color: var(--vscode-foreground);
+}
+
+body {
+    background-color: var(--vscode-background);
+    background-image: var(--vscode-bg-gradient, none);
+}
+
+body::before,
+body::after {
+    background-color: var(--vscode-background);
 }
 
 img, svg {

@@ -564,3 +564,96 @@ system prompt 约束：
 | `styles.css` | 1 | `.codigma-menu-every-item` transition |
 | `app.component.css` | 4 | 3 个面板动画 + 进度条 transition |
 | `ast-api.component.css` | 1 | `transition: clip-path / opacity`（使用 `replaceAll` 为渐进值，`clip-path` 和 `opacity` 值不同故需独立替换） |
+
+---
+
+# 动态渐变背景（Background Gradient）方案
+
+## 目标
+
+通过 LLM 驱动 `submitThemePrompt()` 流程，在生成颜色/字体/圆角/阴影/动效的同时动态生成 body 层面微妙的渐变氛围背景。
+
+## 核心挑战
+
+CSS `background-color` 不接受渐变值，但项目中 ~98 处 `background-color` 引用不能全部改为 `background` 简写。因此采用分层策略：
+
+- **body 层**：`background-color` + `background-image` 双层叠加，支持渐变
+- **组件层**：保持 `background-color` 纯色不变，避免视觉杂音
+
+渐变仅作为 body 氛围光叠加，在视口边缘、面板间隙等未被组件覆盖的区域可见。
+
+## 渐变 CSS 变量
+
+| 变量名 | 默认值 | 属性 |
+|--------|--------|------|
+| `--vscode-bg-gradient` | `none` | body `background-image` 值 |
+
+## body 样式变更
+
+```css
+body {
+    background-color: var(--vscode-background);        /* 纯色底 */
+    background-image: var(--vscode-bg-gradient, none);  /* 渐变叠层 */
+}
+
+body::before,
+body::after {
+    background-color: var(--vscode-background);  /* 伪元素仅纯色 */
+}
+```
+
+当无渐变时：`background-image: none` 渲染纯色，UI 完全不变。
+当有渐变时：渐变以 alpha 透明度叠在纯色之上，产生微妙氛围。
+
+## JSON Schema 扩展
+
+LLM 响应 JSON 新增 `bgGradient` 字段：
+
+```json
+{
+  "bgGradient": "linear-gradient(135deg, rgba(102,126,234,0.12) 0%, transparent 50%, rgba(251,168,31,0.08) 100%)"
+}
+```
+
+system prompt 约束：
+- 值为完整 CSS `background-image` 值（`linear-gradient()` / `radial-gradient()` / 多层组合）
+- 推荐 alpha ≤ 0.15 控制透明度，保持微妙
+- 情绪映射：
+  - 温和平静 → 柔和暖色调（低 opacity）
+  - 科技冷感 → 蓝紫冷色调
+  - 活泼创意 → 多色对角渐变
+  - 极简专业 → 空字符串（不启用）
+
+## 映射函数 mapBgGradientToCss()
+
+| LLM key | CSS 变量 |
+|---------|----------|
+| `bgGradient` | `--vscode-bg-gradient` |
+
+## 集成点
+
+| 位置 | 操作 |
+|------|------|
+| `styles.css :root` | 添加 `--vscode-bg-gradient: none`；移除死代码 `--background` 变量 |
+| `styles.css [data-theme="dark"]` | 添加相同默认值 |
+| `styles.css body` | 拆分为 body / body::before / body::after，body 增加 `background-image` |
+| `AppComponent.getThemeSystemPrompt()` | JSON schema 增加 `bgGradient` + 生成规则 |
+| `AppComponent.parseUnifiedThemeContent()` | 解析 `bgGradient` → 调用 `mapBgGradientToCss()` 合并到 cssVars |
+| `ThemeService` | 无改动 |
+
+## Phase 1 范围
+
+仅影响 body + CSS 变量定义，无组件层改动。共 **1 处 body 规则重写 + 1 处死代码移除 + 2 处变量添加**。
+
+| 文件 | 操作 |
+|------|------|
+| `styles.css :root` | 移除死代码 `--background`（5 层渐变）；添加 `--vscode-bg-gradient: none` |
+| `styles.css [data-theme="dark"]` | 添加 `--vscode-bg-gradient: none` |
+| `styles.css body` | 拆分为 body / body::before / body::after；body 增加 `background-image` |
+| `app.component.ts` | Schema + system prompt + 解析 + 映射方法 |
+
+### 不纳入渐变范围
+
+- 所有组件背景色（`.codigma-app-body`、面板、侧栏、菜单等）— 保持纯色
+- `@a2ui` 组件库背景— 后续阶段
+- `body::before / body::after` — 布局辅助伪元素，不需要渐变

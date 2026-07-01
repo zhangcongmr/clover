@@ -40,7 +40,7 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background-color: var(--vscode-editor-background);
+  background: var(--vscode-editor-bg-gradient, none) var(--vscode-editor-background);
   color: var(--vscode-foreground);
   line-height: 1.6;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;

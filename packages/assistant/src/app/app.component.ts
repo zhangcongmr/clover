@@ -438,6 +438,8 @@ RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped i
     "duration": "0.3s",
     "easing": "ease"
   },
+  "bgGradient": "linear-gradient(135deg, rgba(102,126,234,0.12) 0%, transparent 50%, rgba(251,168,31,0.08) 100%)",
+  "editorBgGradient": "linear-gradient(135deg, rgba(110,130,230,0.08) 0%, transparent 60%)",
   "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
@@ -487,6 +489,15 @@ For motion: generate duration and easing values that match the user's described 
 - duration: CSS transition/animation duration string. Range: 0.1s (instant/snappy) to 0.8s (slow/deliberate). Default: 0.3s.
 - easing: CSS easing function string. One of "ease", "ease-in-out", "ease-out", "ease-in", "linear", or a cubic-bezier(...) value. Default: "ease".
 Match the emotional mood: energetic/playful styles use shorter durations (0.15s-0.2s) with ease-out or bounce-like cubic-bezier; calm/professional styles use moderate durations (0.2s-0.3s) with ease; dramatic/emphatic styles use longer durations (0.4s-0.6s) with ease-out.
+
+For bgGradient: generate a CSS background-image value (gradient) that adds a subtle ambient color wash to the application background. This is applied as an overlay on top of the solid background color. Recommended to use high transparency (alpha ≤ 0.15) for subtlety. The value must be a valid CSS gradient function: linear-gradient(...), radial-gradient(...), conic-gradient(...), or a comma-separated combination.
+- Use rgba() with alpha ≤ 0.15 for color stops to keep the effect subtle
+- Include at least one transparent or very low opacity stop to blend with the solid background
+- Optionally, use multiple gradient layers separated by commas
+If the user's mood does not suggest a gradient (e.g., "minimal", "clean", "professional"), set this to an empty string to omit.
+Mood mapping: calm/peaceful → warm-toned subtle gradients; cold/tech-focused → blue-purple tones; playful/creative → multi-color diagonal gradients; intense/dark → very dark subtle radial gradients; minimal → no gradient (empty string).
+
+For editorBgGradient: same rules as bgGradient, but applied specifically to the code editor background (CodeMirror editor view, markdown preview panel, and shadow DOM preview). This allows the editor area to have a distinct gradient from the body background. If omitted, the editor uses the solid --vscode-editor-background. Recommended alpha ≤ 0.08 for editor since it is a reading/editing surface.
 
 For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
 
@@ -686,6 +697,18 @@ For each fileIcons entry:
       Object.assign(cssVars, motionCssVars);
     }
 
+    // Process bgGradient
+    if (parsed.bgGradient && typeof parsed.bgGradient === 'string' && parsed.bgGradient.trim()) {
+      const bgGradientCssVars = this.mapBgGradientToCss(parsed.bgGradient.trim());
+      Object.assign(cssVars, bgGradientCssVars);
+    }
+
+    // Process editorBgGradient
+    if (parsed.editorBgGradient && typeof parsed.editorBgGradient === 'string' && parsed.editorBgGradient.trim()) {
+      const editorBgGradientCssVars = this.mapEditorBgGradientToCss(parsed.editorBgGradient.trim());
+      Object.assign(cssVars, editorBgGradientCssVars);
+    }
+
     // Process googleFonts
     const googleFonts: string[] = [];
     if (Array.isArray(parsed.googleFonts)) {
@@ -758,6 +781,13 @@ For each fileIcons entry:
     const cssVars: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(themeVars)) {
+      // Keys already prefixed with --vscode- (typography, radius, shadow, motion, gradients)
+      // pass through directly without remapping
+      if (key.startsWith('--vscode-')) {
+        cssVars[key] = value;
+        continue;
+      }
+
       const normalizedKey = key.toLowerCase().replace(/[\s_-]/g, '');
       let canonical = '';
 
@@ -872,6 +902,18 @@ For each fileIcons entry:
       }
     }
     return cssVars;
+  }
+
+  private mapBgGradientToCss(bgGradient: string): Record<string, string> {
+    return {
+      '--vscode-bg-gradient': bgGradient,
+    };
+  }
+
+  private mapEditorBgGradientToCss(editorBgGradient: string): Record<string, string> {
+    return {
+      '--vscode-editor-bg-gradient': editorBgGradient,
+    };
   }
 
   onCloseTab(evt: any) {

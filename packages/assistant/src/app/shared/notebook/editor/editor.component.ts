@@ -65,6 +65,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
             border: 'none', // 移除边框
             outline: 'none', // 可选：移除聚焦时的 outline
             boxShadow: 'none',
+            background: 'var(--vscode-editor-bg-gradient, none) var(--vscode-editor-background)',
           },
           '.cm-scroller': {
             height: '100%',
@@ -173,7 +174,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
         line-height: 1.6;
         color: var(--vscode-foreground, #616161);
-        background-color: var(--vscode-editor-background, #ffffff);
+        background: var(--vscode-editor-bg-gradient, none) var(--vscode-editor-background, #ffffff);
       }
       
       h1, h2, h3, h4, h5, h6 {
