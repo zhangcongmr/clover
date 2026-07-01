@@ -389,17 +389,21 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private getThemeSystemPrompt(): string {
     return `
-You are a UI theme generation assistant. You MUST ALWAYS respond in this exact order. Do not skip any step.
+You are a UI theme generation assistant. You MUST open your response with a single JSON code block containing ALL theme and file icon data. Do not output any other text before the JSON block.
 
-RESPONSE ORDER (mandatory):
-1. First, open your response with the file icons JSON block (STEP 1 below)
-2. Then, call ui_theme_colors
-3. Then, call ui_theme_icon
-
-STEP 1 - File icons (MANDATORY - output FIRST): Open your response with a JSON code block containing ALL file icon definitions. The JSON block must be wrapped in triple backticks with "json" language identifier, in exactly this format:
+RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped in triple backticks with "json" language identifier, in exactly this format:
 
 \`\`\`json
 {
+  "colors": {
+    "background": "#1e1e1e",
+    "primary": "#007acc",
+    "text": "#cccccc",
+    "surface": "#252526",
+    "accent": "#0097fb",
+    "border": "#3c3c3c"
+  },
+  "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
       "extension": "js",
@@ -410,16 +414,16 @@ STEP 1 - File icons (MANDATORY - output FIRST): Open your response with a JSON c
 }
 \`\`\`
 
-Include ALL of these extensions: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, sql, yaml, sh, bat, txt, csv, lock, env, git, png, jpg, svg, pdf, zip.
+For colors: provide all 6 values in hex format (e.g., #1e1e1e) that match the user's described theme mood or style. The colors object must contain background, primary, text, surface, accent, border.
 
-For each entry:
+For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
+
+Include ALL of these extensions in fileIcons: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, sql, yaml, sh, bat, txt, csv, lock, env, git, png, jpg, svg, pdf, zip.
+
+For each fileIcons entry:
 - extension: the file extension without dot
 - iconId: choose from icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-csv, icon-file-php, icon-file-bat
 - svgPath: SVG path d attribute for a 24x24 icon. Examples: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" (circle), "M12 2L2 22h20L12 2z" (triangle), "M6 2h8l6 6v14H6V2z" (document). Design paths that reflect both the file type and the theme mood. Prefer using the file extension text string, its abbreviation, or related file type characteristics as the basis for svgPath generation. For example: "JS" text for .js files, "TS" text for .ts files, "{ }" brace shape for .json files, "#" hash shape for .css files, "</>" tag shape for .html/.xml files, "PY" text for .py files, "MD" text for .md files, "GO" text for .go files, "RS" text for .rs files, "VUE" or "V" shape for .vue files, "SQL" or database cylinder for .sql files, "TXT" text for .txt files, "SH" text for .sh files, "BAT" text for .bat files, gear shape for .yml/.yaml files, lock shape for .env files, branch shape for .git files, lock shape for .lock files, document shape for .pdf files, archive shape for .zip files, image shape for image files, "CPP" text for .cpp files, "JAVA" or coffee shape for .java files, "PHP" text for .php files. Use fill="currentColor" and simple, clean geometric paths that form recognizable text or symbols.
-
-STEP 2 - Theme colors (MANDATORY): After the file icons JSON block, call ui_theme_colors ONCE with all 6 color values (background, primary, text, surface, accent, border) in hex format, matching the user's input. This tool accepts all colors in one call.
-
-STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_icon ONCE with an svgPath that represents the emotion/mood.
 `;
   }
 
@@ -441,60 +445,6 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
           history: [],
           system: systemPrompt,
           autoCreate: true,
-          tools: [
-            {
-              name: 'ui_theme_colors',
-              description: 'Output the complete theme color palette. Provide all 6 color values in one call.',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  background: {
-                    type: 'string',
-                    description: 'Main application background color in hex format (e.g., #1e1e1e).',
-                  },
-                  primary: {
-                    type: 'string',
-                    description: 'Primary accent color for buttons and controls in hex format.',
-                  },
-                  text: {
-                    type: 'string',
-                    description: 'Primary readable text color in hex format.',
-                  },
-                  surface: {
-                    type: 'string',
-                    description: 'Surface color for cards, panels, sidebars in hex format.',
-                  },
-                  accent: {
-                    type: 'string',
-                    description: 'Accent color for links and highlights in hex format.',
-                  },
-                  border: {
-                    type: 'string',
-                    description: 'Border or divider color in hex format.',
-                  },
-                },
-                required: ['background', 'primary', 'text', 'surface', 'accent', 'border'],
-              },
-            },
-            {
-              name: 'ui_theme_icon',
-              description: 'Generate an SVG icon path that visually represents the current emotion, mood, or style theme. The icon must be a simple, recognizable symbol related to the emotion (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm).',
-              parameters: {
-                $schema: 'https://json-schema.org/draft/2020-12/schema',
-                additionalProperties: false,
-                type: 'object',
-                properties: {
-                  svgPath: {
-                    type: 'string',
-                    description: 'The SVG <path> d attribute value for the icon. Use a standard 24x24 viewBox.',
-                  },
-                },
-                required: ['svgPath'],
-              },
-            },
-          ],
         }),
         credentials: 'include',
       });
@@ -505,11 +455,8 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
       }
 
       const decoder = new TextDecoder();
-      let accumulatedText = '';
-      let payload: any = null;
       let assistantText = '';
       let done = false;
-      const toolCallsByIndex: Record<string, { index: number; id?: string; name?: string; arguments?: string }> = {};
 
       while (!done) {
         const result = await reader.read();
@@ -518,7 +465,6 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
         }
 
         const chunk = decoder.decode(result.value, { stream: true });
-        accumulatedText += chunk;
         const lines = chunk.split('\n');
 
         for (const line of lines) {
@@ -541,67 +487,7 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
               assistantText += parsed.content;
             }
 
-            const entries = Array.isArray(parsed.toolCalls) ? parsed.toolCalls : Array.isArray(parsed.tool_calls) ? parsed.tool_calls : [];
-            for (const toolCall of entries) {
-              if (!toolCall || typeof toolCall !== 'object') {
-                continue;
-              }
-
-              const callIndex = toolCall.index !== undefined ? String(toolCall.index) : undefined;
-              if (!callIndex) {
-                continue;
-              }
-
-              const existing = toolCallsByIndex[callIndex] || { index: toolCall.index };
-              const fn = toolCall.function && typeof toolCall.function === 'object' ? toolCall.function : null;
-
-              if (typeof toolCall.id === 'string' && toolCall.id) {
-                existing.id = toolCall.id;
-              }
-              if (typeof toolCall.name === 'string' && toolCall.name) {
-                existing.name = toolCall.name;
-              }
-              if (fn) {
-                if (typeof fn.name === 'string' && fn.name) {
-                  existing.name = fn.name;
-                }
-                if (fn.arguments !== undefined) {
-                  if (typeof fn.arguments === 'string') {
-                    existing.arguments = (existing.arguments ?? '') + fn.arguments;
-                  } else {
-                    existing.arguments = JSON.stringify(fn.arguments);
-                  }
-                }
-              }
-              if (toolCall.arguments !== undefined) {
-                if (typeof toolCall.arguments === 'string') {
-                  existing.arguments = (existing.arguments ?? '') + toolCall.arguments;
-                } else {
-                  existing.arguments = JSON.stringify(toolCall.arguments);
-                }
-              }
-
-              toolCallsByIndex[callIndex] = existing;
-            }
-
-            if (parsed.theme && typeof parsed.theme === 'object') {
-              payload = {
-                ...payload,
-                ...parsed.theme,
-              };
-            } else if (parsed.content && typeof parsed.content === 'object') {
-              payload = {
-                ...payload,
-                ...parsed.content,
-              };
-            } else if (typeof parsed === 'object') {
-              payload = {
-                ...payload,
-                ...parsed,
-              };
-            }
             if (parsed.sessionId) {
-              // Keep sessionId for future use if the backend returns it
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (window as any).currentSessionId = parsed.sessionId;
             }
@@ -615,36 +501,11 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
         throw new Error(`请求失败 ${response.status}，请稍后重试`);
       }
 
-      const toolCalls = Object.values(toolCallsByIndex);
-      const themeData = this.extractThemeVariables(payload, accumulatedText, toolCalls);
+      //console.log('生成主题成功', assistantText);
+      const themeData = this.parseUnifiedThemeContent(assistantText);
 
-      if (themeData['theme_icon']) {
-        this.themeIconPath.set(themeData['theme_icon']);
-        this.saveThemeIcon();
-        delete themeData['theme_icon'];
-      }
-
-      let hasFileIcons = this.parseFileIconsFromContent(assistantText);
-      if (!hasFileIcons) {
-        for (const tc of toolCalls) {
-          if (tc.name !== 'ui_file_icon') continue;
-          let args: any = tc.arguments;
-          if (typeof args === 'string') {
-            try { args = JSON.parse(args); } catch { continue; }
-          }
-          if (!args || !Array.isArray(args.icons)) continue;
-          for (const entry of args.icons) {
-            if (!entry.extension || !entry.svgPath) continue;
-            const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
-            const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
-            customFileIcons[ext] = symbolId;
-            customFileIconPaths[ext] = entry.svgPath;
-            hasFileIcons = true;
-          }
-        }
-      }
-      if (hasFileIcons) {
-        this.saveFileIcons();
+      if (!themeData) {
+        throw new Error('未能从响应中解析出主题变量');
       }
 
       const cssVars = this.mapThemeKeysToCss(themeData);
@@ -656,7 +517,7 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
       this.themeService.setTheme('custom');
       this.themeService.setThemeVariables(cssVars);
 
-      if (hasFileIcons) {
+      if (Object.keys(customFileIcons).length > 0) {
         const content = this.contentComp();
         if (content) {
           const data = content.dataList();
@@ -675,178 +536,51 @@ STEP 3 - Theme icon (MANDATORY): After calling ui_theme_colors, call ui_theme_ic
     }
   }
 
-  private parseFileIconsFromContent(text: string): boolean {
+  private parseUnifiedThemeContent(text: string): Record<string, string> | null {
     const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
-    let match;
-    let hasFileIcons = false;
-    while ((match = jsonBlockRegex.exec(text)) !== null) {
-      try {
-        const parsed = JSON.parse(match[1]);
-        const icons = parsed.fileIcons || parsed.icons || parsed;
-        if (!Array.isArray(icons)) continue;
-        for (const entry of icons) {
-          if (!entry.extension || !entry.svgPath) continue;
-          const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
-          const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
-          customFileIcons[ext] = symbolId;
-          customFileIconPaths[ext] = entry.svgPath;
-          hasFileIcons = true;
-        }
-      } catch { /* continue searching */ }
+    const match = jsonBlockRegex.exec(text);
+    if (!match) return null;
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(match[1]);
+    } catch {
+      return null;
     }
-    return hasFileIcons;
-  }
 
-  private extractThemeVariables(payload: any, rawText: string, toolCalls: any[] = []): Record<string, string> {
-    const theme: Record<string, string> = {};
-    const normalized = payload && typeof payload === 'object'
-      ? payload.theme && typeof payload.theme === 'object'
-        ? payload.theme
-        : payload
-      : null;
-
-    if (normalized) {
-      for (const key of Object.keys(normalized)) {
-        const value = normalized[key];
-        if (typeof value === 'string' && value.trim()) {
-          theme[key.trim()] = value.trim();
-        }
+    // Process file icons
+    const icons = parsed.fileIcons;
+    if (Array.isArray(icons)) {
+      for (const entry of icons) {
+        if (!entry.extension || !entry.svgPath) continue;
+        const ext = String(entry.extension).toLowerCase().replace(/^\./, '');
+        const symbolId = addDynamicFileIconSymbol(ext, entry.svgPath);
+        customFileIcons[ext] = symbolId;
+        customFileIconPaths[ext] = entry.svgPath;
+      }
+      if (Object.keys(customFileIcons).length > 0) {
+        this.saveFileIcons();
       }
     }
 
-    const aliasMap: Record<string, string> = {
-      ui_background: 'background',
-      background: 'background',
-      ui_primary_color: 'primary',
-      primary: 'primary',
-      ui_text_color: 'text',
-      text: 'text',
-      ui_surface: 'surface',
-      surface: 'surface',
-      ui_accent: 'accent',
-      accent: 'accent',
-      ui_border: 'border',
-      border: 'border',
-      ui_theme_icon: 'theme_icon',
-      theme_icon: 'theme_icon',
-    };
+    // Process theme icon
+    if (parsed.themeIcon && typeof parsed.themeIcon === 'string') {
+      this.themeIconPath.set(parsed.themeIcon);
+      this.saveThemeIcon();
+    }
 
-    if (Object.keys(theme).length === 0) {
-      const jsonMatch = rawText.match(/({[\s\S]*})/m);
-      if (jsonMatch) {
-        try {
-          const parsed = JSON.parse(jsonMatch[1]);
-          for (const key of Object.keys(parsed)) {
-            const value = parsed[key];
-            if (typeof value === 'string' && value.trim()) {
-              theme[key.trim()] = value.trim();
-            }
-          }
-        } catch {
-          // ignore JSON parse failure
-        }
+    // Process colors
+    const colors = parsed.colors;
+    if (!colors || typeof colors !== 'object') return null;
+
+    const themeColors: Record<string, string> = {};
+    for (const [key, value] of Object.entries(colors)) {
+      if (typeof value === 'string' && value.trim()) {
+        themeColors[key.trim()] = value.trim();
       }
     }
 
-    if (Object.keys(theme).length === 0) {
-      for (const [alias, canonical] of Object.entries(aliasMap)) {
-        const regex = new RegExp(`${alias}\\s*[:=]\\s*(#[0-9a-fA-F]{3,8}|rgba?\\([^)]*\\)|[a-zA-Z]+)`, 'i');
-        const match = rawText.match(regex);
-        if (match) {
-          theme[canonical] = match[1];
-        }
-      }
-    }
-
-    if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-      const indexedCalls: Record<string, { name?: string; arguments?: unknown }> = {};
-
-      for (const toolCall of toolCalls) {
-        if (!toolCall || typeof toolCall !== 'object') {
-          continue;
-        }
-
-        const fn = toolCall.function && typeof toolCall.function === 'object' ? toolCall.function : null;
-        const callIndex = toolCall.index !== undefined ? String(toolCall.index) : undefined;
-        const entryKey = callIndex ?? String(toolCall.id ?? toolCall.name ?? '');
-        if (!entryKey) {
-          continue;
-        }
-
-        const existing = indexedCalls[entryKey] || {};
-
-        if (toolCall.name && typeof toolCall.name === 'string') {
-          existing.name = toolCall.name;
-        }
-
-        if (fn) {
-          if (typeof fn.name === 'string' && fn.name) {
-            existing.name = fn.name;
-          }
-          if (fn.arguments !== undefined) {
-            existing.arguments = fn.arguments;
-          }
-        }
-
-        if (toolCall.arguments !== undefined) {
-          existing.arguments = toolCall.arguments;
-        }
-
-        indexedCalls[entryKey] = existing;
-      }
-
-      for (const entry of Object.values(indexedCalls)) {
-        if (!entry.name) {
-          continue;
-        }
-
-        const toolName = entry.name.toLowerCase();
-        const canonicalToolName = aliasMap[toolName] || aliasMap[toolName.replace(/[-_\s]/g, '')];
-        let toolArgs: any = entry.arguments;
-
-        if (typeof toolArgs === 'string') {
-          const trimmed = toolArgs.trim();
-          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-            try {
-              toolArgs = JSON.parse(trimmed);
-            } catch {
-              toolArgs = { value: trimmed };
-            }
-          } else {
-            toolArgs = { value: trimmed };
-          }
-        }
-
-        if (canonicalToolName) {
-          if (typeof toolArgs === 'string') {
-            theme[canonicalToolName] = toolArgs;
-          } else if (toolArgs && typeof toolArgs === 'object') {
-            if (typeof toolArgs.color === 'string') {
-              theme[canonicalToolName] = toolArgs.color;
-            } else if (typeof toolArgs.value === 'string') {
-              theme[canonicalToolName] = toolArgs.value;
-            } else {
-              for (const value of Object.values(toolArgs)) {
-                if (typeof value === 'string' && value.trim()) {
-                  theme[canonicalToolName] = value.trim();
-                  break;
-                }
-              }
-            }
-          }
-        } else if (toolArgs && typeof toolArgs === 'object') {
-          for (const [innerKey, innerValue] of Object.entries(toolArgs)) {
-            const normalizedInnerKey = innerKey.toLowerCase().replace(/[-_\s]/g, '');
-            const canonicalInner = aliasMap[normalizedInnerKey] || normalizedInnerKey;
-            if (typeof innerValue === 'string' && innerValue.trim()) {
-              theme[canonicalInner] = innerValue.trim();
-            }
-          }
-        }
-      }
-    }
-
-    return theme;
+    return Object.keys(themeColors).length > 0 ? themeColors : null;
   }
 
   private mapThemeKeysToCss(themeVars: Record<string, string>): Record<string, string> {

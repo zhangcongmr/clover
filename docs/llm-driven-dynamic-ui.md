@@ -9,13 +9,13 @@
 ```
 用户输入主题描述
     ↓
-LLM 在 content 开头输出 JSON 代码块（含 extension, iconId, svgPath 数组）
-  然后依次调用 ui_theme_colors → ui_theme_icon
+LLM 在 content 开头输出统一 JSON 代码块（colors → themeIcon → fileIcons）
     ↓
-generateThemeFromPrompt() 优先从 content 解析 JSON 代码块
-   -> parseFileIconsFromContent(assistantText)
+parseUnifiedThemeContent() 从 content 解析 JSON 代码块
    -> 正则 /```json\s*({[\s\S]*?})\s*```/g 提取/解析
-   -> 若 content 未命中，兜底从 tool calls 提取（兼容旧模型）
+   -> 提取 fileIcons → 创建 SVG symbol
+   -> 提取 colors → 映射 CSS 变量
+   -> 提取 themeIcon → 设置主题图标
     ↓
 addDynamicFileIconSymbol(ext, svgPath) 创建 <symbol> 注入 SVG sprite
     ↓
@@ -85,9 +85,9 @@ const customFileIconPaths: Record<string, string> = {};   // ext → svgPath
 - `saveFileIcons`: 将 `customFileIconPaths` 序列化写入 `localStorage`
 - `loadSavedFileIcons`: 从 localStorage 读取 paths，为每个 path 调用 `addDynamicFileIconSymbol` 重建 symbol，同时填充 `customFileIcons` 和 `customFileIconPaths`
 
-### parseFileIconsFromContent(text: string): boolean
+### parseUnifiedThemeContent(text: string): Record\<string, string\> | null
 
-在 `generateThemeFromPrompt()` 中使用 — 用正则 `/```json\s*(\{[\s\S]*?\})\s*```/g` 从 LLM 响应的 content 中提取 JSON 代码块，解析 `fileIcons` 数组，为每个 entry 调用 `addDynamicFileIconSymbol` 并填充 `customFileIcons`/`customFileIconPaths`。返回是否找到图标。
+在 `generateThemeFromPrompt()` 中使用 — 用正则 `/```json\s*(\{[\s\S]*?\})\s*```/g` 从 LLM 响应的 content 中提取统一 JSON 代码块，分别处理 `colors`（返回颜色 map）、`themeIcon`（设主题图标）、`fileIcons`（创建 symbol + 持久化）。返回颜色 map，解析失败返回 `null`。
 
 ### toggleTheme()
 
@@ -109,6 +109,15 @@ LLM 在响应 content 开头输出 JSON 代码块，格式如下：
 
 ```json
 {
+  "colors": {
+    "background": "#1e1e1e",
+    "primary": "#007acc",
+    "text": "#cccccc",
+    "surface": "#252526",
+    "accent": "#0097fb",
+    "border": "#3c3c3c"
+  },
+  "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
       "extension": "js",
@@ -133,16 +142,11 @@ LLM 在响应 content 开头输出 JSON 代码块，格式如下：
 6. 简单清晰的几何路径，形成可识别的文本或符号
 7. 同时反映文件类型和主题情绪
 
-## LLM Tool 定义
+## Tool 定义（已废弃）
 
-2 个 tool（文件图标已改为 content JSON 输出，不再需要 tool）：
+原先的 tool call 方式（`ui_theme_colors`、`ui_theme_icon`、`ui_file_icon`）已全部废除，统一合并为 content JSON 代码块输出。
 
-### 1. ui_theme_colors
-- 参数：`background`, `primary`, `text`, `surface`, `accent`, `border`（均为 hex string）
-- 单次调用返回全部 6 个颜色
-
-### 2. ui_theme_icon
-- 参数：`svgPath` — 表示主题情绪/感觉的 SVG path
+详见上方"核心流程"节中的统一 JSON 格式。
 
 ## 集成点
 
@@ -151,14 +155,14 @@ LLM 在响应 content 开头输出 JSON 代码块，格式如下：
 | `ngOnInit` | 调用 `loadSavedFileIcons()` 恢复持久化图标 |
 | `ngAfterViewInit` | `afterNextRender` 中若存在已加载图标，调用 `computeFileIcons()` 刷新树 |
 | `ngOnChanges` | `computeFileIcons()` 调用在 `assignDeepLevel()` 之后 |
-| `generateThemeFromPrompt()` | 优先从 `assistantText` 解析 JSON 代码块（`parseFileIconsFromContent`），兜底从 `ui_file_icon` tool calls 提取；创建 symbol，更新树，保存持久化 |
+| `generateThemeFromPrompt()` | 从 `assistantText` 解析统一 JSON 代码块（`parseUnifiedThemeContent`），提取 colors → 设 CSS 变量、themeIcon → 设主题图标、fileIcons → 创建 symbol + 持久化 |
 | `toggleTheme()` | 清除所有自定义图标状态和 localStorage |
 
 ## 关键决策记录
 
-1. **Tool 合并**：将 6 个独立颜色 tool 合并为 1 个 `ui_theme_colors`，总 tools 从 8 降为 2，适配 deepseek-v4-flash 模型 tool call 限制（~6 calls）
-2. **文件图标输出方式**：从 tool call 改为 content JSON 代码块 — tool call 方式 >50% 概率不触发，content JSON 在模型 token 充足时首先生成，成功率更高；保留 tool call 兜底解析兼容旧模型
-3. **系统提示词顺序**：文件图标排在 STEP 1（最先输出），颜色和主题图标分别排在 STEP 2/3（tool calls）— 模型在 token 预算充足时先完成最重的 JSON 输出
+1. **全部合并为 content JSON**：将 `ui_theme_colors`、`ui_theme_icon`、`ui_file_icon` 三个 tool 全部废除，统一合并到 content 开头的 JSON 代码块中。文件图标（28 个 svgPath，~2000 tokens）占主体，6 个色值 + 1 个主题图标（~200 tokens）开销极小，合并后零 tool call、零失败率
+2. **统一 JSON schema**：`{ colors: { ... }, themeIcon: "M...", fileIcons: [...] }` — colors 和 themeIcon 放在前面优先输出，文件图标在后，确保核心主题数据先到达
+3. **系统提示词简化为单步**：不再分 STEP 1/2/3，直接要求模型在 content 开头输出统一 JSON 代码块
 4. **扩展名列表精简**：从 ~40 个低频扩展名（swift, kt, dart, svelte, gradle, lua, hs, ex, graphql, sol 等）减至 ~25 个最常用扩展名，减少约 40% token 压力，低频类型靠静态 sprite 兜底
 5. **持久化格式**：存储 SVG path 数据而非 symbol ID — symbol 是运行时 ephemeral 的，每次页面加载需从 path 重建
 6. **存储方案**：localStorage 而非 IndexedDB — 数据量 2-8 KB，localStorage 5 MB 限制足够且 API 更简单
