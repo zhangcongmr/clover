@@ -18,7 +18,7 @@
     pointer-events: auto;
     cursor: pointer;
     clip-path: inset(0 0 0 100%);
-    transition: clip-path 0.3s ease;
+    transition: clip-path var(--vscode-motion-duration, 0.3s) var(--vscode-motion-easing, ease);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     background-color: transparent;
@@ -362,7 +362,7 @@ table tr:hover {
     border-radius: 4px;
     font-size: 14px;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--vscode-motion-duration, 0.3s) var(--vscode-motion-easing, ease);
     pointer-events: none;
     /* 避免遮挡点击 */
     opacity: 1;

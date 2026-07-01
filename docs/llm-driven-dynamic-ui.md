@@ -489,3 +489,78 @@ system prompt 约束：
 | `app.component.css` | 3 | `.indicator-panel` / `.theme-prompt-panel` / `.testSurface-panel` |
 | `ast-menu.component.css` | 1 | `:host(.codigma-right-menu)` |
 | `ast-modal.component.css` | 1 | `.ast-modal-overlay` |
+
+---
+
+# 动态动效（Motion / Animation）方案
+
+## 目标
+
+通过 LLM 驱动 `submitThemePrompt()` 流程，在生成颜色/字体/圆角/阴影的同时动态生成 UI 动效参数（时长和缓动函数），支持极快/标准/缓慢等不同速度风格。
+
+## 动效 CSS 变量
+
+| 变量名 | 默认值 | 适用范围 |
+|--------|--------|----------|
+| `--vscode-motion-duration` | `0.3s` | 主要过渡/动画时长 |
+| `--vscode-motion-easing` | `ease` | 主要缓动函数 |
+
+## JSON Schema 扩展
+
+LLM 响应 JSON 新增 `motion` 字段：
+
+```json
+{
+  "motion": {
+    "duration": "0.3s",
+    "easing": "ease"
+  }
+}
+```
+
+system prompt 约束：
+- `duration`: 0.1s（极快/干脆）到 0.8s（缓慢/刻意），默认 0.3s
+- `easing`: `ease`、`ease-in-out`、`ease-out`、`ease-in`、`linear` 或 `cubic-bezier(...)`
+- 情绪映射：
+  - 活泼/俏皮 → 0.15s-0.2s + ease-out 或弹跳型 cubic-bezier
+  - 平静/专业 → 0.2s-0.3s + ease
+  - 戏剧/强调 → 0.4s-0.6s + ease-out
+
+## 映射函数 mapMotionToCss()
+
+| LLM key | CSS 变量 |
+|---------|----------|
+| duration | `--vscode-motion-duration` |
+| easing | `--vscode-motion-easing` |
+
+## 集成点
+
+| 位置 | 操作 |
+|------|------|
+| `styles.css :root` | 添加 2 个 `--vscode-motion-*` 变量默认值 |
+| `styles.css [data-theme="dark"]` | 添加相同默认值 |
+| `AppComponent.getThemeSystemPrompt()` | JSON schema 增加 `motion` + 生成规则 |
+| `AppComponent.parseUnifiedThemeContent()` | 解析 `motion` → 调用 `mapMotionToCss()` 合并到 cssVars |
+| `ThemeService` | 无改动 |
+
+### 不纳入替换的动效
+
+以下动效保持硬编码：
+
+| 类型 | 原因 |
+|------|------|
+| `cubic-bezier` 过渡（tab 拖拽 `cubic-bezier(0,0,0.2,1)`） | 属于特定 UX 交互行为，非通用泛化 |
+| `fadeIn` 含 delay 的组合（`cubic-bezier(0,0,0.3,1) + delay`） | 含 delay 的特殊结构 |
+| `spin` 旋转动画（`1s linear infinite`） | 功能型加载指示器 |
+| feature 组件动效（file-input、add-project） | 延至后续阶段 |
+| `@a2ui` 组件库动效 | 组件库自有变量体系 |
+
+## Phase 1 范围
+
+仅替换使用 `ease` 缓动的通用 transition/animation，共 **6 处**。
+
+| 文件 | 替换数 | 位置 |
+|------|--------|------|
+| `styles.css` | 1 | `.codigma-menu-every-item` transition |
+| `app.component.css` | 4 | 3 个面板动画 + 进度条 transition |
+| `ast-api.component.css` | 1 | `transition: clip-path / opacity`（使用 `replaceAll` 为渐进值，`clip-path` 和 `opacity` 值不同故需独立替换） |

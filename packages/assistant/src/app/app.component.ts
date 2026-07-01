@@ -434,6 +434,10 @@ RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped i
     "md": "0 8px 24px rgba(0,0,0,0.15)",
     "lg": "0 18px 50px rgba(0,0,0,0.22)"
   },
+  "motion": {
+    "duration": "0.3s",
+    "easing": "ease"
+  },
   "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
@@ -478,6 +482,11 @@ For shadow: generate box-shadow values (full CSS value string) for 3 elevation l
 - md: medium elevation for modals, floating windows
 - lg: large elevation for dialogs, panels, overlays
 Match the emotional mood: flat/minimal styles use no or very subtle shadows (small offset, low opacity), deep/pronounced styles use larger offsets and blur with higher opacity, playful/creative styles can use colored shadows (e.g., rgba with a tint). Use rgba(0,0,0,X) as the default color.
+
+For motion: generate duration and easing values that match the user's described mood, emotion, or style. These control all UI transitions and animations (panel fade-ins, hover effects, progress bar).
+- duration: CSS transition/animation duration string. Range: 0.1s (instant/snappy) to 0.8s (slow/deliberate). Default: 0.3s.
+- easing: CSS easing function string. One of "ease", "ease-in-out", "ease-out", "ease-in", "linear", or a cubic-bezier(...) value. Default: "ease".
+Match the emotional mood: energetic/playful styles use shorter durations (0.15s-0.2s) with ease-out or bounce-like cubic-bezier; calm/professional styles use moderate durations (0.2s-0.3s) with ease; dramatic/emphatic styles use longer durations (0.4s-0.6s) with ease-out.
 
 For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
 
@@ -670,6 +679,13 @@ For each fileIcons entry:
       Object.assign(cssVars, shadowCssVars);
     }
 
+    // Process motion
+    const motion = parsed.motion;
+    if (motion && typeof motion === 'object') {
+      const motionCssVars = this.mapMotionToCss(motion);
+      Object.assign(cssVars, motionCssVars);
+    }
+
     // Process googleFonts
     const googleFonts: string[] = [];
     if (Array.isArray(parsed.googleFonts)) {
@@ -828,6 +844,25 @@ For each fileIcons entry:
 
     const cssVars: Record<string, string> = {};
     for (const [key, value] of Object.entries(radius)) {
+      if (typeof value !== 'string' || !value.trim()) continue;
+      const targets = keyMap[key];
+      if (targets) {
+        for (const cssVar of targets) {
+          cssVars[cssVar] = value;
+        }
+      }
+    }
+    return cssVars;
+  }
+
+  private mapMotionToCss(motion: Record<string, string>): Record<string, string> {
+    const keyMap: Record<string, string[]> = {
+      duration: ['--vscode-motion-duration'],
+      easing: ['--vscode-motion-easing'],
+    };
+
+    const cssVars: Record<string, string> = {};
+    for (const [key, value] of Object.entries(motion)) {
       if (typeof value !== 'string' || !value.trim()) continue;
       const targets = keyMap[key];
       if (targets) {

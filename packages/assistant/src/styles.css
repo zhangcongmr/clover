@@ -44,6 +44,10 @@
   --vscode-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
   --vscode-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.22);
 
+  /* Motion / animation */
+  --vscode-motion-duration: 0.3s;
+  --vscode-motion-easing: ease;
+
   /* Background and UI colors */
   --vscode-background: #ffffff;
   --vscode-foreground: #616161;
@@ -183,6 +187,10 @@
   --vscode-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
   --vscode-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.22);
 
+  /* Motion / animation */
+  --vscode-motion-duration: 0.3s;
+  --vscode-motion-easing: ease;
+
   /* Background and UI colors */
   --vscode-background: #1f1f1f;
   --vscode-foreground: #cccccc;
@@ -282,7 +290,7 @@ img, svg {
 
     padding: 12px 16px;
     border-bottom: 1px solid var(--vscode-editorGroup-border);
-    transition: background-color 0.2s;
+    transition: background-color var(--vscode-motion-duration, 0.2s) var(--vscode-motion-easing, ease);
     background-color: var(--vscode-sideBar-background);
 }
 
