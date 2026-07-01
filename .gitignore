@@ -43,3 +43,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Build generated files
+packages/assistant/src/inlined-styles.ts
