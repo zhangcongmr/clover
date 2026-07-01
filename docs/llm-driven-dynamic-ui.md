@@ -323,3 +323,93 @@ ThemeService 构造器 / AppComponent.ngOnInit 中：
 | `explorer/*.css` | 树项/标签 `font-size` |
 | `ast-tree/*.css` | 树标签 `font-size` |
 | `terminal/*.css` | `font-family` + `font-size` |
+
+---
+
+# 动态圆角（Border-Radius）方案
+
+## 目标
+
+通过 LLM 驱动 `submitThemePrompt()` 流程，在生成颜色和字体的同时动态生成 UI 圆角风格，支持尖锐/圆润/现代等不同风格。
+
+## 圆角 CSS 变量
+
+| 变量名 | 默认值 | 适用范围 |
+|--------|--------|----------|
+| `--vscode-radius-sm` | `4px` | 滚动条滑块、徽章、树节点、菜单、进度条、tab 拖拽预览、小按钮 |
+| `--vscode-radius-md` | `10px` | 按钮、输入框、文本区、select 菜单、弹窗 |
+| `--vscode-radius-lg` | `16px` | 面板、对话框、大卡片 |
+| `--vscode-radius-pill` | `9999px` | 胶囊/药丸形元素（搜索输入框、标签） |
+
+## JSON Schema 扩展
+
+LLM 响应 JSON 新增 `radius` 字段：
+
+```json
+{
+  "radius": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "16px"
+  }
+}
+```
+
+system prompt 约束：
+- `sm`: 小圆角，范围 2px-8px
+- `md`: 中圆角，范围 4px-16px
+- `lg`: 大圆角，范围 8px-24px
+- `pill`（9999px）固定，无需生成
+- 风格映射：
+  - 尖锐/科技感 → sm:2px, md:4px, lg:8px
+  - 柔和/圆润 → sm:6px, md:12px, lg:20px
+  - 现代/简洁 → sm:4px, md:8px, lg:16px
+
+## 映射函数 mapRadiusToCss()
+
+| LLM key | CSS 变量 |
+|---------|----------|
+| sm | `--vscode-radius-sm` |
+| md | `--vscode-radius-md` |
+| lg | `--vscode-radius-lg` |
+| pill | `--vscode-radius-pill` |
+
+## 集成点
+
+| 位置 | 操作 |
+|------|------|
+| `styles.css :root` | 添加 4 个 `--vscode-radius-*` 变量默认值 |
+| `styles.css [data-theme="dark"]` | 添加相同默认值 |
+| `AppComponent.getThemeSystemPrompt()` | JSON schema 增加 `radius` + 生成规则 |
+| `AppComponent.parseUnifiedThemeContent()` | 解析 `radius` → 调用 `mapRadiusToCss()` 合并到 cssVars |
+| `ThemeService` | 无改动（color/typography/radius 统一通过 cssVars 走 set/clear/save/load） |
+
+## Phase 1 范围
+
+与字体 Phase 1 的文件集一致，共 18 处替换。
+
+### 替换原则
+
+所有替换遵循：`border-radius: Xpx` → `border-radius: var(--vscode-radius-YY, Xpx)`，其中 fallback 严格等于原值，保证变量失效时 UI 不变。按当前值就近归类语义变量：
+
+| 原值 | 语义变量 | 典型元素 |
+|------|----------|----------|
+| 2px | `--vscode-radius-sm` | 树标签徽章 |
+| 4px | `--vscode-radius-sm` | 滚动条、菜单、tab 拖拽、树过滤框、终端按钮、弹窗提交按钮 |
+| 10px | `--vscode-radius-md` | 主题提示按钮、进度条容器 |
+| 12px | `--vscode-radius-md` | 主题提示文本区 |
+| 16px | `--vscode-radius-lg` | 通知面板、主题提示面板、测试面板 |
+| 32px | `--vscode-radius-pill` | 搜索输入框和按钮 |
+| 50% | 保持不动 | 圆形图标 |
+
+### 改动文件清单
+
+| 文件 | 替换数 | 说明 |
+|------|--------|------|
+| `styles.css` | 1 | `.custom-scroll::-webkit-scrollbar-thumb` |
+| `app.component.css` | 9 | 面板/按钮/输入框/进度条/搜索 |
+| `ast-menu.component.css` | 1 | 菜单容器 |
+| `ast-tab-group.component.css` | 1 | 拖拽预览 |
+| `ast-tree.component.css` | 3 | 过滤输入框 + 2 个徽章 |
+| `terminal.component.css` | 1 | 控制按钮 |
+| `ast-modal.component.css` | 1 | 提交按钮 |

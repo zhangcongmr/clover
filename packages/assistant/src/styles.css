@@ -33,6 +33,12 @@
   --vscode-badge-font-size: 11px;
   --vscode-small-font-size: 12px;
 
+  /* Border radius */
+  --vscode-radius-sm: 4px;
+  --vscode-radius-md: 10px;
+  --vscode-radius-lg: 16px;
+  --vscode-radius-pill: 9999px;
+
   /* Background and UI colors */
   --vscode-background: #ffffff;
   --vscode-foreground: #616161;
@@ -160,6 +166,12 @@
   --vscode-tree-font-size: 13px;
   --vscode-badge-font-size: 11px;
   --vscode-small-font-size: 12px;
+
+  /* Border radius */
+  --vscode-radius-sm: 4px;
+  --vscode-radius-md: 10px;
+  --vscode-radius-lg: 16px;
+  --vscode-radius-pill: 9999px;
 
   /* Background and UI colors */
   --vscode-background: #1f1f1f;
@@ -298,7 +310,7 @@ img, svg {
 
 .custom-scroll::-webkit-scrollbar-thumb {
   background: #ccc;
-  border-radius: 4px;
+  border-radius: var(--vscode-radius-sm, 4px);
 }
 
 .custom-scroll::-webkit-scrollbar-thumb:hover {

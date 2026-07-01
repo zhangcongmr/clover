@@ -2,7 +2,7 @@
     width: 100%;
     background-color: #fff;
     /* background-image: none; */
-    border-radius: 4px;
+    border-radius: var(--vscode-radius-sm, 4px);
     border: 1px solid #dcdfe6;
     box-sizing: border-box;
     color: #606266;
@@ -65,7 +65,7 @@
     /* green border/background like the screenshot */
     color: #fff;
     font-size: 0.6rem;
-    border-radius: 2px;
+    border-radius: var(--vscode-radius-sm, 2px);
     padding: 0 0.25rem;
     margin-left: 0.25rem;
     top: 2px;
@@ -78,7 +78,7 @@
     /* green border/background like the screenshot */
     color: #fff;
     font-size: 0.6rem;
-    border-radius: 2px;
+    border-radius: var(--vscode-radius-sm, 2px);
     padding: 0 0.25rem;
     margin-left: 0.25rem;
     top: 2px;

@@ -40,6 +40,20 @@ This is a package-level AI instruction file for the `packages/assistant` workspa
 - When refactoring, prioritize `src/app` shared components and token/provider patterns rather than creating unrelated new runtime globals.
 - There is no existing package-specific documentation beyond a placeholder README; rely on code and package manifests.
 
+## Verification
+
+After implementing code changes, run the following to verify correctness:
+
+```bash
+pnpm --filter ./packages/assistant build
+```
+
+This runs `ng build` + `scripts/inline-styles.mjs` + `tsc`, which validates TypeScript compilation, Angular template compilation, and CSS inlining.
+
+### Test command status
+
+`pnpm --filter ./packages/assistant test` (`ng test --watch=false`) has **pre-existing failures** unrelated to feature changes (Chrome extension type stubs missing, Angular 21 API deprecations in spec files). Do not rely on it for verification until the test files are fixed.
+
 ## Useful note
 
 - This package uses both a browser entrypoint and a public library export. Changes to `src/index.ts` or `src/main.common.ts` may affect embedded consumers.

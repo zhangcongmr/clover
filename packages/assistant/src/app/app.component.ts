@@ -424,6 +424,11 @@ RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped i
     "smallSize": "12px"
   },
   "googleFonts": ["Inter", "JetBrains Mono"],
+  "radius": {
+    "sm": "4px",
+    "md": "8px",
+    "lg": "16px"
+  },
   "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
@@ -457,6 +462,12 @@ For typography: generate font styles that match the user's described mood or sty
 
 For googleFonts: if any typography fontFamily/monoFont/headingFont uses a Google Font (e.g., Inter, Roboto, Noto Sans, JetBrains Mono, Fira Code, IBM Plex Mono, Playfair Display, etc.), list the exact font name in this array. Only include the primary font name, not the full font stack. Do NOT list system/web-safe fonts (Arial, Georgia, Times New Roman, Courier New, etc.).
 
+For radius: generate border-radius values (px units) that match the user's described mood, emotion, or style. Provide 3 values:
+- sm: small radius for small UI elements (scrollbar, badges, tree items, progress bar). Range: 2px-8px.
+- md: medium radius for buttons, inputs, select menus, modals. Range: 4px-16px.
+- lg: large radius for panels, dialogs, cards. Range: 8px-24px.
+The pill value (9999px) is fixed and should not be included. Match the emotional mood: intense/angry/tech styles use sharper corners (sm:2, md:4, lg:8), calm/soft/friendly styles use rounder corners (sm:6, md:12, lg:20), balanced/professional styles use moderate values (sm:4, md:8, lg:16).
+
 For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
 
 Include ALL of these extensions in fileIcons: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, sql, yaml, sh, bat, txt, csv, lock, env, git, png, jpg, svg, pdf, zip.
@@ -464,7 +475,7 @@ Include ALL of these extensions in fileIcons: js, ts, json, html, css, py, md, v
 For each fileIcons entry:
 - extension: the file extension without dot
 - iconId: choose from icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-csv, icon-file-php, icon-file-bat
-- svgPath: SVG path d attribute for a 24x24 icon. Use fill="currentColor" and simple, clean geometric paths that form recognizable text or symbols.
+- svgPath: SVG path d attribute for a 24x24 icon. Use fill="currentColor". The paths should reflect both the file type and the user's described mood or emotion. For example, a "calm" mood should use softer, rounded paths; an "angry" or "intense" mood should use sharp, angular paths; a "playful" mood should use organic, curved shapes. Prefer using the file extension text string, its abbreviation, or related file type characteristics as the basis for svgPath generation.
 `;
   }
 
@@ -634,6 +645,13 @@ For each fileIcons entry:
       Object.assign(cssVars, typoCssVars);
     }
 
+    // Process radius
+    const radius = parsed.radius;
+    if (radius && typeof radius === 'object') {
+      const radiusCssVars = this.mapRadiusToCss(radius);
+      Object.assign(cssVars, radiusCssVars);
+    }
+
     // Process googleFonts
     const googleFonts: string[] = [];
     if (Array.isArray(parsed.googleFonts)) {
@@ -753,6 +771,27 @@ For each fileIcons entry:
       if (typeof value !== 'string' || !value.trim()) continue;
       const normalizedKey = key.replace(/[\s_-]/g, '');
       const targets = keyMap[normalizedKey];
+      if (targets) {
+        for (const cssVar of targets) {
+          cssVars[cssVar] = value;
+        }
+      }
+    }
+    return cssVars;
+  }
+
+  private mapRadiusToCss(radius: Record<string, string>): Record<string, string> {
+    const keyMap: Record<string, string[]> = {
+      sm: ['--vscode-radius-sm'],
+      md: ['--vscode-radius-md'],
+      lg: ['--vscode-radius-lg'],
+      pill: ['--vscode-radius-pill'],
+    };
+
+    const cssVars: Record<string, string> = {};
+    for (const [key, value] of Object.entries(radius)) {
+      if (typeof value !== 'string' || !value.trim()) continue;
+      const targets = keyMap[key];
       if (targets) {
         for (const cssVar of targets) {
           cssVars[cssVar] = value;

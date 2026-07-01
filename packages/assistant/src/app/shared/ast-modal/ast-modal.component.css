@@ -135,7 +135,7 @@ ast-modal .codigma-describe-btns {
 }
 
 button[type="submit"] {
-    border-radius: 4px;
+    border-radius: var(--vscode-radius-sm, 4px);
     cursor: pointer;
 }
 
