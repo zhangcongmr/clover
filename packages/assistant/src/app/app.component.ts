@@ -389,7 +389,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private getThemeSystemPrompt(): string {
     return `
-You are a UI theme generation assistant. You MUST open your response with a single JSON code block containing ALL theme and file icon data. Do not output any other text before the JSON block.
+You are a UI theme generation assistant. You MUST open your response with a single JSON code block containing ALL theme, typography, and file icon data. Do not output any other text before the JSON block.
 
 RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped in triple backticks with "json" language identifier, in exactly this format:
 
@@ -403,6 +403,27 @@ RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped i
     "accent": "#0097fb",
     "border": "#3c3c3c"
   },
+  "typography": {
+    "fontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    "fontSize": "14px",
+    "fontWeight": "400",
+    "lineHeight": "1.5",
+    "monoFont": "'Courier New', monospace",
+    "codeFontSize": "13px",
+    "headingFont": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    "headingWeight": "600",
+    "labelSize": "13px",
+    "labelWeight": "400",
+    "inputSize": "14px",
+    "buttonSize": "14px",
+    "buttonWeight": "500",
+    "menuSize": "13px",
+    "tabSize": "13px",
+    "treeSize": "13px",
+    "badgeSize": "11px",
+    "smallSize": "12px"
+  },
+  "googleFonts": ["Inter", "JetBrains Mono"],
   "themeIcon": "M12 2C6.48 2...",
   "fileIcons": [
     {
@@ -416,6 +437,26 @@ RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped i
 
 For colors: provide all 6 values in hex format (e.g., #1e1e1e) that match the user's described theme mood or style. The colors object must contain background, primary, text, surface, accent, border.
 
+For typography: generate font styles that match the user's described mood or style. If using non-web-safe fonts, add the font name to the googleFonts array.
+- fontFamily: primary interface font stack (prefer web-safe or Google Fonts as first choice)
+- fontSize: base font size (typically 14px)
+- fontWeight: base text weight (typically 400)
+- lineHeight: base line height (typically 1.5)
+- monoFont: monospace font stack for code
+- codeFontSize: code/terminal font size (typically 13px)
+- headingFont: heading font family (can differ from body)
+- headingWeight: heading font weight (typically 600)
+- labelSize / labelWeight: UI label font size/weight
+- inputSize: input field font size
+- buttonSize / buttonWeight: button font size/weight
+- menuSize: menu item font size
+- tabSize: tab label font size
+- treeSize: file tree item font size
+- badgeSize: badge/label font size
+- smallSize: secondary text font size
+
+For googleFonts: if any typography fontFamily/monoFont/headingFont uses a Google Font (e.g., Inter, Roboto, Noto Sans, JetBrains Mono, Fira Code, IBM Plex Mono, Playfair Display, etc.), list the exact font name in this array. Only include the primary font name, not the full font stack. Do NOT list system/web-safe fonts (Arial, Georgia, Times New Roman, Courier New, etc.).
+
 For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
 
 Include ALL of these extensions in fileIcons: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, sql, yaml, sh, bat, txt, csv, lock, env, git, png, jpg, svg, pdf, zip.
@@ -423,7 +464,7 @@ Include ALL of these extensions in fileIcons: js, ts, json, html, css, py, md, v
 For each fileIcons entry:
 - extension: the file extension without dot
 - iconId: choose from icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-csv, icon-file-php, icon-file-bat
-- svgPath: SVG path d attribute for a 24x24 icon. Examples: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" (circle), "M12 2L2 22h20L12 2z" (triangle), "M6 2h8l6 6v14H6V2z" (document). Design paths that reflect both the file type and the theme mood. Prefer using the file extension text string, its abbreviation, or related file type characteristics as the basis for svgPath generation. For example: "JS" text for .js files, "TS" text for .ts files, "{ }" brace shape for .json files, "#" hash shape for .css files, "</>" tag shape for .html/.xml files, "PY" text for .py files, "MD" text for .md files, "GO" text for .go files, "RS" text for .rs files, "VUE" or "V" shape for .vue files, "SQL" or database cylinder for .sql files, "TXT" text for .txt files, "SH" text for .sh files, "BAT" text for .bat files, gear shape for .yml/.yaml files, lock shape for .env files, branch shape for .git files, lock shape for .lock files, document shape for .pdf files, archive shape for .zip files, image shape for image files, "CPP" text for .cpp files, "JAVA" or coffee shape for .java files, "PHP" text for .php files. Use fill="currentColor" and simple, clean geometric paths that form recognizable text or symbols.
+- svgPath: SVG path d attribute for a 24x24 icon. Use fill="currentColor" and simple, clean geometric paths that form recognizable text or symbols.
 `;
   }
 
@@ -501,14 +542,15 @@ For each fileIcons entry:
         throw new Error(`请求失败 ${response.status}，请稍后重试`);
       }
 
-      //console.log('生成主题成功', assistantText);
-      const themeData = this.parseUnifiedThemeContent(assistantText);
+      console.log('生成主题成功', assistantText);
+      const result = this.parseUnifiedThemeContent(assistantText);
 
-      if (!themeData) {
+      if (!result) {
         throw new Error('未能从响应中解析出主题变量');
       }
 
-      const cssVars = this.mapThemeKeysToCss(themeData);
+      const { cssVars: rawVars, googleFonts } = result;
+      const cssVars = this.mapThemeKeysToCss(rawVars);
 
       if (!cssVars || Object.keys(cssVars).length === 0) {
         throw new Error('未能从响应中解析出主题变量');
@@ -516,6 +558,11 @@ For each fileIcons entry:
 
       this.themeService.setTheme('custom');
       this.themeService.setThemeVariables(cssVars);
+
+      // Load Google Fonts if needed
+      if (googleFonts.length > 0) {
+        this.themeService.loadGoogleFonts(googleFonts);
+      }
 
       if (Object.keys(customFileIcons).length > 0) {
         const content = this.contentComp();
@@ -536,7 +583,7 @@ For each fileIcons entry:
     }
   }
 
-  private parseUnifiedThemeContent(text: string): Record<string, string> | null {
+  private parseUnifiedThemeContent(text: string): { cssVars: Record<string, string>; googleFonts: string[] } | null {
     const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
     const match = jsonBlockRegex.exec(text);
     if (!match) return null;
@@ -573,14 +620,31 @@ For each fileIcons entry:
     const colors = parsed.colors;
     if (!colors || typeof colors !== 'object') return null;
 
-    const themeColors: Record<string, string> = {};
+    const cssVars: Record<string, string> = {};
     for (const [key, value] of Object.entries(colors)) {
       if (typeof value === 'string' && value.trim()) {
-        themeColors[key.trim()] = value.trim();
+        cssVars[key.trim()] = value.trim();
       }
     }
 
-    return Object.keys(themeColors).length > 0 ? themeColors : null;
+    // Process typography
+    const typography = parsed.typography;
+    if (typography && typeof typography === 'object') {
+      const typoCssVars = this.mapTypographyToCss(typography);
+      Object.assign(cssVars, typoCssVars);
+    }
+
+    // Process googleFonts
+    const googleFonts: string[] = [];
+    if (Array.isArray(parsed.googleFonts)) {
+      for (const name of parsed.googleFonts) {
+        if (typeof name === 'string' && name.trim()) {
+          googleFonts.push(name.trim());
+        }
+      }
+    }
+
+    return Object.keys(cssVars).length > 0 ? { cssVars, googleFonts } : null;
   }
 
   private mapThemeKeysToCss(themeVars: Record<string, string>): Record<string, string> {
@@ -659,6 +723,42 @@ For each fileIcons entry:
       }
     }
 
+    return cssVars;
+  }
+
+  private mapTypographyToCss(typography: Record<string, string>): Record<string, string> {
+    const keyMap: Record<string, string[]> = {
+      fontFamily: ['--vscode-font-family'],
+      fontSize: ['--vscode-font-size'],
+      fontWeight: ['--vscode-font-weight'],
+      lineHeight: ['--vscode-line-height'],
+      monoFont: ['--vscode-font-mono', '--vscode-terminal-font-family'],
+      codeFontSize: ['--vscode-code-font-size', '--vscode-terminal-font-size'],
+      headingFont: ['--vscode-heading-font-family'],
+      headingWeight: ['--vscode-heading-font-weight'],
+      labelSize: ['--vscode-label-font-size'],
+      labelWeight: ['--vscode-label-font-weight'],
+      inputSize: ['--vscode-input-font-size'],
+      buttonSize: ['--vscode-button-font-size'],
+      buttonWeight: ['--vscode-button-font-weight'],
+      menuSize: ['--vscode-menu-font-size'],
+      tabSize: ['--vscode-tab-font-size'],
+      treeSize: ['--vscode-tree-font-size'],
+      badgeSize: ['--vscode-badge-font-size'],
+      smallSize: ['--vscode-small-font-size'],
+    };
+
+    const cssVars: Record<string, string> = {};
+    for (const [key, value] of Object.entries(typography)) {
+      if (typeof value !== 'string' || !value.trim()) continue;
+      const normalizedKey = key.replace(/[\s_-]/g, '');
+      const targets = keyMap[normalizedKey];
+      if (targets) {
+        for (const cssVar of targets) {
+          cssVars[cssVar] = value;
+        }
+      }
+    }
     return cssVars;
   }
 

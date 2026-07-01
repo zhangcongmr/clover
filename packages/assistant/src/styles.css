@@ -5,6 +5,34 @@
 
 /* VS Code Light Modern theme variables */
 :root {
+  /* Base typography */
+  --vscode-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --vscode-font-size: 14px;
+  --vscode-font-weight: 400;
+  --vscode-line-height: 1.5;
+
+  /* Mono typography */
+  --vscode-font-mono: 'Courier New', monospace;
+  --vscode-code-font-size: 13px;
+  --vscode-terminal-font-family: var(--vscode-font-mono);
+  --vscode-terminal-font-size: var(--vscode-code-font-size);
+
+  /* Heading typography */
+  --vscode-heading-font-family: var(--vscode-font-family);
+  --vscode-heading-font-weight: 600;
+
+  /* UI element typography */
+  --vscode-label-font-size: 13px;
+  --vscode-label-font-weight: 400;
+  --vscode-input-font-size: 14px;
+  --vscode-button-font-size: 14px;
+  --vscode-button-font-weight: 500;
+  --vscode-menu-font-size: 13px;
+  --vscode-tab-font-size: 13px;
+  --vscode-tree-font-size: 13px;
+  --vscode-badge-font-size: 11px;
+  --vscode-small-font-size: 12px;
+
   /* Background and UI colors */
   --vscode-background: #ffffff;
   --vscode-foreground: #616161;
@@ -105,6 +133,34 @@
 
 /* VS Code Dark Modern theme variables */
 [data-theme="dark"] {
+  /* Base typography */
+  --vscode-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --vscode-font-size: 14px;
+  --vscode-font-weight: 400;
+  --vscode-line-height: 1.5;
+
+  /* Mono typography */
+  --vscode-font-mono: 'Courier New', monospace;
+  --vscode-code-font-size: 13px;
+  --vscode-terminal-font-family: var(--vscode-font-mono);
+  --vscode-terminal-font-size: var(--vscode-code-font-size);
+
+  /* Heading typography */
+  --vscode-heading-font-family: var(--vscode-font-family);
+  --vscode-heading-font-weight: 600;
+
+  /* UI element typography */
+  --vscode-label-font-size: 13px;
+  --vscode-label-font-weight: 400;
+  --vscode-input-font-size: 14px;
+  --vscode-button-font-size: 14px;
+  --vscode-button-font-weight: 500;
+  --vscode-menu-font-size: 13px;
+  --vscode-tab-font-size: 13px;
+  --vscode-tree-font-size: 13px;
+  --vscode-badge-font-size: 11px;
+  --vscode-small-font-size: 12px;
+
   /* Background and UI colors */
   --vscode-background: #1f1f1f;
   --vscode-foreground: #cccccc;
@@ -159,8 +215,10 @@ body::before,
 body::after {
     height: 100%;
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 75%;
+    font-family: var(--vscode-font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
+    font-size: var(--vscode-font-size, 14px);
+    font-weight: var(--vscode-font-weight, 400);
+    line-height: var(--vscode-line-height, 1.5);
     background-color: var(--vscode-background);
     color: var(--vscode-foreground);
 }

@@ -17,7 +17,7 @@
 
 .terminal-header h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--vscode-font-size, 1rem);
   color: var(--vscode-foreground);
 }
 
@@ -33,7 +33,7 @@
   color: var(--vscode-foreground);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--vscode-small-font-size, 0.8rem);
 }
 
 .btn:hover {
@@ -43,7 +43,7 @@
 .terminal-element {
   flex: 1 1 0;
   /* padding: 10px; */
-  font-family: 'Courier New', monospace;
+  font-family: var(--vscode-font-mono, 'Courier New', monospace);
   overflow-y: hidden;
 }
 

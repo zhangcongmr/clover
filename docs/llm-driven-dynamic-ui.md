@@ -168,3 +168,158 @@ LLM 在响应 content 开头输出 JSON 代码块，格式如下：
 6. **存储方案**：localStorage 而非 IndexedDB — 数据量 2-8 KB，localStorage 5 MB 限制足够且 API 更简单
 7. **图标设计**：文本缩写（JS、TS、CPP）+ 简单几何形状 — 16×16 尺寸下可识别度最高
 8. **文档背景**：使用 opacity 0.06 的矩形提供微妙上下文，前景/符号使用完全透明
+
+---
+
+# 动态字体（Typography）方案
+
+## 目标
+
+通过 LLM 驱动 `submitThemePrompt()` 流程，在生成颜色的同时动态生成整套 UI 字体样式（font-family、font-size、font-weight），支持 Google Fonts 动态加载与持久化。
+
+## 字体 CSS 变量全集
+
+| 类别 | 变量名 | 默认值 |
+|------|--------|--------|
+| Base | `--vscode-font-family` | `'Segoe UI', Tahoma, Geneva, Verdana, sans-serif` |
+| Base | `--vscode-font-size` | `14px` |
+| Base | `--vscode-font-weight` | `400` |
+| Base | `--vscode-line-height` | `1.5` |
+| Mono | `--vscode-font-mono` | `'Courier New', monospace` |
+| Mono | `--vscode-code-font-size` | `13px` |
+| Heading | `--vscode-heading-font-family` | `var(--vscode-font-family)` |
+| Heading | `--vscode-heading-font-weight` | `600` |
+| UI | `--vscode-label-font-size` | `13px` |
+| UI | `--vscode-label-font-weight` | `400` |
+| UI | `--vscode-input-font-size` | `14px` |
+| UI | `--vscode-button-font-size` | `14px` |
+| UI | `--vscode-button-font-weight` | `500` |
+| UI | `--vscode-menu-font-size` | `13px` |
+| UI | `--vscode-tab-font-size` | `13px` |
+| UI | `--vscode-tree-font-size` | `13px` |
+| UI | `--vscode-badge-font-size` | `11px` |
+| UI | `--vscode-small-font-size` | `12px` |
+
+所有变量在 `:root` 和 `[data-theme="dark"]` 中定义相同默认值。
+
+## JSON Schema 扩展
+
+LLM 响应 JSON 新增 `typography` 和 `googleFonts` 字段：
+
+```json
+{
+  "colors": { "...": "..." },
+  "themeIcon": "...",
+  "fileIcons": [...],
+  "typography": {
+    "fontFamily": "'Inter', 'Segoe UI', sans-serif",
+    "fontSize": "14px",
+    "fontWeight": "400",
+    "lineHeight": "1.6",
+    "monoFont": "'JetBrains Mono', 'Fira Code', monospace",
+    "codeFontSize": "13px",
+    "headingFont": "'Inter', 'Segoe UI', sans-serif",
+    "headingWeight": "600",
+    "labelSize": "13px",
+    "inputSize": "14px",
+    "buttonSize": "14px",
+    "buttonWeight": "500",
+    "menuSize": "13px",
+    "tabSize": "13px",
+    "treeSize": "13px",
+    "badgeSize": "11px",
+    "smallSize": "12px"
+  },
+  "googleFonts": ["Inter", "JetBrains Mono"]
+}
+```
+
+system prompt 约束：
+- 推荐非系统字体时，必须将字体名加入 `googleFonts` 数组（只写具体字体名，不含 fallback）
+- `typography` 中的所有字体值必须使用 web-safe family 或 `googleFonts` 中列出的字体名作为首选
+- UI 字号以 `fontSize` 为基准，根据用途语义化调整
+
+## Google Fonts 动态加载
+
+### localStorage 键
+
+| 键 | 值 | 来源 |
+|---|-----|------|
+| `vscode-google-fonts` | `string[]` 字体名数组 | 新增 |
+
+### 加载流程 `loadGoogleFonts(fontNames: string[])`
+
+```
+1. 每个字体名 → URL: https://fonts.googleapis.com/css2?family=FONT:wght@400;500;600;700&display=swap
+2. 检查 <head> 是否已有相同 href 的 <link>，避免重复
+3. 无则创建 <link rel="stylesheet" href="URL" data-vscode-font="true">
+4. 序列化写入 localStorage vscode-google-fonts
+```
+
+### 清理流程 `removeGoogleFonts()`
+
+```
+1. 查找 <link[data-vscode-font]> 全部移除
+2. 清除 localStorage vscode-google-fonts
+```
+
+### 页面启动恢复
+
+```
+ThemeService 构造器 / AppComponent.ngOnInit 中：
+  1. 加载 vscode-theme-vars（恢复所有 CSS 变量，含字体）
+  2. 读取 vscode-google-fonts，存在则调用 loadGoogleFonts()
+```
+
+## 映射函数 mapTypographyToCss()
+
+| LLM key | CSS 变量 |
+|---------|----------|
+| fontFamily | `--vscode-font-family` |
+| fontSize | `--vscode-font-size` |
+| fontWeight | `--vscode-font-weight` |
+| lineHeight | `--vscode-line-height` |
+| monoFont | `--vscode-font-mono`, `--vscode-terminal-font-family` |
+| codeFontSize | `--vscode-code-font-size`, `--vscode-terminal-font-size` |
+| headingFont | `--vscode-heading-font-family` |
+| headingWeight | `--vscode-heading-font-weight` |
+| labelSize | `--vscode-label-font-size` |
+| labelWeight | `--vscode-label-font-weight` |
+| inputSize | `--vscode-input-font-size` |
+| buttonSize | `--vscode-button-font-size` |
+| buttonWeight | `--vscode-button-font-weight` |
+| menuSize | `--vscode-menu-font-size` |
+| tabSize | `--vscode-tab-font-size` |
+| treeSize | `--vscode-tree-font-size` |
+| badgeSize | `--vscode-badge-font-size` |
+| smallSize | `--vscode-small-font-size` |
+
+## 集成点
+
+| 位置 | 操作 |
+|------|------|
+| `styles.css :root` | 添加所有字体变量默认值；body 改用 `var()` |
+| `styles.css [data-theme="dark"]` | 添加所有字体变量默认值 |
+| `ThemeService.setThemeVariables()` | 无需修改（颜色/字体统一注入） |
+| `ThemeService` | 新增 `loadGoogleFonts()` / `removeGoogleFonts()` |
+| `AppComponent.getThemeSystemPrompt()` | 更新 JSON schema 增加 typography 说明 |
+| `AppComponent.parseUnifiedThemeContent()` | 解析 `typography` 和 `googleFonts` |
+| `AppComponent.generateThemeFromPrompt()` | 成功后调用字体加载 |
+| `AppComponent.toggleTheme()` | 调用 `removeGoogleFonts()` |
+| 核心组件 CSS | 用 `var(--vscode-xxx)` 替换硬编码 |
+
+## Phase 1 范围
+
+只改全局 body 和核心布局组件，不包括编辑器（notebook Shadow DOM 字体）、feature 组件（user-center、settings）。
+
+| 文件 | 改动 |
+|------|------|
+| `styles.css` | 字体变量 + body 使用 var() |
+| `theme.service.ts` | Google Fonts 加载/清理/持久化 |
+| `app.component.ts` | typography 解析/映射 + system prompt 更新 |
+| `app.component.css` | 布局元素用 var() |
+| `ast-tab-group/*.css` | tab 标签 `font-size` |
+| `ast-menu/*.css` | 菜单项 `font-size` |
+| `explorer/*.css` | 树项/标签 `font-size` |
+| `ast-tree/*.css` | 树标签 `font-size` |
+| `terminal/*.css` | `font-family` + `font-size` |

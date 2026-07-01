@@ -10,7 +10,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   min-width: 160px;
-  font-size: 13px;
+  font-size: var(--vscode-menu-font-size, 13px);
   color: var(--vscode-foreground);
 }
 
