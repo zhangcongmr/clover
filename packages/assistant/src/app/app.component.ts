@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -40,6 +40,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   protected notificationService = inject(NotificationService);
   contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
+  injector = inject(Injector);
 
   title = 'luxio';
   luxioAppTabId: any;
@@ -270,15 +271,17 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     // 将已保存的文件图标应用到当前树数据
     if (Object.keys(customFileIcons).length > 0) {
-      afterNextRender(() => {
-        const content = this.contentComp();
-        if (content) {
-          const data = content.dataList();
-          if (data && data.length > 0) {
-            computeFileIcons(data);
-            content.dataList.set([...data]);
+      runInInjectionContext(this.injector, () => {
+        afterNextRender(() => {
+          const content = this.contentComp();
+          if (content) {
+            const data = content.dataList();
+            if (data && data.length > 0) {
+              computeFileIcons(data);
+              content.dataList.set([...data]);
+            }
           }
-        }
+        });
       });
     }
   }
