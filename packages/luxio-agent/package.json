@@ -1,0 +1,43 @@
+{
+  "name": "@luxio/agent",
+  "version": "0.1.0",
+  "description": "Local proxy agent for Luxio Web App - provides file system access and PTY terminal",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "luxio-agent": "./bin/luxio-agent.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "echo \"No tests\" && exit 0",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "luxio",
+    "agent",
+    "pty",
+    "terminal",
+    "file-system",
+    "websocket"
+  ],
+  "dependencies": {
+    "node-pty": "^1.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/ws": "^8.18.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

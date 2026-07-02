@@ -5,6 +5,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { CoreService } from '../../core.service';
+import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
   selector: 'app-terminal',
@@ -17,6 +18,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   
   @Input() fontSize: number = 14;
   private coreService = inject(CoreService);
+  private localAgentService = inject(LocalAgentService);
   theme = input<string>('light'); // 'dark' or 'light'
   dataList = input<Array<any>>([]);
 
@@ -36,6 +38,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   userName: string = 'Anonymous';
   customCwd: string = "/mnt/storage/";
   containerName: string = "";
+  isLocalProject: boolean = false;
   constructor() {
     effect(() => {
       if (this.theme() !== this.previousTheme) {
@@ -50,7 +53,16 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     if (dataList.length > 0) {
       const docObj = dataList[0];
       this.userName = this.coreService.userData?.username || "Anonymous";
-      this.customCwd = "/mnt/storage/" + docObj.label;
+
+      // 检测是否为本地项目
+      this.isLocalProject = docObj.isLocal === true;
+
+      if (this.isLocalProject) {
+        // 本地项目：使用节点 label 作为 cwd（相对于 Agent workspace）
+        this.customCwd = docObj.label;
+      } else {
+        this.customCwd = "/mnt/storage/" + docObj.label;
+      }
       this.containerName = 'con-' + this.userName + '-' + docObj.label;
     }
   }
@@ -58,12 +70,12 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     // Initialize the terminal
     this.initializeTerminal();
-    // Add welcome message after view initialization
-    setTimeout(() => {
-      // this.terminal.writeln('Connecting to terminal server...');
-    }, 100);
-    // Connect to WebSocket
-    this.connectWebSocket();
+    // Connect to WebSocket (local or remote)
+    if (this.isLocalProject) {
+      this.connectLocalPty();
+    } else {
+      this.connectWebSocket();
+    }
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         this.fitAddon.fit();
@@ -73,7 +85,6 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const terminal = this.terminalElement.nativeElement;
     if (terminal) {
       this.resizeObserver.observe(terminal);
-      // 保存 observer 以便 ngOnDestroy 中 disconnect（可选）
     }
   }
 
@@ -125,16 +136,25 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Handle terminal resize events
     this.terminal.onResize((size) => {
-      if (!this.pid) {
-        return;
+      if (this.isLocalProject) {
+        // 本地Agent：通过WS发送resize消息
+        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+          this.websocket.send(JSON.stringify({
+            type: 'resize',
+            cols: size.cols,
+            rows: size.rows
+          }));
+        }
+      } else {
+        // 远程服务器：使用HTTP API
+        if (!this.pid) return;
+        const cols = size.cols;
+        const rows = size.rows;
+        const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
+        const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
+        const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=' + this.containerName;
+        fetch(url, { method: 'POST' });
       }
-      const cols = size.cols;
-      const rows = size.rows;
-      const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
-      const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-      const url = '/terminals/' + this.pid + '/size?cols=' + cols + '&rows=' + rows + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&name=' + this.containerName;
-
-      fetch(url, { method: 'POST' });
     });
   }
 
@@ -155,10 +175,47 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.websocket.onopen = (event) => {
       this.isConnected = true;
       console.log('WebSocket connected');
-      // Optionally send an initial message or setup
       this.attachAddon = new AttachAddon(this.websocket!);
       this.terminal.loadAddon(this.attachAddon);
     };
+  }
+
+  // 连接到本地 Agent PTY
+  private async connectLocalPty(): Promise<void> {
+    try {
+      // 获取 token
+      const token = await this.localAgentService.getToken();
+      const agentUrl = this.localAgentService.getAgentUrl();
+      const wsUrl = `${agentUrl.replace(/^http/, 'ws')}?token=${token}`;
+
+      this.websocket = new WebSocket(wsUrl);
+
+      this.websocket.onopen = () => {
+        // 发送 PTY 初始化消息
+        this.websocket!.send(JSON.stringify({
+          type: 'pty',
+          cols: this.terminal.cols,
+          rows: this.terminal.rows,
+          cwd: this.customCwd
+        }));
+
+        // PTY 输出 → xterm（通过 AttachAddon）
+        this.attachAddon = new AttachAddon(this.websocket!);
+        this.terminal.loadAddon(this.attachAddon);
+        this.isConnected = true;
+        console.log('[Terminal] Connected to local agent PTY');
+      };
+
+      this.websocket.onerror = (err) => {
+        console.error('[Terminal] Local agent PTY error:', err);
+      };
+
+      this.websocket.onclose = () => {
+        this.isConnected = false;
+      };
+    } catch (err) {
+      console.error('[Terminal] Failed to connect to local agent PTY:', err);
+    }
   }
 
   private applyTheme(): void {

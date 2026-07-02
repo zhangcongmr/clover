@@ -23,6 +23,8 @@ import { NotificationService } from '../../shared/notification/notification.serv
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';
 import { normalizeApiSpec } from "api-render-ui"
+import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
+
 interface WebSocketRequest {
   action: string;
   objectKey: string;
@@ -57,6 +59,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   public myConfigService = inject(MyConfigService)
   public coreService = inject(CoreService);
   private notificationService = inject(NotificationService);
+  private localAgentService = inject(LocalAgentService);
+
+  // 本地项目检测
+  isLocalProject = signal(false);
 
   // lock state for the entire content, which can be set based on user permissions or other factors; when true, all nodes are effectively read-only and UI will reflect this state
   isLocked: boolean = false;
@@ -186,6 +192,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.dataList.set([]);
     }
 
+    // 检测是否为本地项目
+    this.checkIsLocalProject();
+
     this.generateWelcomeContent();
 
     // 启动自动刷新功能
@@ -208,6 +217,39 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (this.wsConnection) {
       this.wsConnection.close();
       this.wsConnection = null;
+    }
+
+    // 断开本地Agent连接
+    this.localAgentService.disconnect();
+  }
+
+  // 检测是否为本地项目（根节点 isLocal = true）
+  private checkIsLocalProject() {
+    const list = this.dataList();
+    const isLocal = list.length > 0 && list[0].isLocal === true;
+    this.isLocalProject.set(isLocal);
+
+    if (isLocal) {
+      this.initLocalAgentConnection();
+    }
+  }
+
+  // 初始化本地Agent连接（含自动探测）
+  private async initLocalAgentConnection() {
+    try {
+      // 先探测可用的 Agent 端口
+      const found = await this.localAgentService.probeAndConnect();
+      if (found) {
+        await this.localAgentService.connectFileService();
+        console.log('[Content] Connected to local agent at', this.localAgentService.getAgentUrl());
+      } else {
+        console.warn('[Content] Local agent not found on common ports');
+        this.notificationService.showNotification(
+          'Local agent not running. Start it with: luxio-agent --workspace <path>', 'warning'
+        );
+      }
+    } catch (err) {
+      console.error('[Content] Failed to connect to local agent:', err);
     }
   }
 
@@ -866,22 +908,33 @@ Always use the welcome_greeting tool.`;
    */
   private async refreshNodeContent(targetTab: any) {
     const handle = targetTab.folderHandle;
+
+    // 本地项目：通过 Local Agent 读取文件
+    if (this.isLocalProject() && targetTab.nodeType === 'file') {
+      try {
+        const filePath = this.generateLocalFilePath(targetTab);
+        const content = await this.localAgentService.readFile(filePath);
+        targetTab.content = content;
+        return;
+      } catch (err: any) {
+        console.warn('[Content] Failed to read file via local agent:', err.message);
+        targetTab.content = '';
+        return;
+      }
+    }
+
+    // File System Access API（Chromium）
     if (targetTab.nodeType === 'file' && handle && handle.kind === 'file') {
-      // If this is a file node, refresh its content from the file system
       await this.addProjectComponent()?.setTextContextToNode(handle.name, handle, targetTab);
 
     } else if (targetTab.nodeType === 'file' && (!handle || Object.keys(handle).length === 0)) {
-      // this can happen for files that were created in-app and haven't been saved to disk yet; they won't have a handle until they're saved, so we can just initialize their content to an empty string
-      //Fetch from server if it's a shared tree and the file content is missing, since in that case the file was likely created by another user and won't have a handle in this user's browser until it's saved back to disk at least once
       const filePathUrl = generateDirectoryPath(this.dataList(), targetTab);
       const objectKey = `${this.nodeDef?.username || 'Anonymous'}/${filePathUrl}`;
 
       try {
-        // 使用WebSocket下载文件
         const response = await this.downloadFileViaWebSocket(objectKey);
 
         if (!this.coreService.isBinaryName(targetTab.label)) {
-          // 解码Base64数据
           const binaryData = atob(response.data!);
           const bytes = new Uint8Array(binaryData.length);
           for (let i = 0; i < binaryData.length; i++) {
@@ -895,13 +948,24 @@ Always use the welcome_greeting tool.`;
         }
       } catch (error: any) {
         if (error.success === false && error.message == 'File not found') {
-          targetTab.isDeleted = true; // mark as deleted in UI so user knows it's missing, but keep it visible in case they want to try saving it again which would recreate it on the server
+          targetTab.isDeleted = true;
           console.warn('file not found on server for path ', filePathUrl);
         } else {
           console.warn('failed to fetch file content from server via WebSocket for path ', filePathUrl, error);
         }
       }
     }
+  }
+
+  // 计算本地文件路径（从节点向上遍历到根）
+  private generateLocalFilePath(node: AstTreeNode): string {
+    const pathParts: string[] = [];
+    let current: any = node;
+    while (current) {
+      pathParts.unshift(current.label);
+      current = current.parentItem;
+    }
+    return pathParts.join('/');
   }
 
   async apiSelected(evt: Array<AstTreeNode>) {
@@ -1061,8 +1125,22 @@ Always use the welcome_greeting tool.`;
       console.warn('read-only mode: cannot save text');
       return;
     }
-    // if the tab corresponds to a file from an imported folder and has a handle,
-    // attempt to write the updated content back to disk when in write mode
+
+    // 本地项目：通过 Local Agent 保存文件
+    if (this.isLocalProject() && evt.nodeType === 'file') {
+      try {
+        const filePath = this.generateLocalFilePath(evt);
+        await this.localAgentService.writeFile(filePath, evt.content || '');
+        this.notificationService.showNotification('File saved locally', 'success');
+      } catch (err: any) {
+        console.error('[Content] Failed to save file via local agent:', err);
+        this.notificationService.showNotification(`Failed to save: ${err.message}`, 'error');
+      }
+      this.storeApi();
+      return;
+    }
+
+    // File System Access API（Chromium）
     if (evt.folderHandle && evt.folderHandle.kind === 'file' && evt.mode === 'readwrite') {
       try {
         const writable = await evt.folderHandle.createWritable();
@@ -1072,7 +1150,6 @@ Always use the welcome_greeting tool.`;
         console.error('failed to write file', err);
       }
     } else {
-      // 如果没有folderHandle，则通过WebSocket发送editFile请求到服务端
       await this.saveFileToServer(evt);
     }
 
