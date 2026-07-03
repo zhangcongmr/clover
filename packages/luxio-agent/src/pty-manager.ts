@@ -1,5 +1,6 @@
 import { spawn, type IPty } from 'node-pty';
 import { platform } from 'node:os';
+import { existsSync } from 'node:fs';
 
 export interface PtyInstance {
   pty: IPty;
@@ -26,11 +27,15 @@ export class PtyManager {
     const id = `pty_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const shell = platform() === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/bash');
 
+    // 验证 cwd 存在，不存在则回退到 process.cwd()
+    const validCwd = (cwd && existsSync(cwd)) ? cwd : process.cwd();
+    console.log('[PTY] Spawning shell:', shell, 'cwd:', validCwd);
+
     const pty = spawn(shell, [], {
       name: 'xterm-color',
       cols,
       rows,
-      cwd: cwd || process.cwd(),
+      cwd: validCwd,
       env: process.env as Record<string, string>
     });
 

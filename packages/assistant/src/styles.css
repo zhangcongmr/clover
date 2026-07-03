@@ -90,6 +90,24 @@
   --vscode-cursor-foreground: #616161;
   --vscode-text-selectionBackground: #cce0ff;
 
+  /* Terminal ANSI colors (light theme) */
+  --terminal-ansi-black: #000000;
+  --terminal-ansi-red: #cd3131;
+  --terminal-ansi-green: #00bc00;
+  --terminal-ansi-yellow: #949800;
+  --terminal-ansi-blue: #0451a5;
+  --terminal-ansi-magenta: #bc05bc;
+  --terminal-ansi-cyan: #0598bc;
+  --terminal-ansi-white: #555555;
+  --terminal-ansi-bright-black: #666666;
+  --terminal-ansi-bright-red: #cd3131;
+  --terminal-ansi-bright-green: #14ce14;
+  --terminal-ansi-bright-yellow: #b5ba00;
+  --terminal-ansi-bright-blue: #0451a5;
+  --terminal-ansi-bright-magenta: #bc05bc;
+  --terminal-ansi-bright-cyan: #0598bc;
+  --terminal-ansi-bright-white: #a5a5a5;
+
   --n-100: #ffffff;
   --n-95: #f1f1f1;
   --n-90: #e2e2e2;
@@ -213,6 +231,24 @@
   --vscode-tabborder-background: rgba(0, 0, 0, 0);
   --vscode-cursor-foreground: #ffffff;
   --vscode-text-selectionBackground: #264f78;
+
+  /* Terminal ANSI colors (dark theme) */
+  --terminal-ansi-black: #000000;
+  --terminal-ansi-red: #cd3131;
+  --terminal-ansi-green: #00bc00;
+  --terminal-ansi-yellow: #949800;
+  --terminal-ansi-blue: #0451a5;
+  --terminal-ansi-magenta: #bc05bc;
+  --terminal-ansi-cyan: #0598bc;
+  --terminal-ansi-white: #555555;
+  --terminal-ansi-bright-black: #666666;
+  --terminal-ansi-bright-red: #f44747;
+  --terminal-ansi-bright-green: #b5cea8;
+  --terminal-ansi-bright-yellow: #dcdcaa;
+  --terminal-ansi-bright-blue: #569cd6;
+  --terminal-ansi-bright-magenta: #c586c0;
+  --terminal-ansi-bright-cyan: #9cdcfe;
+  --terminal-ansi-bright-white: #ffffff;
 }
 
 html {

@@ -51,31 +51,17 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     const dataList = this.dataList()
     if (dataList.length > 0) {
-      const docObj = dataList[0];
       this.userName = this.coreService.userData?.username || "Anonymous";
-
-      // 检测是否为本地项目
-      this.isLocalProject = docObj.isLocal === true;
-
-      if (this.isLocalProject) {
-        // 本地项目：使用节点 label 作为 cwd（相对于 Agent workspace）
-        this.customCwd = docObj.label;
-      } else {
-        this.customCwd = "/mnt/storage/" + docObj.label;
-      }
-      this.containerName = 'con-' + this.userName + '-' + docObj.label;
+      this.detectLocalProject(dataList);
     }
   }
 
   ngAfterViewInit(): void {
-    // Initialize the terminal
     this.initializeTerminal();
-    // Connect to WebSocket (local or remote)
-    if (this.isLocalProject) {
-      this.connectLocalPty();
-    } else {
-      this.connectWebSocket();
-    }
+
+    this.detectLocalProject(this.dataList());
+    this.connectTerminal();
+
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         this.fitAddon.fit();
@@ -85,6 +71,29 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const terminal = this.terminalElement.nativeElement;
     if (terminal) {
       this.resizeObserver.observe(terminal);
+    }
+  }
+
+  private detectLocalProject(dataList: Array<any>) {
+    if (dataList.length === 0) return;
+    const docObj = dataList[0];
+    this.userName = this.coreService.userData?.username || "Anonymous";
+    this.isLocalProject = docObj.isLocal === true;
+
+    if (this.isLocalProject) {
+      this.customCwd = docObj.label;
+    } else {
+      this.customCwd = "/mnt/storage/" + docObj.label;
+    }
+    this.containerName = 'con-' + this.userName + '-' + docObj.label;
+  }
+
+  private connectTerminal() {
+    this.isConnected = true;
+    if (this.isLocalProject) {
+      this.connectLocalPty();
+    } else {
+      this.connectWebSocket();
     }
   }
 
@@ -110,11 +119,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.terminal = new Terminal({
       fontSize: this.fontSize,
       cursorBlink: true,
-      windowsPty: true ? {
-        // In a real scenario, these values should be verified on the backend
+      windowsPty: {
         backend: 'conpty',
         buildNumber: 22621
-      } : undefined,
+      },
       // rows: 30,
       // cols: 80,
       theme: this.getTheme(),
@@ -159,31 +167,35 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private async connectWebSocket(): Promise<void> {
-    const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
-    const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-    const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=' + this.containerName
-      + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(this.customCwd), { method: 'POST' });
-    const processId = await res.text();
-    this.pid = processId;
+    try {
+      const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
+      const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
+      const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=' + this.containerName
+        + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(this.customCwd), { method: 'POST' });
+      const processId = await res.text();
+      this.pid = processId;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=' + this.containerName;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=' + this.containerName;
 
-    this.websocket = new WebSocket(wsUrl);
+      this.websocket = new WebSocket(wsUrl);
 
-    this.websocket.onopen = (event) => {
-      this.isConnected = true;
-      console.log('WebSocket connected');
-      this.attachAddon = new AttachAddon(this.websocket!);
-      this.terminal.loadAddon(this.attachAddon);
-    };
+      this.websocket.onopen = (event) => {
+        this.isConnected = true;
+        console.log('WebSocket connected');
+        this.attachAddon = new AttachAddon(this.websocket!);
+        this.terminal.loadAddon(this.attachAddon);
+      };
+    } catch (err) {
+      console.error('[Terminal] Failed to connect to remote terminal:', err);
+      this.terminal.writeln('\r\n\x1b[33m[Warning] Remote terminal not available in development mode.\x1b[0m');
+    }
   }
 
   // 连接到本地 Agent PTY
   private async connectLocalPty(): Promise<void> {
     try {
-      // 获取 token
       const token = await this.localAgentService.getToken();
       const agentUrl = this.localAgentService.getAgentUrl();
       const wsUrl = `${agentUrl.replace(/^http/, 'ws')}?token=${token}`;
@@ -191,7 +203,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
-        // 发送 PTY 初始化消息
+        console.log('[Terminal] WebSocket opened');
         this.websocket!.send(JSON.stringify({
           type: 'pty',
           cols: this.terminal.cols,
@@ -199,7 +211,6 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
           cwd: this.customCwd
         }));
 
-        // PTY 输出 → xterm（通过 AttachAddon）
         this.attachAddon = new AttachAddon(this.websocket!);
         this.terminal.loadAddon(this.attachAddon);
         this.isConnected = true;
@@ -215,6 +226,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       };
     } catch (err) {
       console.error('[Terminal] Failed to connect to local agent PTY:', err);
+      this.terminal.writeln('\r\n\x1b[31m[Error] Failed to connect to local agent. Make sure luxio-agent is running.\x1b[0m');
     }
   }
 
@@ -234,11 +246,31 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const cursor = computedStyle.getPropertyValue('--vscode-cursor-foreground')?.trim() || '#616161';
     const selectionBackground = computedStyle.getPropertyValue('--vscode-text-selectionBackground')?.trim() || '#cce0ff';
 
+    const getVar = (name: string, fallback: string) =>
+      computedStyle.getPropertyValue(`--${name}`)?.trim() || fallback;
+
     return {
       background: background,
       foreground: foreground,
       cursor: cursor,
-      selectionBackground: selectionBackground
+      selectionBackground: selectionBackground,
+      // ANSI 颜色 - 引用 CSS 变量以适配主题
+      black: getVar('terminal-ansi-black', '#000000'),
+      red: getVar('terminal-ansi-red', '#cd3131'),
+      green: getVar('terminal-ansi-green', '#00bc00'),
+      yellow: getVar('terminal-ansi-yellow', '#949800'),
+      blue: getVar('terminal-ansi-blue', '#0451a5'),
+      magenta: getVar('terminal-ansi-magenta', '#bc05bc'),
+      cyan: getVar('terminal-ansi-cyan', '#0598bc'),
+      white: getVar('terminal-ansi-white', '#555555'),
+      brightBlack: getVar('terminal-ansi-bright-black', '#666666'),
+      brightRed: getVar('terminal-ansi-bright-red', '#cd3131'),
+      brightGreen: getVar('terminal-ansi-bright-green', '#14ce14'),
+      brightYellow: getVar('terminal-ansi-bright-yellow', '#b5ba00'),
+      brightBlue: getVar('terminal-ansi-bright-blue', '#0451a5'),
+      brightMagenta: getVar('terminal-ansi-bright-magenta', '#bc05bc'),
+      brightCyan: getVar('terminal-ansi-bright-cyan', '#0598bc'),
+      brightWhite: getVar('terminal-ansi-bright-white', '#a5a5a5'),
     }
   }
 }

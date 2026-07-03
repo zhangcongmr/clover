@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
+import { isAbsolute, join } from 'node:path';
 import type { Server } from 'node:http';
 import { TokenManager } from './auth.js';
 import { FileService } from './file-service.js';
@@ -71,6 +72,21 @@ export class AgentServer {
 
   private handleHttpRequest(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const origin = req.headers.origin || '';
+    const allowed = this.config.allowedOrigins || DEFAULT_ALLOWED_ORIGINS;
+    const corsOrigin = origin && allowed.some(o => origin.startsWith(o)) ? origin : allowed[0];
+
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
 
     if (url.pathname === '/token' && req.method === 'GET') {
       this.handleTokenRequest(req, res);
@@ -103,10 +119,7 @@ export class AgentServer {
       expiresIn: Math.round((expiresAt - Date.now()) / 1000)
     };
 
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': origin || '*'
-    });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(response));
   }
 
@@ -148,12 +161,17 @@ export class AgentServer {
           if (msg.type === 'pty') {
             connectionType = 'pty';
             const ptyMsg = msg as PtyInitMessage;
-            const cwd = ptyMsg.cwd || this.config.workspacePath;
+            // cwd 为相对路径时，拼接到 workspace 下
+            const cwd = ptyMsg.cwd
+              ? (isAbsolute(ptyMsg.cwd) ? ptyMsg.cwd : join(this.config.workspacePath, ptyMsg.cwd))
+              : this.config.workspacePath;
+            console.log('[PTY] Creating with cwd:', cwd);
             const instance = this.ptyManager.create(ptyMsg.cols, ptyMsg.rows, cwd);
             ptyId = instance.id;
 
             // PTY 输出 → WS
             instance.pty.onData((output: string) => {
+              console.log('[PTY] Output:', JSON.stringify(output.substring(0, 50)));
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(output);
               }
@@ -165,13 +183,15 @@ export class AgentServer {
               }
             });
 
-            ws.send(JSON.stringify({ type: 'pty-ready', ptyId: instance.id }));
+            // 不发送 pty-ready 消息，直接让 PTY 输出到终端
             return;
           }
 
           ws.close(4002, 'First message must be file-service or pty');
           return;
-        } catch {
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.error('[Server] Invalid init message:', msg);
           ws.close(4002, 'Invalid init message');
           return;
         }
@@ -207,11 +227,15 @@ export class AgentServer {
             instance.pty.resize(msg.cols, msg.rows);
             return;
           }
-        } catch {
-          // 不是 JSON → 作为 PTY 输入处理
+        } catch (e: unknown) {
+          if (!(e instanceof SyntaxError)) {
+            console.error('[PTY] Unexpected error parsing message:', e);
+          }
+          // SyntaxError → 不是 JSON，作为 PTY 输入处理
         }
 
         // 原始数据 → PTY 输入
+        console.log('[PTY] Raw data type:', typeof messageStr, 'length:', messageStr.length, 'preview:', JSON.stringify(messageStr.substring(0, 100)));
         instance.pty.write(messageStr);
       }
     });

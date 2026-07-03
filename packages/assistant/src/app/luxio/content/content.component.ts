@@ -173,6 +173,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const openedListWithHandles = await this.restoreHandles(docObj.openedList || []);
       this.dataList.set(dataListWithHandles);
       this.openedList.set(openedListWithHandles);
+      this.dataListChangeOutput.emit(this.dataList());
     } else if ('profile' in docObj) { //NodeDef
       if(docObj.profile) {
         const profileObj = JSON.parse(docObj.profile);

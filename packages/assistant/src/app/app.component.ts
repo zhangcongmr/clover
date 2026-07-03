@@ -51,7 +51,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
-  terminalBtnShow = false;
+  terminalBtnShow = true;
   terminalPanelShow = false;
   themePromptOpen = false;
   themePromptText = '';
@@ -1184,7 +1184,7 @@ For each fileIcons entry:
     if (dataList.length > 0) {
       const docObj = dataList[0];
       setTimeout(() => {
-        this.terminalBtnShow = !docObj.isLocked;
+        // this.terminalBtnShow = !docObj.isLocked;
       }, 0);
     }
   }
