@@ -29,7 +29,6 @@ export class PtyManager {
 
     // 验证 cwd 存在，不存在则回退到 process.cwd()
     const validCwd = (cwd && existsSync(cwd)) ? cwd : process.cwd();
-    console.log('[PTY] Spawning shell:', shell, 'cwd:', validCwd);
 
     const pty = spawn(shell, [], {
       name: 'xterm-color',

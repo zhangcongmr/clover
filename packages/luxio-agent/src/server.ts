@@ -178,13 +178,11 @@ export class AgentServer {
             } else {
               cwd = this.config.workspacePath;
             }
-            console.log('[PTY] Creating with cwd:', cwd);
             const instance = this.ptyManager.create(ptyMsg.cols, ptyMsg.rows, cwd);
             ptyId = instance.id;
 
             // PTY 输出 → WS
             instance.pty.onData((output: string) => {
-              console.log('[PTY] Output:', JSON.stringify(output.substring(0, 50)));
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(output);
               }
@@ -248,7 +246,6 @@ export class AgentServer {
         }
 
         // 原始数据 → PTY 输入
-        console.log('[PTY] Raw data type:', typeof messageStr, 'length:', messageStr.length, 'preview:', JSON.stringify(messageStr.substring(0, 100)));
         instance.pty.write(messageStr);
       }
     });
