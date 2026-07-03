@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { WebSocketServer, WebSocket, type RawData } from 'ws';
 import { isAbsolute, join } from 'node:path';
+import { existsSync } from 'node:fs';
 import type { Server } from 'node:http';
 import { TokenManager } from './auth.js';
 import { FileService } from './file-service.js';
@@ -66,7 +67,12 @@ export class AgentServer {
         this.ptyManager.destroy(instance.id);
       }
       this.wss.close();
-      this.server.close(() => resolve());
+      // 超时强制退出，防止 close 回调不触发导致卡住
+      const timer = setTimeout(() => resolve(), 2000);
+      this.server.close(() => {
+        clearTimeout(timer);
+        resolve();
+      });
     });
   }
 
@@ -161,10 +167,17 @@ export class AgentServer {
           if (msg.type === 'pty') {
             connectionType = 'pty';
             const ptyMsg = msg as PtyInitMessage;
-            // cwd 为相对路径时，拼接到 workspace 下
-            const cwd = ptyMsg.cwd
-              ? (isAbsolute(ptyMsg.cwd) ? ptyMsg.cwd : join(this.config.workspacePath, ptyMsg.cwd))
-              : this.config.workspacePath;
+            // cwd 解析：优先绝对路径，其次拼接 workspace，最后尝试直接使用（兼容各种场景）
+            let cwd: string;
+            if (ptyMsg.cwd && isAbsolute(ptyMsg.cwd)) {
+              cwd = ptyMsg.cwd;
+            } else if (ptyMsg.cwd && existsSync(join(this.config.workspacePath, ptyMsg.cwd))) {
+              cwd = join(this.config.workspacePath, ptyMsg.cwd);
+            } else if (ptyMsg.cwd && existsSync(ptyMsg.cwd)) {
+              cwd = ptyMsg.cwd;
+            } else {
+              cwd = this.config.workspacePath;
+            }
             console.log('[PTY] Creating with cwd:', cwd);
             const instance = this.ptyManager.create(ptyMsg.cols, ptyMsg.rows, cwd);
             ptyId = instance.id;
