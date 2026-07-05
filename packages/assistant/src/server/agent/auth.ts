@@ -3,7 +3,6 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 export class TokenManager {
   private secret: string;
   private ttl: number;
-  private usedTokens = new Set<string>();
 
   constructor(secret?: string, ttlSeconds: number = 30) {
     this.secret = secret || randomBytes(32).toString('hex');
@@ -19,11 +18,6 @@ export class TokenManager {
   }
 
   verify(token: string): boolean {
-    if (this.usedTokens.has(token)) {
-      this.usedTokens.delete(token);
-      return false;
-    }
-
     try {
       const decoded = Buffer.from(token, 'base64url').toString('utf-8');
       const parts = decoded.split(':');
@@ -40,19 +34,9 @@ export class TokenManager {
       const expBuf = Buffer.from(expectedSig, 'hex');
       if (sigBuf.length !== expBuf.length) return false;
 
-      const valid = timingSafeEqual(sigBuf, expBuf);
-      if (valid) {
-        this.usedTokens.add(token);
-      }
-      return valid;
+      return timingSafeEqual(sigBuf, expBuf);
     } catch {
       return false;
-    }
-  }
-
-  cleanup() {
-    if (this.usedTokens.size > 10000) {
-      this.usedTokens.clear();
     }
   }
 }
