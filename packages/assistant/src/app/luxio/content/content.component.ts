@@ -9,7 +9,7 @@ import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab
 import { file, write } from 'opfs-tools';
 import {
   AstTreeComponent, assignDeepLevel, pickParentObject, expandAncestorsIfActive, 
-  findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath } from '../../shared/ast-tree/ast-tree.component';
+  findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath, computeFileIcons } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
@@ -801,12 +801,36 @@ Always use the welcome_greeting tool.`;
       assignDeepLevel([rootNode]);
       this.assignDeepParent([rootNode]);
       this.dataList.set([rootNode]);
+      this.checkIsLocalProject();
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
       console.error('[Content] Failed to open folder via Node API:', err);
       this.notificationService.showNotification('Failed to open folder', 'error');
     }
   }
+
+  // Hook: lazy-load children for local project folder nodes
+  onFolderBeforeToggle = async (node: AstTreeNode) => {
+    if (!this.isLocalProject() || node.children?.length > 0) return;
+
+    const parts: string[] = [];
+    let cur: any = node;
+    while (cur.parentItem) { parts.unshift(cur.label); cur = cur.parentItem; }
+    const rootPath = (cur.rootPath || node.rootPath || '').replace(/\/+$/, '');
+    const fullPath = rootPath + '/' + parts.join('/');
+
+    const items = await this.localAgentService.listDir(fullPath);
+    node.children = items.map((item: any) => ({
+      id: this.uuid(),
+      label: item.name,
+      rootPath: node.rootPath,
+      nodeType: item.kind === 'directory' ? 'folder' : 'file',
+      children: [],
+      parentItem: node,
+    }));
+    assignDeepLevel(node.children, (node.deepLevel || 0) + 1);
+    computeFileIcons(node.children);
+  };
 
   // Open file via Node.js API (SSR readFile endpoint)
   async openFileViaNodeApi(path: string) {
@@ -824,6 +848,7 @@ Always use the welcome_greeting tool.`;
       };
       assignDeepLevel([fileNode]);
       this.dataList.set([fileNode]);
+      this.checkIsLocalProject();
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
       console.error('[Content] Failed to open file via Node API:', err);

@@ -97,7 +97,7 @@
               }
             </div>
           </div>
-          <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
+          <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" [folderBeforeToggle]="onFolderBeforeToggle" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
           <ast-modal [title]="'Share on Community'" [visible]="shareOnMenuVisible" [modalSize]="'small'" (close)="shareOnMenuVisible = false">
             <div class="codigma-ast-modal-body">
               <div class="ShareOnMessage">

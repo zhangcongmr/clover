@@ -24,6 +24,10 @@
         <div style="text-align: left;font-size: 10px;" [style.color]="item.symbolColor">
           {{item.symbol}}
         </div>
+      } @else if(item.nodeType=='folder') {
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6b7280;">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
       } @else if(item.nodeType=='file') {
         <svg class="icon" width="16" height="16">
           <use [attr.href]="'#' + (item.fileIcon || 'icon-file')"></use>
@@ -57,6 +61,10 @@
           <div style="text-align: left;font-size: 10px;" [style.color]="childItem.symbolColor">
             {{childItem.symbol}}
           </div>
+        } @else if(childItem.nodeType=='folder') {
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6b7280;">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
         } @else if(childItem.nodeType=='file') {
           <svg class="icon" width="16" height="16">
             <use [attr.href]="'#' + (childItem.fileIcon || 'icon-file')"></use>
@@ -72,6 +80,7 @@
     @if ((childItem.children || []).length > 0) {
       <div ast-tree [data]="childItem.children" [dataType]="'subData'" [style.display]="(item.isExpanded && childItem.isExpanded)?'block':'none'"
       [selectedNodeType]="selectedNodeType()"
+      [folderBeforeToggle]="folderBeforeToggle()"
       (nodeClick)="elementClick($event)"
       (showContextMenuClick)="showContextMenu($event)"
       (outOfRenameClick)="outOfRename($event)"></div>

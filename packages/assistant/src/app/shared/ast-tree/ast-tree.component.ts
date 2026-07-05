@@ -24,6 +24,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
   readonly fobiddenContextMenu = input(false)
   // 内部使用，标识当前是否处于锁定状态
   readonly isLocked = input<boolean>(false);
+  readonly folderBeforeToggle = input<(node: AstTreeNode) => Promise<void>>();
   selectedNodeType = model<string>('') //内部使用，标识当前选中的节点类型  TreeNodeType  暂时闲置未使用
 
   readonly nodeClick = output<AstTreeNode>();
@@ -91,7 +92,14 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
     this.selectedNodeType.set(item['nodeType']);
     if(item.nodeType == 'folder') {
-      item.isExpanded = !item.isExpanded;
+      const wasExpanded = item.isExpanded;
+      item.isExpanded = !wasExpanded;
+
+      const hook = this.folderBeforeToggle();
+      if (!wasExpanded && hook) {
+        hook(item).then(() => this.data.update(d => [...d]));
+      }
+
       const activeNode = findActiveNode(this.data(), 'exclude-folder');
       reset(this.data(), ResetType.onlyResetFolder)
       item['isActive'] = true;
@@ -675,7 +683,7 @@ export function expandAncestorsIfActive(item: AstTreeNode, datas: AstTreeNode[])
    * @returns 
    */
 export function pickParentObject(obj: any) {
-  const keys = ['deepLevel', 'id', 'label', 'nodeType']
+  const keys = ['deepLevel', 'id', 'label', 'nodeType', 'rootPath']
   return pick(obj, keys);
 }
 

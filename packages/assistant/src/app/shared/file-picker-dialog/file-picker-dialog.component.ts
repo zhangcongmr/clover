@@ -52,7 +52,7 @@ export class FilePickerDialogComponent {
         'bin', 'obj', 'vendor', 'third_party', 'jspm_packages'
       ]);
 
-      const rootNode = this.scanNodeToTreeNode(data, path);
+      const rootNode = this.scanNodeToTreeNode(data, path, undefined, true);
       this.treeData.set([rootNode]);
     } catch (err) {
       console.error('Failed to load directory:', err);
@@ -61,13 +61,13 @@ export class FilePickerDialogComponent {
     }
   }
 
-  private scanNodeToTreeNode(scanData: any, rootPath: string, parent?: AstTreeNode): AstTreeNode {
+  private scanNodeToTreeNode(scanData: any, rootPath: string, parent?: AstTreeNode, isRoot = false): AstTreeNode {
     const node: AstTreeNode = {
       id: this.uuid(),
       label: scanData.name,
       rootPath: rootPath,
       nodeType: scanData.kind === 'directory' ? 'folder' : 'file',
-      isExpanded: false,
+      isExpanded: isRoot,
       children: [],
       parentItem: parent,
     };
@@ -87,17 +87,22 @@ export class FilePickerDialogComponent {
     }
   }
 
-  private async expandFolder(node: AstTreeNode) {
+  async expandFolder(node: AstTreeNode) {
+    if (node.children?.length > 0) return;
     const fullPath = this.getFullPath(node);
     try {
       const data = await this.localAgentService.scanDir(fullPath, 1);
-      node.children = (data.children || []).map((child: any) =>
+      const newChildren = (data.children || []).map((child: any) =>
         this.scanNodeToTreeNode(child, node.rootPath || fullPath, node)
       );
+      node.children = [...newChildren];
+      this.treeData.update(d => [...d]);
     } catch (err) {
       console.error('Failed to expand folder:', err);
     }
   }
+
+  expandFolderFn = (node: AstTreeNode) => this.expandFolder(node);
 
   // Handle click from ast-tree component
   onTreeNodeClick(node: AstTreeNode) {
@@ -131,7 +136,7 @@ export class FilePickerDialogComponent {
       parts.unshift(current.label);
       current = current.parentItem;
     }
-    const rootPath = root.rootPath || '';
+    const rootPath = (root.rootPath || '').replace(/\/+$/, '');
     return rootPath + '/' + parts.join('/');
   }
 
