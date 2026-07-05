@@ -13,81 +13,8 @@
       @if (loading()) {
         <div class="loading">Loading...</div>
       } @else {
-        <div class="tree-list">
-          @for (node of treeData(); track node.id) {
-            @if (node.nodeType === 'folder') {
-              <div class="tree-node folder-node" [class.selected]="selectedNode()?.id === node.id"
-                   (click)="onNodeClick(node)" (dblclick)="onNodeDblClick(node)">
-                <span class="expand-icon" (click)="toggleExpand(node); $event.stopPropagation()">
-                  {{ node.isExpanded ? '&#9660;' : '&#9654;' }}
-                </span>
-                <span class="node-icon">&#128193;</span>
-                <span class="node-label">{{ node.label }}</span>
-              </div>
-              @if (node.isExpanded && node.children) {
-                @for (child of node.children; track child.id) {
-                  <div class="tree-node" [class.selected]="selectedNode()?.id === child.id"
-                       [style.paddingLeft]="'1.5rem'"
-                       (click)="onNodeClick(child)" (dblclick)="onNodeDblClick(child)">
-                    @if (child.nodeType === 'folder') {
-                      <span class="expand-icon" (click)="toggleExpand(child); $event.stopPropagation()">
-                        {{ child.isExpanded ? '&#9660;' : '&#9654;' }}
-                      </span>
-                      <span class="node-icon">&#128193;</span>
-                    } @else {
-                      <span class="expand-icon"></span>
-                      <span class="node-icon">&#128196;</span>
-                    }
-                    <span class="node-label">{{ child.label }}</span>
-                  </div>
-                  @if (child.isExpanded && child.children) {
-                    @for (grand of child.children; track grand.id) {
-                      <div class="tree-node" [class.selected]="selectedNode()?.id === grand.id"
-                           [style.paddingLeft]="'3rem'"
-                           (click)="onNodeClick(grand)" (dblclick)="onNodeDblClick(grand)">
-                        @if (grand.nodeType === 'folder') {
-                          <span class="expand-icon" (click)="toggleExpand(grand); $event.stopPropagation()">
-                            {{ grand.isExpanded ? '&#9660;' : '&#9654;' }}
-                          </span>
-                          <span class="node-icon">&#128193;</span>
-                        } @else {
-                          <span class="expand-icon"></span>
-                          <span class="node-icon">&#128196;</span>
-                        }
-                        <span class="node-label">{{ grand.label }}</span>
-                      </div>
-                      @if (grand.isExpanded && grand.children) {
-                        @for (g4 of grand.children; track g4.id) {
-                          <div class="tree-node" [class.selected]="selectedNode()?.id === g4.id"
-                               [style.paddingLeft]="'4.5rem'"
-                               (click)="onNodeClick(g4)" (dblclick)="onNodeDblClick(g4)">
-                            @if (g4.nodeType === 'folder') {
-                              <span class="expand-icon" (click)="toggleExpand(g4); $event.stopPropagation()">
-                                {{ g4.isExpanded ? '&#9660;' : '&#9654;' }}
-                              </span>
-                              <span class="node-icon">&#128193;</span>
-                            } @else {
-                              <span class="expand-icon"></span>
-                              <span class="node-icon">&#128196;</span>
-                            }
-                            <span class="node-label">{{ g4.label }}</span>
-                          </div>
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            } @else {
-              <div class="tree-node" [class.selected]="selectedNode()?.id === node.id"
-                   (click)="onNodeClick(node)">
-                <span class="expand-icon"></span>
-                <span class="node-icon">&#128196;</span>
-                <span class="node-label">{{ node.label }}</span>
-              </div>
-            }
-          }
-        </div>
+        <div ast-tree [data]="treeData()" [fobiddenContextMenu]="true"
+             (nodeClick)="onTreeNodeClick($event)" class="custom-scroll file-tree"></div>
       }
     </div>
 

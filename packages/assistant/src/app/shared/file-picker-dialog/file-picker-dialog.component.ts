@@ -1,13 +1,14 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../ast-modal/ast-modal.component';
+import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
   selector: 'app-file-picker-dialog',
   standalone: true,
-  imports: [AstModalComponent, FormsModule],
+  imports: [AstModalComponent, AstTreeComponent, FormsModule],
   templateUrl: './file-picker-dialog.component.html',
   styleUrls: ['./file-picker-dialog.component.css']
 })
@@ -98,7 +99,8 @@ export class FilePickerDialogComponent {
     }
   }
 
-  onNodeClick(node: AstTreeNode) {
+  // Handle click from ast-tree component
+  onTreeNodeClick(node: AstTreeNode) {
     if (this.mode() === 'folder' && node.nodeType === 'folder') {
       this.selectedNode.set(node);
     } else if (this.mode() === 'file' && node.nodeType === 'file') {
