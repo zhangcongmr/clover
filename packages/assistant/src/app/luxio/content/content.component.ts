@@ -24,6 +24,7 @@ import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';
 import { normalizeApiSpec } from "api-render-ui"
 import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
+import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 
 interface WebSocketRequest {
   action: string;
@@ -49,12 +50,13 @@ interface WebSocketResponse {
   styleUrls: ['./content.component.css'],
   standalone: true,
   imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent, AstMenuComponent,
-    NoteBookComponent
+    NoteBookComponent, FilePickerDialogComponent
   ]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   readonly sideOpen = model<boolean>(true);
   readonly addProjectComponent = viewChild(AddProjectComponent);
+  readonly filePicker = viewChild(FilePickerDialogComponent);
   readonly currentDisplayViewId = model<number>(1);
   public myConfigService = inject(MyConfigService)
   public coreService = inject(CoreService);
@@ -235,18 +237,16 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
-  // 初始化本地Agent连接（含自动探测）
+  // Initialize local agent connection
   private async initLocalAgentConnection() {
     try {
-      // 先探测可用的 Agent 端口
       const found = await this.localAgentService.probeAndConnect();
       if (found) {
-        await this.localAgentService.connectFileService();
         console.log('[Content] Connected to local agent at', this.localAgentService.getAgentUrl());
       } else {
-        console.warn('[Content] Local agent not found on common ports');
+        console.warn('[Content] Local agent not available');
         this.notificationService.showNotification(
-          'Local agent not running. Start it with: luxio-agent --workspace <path>', 'warning'
+          'Local file system access not available. Configure Agent URL in Settings.', 'warning'
         );
       }
     } catch (err) {
@@ -750,92 +750,84 @@ Always use the welcome_greeting tool.`;
   }
 
   async openFolderInContent(mode: 'read' | 'readwrite' = 'read') {
-    // Delegate folder selection and tree building to the AddProjectComponent
-    const addProject = this.addProjectComponent();
-    if (!addProject) {
-      console.warn('AddProjectComponent not available');
-      return;
-    }
-
-    // ensure environment supports picker
-    if (!('showDirectoryPicker' in window)) {
-      this.notificationService.showNotification('The File System Access API is not supported in this browser.', 'error');
-      return;
-    }
-
-    try {
-      // Keep the directory picker call in the direct click handler stack
-      const folderHandle: any = await (window as any).showDirectoryPicker({ mode });
-      if (!folderHandle) {
-        return;
-      }
-
-      await addProject.fileContentChangedFn([folderHandle]);
-      // grab the results from the child component
-      const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
-
-      assignDeepLevel(rootNode);
-      this.assignDeepParent(rootNode);
-      this.dataList.set(rootNode);
-      try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
-    } catch (err) {
-      console.error('openFolderInContent error', err);
+    // Open the FilePickerDialog for folder selection
+    const picker = this.filePicker();
+    if (picker) {
+      picker.openFolderPicker('/');
     }
   }
 
   async openFileInContent() {
-    const addProject = this.addProjectComponent();
-    if (!addProject) {
-      console.warn('AddProjectComponent not available');
-      return;
+    // Open the FilePickerDialog for file selection
+    const picker = this.filePicker();
+    if (picker) {
+      picker.openFilePicker('/');
     }
-    // Try native file picker first
-    try {
-      if ('showOpenFilePicker' in window) {
-        const folderHandle = await (window as any).showOpenFilePicker({ multiple: true });
-        await addProject.fileContentChangedFn(folderHandle);
-        const rootNode: Array<AstTreeNode> = (addProject as any).directoryTreeData || [];
+  }
 
-        assignDeepLevel(rootNode);
-        this.assignDeepParent(rootNode);
-        this.dataList.set(rootNode);
-        try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
-        return;
-      }
-    } catch (err) {
-      console.warn('showOpenFilePicker failed or unsupported', err);
+  // Callback from FilePickerDialog when a folder is selected
+  async onFilePickerSelected(result: { path: string; kind: 'folder' | 'file' }) {
+    if (result.kind === 'folder') {
+      await this.openFolderViaNodeApi(result.path);
+    } else {
+      await this.openFileViaNodeApi(result.path);
     }
+  }
 
-    // Fallback: use hidden input element
+  // Open folder via Node.js API (SSR scan endpoint)
+  async openFolderViaNodeApi(path: string) {
     try {
-      const input: HTMLInputElement = document.createElement('input');
-      input.type = 'file';
-      input.accept = '*/*';
-      input.onchange = async (ev: any) => {
-        const file = ev.target.files && ev.target.files[0];
-        if (!file) return;
-        const name = file.name;
-        const isBinary = /\.(exe|dll|bin|dat|jpg|jpeg|png|gif|zip|7z|rar|tar|gz|iso)$/i.test(name);
-        let content = '';
-        if (!isBinary) {
-          try { content = await file.text(); } catch (e) { console.warn('fallback read failed', e); }
-        }
-        const node: AstTreeNode = {
+      const data = await this.localAgentService.scanDir(path, 1, [
+        'node_modules', '.git', 'dist', 'build', '__pycache__',
+        '.angular', '.vscode', '.idea', '.vs', 'target', 'out',
+        'coverage', 'logs', 'log', 'tmp', 'temp', 'cache',
+        'bin', 'obj', 'vendor', 'third_party', 'jspm_packages'
+      ]);
+      const rootNode: AstTreeNode = {
+        id: this.uuid(),
+        label: data.name,
+        rootPath: data.absolutePath,
+        isLocal: true,
+        nodeType: 'folder',
+        children: (data.children || []).map((e: any) => ({
           id: this.uuid(),
-          label: name,
-          nodeType: 'file',
-          content: content,
-          children: [],
-          mode: 'read'
-        } as any;
-        assignDeepLevel([node]);
-        this.dataList.set([node]);
-        try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
+          label: e.name,
+          rootPath: data.absolutePath,
+          nodeType: e.kind === 'directory' ? 'folder' : 'file',
+          children: e.kind === 'directory' ? [] : undefined,
+        })),
+        isExpanded: true,
       };
-      // trigger
-      input.click();
+      assignDeepLevel([rootNode]);
+      this.assignDeepParent([rootNode]);
+      this.dataList.set([rootNode]);
+      try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
-      console.error('openFileInContent fallback error', err);
+      console.error('[Content] Failed to open folder via Node API:', err);
+      this.notificationService.showNotification('Failed to open folder', 'error');
+    }
+  }
+
+  // Open file via Node.js API (SSR readFile endpoint)
+  async openFileViaNodeApi(path: string) {
+    try {
+      const content = await this.localAgentService.readFile(path);
+      const fileName = path.split(/[/\\]/).pop() || path;
+      const fileNode: AstTreeNode = {
+        id: this.uuid(),
+        label: fileName,
+        rootPath: path,
+        isLocal: true,
+        nodeType: 'file',
+        content: content,
+        children: [],
+      };
+      assignDeepLevel([fileNode]);
+      this.dataList.set([fileNode]);
+      try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
+    } catch (err) {
+      console.error('[Content] Failed to open file via Node API:', err);
+      this.notificationService.showNotification('Failed to open file', 'error');
     }
   }
 
@@ -958,15 +950,29 @@ Always use the welcome_greeting tool.`;
     }
   }
 
-  // 计算本地文件路径（从节点向上遍历到根）
+  // 计算本地文件路径（使用 rootPath + 相对路径）
   private generateLocalFilePath(node: AstTreeNode): string {
+    const root = this.dataList()[0];
+    const rootPath = root?.rootPath || '';
+    if (!rootPath) {
+      // fallback: old logic
+      const pathParts: string[] = [];
+      let current: any = node;
+      while (current) {
+        pathParts.unshift(current.label);
+        current = current.parentItem;
+      }
+      return pathParts.join('/');
+    }
+
+    // Walk from current node up to root (excluding root itself)
     const pathParts: string[] = [];
     let current: any = node;
-    while (current) {
+    while (current && current !== root) {
       pathParts.unshift(current.label);
       current = current.parentItem;
     }
-    return pathParts.join('/');
+    return rootPath + '/' + pathParts.join('/');
   }
 
   async apiSelected(evt: Array<AstTreeNode>) {

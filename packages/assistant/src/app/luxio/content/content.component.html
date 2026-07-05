@@ -10,6 +10,7 @@
     <input type="text" name="createNewFile" [(ngModel)]="newFileName" (keyup)="newFileKeyUp($event, newFileName)"
       autocomplete="off" required>
   </div>
+  <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
 </div>
 <div style="position: relative;display: flex;width: calc(100vw - 42px);height: 100%;">
   @if (sideOpen()) {
@@ -24,7 +25,7 @@
                 <button (click)="openFolderInContent('readwrite')" style="background:var(--primary-color, rgb(103, 137, 186));color:#fff;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open Folder</button>
                 <button (click)="openFileInContent()" style="background:#e1e1e1;color:#222;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open File</button>
               </div>
-              <div style="margin-top:0.2rem; color:var(--vscode-textSeparator-foreground); font-size:0.9rem;">Opening a folder will close all currently open editors. To keep them open, add a folder instead.</div>
+              <div style="margin-top:0.2rem; color:var(--vscode-textSeparator-foreground); font-size:0.9rem;">Click to browse and select a local folder or file.</div>
             </div>
           </div>
         } @else {

@@ -1,0 +1,107 @@
+<ast-modal [visible]="visible()" [title]="title()" modalSize="large" (close)="cancel()">
+  <div class="file-picker">
+    <!-- Path navigation bar -->
+    <div class="path-bar">
+      <button (click)="goUp()" class="nav-btn" title="Go up">../</button>
+      <input [value]="currentPath()" (keyup.enter)="loadDirectory($any($event.target).value)"
+             class="path-input" placeholder="Enter path...">
+      <button (click)="refresh()" class="nav-btn" title="Refresh">&#x21bb;</button>
+    </div>
+
+    <!-- File tree -->
+    <div class="tree-container">
+      @if (loading()) {
+        <div class="loading">Loading...</div>
+      } @else {
+        <div class="tree-list">
+          @for (node of treeData(); track node.id) {
+            @if (node.nodeType === 'folder') {
+              <div class="tree-node folder-node" [class.selected]="selectedNode()?.id === node.id"
+                   (click)="onNodeClick(node)" (dblclick)="onNodeDblClick(node)">
+                <span class="expand-icon" (click)="toggleExpand(node); $event.stopPropagation()">
+                  {{ node.isExpanded ? '&#9660;' : '&#9654;' }}
+                </span>
+                <span class="node-icon">&#128193;</span>
+                <span class="node-label">{{ node.label }}</span>
+              </div>
+              @if (node.isExpanded && node.children) {
+                @for (child of node.children; track child.id) {
+                  <div class="tree-node" [class.selected]="selectedNode()?.id === child.id"
+                       [style.paddingLeft]="'1.5rem'"
+                       (click)="onNodeClick(child)" (dblclick)="onNodeDblClick(child)">
+                    @if (child.nodeType === 'folder') {
+                      <span class="expand-icon" (click)="toggleExpand(child); $event.stopPropagation()">
+                        {{ child.isExpanded ? '&#9660;' : '&#9654;' }}
+                      </span>
+                      <span class="node-icon">&#128193;</span>
+                    } @else {
+                      <span class="expand-icon"></span>
+                      <span class="node-icon">&#128196;</span>
+                    }
+                    <span class="node-label">{{ child.label }}</span>
+                  </div>
+                  @if (child.isExpanded && child.children) {
+                    @for (grand of child.children; track grand.id) {
+                      <div class="tree-node" [class.selected]="selectedNode()?.id === grand.id"
+                           [style.paddingLeft]="'3rem'"
+                           (click)="onNodeClick(grand)" (dblclick)="onNodeDblClick(grand)">
+                        @if (grand.nodeType === 'folder') {
+                          <span class="expand-icon" (click)="toggleExpand(grand); $event.stopPropagation()">
+                            {{ grand.isExpanded ? '&#9660;' : '&#9654;' }}
+                          </span>
+                          <span class="node-icon">&#128193;</span>
+                        } @else {
+                          <span class="expand-icon"></span>
+                          <span class="node-icon">&#128196;</span>
+                        }
+                        <span class="node-label">{{ grand.label }}</span>
+                      </div>
+                      @if (grand.isExpanded && grand.children) {
+                        @for (g4 of grand.children; track g4.id) {
+                          <div class="tree-node" [class.selected]="selectedNode()?.id === g4.id"
+                               [style.paddingLeft]="'4.5rem'"
+                               (click)="onNodeClick(g4)" (dblclick)="onNodeDblClick(g4)">
+                            @if (g4.nodeType === 'folder') {
+                              <span class="expand-icon" (click)="toggleExpand(g4); $event.stopPropagation()">
+                                {{ g4.isExpanded ? '&#9660;' : '&#9654;' }}
+                              </span>
+                              <span class="node-icon">&#128193;</span>
+                            } @else {
+                              <span class="expand-icon"></span>
+                              <span class="node-icon">&#128196;</span>
+                            }
+                            <span class="node-label">{{ g4.label }}</span>
+                          </div>
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            } @else {
+              <div class="tree-node" [class.selected]="selectedNode()?.id === node.id"
+                   (click)="onNodeClick(node)">
+                <span class="expand-icon"></span>
+                <span class="node-icon">&#128196;</span>
+                <span class="node-label">{{ node.label }}</span>
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Footer buttons -->
+    <div class="dialog-footer">
+      <span class="selected-info">
+        @if (selectedNode()) {
+          Selected: {{ getFullPath(selectedNode()!) }}
+        }
+      </span>
+      <div class="footer-buttons">
+        <button (click)="cancel()" class="btn-cancel">Cancel</button>
+        <button (click)="confirm()" class="btn-confirm" [disabled]="!selectedNode()">Open</button>
+      </div>
+    </div>
+  </div>
+</ast-modal>

@@ -81,7 +81,8 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isLocalProject = docObj.isLocal === true;
 
     if (this.isLocalProject) {
-      this.customCwd = docObj.label;
+      // Use rootPath for local project CWD
+      this.customCwd = docObj.rootPath || docObj.label;
     } else {
       this.customCwd = "/mnt/storage/" + docObj.label;
     }
@@ -193,12 +194,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // 连接到本地 Agent PTY
+  // Connect to local PTY via SSR WebSocket
   private async connectLocalPty(): Promise<void> {
     try {
-      const token = await this.localAgentService.getToken();
-      const agentUrl = this.localAgentService.getAgentUrl();
-      const wsUrl = `${agentUrl.replace(/^http/, 'ws')}?token=${token}`;
+      const wsUrl = await this.localAgentService.getTerminalWsUrl();
 
       this.websocket = new WebSocket(wsUrl);
 
@@ -226,7 +225,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
       };
     } catch (err) {
       console.error('[Terminal] Failed to connect to local agent PTY:', err);
-      this.terminal.writeln('\r\n\x1b[31m[Error] Failed to connect to local agent. Make sure luxio-agent is running.\x1b[0m');
+      this.terminal.writeln('\r\n\x1b[31m[Error] Failed to connect to local agent. Check Agent URL in Settings.\x1b[0m');
     }
   }
 

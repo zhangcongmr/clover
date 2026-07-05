@@ -1,9 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { MyConfigService } from '../../my-config.service';
 
-const DEFAULT_PORTS = [9120, 9121, 9122, 9123];
 const PROBE_TIMEOUT_MS = 1500;
-const REPROBE_INTERVAL_MS = 15000;
 
 export interface LocalFileRequest {
   type: 'file-request';
@@ -27,30 +24,42 @@ export class LocalAgentService {
   private agentUrl = '';
   private cachedToken: string | null = null;
   private tokenExpiry: number = 0;
-  private wsConnection: WebSocket | null = null;
-  private pendingRequests = new Map<string, (res: LocalFileResponse) => void>();
-  private isConnecting = false;
-  private reprobeTimer: any = null;
 
-  /** Agent 可用状态（组件可订阅） */
+  /** Agent availability status (components can subscribe) */
   isAvailable = signal(false);
-  /** Agent 地址 */
+  /** Agent URL */
   connectedUrl = signal<string>('');
 
-  constructor(private myConfigService: MyConfigService) {
-    // 从配置读取自定义 Agent 地址
-    const configUrl = this.myConfigService.getAgentUrl();
-    if (configUrl) {
-      this.agentUrl = configUrl;
+  constructor() {
+    // Read agentUrl from localStorage (UI Settings) - only in browser
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('assistant_agentUrl');
+      if (stored) {
+        this.agentUrl = stored;
+      }
     }
   }
 
-  setAgentUrl(url: string) {
-    this.agentUrl = url;
+  /** Get base URL for API requests (same-origin or agentUrl) */
+  private getBaseUrl(): string {
+    return this.agentUrl || window.location.origin;
   }
 
+  /** Get the configured agentUrl (for display/terminal use) */
   getAgentUrl(): string {
-    return this.agentUrl || `http://127.0.0.1:9120`;
+    return this.agentUrl || window.location.origin;
+  }
+
+  /** Update agentUrl at runtime */
+  setAgentUrl(url: string) {
+    this.agentUrl = url;
+    if (typeof localStorage !== 'undefined') {
+      if (url) {
+        localStorage.setItem('assistant_agentUrl', url);
+      } else {
+        localStorage.removeItem('assistant_agentUrl');
+      }
+    }
   }
 
   async getToken(): Promise<string> {
@@ -58,8 +67,8 @@ export class LocalAgentService {
       return this.cachedToken;
     }
 
-    const url = this.getAgentUrl();
-    const res = await fetch(`${url}/token`);
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/auth/token`);
     if (!res.ok) throw new Error(`Token request failed: ${res.status}`);
     const data = await res.json();
     this.cachedToken = data.token;
@@ -68,201 +77,163 @@ export class LocalAgentService {
   }
 
   async checkAgentAvailable(url?: string): Promise<boolean> {
-    const target = url || this.getAgentUrl();
+    const target = url || this.getBaseUrl();
     try {
-      const res = await fetch(`${target}/health`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+      const res = await fetch(`${target}/api/local/health`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
       return res.ok;
     } catch {
       return false;
     }
   }
 
-  // 自动探测：尝试常见端口，找到可用的 Agent
+  /** Probe and connect to the agent (same-origin or agentUrl) */
   async probeAndConnect(): Promise<boolean> {
-    // 如果已配置固定地址，直接探测
-    if (this.agentUrl) {
-      const ok = await this.checkAgentAvailable(this.agentUrl);
-      this.isAvailable.set(ok);
-      if (ok) this.connectedUrl.set(this.agentUrl);
-      return ok;
-    }
-
-    // 依次探测默认端口
-    for (const port of DEFAULT_PORTS) {
-      const url = `http://127.0.0.1:${port}`;
-      const ok = await this.checkAgentAvailable(url);
-      if (ok) {
-        this.agentUrl = url;
-        this.isAvailable.set(true);
-        this.connectedUrl.set(url);
-        console.log(`[LocalAgent] Found agent at ${url}`);
-        return true;
-      }
-    }
-
-    this.isAvailable.set(false);
-    this.connectedUrl.set('');
-    return false;
+    const ok = await this.checkAgentAvailable();
+    this.isAvailable.set(ok);
+    if (ok) this.connectedUrl.set(this.getBaseUrl());
+    return ok;
   }
 
-  // 启动定期探测
-  startAutoProbe() {
-    this.probeAndConnect();
-    this.reprobeTimer = setInterval(() => {
-      this.probeAndConnect();
-    }, REPROBE_INTERVAL_MS);
+  /** Get WebSocket terminal URL */
+  async getTerminalWsUrl(): Promise<string> {
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const url = new URL(base);
+    const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${url.host}/ws/terminal?token=${token}`;
   }
 
-  // 停止定期探测
-  stopAutoProbe() {
-    if (this.reprobeTimer) {
-      clearInterval(this.reprobeTimer);
-      this.reprobeTimer = null;
-    }
-  }
+  // --- File operations (HTTP) ---
 
-  async connectFileService(): Promise<WebSocket> {
-    if (this.wsConnection && this.wsConnection.readyState === WebSocket.OPEN) {
-      return this.wsConnection;
-    }
-
-    if (this.isConnecting) {
-      return new Promise((resolve) => {
-        const check = setInterval(() => {
-          if (this.wsConnection && this.wsConnection.readyState === WebSocket.OPEN) {
-            clearInterval(check);
-            resolve(this.wsConnection);
-          }
-        }, 100);
-      });
-    }
-
-    this.isConnecting = true;
-
-    try {
-      const token = await this.getToken();
-      const url = this.getAgentUrl();
-      const wsUrl = `${url.replace(/^http/, 'ws')}?token=${token}`;
-
-      return new Promise((resolve, reject) => {
-        const ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-          ws.send(JSON.stringify({ type: 'file-service' }));
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'file-service' && msg.success) {
-              this.wsConnection = ws;
-              this.isConnecting = false;
-              this.isAvailable.set(true);
-              resolve(ws);
-              return;
-            }
-
-            if (msg.requestId && this.pendingRequests.has(msg.requestId)) {
-              const cb = this.pendingRequests.get(msg.requestId)!;
-              this.pendingRequests.delete(msg.requestId);
-              cb(msg);
-            }
-          } catch (e) {
-            console.error('[LocalAgent] Message parse error:', e);
-          }
-        };
-
-        ws.onerror = (err) => {
-          this.isConnecting = false;
-          this.isAvailable.set(false);
-          reject(err);
-        };
-
-        ws.onclose = () => {
-          this.wsConnection = null;
-          this.isConnecting = false;
-          this.pendingRequests.clear();
-        };
-      });
-    } catch (err) {
-      this.isConnecting = false;
-      throw err;
-    }
-  }
-
-  async sendFileRequest(request: LocalFileRequest): Promise<LocalFileResponse> {
-    if (!this.wsConnection || this.wsConnection.readyState !== WebSocket.OPEN) {
-      await this.connectFileService();
-    }
-
-    return new Promise((resolve, reject) => {
-      const requestId = request.requestId || `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      const requestWithId = { ...request, requestId };
-
-      const timeout = setTimeout(() => {
-        this.pendingRequests.delete(requestId);
-        reject(new Error('Request timeout'));
-      }, 30000);
-
-      this.pendingRequests.set(requestId, (response) => {
-        clearTimeout(timeout);
-        if (response.success) {
-          resolve(response);
-        } else {
-          reject(new Error(response.message || 'Request failed'));
-        }
-      });
-
-      this.wsConnection!.send(JSON.stringify(requestWithId));
+  async scanDir(path: string, depth: number = 1, ignore: string[] = []): Promise<any> {
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path, depth, ignore })
     });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
   }
 
   async listDir(path: string): Promise<any[]> {
-    const res = await this.sendFileRequest({ type: 'file-request', action: 'listDir', path });
-    return res.data;
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/listDir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
   }
 
   async readFile(path: string): Promise<string> {
-    const res = await this.sendFileRequest({ type: 'file-request', action: 'readFile', path });
-    return res.data.content;
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/readFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data.content;
   }
 
   async writeFile(path: string, content: string): Promise<void> {
-    await this.sendFileRequest({ type: 'file-request', action: 'writeFile', path, content });
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/writeFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path, content })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
   }
 
   async deleteFile(path: string): Promise<void> {
-    await this.sendFileRequest({ type: 'file-request', action: 'deleteFile', path });
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/deleteFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
   }
 
   async createFile(path: string): Promise<void> {
-    await this.sendFileRequest({ type: 'file-request', action: 'createFile', path });
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/createFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
   }
 
   async createDir(path: string): Promise<void> {
-    await this.sendFileRequest({ type: 'file-request', action: 'createDir', path });
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/createDir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
   }
 
   async rename(oldPath: string, newName: string): Promise<void> {
-    await this.sendFileRequest({ type: 'file-request', action: 'rename', path: oldPath, newName });
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/rename`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path: oldPath, newName })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
   }
 
   async stat(path: string): Promise<any> {
-    const res = await this.sendFileRequest({ type: 'file-request', action: 'stat', path });
-    return res.data;
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/stat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
   }
 
   async exists(path: string): Promise<boolean> {
-    const res = await this.sendFileRequest({ type: 'file-request', action: 'exists', path });
-    return res.data.exists;
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/exists`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data.exists;
   }
 
   disconnect() {
-    this.stopAutoProbe();
-    if (this.wsConnection) {
-      this.wsConnection.close();
-      this.wsConnection = null;
-    }
-    this.pendingRequests.clear();
+    this.cachedToken = null;
+    this.tokenExpiry = 0;
+    this.isAvailable.set(false);
+    this.connectedUrl.set('');
   }
 }

@@ -1,0 +1,140 @@
+.file-picker {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.path-bar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--vscode-widget-border, #ccc);
+}
+
+.nav-btn {
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  background: var(--vscode-button-secondaryBackground, #e1e1e1);
+  border: 1px solid var(--vscode-button-secondaryBorder, #c8c8c8);
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground, #333);
+}
+
+.nav-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #d0d0d0);
+}
+
+.path-input {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--vscode-input-border, #ccc);
+  background: var(--vscode-input-background, #fff);
+  color: var(--vscode-input-foreground, #333);
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.tree-container {
+  flex: 1;
+  overflow: auto;
+  min-height: 200px;
+  max-height: 350px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--vscode-foreground, #333);
+}
+
+.tree-list {
+  padding: 0.25rem 0;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tree-node:hover {
+  background: var(--vscode-list-hoverBackground, #e8e8e8);
+}
+
+.tree-node.selected {
+  background: var(--vscode-list-activeSelectionBackground, #0078d4);
+  color: var(--vscode-list-activeSelectionForeground, #fff);
+}
+
+.expand-icon {
+  width: 1rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--vscode-descriptionForeground, #666);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.node-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.node-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-top: 1px solid var(--vscode-widget-border, #ccc);
+}
+
+.selected-info {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--vscode-descriptionForeground, #666);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 1rem;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-cancel {
+  padding: 0.4rem 1rem;
+  background: var(--vscode-button-secondaryBackground, #e1e1e1);
+  border: 1px solid var(--vscode-button-secondaryBorder, #c8c8c8);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--vscode-button-secondaryForeground, #333);
+}
+
+.btn-confirm {
+  padding: 0.4rem 1rem;
+  background: var(--primary-color, rgb(103, 137, 186));
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

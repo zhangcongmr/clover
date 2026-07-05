@@ -9,6 +9,12 @@ import { join } from 'node:path';
 import {v4 as uuidv4} from 'uuid';
 import {A2AClient} from '@a2a-js/sdk/client';
 import {MessageSendParams, Part, SendMessageSuccessResponse, Task} from '@a2a-js/sdk';
+import { WebSocketServer, WebSocket } from 'ws';
+import { createServer } from 'node:http';
+import { TokenManager } from './server/agent/auth.js';
+import { FileService } from './server/agent/file-service.js';
+import { PtyManager } from './server/agent/pty-manager.js';
+import type { PtyInitMessage } from './server/agent/protocol.js';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -19,17 +25,38 @@ const angularApp = new AngularNodeAppEngine({
 let client: A2AClient | null = null;
 const enableStreaming = process.env['ENABLE_STREAMING'] !== 'false';
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
+// --- Agent services ---
+const tokenManager = new TokenManager(process.env['LUXIO_TOKEN_SECRET'], 30);
+const fileService = new FileService(process.env['LUXIO_READONLY'] === 'true');
+const ptyManager = new PtyManager();
+
+// CORS fixed whitelist
+const allowedOrigins = [
+  'http://localhost:4200',
+  'http://localhost:4000',
+  'http://127.0.0.1:4200',
+  'http://127.0.0.1:4000',
+];
+
+// CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin || '';
+  if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  next();
+});
+
+// Parse JSON for API routes
+app.use('/api/local', express.json());
 
 /**
  * Serve static files from /browser
@@ -41,6 +68,133 @@ app.use(
     redirect: false,
   }),
 );
+
+// --- Local Agent API Routes ---
+
+// Token endpoint
+app.get('/api/local/auth/token', (_req, res) => {
+  const { token, expiresAt } = tokenManager.generate();
+  res.json({ token, expiresIn: Math.floor((expiresAt - Date.now()) / 1000) });
+});
+
+// Health check
+app.get('/api/local/health', (_req, res) => {
+  res.json({ status: 'ok', readonly: process.env['LUXIO_READONLY'] === 'true' });
+});
+
+// Auth middleware for file operations
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token || !tokenManager.verify(token)) {
+    res.status(401).json({ success: false, message: 'Unauthorized' });
+    return;
+  }
+  next();
+}
+
+// File operation endpoints
+app.post('/api/local/scan', requireAuth, async (req, res) => {
+  const { path: dirPath, depth, ignore } = req.body;
+  if (!dirPath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'scan', path: dirPath, ...req.body, depth, ignore } as any);
+  res.json(result);
+});
+
+app.post('/api/local/listDir', requireAuth, async (req, res) => {
+  const { path: dirPath } = req.body;
+  if (!dirPath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'listDir', path: dirPath });
+  res.json(result);
+});
+
+app.post('/api/local/readFile', requireAuth, async (req, res) => {
+  const { path: filePath } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'readFile', path: filePath });
+  res.json(result);
+});
+
+app.post('/api/local/writeFile', requireAuth, async (req, res) => {
+  const { path: filePath, content } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'writeFile', path: filePath, content });
+  res.json(result);
+});
+
+app.post('/api/local/deleteFile', requireAuth, async (req, res) => {
+  const { path: filePath } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'deleteFile', path: filePath });
+  res.json(result);
+});
+
+app.post('/api/local/createFile', requireAuth, async (req, res) => {
+  const { path: filePath } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'createFile', path: filePath });
+  res.json(result);
+});
+
+app.post('/api/local/createDir', requireAuth, async (req, res) => {
+  const { path: dirPath } = req.body;
+  if (!dirPath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'createDir', path: dirPath });
+  res.json(result);
+});
+
+app.post('/api/local/rename', requireAuth, async (req, res) => {
+  const { path: oldPath, newName } = req.body;
+  if (!oldPath || !newName) {
+    res.status(400).json({ success: false, message: 'path and newName are required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'rename', path: oldPath, newName });
+  res.json(result);
+});
+
+app.post('/api/local/stat', requireAuth, async (req, res) => {
+  const { path: filePath } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'stat', path: filePath });
+  res.json(result);
+});
+
+app.post('/api/local/exists', requireAuth, async (req, res) => {
+  const { path: filePath } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'exists', path: filePath });
+  res.json(result);
+});
+
+// --- A2A Routes ---
 
 app.post('/a2a', (req, res) => {
   let originalBody = '';
@@ -211,12 +365,78 @@ app.use((req, res, next) => {
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 4000;
-  app.listen(port, (error: any) => {
+  const httpServer = app.listen(port, (error: any) => {
     if (error) {
       throw error;
     }
-
     console.log(`Node Express server listening on http://localhost:${port}`);
+  });
+
+  // --- WebSocket PTY ---
+  const wss = new WebSocketServer({ noServer: true });
+
+  httpServer.on('upgrade', (req, socket, head) => {
+    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+
+    if (url.pathname === '/ws/terminal') {
+      const token = url.searchParams.get('token');
+      if (!token || !tokenManager.verify(token)) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
+      });
+    } else {
+      socket.destroy();
+    }
+  });
+
+  wss.on('connection', (ws, _req) => {
+    let ptyId: string | null = null;
+
+    ws.on('message', (data) => {
+      const msg = data.toString();
+
+      if (!ptyId) {
+        // First message: init PTY
+        try {
+          const init: PtyInitMessage = JSON.parse(msg);
+          if (init.type === 'pty') {
+            const instance = ptyManager.create(init.cols, init.rows, init.cwd || process.cwd());
+            ptyId = instance.id;
+
+            instance.pty.onData((output) => {
+              if (ws.readyState === WebSocket.OPEN) ws.send(output);
+            });
+            instance.pty.onExit(() => {
+              if (ws.readyState === WebSocket.OPEN) ws.close(1000, 'PTY exited');
+            });
+          }
+        } catch (e) {
+          ws.close(4002, 'Invalid init message');
+        }
+        return;
+      }
+
+      // Subsequent messages: PTY input or resize
+      const instance = ptyManager.getById(ptyId);
+      if (!instance) { ws.close(1000, 'PTY not found'); return; }
+
+      try {
+        const resizeMsg = JSON.parse(msg);
+        if (resizeMsg.type === 'resize') {
+          instance.pty.resize(resizeMsg.cols, resizeMsg.rows);
+          return;
+        }
+      } catch (e) { /* not JSON, treat as PTY input */ }
+
+      instance.pty.write(msg);
+    });
+
+    ws.on('close', () => { if (ptyId) ptyManager.destroy(ptyId); });
+    ws.on('error', () => { if (ptyId) ptyManager.destroy(ptyId); });
   });
 }
 

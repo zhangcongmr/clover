@@ -53,6 +53,7 @@ export interface AstTreeNode {
      * Local properties
      */
     isLocal?: boolean;
+    rootPath?: string;  // Absolute path root for local projects
     /**
      * locked node cannot be edited or deleted, but can be viewed and copied
      */
