@@ -111,7 +111,10 @@ export class FileService {
       }
     }
 
-    node.children = children;
+    node.children = children.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
     return node;
   }
 
@@ -140,7 +143,10 @@ export class FileService {
       }
     }
 
-    return items;
+    return items.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
   }
 
   private async readFile(filePath: string): Promise<any> {
