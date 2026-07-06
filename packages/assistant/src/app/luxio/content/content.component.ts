@@ -993,7 +993,7 @@ Always use the welcome_greeting tool.`;
     // Walk from current node up to root (excluding root itself)
     const pathParts: string[] = [];
     let current: any = node;
-    while (current && current !== root) {
+    while (current && current.parentItem) {
       pathParts.unshift(current.label);
       current = current.parentItem;
     }
