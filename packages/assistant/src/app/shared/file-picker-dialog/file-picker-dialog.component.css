@@ -3,6 +3,12 @@
   height: 100%;
 }
 
+.file-picker-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
 .path-bar {
   display: flex;
   gap: 0.5rem;
@@ -34,7 +40,7 @@
 }
 
 .tree-container {
-  flex: 1;
+  flex: 1 1 0;
   overflow: auto;
   min-height: 200px;
   max-height: 350px;
