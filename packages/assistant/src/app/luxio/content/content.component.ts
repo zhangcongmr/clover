@@ -826,7 +826,7 @@ Always use the welcome_greeting tool.`;
       rootPath: node.rootPath,
       nodeType: item.kind === 'directory' ? 'folder' : 'file',
       children: [],
-      parentItem: node,
+      parentItem: pickParentObject(node),
     }));
     assignDeepLevel(node.children, (node.deepLevel || 0) + 1);
     computeFileIcons(node.children);
