@@ -9,7 +9,7 @@ import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab
 import { file, write } from 'opfs-tools';
 import {
   AstTreeComponent, assignDeepLevel, pickParentObject, expandAncestorsIfActive, 
-  findActiveNode, findNodeById, reset, ResetType, generateDirectoryPath, computeFileIcons } from '../../shared/ast-tree/ast-tree.component';
+  findActiveNode, findNodeById, reset, ResetType, getNodeAbsolutePath, generateDirectoryPath, computeFileIcons } from '../../shared/ast-tree/ast-tree.component';
 import { AddProjectComponent } from '../add-project/add-project.component';
 import { AstDraggableComponent } from '../../shared/ast-draggable/ast-draggable.component';
 import { AstTreeNode, NoN_SELECTION } from '../../shared/model';
@@ -813,23 +813,23 @@ Always use the welcome_greeting tool.`;
   onFolderBeforeToggle = async (node: AstTreeNode) => {
     if (!this.isLocalProject() || node.children?.length > 0) return;
 
-    const parts: string[] = [];
-    let cur: any = node;
-    while (cur.parentItem) { parts.unshift(cur.label); cur = cur.parentItem; }
-    const rootPath = (cur.rootPath || node.rootPath || '').replace(/\/+$/, '');
-    const fullPath = rootPath + '/' + parts.join('/');
-
-    const items = await this.localAgentService.listDir(fullPath);
-    node.children = items.map((item: any) => ({
-      id: this.uuid(),
-      label: item.name,
-      rootPath: node.rootPath,
-      nodeType: item.kind === 'directory' ? 'folder' : 'file',
-      children: [],
-      parentItem: pickParentObject(node),
-    }));
-    assignDeepLevel(node.children, (node.deepLevel || 0) + 1);
-    computeFileIcons(node.children);
+    const fullPath = getNodeAbsolutePath(this.dataList(), node);
+    try {
+      const items = await this.localAgentService.listDir(fullPath);
+      node.children = items.map((item: any) => ({
+        id: this.uuid(),
+        label: item.name,
+        rootPath: node.rootPath,
+        nodeType: item.kind === 'directory' ? 'folder' : 'file',
+        children: [],
+        parentItem: pickParentObject(node),
+      }));
+      assignDeepLevel(node.children, (node.deepLevel || 0) + 1);
+      computeFileIcons(node.children);
+    } catch (err) {
+      console.warn('[Content] Failed to list directory:', fullPath, err);
+      node.children = [];
+    }
   };
 
   // Open file via Node.js API (SSR readFile endpoint)
@@ -930,7 +930,7 @@ Always use the welcome_greeting tool.`;
     // 本地项目：通过 Local Agent 读取文件
     if (this.isLocalProject() && targetTab.nodeType === 'file') {
       try {
-        const filePath = this.generateLocalFilePath(targetTab);
+        const filePath = getNodeAbsolutePath(this.dataList(), targetTab);
         const content = await this.localAgentService.readFile(filePath);
         targetTab.content = content;
         return;
@@ -975,30 +975,6 @@ Always use the welcome_greeting tool.`;
     }
   }
 
-  // 计算本地文件路径（使用 rootPath + 相对路径）
-  private generateLocalFilePath(node: AstTreeNode): string {
-    const root = this.dataList()[0];
-    const rootPath = root?.rootPath || '';
-    if (!rootPath) {
-      // fallback: old logic
-      const pathParts: string[] = [];
-      let current: any = node;
-      while (current) {
-        pathParts.unshift(current.label);
-        current = current.parentItem;
-      }
-      return pathParts.join('/');
-    }
-
-    // Walk from current node up to root (excluding root itself)
-    const pathParts: string[] = [];
-    let current: any = node;
-    while (current && current.parentItem) {
-      pathParts.unshift(current.label);
-      current = current.parentItem;
-    }
-    return rootPath + '/' + pathParts.join('/');
-  }
 
   async apiSelected(evt: Array<AstTreeNode>) {
     this.pendingNodes = evt;
@@ -1161,7 +1137,7 @@ Always use the welcome_greeting tool.`;
     // 本地项目：通过 Local Agent 保存文件
     if (this.isLocalProject() && evt.nodeType === 'file') {
       try {
-        const filePath = this.generateLocalFilePath(evt);
+        const filePath = getNodeAbsolutePath(this.dataList(), evt);
         await this.localAgentService.writeFile(filePath, evt.content || '');
         this.notificationService.showNotification('File saved locally', 'success');
       } catch (err: any) {

@@ -591,6 +591,32 @@ export function generateDirectoryPath(nodes: AstTreeNode[], node: AstTreeNode, w
 }
 
 /**
+ * 生成节点的绝对路径（基于树遍历，从根节点 rootPath 拼接）
+ * @param nodes  整棵树（dataList 或 treeData）
+ * @param node   目标节点
+ * @param withFileName  是否包含文件名（目标为 file 时可设为 false 只取目录路径）
+ * @returns 规范化的绝对路径
+ */
+export function getNodeAbsolutePath(nodes: AstTreeNode[], node: AstTreeNode, withFileName: boolean = true): string {
+  const pathSegments: string[] = [];
+  const found = findNodePath(nodes, node.id, pathSegments);
+
+  if (!found || pathSegments.length === 0) return '';
+
+  // 跳过根节点标签（rootPath 已代表根目录）
+  pathSegments.shift();
+
+  if (!withFileName && pathSegments.length > 0) {
+    pathSegments.pop();
+  }
+
+  const root = nodes[0];
+  const rootPath = (root?.rootPath || '');
+  const fullPath = pathSegments.join('/');
+  return (rootPath ? rootPath + '/' + fullPath : fullPath).replace(/\/+/g, '/');
+}
+
+/**
  * 查找节点路径
  */
 export function findNodePath(nodes: AstTreeNode[], targetId: string, pathSegments: string[]): boolean {

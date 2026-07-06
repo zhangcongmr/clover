@@ -1,9 +1,9 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../ast-modal/ast-modal.component';
 import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
-import { pickParentObject } from '../ast-tree/ast-tree.component';
+import { pickParentObject, getNodeAbsolutePath } from '../ast-tree/ast-tree.component';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
@@ -23,6 +23,11 @@ export class FilePickerDialogComponent {
   treeData = signal<AstTreeNode[]>([]);
   selectedNode = signal<AstTreeNode | null>(null);
   loading = signal(false);
+
+  selectedNodePath = computed(() => {
+    const node = this.selectedNode();
+    return node ? getNodeAbsolutePath(this.treeData(), node) : '';
+  });
 
   readonly selected = output<{ path: string; kind: 'folder' | 'file' }>();
 
@@ -90,7 +95,7 @@ export class FilePickerDialogComponent {
 
   async expandFolder(node: AstTreeNode) {
     if (node.children?.length > 0) return;
-    const fullPath = this.getFullPath(node);
+    const fullPath = getNodeAbsolutePath(this.treeData(), node);
     try {
       const data = await this.localAgentService.scanDir(fullPath, 1);
       const newChildren = (data.children || []).map((child: any) =>
@@ -126,21 +131,6 @@ export class FilePickerDialogComponent {
     }
   }
 
-  getFullPath(node: AstTreeNode): string {
-    const root = this.treeData()[0];
-    if (!root) return node.label;
-
-    // Walk from node up to root using parentItem
-    const parts: string[] = [];
-    let current: any = node;
-    while (current && current !== root) {
-      parts.unshift(current.label);
-      current = current.parentItem;
-    }
-    const rootPath = (root.rootPath || '').replace(/\/+$/, '');
-    return rootPath + '/' + parts.join('/');
-  }
-
   async goUp() {
     const current = this.currentPath();
     const parent = current.split('/').slice(0, -1).join('/') || '/';
@@ -150,7 +140,7 @@ export class FilePickerDialogComponent {
   confirm() {
     const node = this.selectedNode();
     if (!node) return;
-    const fullPath = this.getFullPath(node);
+    const fullPath = getNodeAbsolutePath(this.treeData(), node);
     this.selected.emit({ path: fullPath, kind: node.nodeType as 'folder' | 'file' });
     this.visible.set(false);
   }
