@@ -194,6 +194,16 @@ app.post('/api/local/exists', requireAuth, async (req, res) => {
   res.json(result);
 });
 
+app.post('/api/local/openInFileExplorer', requireAuth, async (req, res) => {
+  const { path: filePath } = req.body;
+  if (!filePath) {
+    res.status(400).json({ success: false, message: 'path is required' });
+    return;
+  }
+  const result = await fileService.handle({ type: 'file-request', action: 'openInFileExplorer', path: filePath });
+  res.json(result);
+});
+
 // --- A2A Routes ---
 
 app.post('/a2a', (req, res) => {

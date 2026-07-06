@@ -230,6 +230,18 @@ export class LocalAgentService {
     return data.data.exists;
   }
 
+  async openInFileExplorer(path: string): Promise<void> {
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/openInFileExplorer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ path })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+  }
+
   disconnect() {
     this.cachedToken = null;
     this.tokenExpiry = 0;

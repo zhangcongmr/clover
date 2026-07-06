@@ -104,6 +104,11 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New Folder</span></div>
     }
+    @if(currentContextMenuEvt&&currentContextMenuEvt['item']) {
+      <div data-layer="Open in File Explorer" class="Open codigma-menu-every-item" (click)="menuSelectAction('openInFileExplorer')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+        <span>Open in File Explorer</span></div>
+    }
     @if(currentContextMenuEvt&&currentContextMenuEvt['item'] == 'NoN_SELECTION') {
       <div data-layer="New Folder" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFolder')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>

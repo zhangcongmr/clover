@@ -8,7 +8,8 @@ export type FileAction =
   | 'rename'
   | 'stat'
   | 'exists'
-  | 'scan';
+  | 'scan'
+  | 'openInFileExplorer';
 
 export interface LocalFileRequest {
   type: 'file-request';

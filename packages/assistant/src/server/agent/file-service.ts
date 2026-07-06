@@ -8,9 +8,13 @@ import {
   rename,
   access
 } from 'node:fs/promises';
-import { join, basename, resolve } from 'node:path';
+import { join, basename, resolve, dirname } from 'node:path';
 import { statSync } from 'node:fs';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import type { LocalFileRequest, LocalFileResponse } from './protocol.js';
+
+const execAsync = promisify(exec);
 
 export interface ScanNode {
   name: string;
@@ -64,6 +68,8 @@ export class FileService {
         return this.exists(filePath);
       case 'scan':
         return this.scan(filePath, (request as any).depth ?? 1, (request as any).ignore ?? []);
+      case 'openInFileExplorer':
+        return this.openInFileExplorer(filePath);
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -212,5 +218,45 @@ export class FileService {
     } catch {
       return { exists: false };
     }
+  }
+
+  private async openInFileExplorer(filePath: string): Promise<any> {
+    const resolved = resolve(filePath);
+    const s = await stat(resolved).catch(() => null);
+    if (!s) {
+      throw new Error(`Path does not exist: ${resolved}`);
+    }
+
+    let command: string;
+    const platform = process.platform;
+
+    if (platform === 'win32') {
+      // Windows: use explorer.exe
+      if (s.isDirectory()) {
+        command = `explorer.exe "${resolved}"`;
+      } else {
+        // Select the file in its parent folder
+        command = `explorer.exe /select,"${resolved}"`;
+      }
+    } else if (platform === 'darwin') {
+      // macOS: use open command
+      if (s.isDirectory()) {
+        command = `open "${resolved}"`;
+      } else {
+        // -R reveals the file in Finder
+        command = `open -R "${resolved}"`;
+      }
+    } else {
+      // Linux: use xdg-open
+      if (s.isDirectory()) {
+        command = `xdg-open "${resolved}"`;
+      } else {
+        // Open the parent directory
+        command = `xdg-open "${dirname(resolved)}"`;
+      }
+    }
+
+    await execAsync(command);
+    return { opened: true, path: resolved };
   }
 }

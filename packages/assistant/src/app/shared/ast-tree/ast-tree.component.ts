@@ -5,6 +5,7 @@ import { AstMenuComponent } from '../ast-menu/ast-menu.component';
 import { HttpClient, HttpEventType } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { CoreService } from '../../core.service';
+import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
   selector: '[ast-tree]',
@@ -37,6 +38,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
   http = inject(HttpClient);
   coreService = inject(CoreService);
+  localAgentService = inject(LocalAgentService);
 
   constructor() {
     let me = this;
@@ -246,6 +248,15 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
         action: action,
         target: current['item']!= NoN_SELECTION ? current['item'] : NoN_SELECTION
       })
+    } else if (action == 'openInFileExplorer') {
+      if (current.item && current.item != NoN_SELECTION) {
+        const fullPath = getNodeAbsolutePath(this.data(), current.item);
+        if (fullPath) {
+          this.localAgentService.openInFileExplorer(fullPath).catch(err => {
+            console.error('[AstTree] Failed to open in file explorer:', err);
+          });
+        }
+      }
     } else if (action == 'Share') {
       this.menuItemAction.emit({
         action: action,
