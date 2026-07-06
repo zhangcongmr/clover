@@ -415,6 +415,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
             });
           }
         } catch (e) {
+          console.error('Failed to create PTY:', e);
           ws.close(4002, 'Invalid init message');
         }
         return;
