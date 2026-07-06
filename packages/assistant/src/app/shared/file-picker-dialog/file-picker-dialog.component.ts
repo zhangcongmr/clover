@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../ast-modal/ast-modal.component';
 import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
+import { pickParentObject } from '../ast-tree/ast-tree.component';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
@@ -69,7 +70,7 @@ export class FilePickerDialogComponent {
       nodeType: scanData.kind === 'directory' ? 'folder' : 'file',
       isExpanded: isRoot,
       children: [],
-      parentItem: parent,
+      parentItem: parent ? pickParentObject(parent) : undefined,
     };
     node.children = (scanData.children || []).map((child: any) =>
       this.scanNodeToTreeNode(child, rootPath, node)
