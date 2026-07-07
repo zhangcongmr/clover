@@ -57,7 +57,6 @@
             "ssr": {
               "entry": "src/server.ts"
             },
-            "externalDependencies": ["node-pty"],
             "sourceMap": {
               "scripts": true,
               "styles": false,
@@ -95,6 +94,7 @@
               "outputPath": "dist/luxio-common",
               "optimization": false,
               "outputHashing": "none",
+              "outputMode": "static",
               "sourceMap": true,
               "namedChunks": false,
               "extractLicenses": true,

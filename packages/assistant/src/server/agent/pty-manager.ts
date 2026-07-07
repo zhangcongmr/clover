@@ -1,6 +1,38 @@
-import { spawn, type IPty } from 'node-pty';
 import { platform } from 'node:os';
 import { existsSync } from 'node:fs';
+
+type NodePty = {
+  spawn: (file: string, args: string[], options: {
+    name: string;
+    cols: number;
+    rows: number;
+    cwd: string;
+    env: Record<string, string>;
+  }) => IPty;
+};
+
+export interface IPty {
+  write(data: string): void;
+  kill(signal?: number | string): void;
+  onData(callback: (data: string) => void): void;
+  onExit(callback: (event: { exitCode: number | null; signal: number | null }) => void): void;
+  resize(cols: number, rows: number): void;
+}
+
+function loadNodePty() {
+  const moduleName = 'node-pty';
+  const runtimeRequire = (globalThis as any)['require']
+    || (() => {
+      const req = new Function('return require')();
+      return (name: string) => req(name);
+    })();
+
+  try {
+    return runtimeRequire(moduleName) as NodePty;
+  } catch (error) {
+    throw new Error(`Failed to load node-pty at runtime: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 
 export interface PtyInstance {
   pty: IPty;
@@ -28,6 +60,7 @@ export class PtyManager {
     const shell = platform() === 'win32' ? 'powershell.exe' : (process.env['SHELL'] || '/bin/bash');
 
     const validCwd = (cwd && existsSync(cwd)) ? cwd : process.cwd();
+    const { spawn } = loadNodePty();
 
     const pty = spawn(shell, [], {
       name: 'xterm-color',
