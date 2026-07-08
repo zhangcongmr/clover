@@ -244,6 +244,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       const found = await this.localAgentService.probeAndConnect();
       if (found) {
         console.log('[Content] Connected to local agent at', this.localAgentService.getAgentUrl());
+        this.startWatchProjectRoot();
       } else {
         console.warn('[Content] Local agent not available');
         this.notificationService.showNotification(
@@ -252,6 +253,60 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       }
     } catch (err) {
       console.error('[Content] Failed to connect to local agent:', err);
+    }
+  }
+
+  private startWatchProjectRoot() {
+    const list = this.dataList();
+    if (list.length === 0 || !list[0].rootPath) return;
+
+    const rootPath = list[0].rootPath;
+    this.localAgentService.startFileWatch(rootPath, (eventType) => {
+      this.onProjectRootChanged(rootPath, eventType);
+    });
+  }
+
+  private async onProjectRootChanged(rootPath: string, eventType: string): Promise<void> {
+    if (eventType === 'rename') {
+      try {
+        const data = await this.localAgentService.scanDir(rootPath, 1, [
+          'node_modules', '.git', 'dist', 'build', '__pycache__',
+          '.angular', '.vscode', '.idea', '.vs', 'target', 'out',
+          'coverage', 'logs', 'log', 'tmp', 'temp', 'cache',
+          'bin', 'obj', 'vendor', 'third_party', 'jspm_packages'
+        ]);
+        
+        const list = this.dataList();
+        if (list.length > 0 && list[0].rootPath === rootPath) {
+          const existingChildren = list[0].children || [];
+          const newChildren = (data.children || []).map((item: any) => {
+            const existing = existingChildren.find((c: any) => c.label === item.name);
+            if (existing) {
+              return existing;
+            }
+            return {
+              id: this.uuid(),
+              label: item.name,
+              rootPath: rootPath,
+              nodeType: item.kind === 'directory' ? 'folder' : 'file',
+              children: [],
+            };
+          });
+
+          const removedChildren = existingChildren.filter((c: any) => 
+            !newChildren.find((n: any) => n.label === c.label)
+          );
+
+          if (removedChildren.length > 0 || newChildren.length !== existingChildren.length) {
+            list[0].children = newChildren;
+            assignDeepLevel(list[0].children, (list[0].deepLevel || 0) + 1);
+            this.dataList.update(value => [...value]);
+            this.notificationService.showNotification('Project files updated', 'info');
+          }
+        }
+      } catch (err) {
+        console.error('[Content] Failed to refresh project root:', err);
+      }
     }
   }
 
