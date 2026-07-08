@@ -10,11 +10,26 @@ import {v4 as uuidv4} from 'uuid';
 import {A2AClient} from '@a2a-js/sdk/client';
 import {MessageSendParams, Part, SendMessageSuccessResponse, Task} from '@a2a-js/sdk';
 import { WebSocketServer, WebSocket } from 'ws';
-import { createServer } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
+import { createServer as createHttpServer } from 'node:http';
+import { readFileSync, existsSync } from 'node:fs';
 import { TokenManager } from './server/agent/auth.js';
 import { FileService } from './server/agent/file-service.js';
 import { PtyManager } from './server/agent/pty-manager.js';
 import type { PtyInitMessage } from './server/agent/protocol.js';
+
+function loadSslConfig() {
+  const certPath = process.env['SSL_CERT_PATH'] || join(import.meta.dirname, '../ssl/cert.pem');
+  const keyPath = process.env['SSL_KEY_PATH'] || join(import.meta.dirname, '../ssl/key.pem');
+
+  if (existsSync(certPath) && existsSync(keyPath)) {
+    return {
+      cert: readFileSync(certPath),
+      key: readFileSync(keyPath),
+    };
+  }
+  return null;
+}
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -34,8 +49,12 @@ const ptyManager = new PtyManager();
 const allowedOrigins = [
   'http://localhost:4200',
   'http://localhost:4000',
+  'https://localhost:4200',
+  'https://localhost:4000',
   'http://127.0.0.1:4200',
   'http://127.0.0.1:4000',
+  'https://127.0.0.1:4200',
+  'https://127.0.0.1:4000',
 ];
 
 // CORS middleware
@@ -372,21 +391,27 @@ app.use((req, res, next) => {
 /**
  * Start the server if this module is the main entry point, or it is ran via PM2.
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * Supports HTTPS via SSL_CERT_PATH and SSL_KEY_PATH environment variables, falling back to HTTP if certificates are not found.
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 4000;
-  const httpServer = app.listen(port, (error: any) => {
-    if (error) {
-      throw error;
-    }
-    console.log(`Node Express server listening on http://localhost:${port}`);
+  const sslConfig = loadSslConfig();
+
+  const httpServer = sslConfig
+    ? createHttpsServer(sslConfig, app)
+    : createHttpServer(app);
+
+  httpServer.listen(port, () => {
+    const protocol = sslConfig ? 'https' : 'http';
+    console.log(`Node Express server listening on ${protocol}://localhost:${port}`);
   });
 
   // --- WebSocket PTY ---
   const wss = new WebSocketServer({ noServer: true });
 
   httpServer.on('upgrade', (req, socket, head) => {
-    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const protocol = sslConfig ? 'https' : 'http';
+    const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
 
     if (url.pathname === '/ws/terminal') {
       const token = url.searchParams.get('token');
