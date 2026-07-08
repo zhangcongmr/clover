@@ -73,16 +73,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     const dataList = this.dataList();
     this.initializeTerminal();
     
-    if (dataList.length === 0) {
-      // 没有打开的项目，显示提示信息
-      this.terminal.writeln('\x1b[33m[Info] No project opened. Please open a folder or file to use the terminal.\x1b[0m');
-      return;
-    }
-    
-    this.detectLocalProject(dataList);
-    this.connectTerminal();
-    this.hasConnected = true;
-
+    // 设置ResizeObserver，确保终端能够自适应滚动
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         this.fitAddon.fit();
@@ -93,6 +84,16 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     if (terminal) {
       this.resizeObserver.observe(terminal);
     }
+    
+    if (dataList.length === 0) {
+      // 没有打开的项目，显示提示信息
+      this.terminal.writeln('\x1b[33m[Info] No project opened. Please open a folder or file to use the terminal.\x1b[0m');
+      return;
+    }
+    
+    this.detectLocalProject(dataList);
+    this.connectTerminal();
+    this.hasConnected = true;
   }
 
   private detectLocalProject(dataList: Array<any>) {
