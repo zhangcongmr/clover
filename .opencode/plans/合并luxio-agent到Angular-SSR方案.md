@@ -8,7 +8,7 @@
   - **文件系统服务**：通过 WebSocket 提供 `listDir`、`readFile`、`writeFile` 等 9 种操作
   - **PTY 终端服务**：通过 `node-pty` 提供伪终端，支持交互式 shell
   - **安全认证**：HMAC-SHA256 一次性 token、路径穿越防护、Origin 校验
-- Angular 前端通过 `LocalAgentService` 以 HTTP + WebSocket 连接到 SSR 自身（端口 4000）
+- Angular 前端通过 `LocalAgentService` 以 HTTP + WebSocket 连接到 SSR 自身（端口 4200）
 - 合并为单进程，文件操作和终端均由 SSR 服务器提供
 
 ### 目标
@@ -134,7 +134,7 @@ import type { LocalFileRequest } from './server/agent/protocol.js';
 
 // 配置
 const agentConfig = {
-  port: parseInt(process.env['PORT'] || '4000'),
+  port: parseInt(process.env['PORT'] || '4200'),
   host: '0.0.0.0',
   readonly: process.env['LUXIO_READONLY'] === 'true',
   tokenSecret: process.env['LUXIO_TOKEN_SECRET'],
@@ -162,7 +162,7 @@ const ptyManager = new PtyManager();
 - **存储方式**：`localStorage.setItem('assistant_agentUrl', url)`
 - **读取方式**：`LocalAgentService` 直接读取 `localStorage.getItem('assistant_agentUrl')`
 - **默认值**：空（同源模式，请求发到当前页面所在服务器）
-- **示例**：`http://192.168.1.100:4000`（指向目标 SSR 服务器的端口，与 SSR 端口一致）
+  - **示例**：`http://192.168.1.100:4200`（指向目标 SSR 服务器的端口，与 SSR 端口一致）
 
 **CORS 配置**（仅 agentUrl 指向不同源时需要）：
 
@@ -172,9 +172,7 @@ const ptyManager = new PtyManager();
 // 固定白名单：SSR 自身 + 开发服务器
 const allowedOrigins = [
   'http://localhost:4200',
-  'http://localhost:4000',
-  'http://127.0.0.1:4200',
-  'http://127.0.0.1:4000'
+  'http://127.0.0.1:4200'
 ];
 
 app.use((req, res, next) => {
@@ -1100,13 +1098,13 @@ SSR PtyManager.create()  →  node-pty spawn shell
 浏览器加载页面（来自当前 SSR）
        ↓
 Angular 启动，读取 agentUrl 配置
-  → agentUrl = "http://192.168.1.100:4000"
+  → agentUrl = "http://192.168.1.100:4200"
        ↓
 用户点击 "Open Folder" → FilePickerDialog
        ↓
 LocalAgentService.scanDir(path)
-  → getBaseUrl() 返回 "http://192.168.1.100:4000"
-  → HTTP POST http://192.168.1.100:4000/api/local/scan（跨域请求）
+  → getBaseUrl() 返回 "http://192.168.1.100:4200"
+  → HTTP POST http://192.168.1.100:4200/api/local/scan（跨域请求）
        ↓
 目标 SSR 收到请求
   → CORS 中间件检查 origin
@@ -1118,14 +1116,14 @@ LocalAgentService.scanDir(path)
 
 **CORS 跨域流程**：
 ```
-浏览器请求 http://192.168.1.100:4000/api/local/scan
-  Origin: http://当前SSR服务器:4000
+浏览器请求 http://192.168.1.100:4200/api/local/scan
+  Origin: http://当前SSR服务器:4200
        ↓
 目标 SSR CORS 中间件:
-  allowedOrigins = ['http://localhost:4200', 'http://localhost:4000', ...]
-  包含 http://当前SSR服务器:4000 ✓
-       ↓
-设置 Access-Control-Allow-Origin: http://当前SSR服务器:4000
+  allowedOrigins = ['http://localhost:4200']
+  包含 http://当前SSR服务器:4200 ✓
+        ↓
+设置 Access-Control-Allow-Origin: http://当前SSR服务器:4200
        ↓
 浏览器允许跨域请求 ✓
 ```
@@ -1153,8 +1151,8 @@ LocalAgentService.scanDir(path)
               └── Node.js fs ──→ 该服务器的文件系统
 ```
 
-- `agentUrl = "http://localhost:4000"` → 访问浏览器所在机器的文件系统
-- `agentUrl = "http://192.168.1.100:4000"` → 访问 192.168.1.100 的文件系统
+- `agentUrl = "http://localhost:4200"` → 访问浏览器所在机器的文件系统
+- `agentUrl = "http://192.168.1.100:4200"` → 访问 192.168.1.100 的文件系统
 
 #### 配置项
 
