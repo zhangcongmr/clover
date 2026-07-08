@@ -9,7 +9,7 @@ import {
   access
 } from 'node:fs/promises';
 import { join, basename, resolve, dirname } from 'node:path';
-import { statSync } from 'node:fs';
+import { statSync, watch, type FSWatcher } from 'node:fs';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { LocalFileRequest, LocalFileResponse } from './protocol.js';
@@ -25,6 +25,7 @@ export interface ScanNode {
 
 export class FileService {
   private readonly: boolean;
+  private watchers = new Map<string, FSWatcher>();
 
   constructor(readonly: boolean = false) {
     this.readonly = readonly;
@@ -258,5 +259,32 @@ export class FileService {
 
     await execAsync(command);
     return { opened: true, path: resolved };
+  }
+
+  startWatching(filePath: string, callback: (eventType: string) => void): void {
+    if (this.watchers.has(filePath)) return;
+
+    try {
+      const resolved = resolve(filePath);
+      const watcher = watch(resolved, { persistent: false }, (eventType: string) => {
+        callback(eventType);
+      });
+      this.watchers.set(filePath, watcher);
+    } catch (err) {
+      console.error(`Failed to watch file: ${filePath}`, err);
+    }
+  }
+
+  stopWatching(filePath: string): void {
+    const watcher = this.watchers.get(filePath);
+    if (watcher) {
+      watcher.close();
+      this.watchers.delete(filePath);
+    }
+  }
+
+  stopAllWatching(): void {
+    this.watchers.forEach(w => w.close());
+    this.watchers.clear();
   }
 }

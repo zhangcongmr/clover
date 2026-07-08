@@ -354,6 +354,19 @@ export class EditorComponent implements OnInit, AfterViewInit {
     // 无论输入是什么，toString() 都返回 \n 分隔的字符串
     return this.editorView.state.doc.toString();
   }
+
+  updateContent(newContent: string): void {
+    if (this.editorView && this.editorView.state.doc.toString() !== newContent) {
+      this.editorView.dispatch({
+        changes: {
+          from: 0,
+          to: this.editorView.state.doc.length,
+          insert: newContent
+        }
+      });
+      this.getEditorContentAndUpdatePreview();
+    }
+  }
 }
 
 // --- 1. 只检测，不标准化 ---

@@ -45,7 +45,25 @@ export interface FileServiceInitMessage {
   type: 'file-service';
 }
 
-export type AgentMessage = PtyInitMessage | PtyResizeMessage | FileServiceInitMessage | LocalFileRequest;
+export interface FileWatchStartMessage {
+  type: 'file-watch-start';
+  path: string;
+  requestId?: string;
+}
+
+export interface FileWatchStopMessage {
+  type: 'file-watch-stop';
+  path: string;
+}
+
+export interface FileWatchEvent {
+  type: 'file-watch-event';
+  path: string;
+  eventType: 'change' | 'rename';
+  requestId?: string;
+}
+
+export type AgentMessage = PtyInitMessage | PtyResizeMessage | FileServiceInitMessage | LocalFileRequest | FileWatchStartMessage | FileWatchStopMessage;
 
 export interface TokenResponse {
   token: string;

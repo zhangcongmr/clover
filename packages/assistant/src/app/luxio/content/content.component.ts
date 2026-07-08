@@ -920,6 +920,13 @@ Always use the welcome_greeting tool.`;
       await this.refreshNodeContent(targetTab);
       openeds.push(targetTab);
       this.openedList.update(value => [...openeds]);
+
+      if (this.isLocalProject() && targetTab.nodeType === 'file') {
+        const filePath = getNodeAbsolutePath(this.dataList(), targetTab);
+        this.localAgentService.startFileWatch(filePath, (eventType) => {
+          this.onExternalFileChange(targetTab, eventType);
+        });
+      }
     }
   }
 
@@ -1313,6 +1320,12 @@ Always use the welcome_greeting tool.`;
         if (datas[index].id == evt.id) {
           currentIndex = index;
           datas[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
+          
+          if (this.isLocalProject() && evt.nodeType === 'file') {
+            const filePath = getNodeAbsolutePath(this.dataList(), evt);
+            this.localAgentService.stopFileWatch(filePath);
+          }
+          
           datas.splice(index, 1);
           break;
         }
@@ -1333,6 +1346,30 @@ Always use the welcome_greeting tool.`;
     }
 
     this.storeOpenedList()
+  }
+
+  private async onExternalFileChange(tab: any, eventType: string): Promise<void> {
+    if (eventType === 'change') {
+      try {
+        const filePath = getNodeAbsolutePath(this.dataList(), tab);
+        const newContent = await this.localAgentService.readFile(filePath);
+        
+        if (tab.content !== newContent) {
+          tab.content = newContent;
+          tab['saved'] = false;
+          
+          this.notificationService.showNotification(
+            'File changed externally. Content updated.', 'info'
+          );
+        }
+      } catch (err) {
+        console.error('Failed to read updated file:', err);
+      }
+    } else if (eventType === 'rename') {
+      this.notificationService.showNotification(
+        'File was renamed or deleted externally.', 'warning'
+      );
+    }
   }
 
   onClickTab(evt: any) {

@@ -30,6 +30,9 @@ export class LocalAgentService {
   /** Agent URL */
   connectedUrl = signal<string>('');
 
+  private fileWatchWs: WebSocket | null = null;
+  private fileWatchCallbacks = new Map<string, (eventType: string) => void>();
+
   constructor() {
     // Read agentUrl from localStorage (UI Settings) - only in browser
     if (typeof localStorage !== 'undefined') {
@@ -242,10 +245,73 @@ export class LocalAgentService {
     if (!data.success) throw new Error(data.message);
   }
 
+  async getFileWatchWsUrl(): Promise<string> {
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const url = new URL(base);
+    const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${url.host}/ws/file-watch?token=${token}`;
+  }
+
+  private async connectFileWatch(): Promise<void> {
+    if (this.fileWatchWs?.readyState === WebSocket.OPEN) return;
+
+    const wsUrl = await this.getFileWatchWsUrl();
+    this.fileWatchWs = new WebSocket(wsUrl);
+
+    this.fileWatchWs.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'file-watch-event') {
+        const callback = this.fileWatchCallbacks.get(msg.path);
+        callback?.(msg.eventType);
+      }
+    };
+
+    this.fileWatchWs.onclose = () => {
+      this.fileWatchWs = null;
+    };
+
+    this.fileWatchWs.onerror = () => {
+      this.fileWatchWs = null;
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      if (!this.fileWatchWs) { reject(new Error('WebSocket not created')); return; }
+      this.fileWatchWs.onopen = () => resolve();
+      this.fileWatchWs.onerror = () => reject(new Error('WebSocket connection failed'));
+    });
+  }
+
+  async startFileWatch(path: string, callback: (eventType: string) => void): Promise<void> {
+    try {
+      await this.connectFileWatch();
+      this.fileWatchCallbacks.set(path, callback);
+      this.fileWatchWs?.send(JSON.stringify({
+        type: 'file-watch-start',
+        path
+      }));
+    } catch (err) {
+      console.error('Failed to start file watch:', err);
+    }
+  }
+
+  async stopFileWatch(path: string): Promise<void> {
+    this.fileWatchCallbacks.delete(path);
+    if (this.fileWatchWs?.readyState === WebSocket.OPEN) {
+      this.fileWatchWs.send(JSON.stringify({
+        type: 'file-watch-stop',
+        path
+      }));
+    }
+  }
+
   disconnect() {
     this.cachedToken = null;
     this.tokenExpiry = 0;
     this.isAvailable.set(false);
     this.connectedUrl.set('');
+    this.fileWatchWs?.close();
+    this.fileWatchWs = null;
+    this.fileWatchCallbacks.clear();
   }
 }

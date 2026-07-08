@@ -16,7 +16,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { TokenManager } from './server/agent/auth.js';
 import { FileService } from './server/agent/file-service.js';
 import { PtyManager } from './server/agent/pty-manager.js';
-import type { PtyInitMessage } from './server/agent/protocol.js';
+import type { PtyInitMessage, FileWatchStartMessage, FileWatchStopMessage } from './server/agent/protocol.js';
 
 function loadSslConfig() {
   const certPath = process.env['SSL_CERT_PATH'] || join(import.meta.dirname, '../ssl/cert.pem');
@@ -418,7 +418,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     const protocol = sslConfig ? 'https' : 'http';
     const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
 
-    if (url.pathname === '/ws/terminal') {
+    if (url.pathname === '/ws/terminal' || url.pathname === '/ws/file-watch') {
       const token = url.searchParams.get('token');
       if (!token || !tokenManager.verify(token)) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
@@ -433,7 +433,55 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     }
   });
 
-  wss.on('connection', (ws, _req) => {
+  wss.on('connection', (ws, req) => {
+    const protocol = sslConfig ? 'https' : 'http';
+    const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
+    const isFileWatch = url.pathname === '/ws/file-watch';
+
+    if (isFileWatch) {
+      const watchedFiles = new Set<string>();
+
+      ws.on('message', (data) => {
+        try {
+          const msg = JSON.parse(data.toString());
+
+          if (msg.type === 'file-watch-start') {
+            const startMsg = msg as FileWatchStartMessage;
+            fileService.startWatching(startMsg.path, (eventType) => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  type: 'file-watch-event',
+                  path: startMsg.path,
+                  eventType,
+                  requestId: startMsg.requestId
+                }));
+              }
+            });
+            watchedFiles.add(startMsg.path);
+          } else if (msg.type === 'file-watch-stop') {
+            const stopMsg = msg as FileWatchStopMessage;
+            fileService.stopWatching(stopMsg.path);
+            watchedFiles.delete(stopMsg.path);
+          }
+        } catch (e) {
+          console.error('Failed to handle file-watch message:', e);
+        }
+      });
+
+      ws.on('close', () => {
+        watchedFiles.forEach(path => fileService.stopWatching(path));
+        watchedFiles.clear();
+      });
+
+      ws.on('error', () => {
+        watchedFiles.forEach(path => fileService.stopWatching(path));
+        watchedFiles.clear();
+      });
+
+      return;
+    }
+
+    // --- PTY handling ---
     let ptyId: string | null = null;
 
     ws.on('message', (data) => {
