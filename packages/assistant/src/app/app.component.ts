@@ -1255,6 +1255,21 @@ For each fileIcons entry:
     this.terminalOpenedList.push(newTab);
   }
 
+  /**
+   * 断开所有终端连接
+   */
+  disconnectAllTerminals(): void {
+    // 关闭终端面板
+    this.terminalPanelShow = false;
+    this.dragHeight = 1;
+    this.keepTerminalInstance.value = false;
+    this.keepTerminalInstance.dragHeight = 0.75;
+    // 清空终端列表
+    this.terminalOpenedList = [];
+    // 清空dataList，防止重新打开终端时连接到原项目
+    this.dataList = [];
+  }
+
   dragHeight: number = 1;
   active = false;
 

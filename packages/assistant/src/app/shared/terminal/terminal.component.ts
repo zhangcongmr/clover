@@ -39,11 +39,24 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   customCwd: string = "/mnt/storage/";
   containerName: string = "";
   isLocalProject: boolean = false;
+  private hasConnected = false;
+
   constructor() {
     effect(() => {
       if (this.theme() !== this.previousTheme) {
         this.applyTheme();
         this.previousTheme = this.theme();
+      }
+    });
+    
+    effect(() => {
+      const dataList = this.dataList();
+      // 当dataList从空变为非空，且终端已初始化但未连接时，连接终端
+      if (dataList.length > 0 && this.terminal && !this.hasConnected) {
+        this.userName = this.coreService.userData?.username || "Anonymous";
+        this.detectLocalProject(dataList);
+        this.connectTerminal();
+        this.hasConnected = true;
       }
     });
   }
@@ -57,10 +70,18 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    const dataList = this.dataList();
     this.initializeTerminal();
-
-    this.detectLocalProject(this.dataList());
+    
+    if (dataList.length === 0) {
+      // 没有打开的项目，显示提示信息
+      this.terminal.writeln('\x1b[33m[Info] No project opened. Please open a folder or file to use the terminal.\x1b[0m');
+      return;
+    }
+    
+    this.detectLocalProject(dataList);
     this.connectTerminal();
+    this.hasConnected = true;
 
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
@@ -99,6 +120,10 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
+    this.disconnect();
+  }
+
+  disconnect(): void {
     // 组件销毁时，断开 ResizeObserver 的连接
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
@@ -112,7 +137,9 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // Close WebSocket connection
     if (this.websocket) {
       this.websocket.close();
+      this.websocket = null;
     }
+    this.isConnected = false;
   }
 
   private initializeTerminal(): void {

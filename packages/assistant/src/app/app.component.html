@@ -131,7 +131,7 @@
       </div>
 
       <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
-        (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)" [style.height]="dragHeight * 100 + '%'"></div>
+        (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)" (disconnectTerminal)="disconnectAllTerminals()" [style.height]="dragHeight * 100 + '%'"></div>
       @if(terminalPanelShow || keepTerminalInstance.value) {
 
         <div ast-tab-group [fobiddenContextMenu]="true"  [style.display]="terminalPanelShow ? '' : 'none'" [style.height]="(1 - dragHeight) * 100 + '%'" style="position: relative;" [tabType]="{'type':'lightcolorselection', 'height':'42px'}"

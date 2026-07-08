@@ -86,6 +86,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   /** event emitted when selected node's file type changes */
   @Output() fileTypeChange = new EventEmitter<string>();
   dataListChangeOutput = output<Array<AstTreeNode>>();
+  disconnectTerminal = output<void>();
 
   // 添加自动刷新控制变量
   autoRefreshEnabled = signal<boolean>(true);
@@ -801,6 +802,7 @@ Always use the welcome_greeting tool.`;
       assignDeepLevel([rootNode]);
       this.assignDeepParent([rootNode]);
       this.dataList.set([rootNode]);
+      this.dataListChangeOutput.emit(this.dataList());
       this.checkIsLocalProject();
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
@@ -848,6 +850,7 @@ Always use the welcome_greeting tool.`;
       };
       assignDeepLevel([fileNode]);
       this.dataList.set([fileNode]);
+      this.dataListChangeOutput.emit(this.dataList());
       this.checkIsLocalProject();
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
@@ -1243,6 +1246,14 @@ Always use the welcome_greeting tool.`;
       }).catch(error => {
         console.error('Error deleting handles for node and descendants:', error);
       });
+      
+      // 检查是否删除的是根目录
+      if (evt.target.item && !evt.target.parentItem) {
+        // 删除的是根目录，断开终端连接
+        this.disconnectTerminal.emit();
+        // 通知父组件dataList已变更
+        this.dataListChangeOutput.emit(this.dataList());
+      }
     }
     
     if(evt == 'Rename') {
