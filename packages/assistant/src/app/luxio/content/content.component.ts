@@ -1167,6 +1167,10 @@ Always use the welcome_greeting tool.`;
     this.storeApi();
   }
 
+  onContentChanged(tab: any) {
+    tab['saved'] = false;
+  }
+
   // 通过WebSocket保存文件到服务器
   private async saveFileToServer(evt: any) {
     // 确保WebSocket已连接

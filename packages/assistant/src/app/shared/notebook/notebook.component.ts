@@ -15,6 +15,7 @@ export class NoteBookComponent implements OnInit {
 
     data = model<AstTreeNode>()
     readonly saved = output();
+    readonly contentChanged = output<void>();
 
     fileType: Signal<string> = computed(()=> {
         const data = this.data()

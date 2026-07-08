@@ -164,7 +164,7 @@
           <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
           }
           @if (openedTab['nodeType']=='file') {
-            <div notebook [data]="openedTab" (saved)="saveText($event)"></div>
+            <div notebook [data]="openedTab" (saved)="saveText($event)" (contentChanged)="onContentChanged(openedTab)"></div>
           }
           @if (openedTab['type']=='api-community') {
             <app-api-explorer [currentDisplayViewId]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>

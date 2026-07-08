@@ -30,6 +30,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
   textInfo = input<any>();
   readonly saved = output();
+  readonly contentChanged = output<void>();
   private editorView!: EditorView;
   originalNewlineType!: string;
   
@@ -96,6 +97,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
         EditorView.updateListener.of((update) => {
           if(update.docChanged) {
             this.getEditorContentAndUpdatePreview()
+            this.contentChanged.emit()
           }
         })
       ]
