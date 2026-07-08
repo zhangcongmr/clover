@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, OnInit, output, viewChild, signal, ViewChild, TemplateRef, ViewContainerRef, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, input, OnInit, output, viewChild, signal, ViewChild, TemplateRef, ViewContainerRef, AfterViewInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {EditorView, basicSetup} from "codemirror"
 import {markdown} from "@codemirror/lang-markdown"
@@ -41,7 +41,19 @@ export class EditorComponent implements OnInit, AfterViewInit {
   
   @ViewChild('previewContainer', { static: false }) previewContainer!: ElementRef<HTMLDivElement>;
   
-  constructor(private viewContainerRef: ViewContainerRef) {}
+  private lastContent: string = '';
+  
+  constructor(private viewContainerRef: ViewContainerRef) {
+    effect(() => {
+      const textInfo = this.textInfo();
+      if (textInfo && this.editorView && this.lastContent !== undefined) {
+        const newContent = textInfo.content;
+        if (newContent !== undefined && newContent !== this.lastContent) {
+          this.updateContent(newContent);
+        }
+      }
+    });
+  }
   
   ngAfterViewInit() {
     // 初始化预览内容
@@ -52,6 +64,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     const parser = this.getParser();
     // --- 4. 检测原始换行符 ---
     this.originalNewlineType = detectNewlineType(this.textInfo().content);
+    this.lastContent = this.textInfo().content;
 
     const textEditorView = this.textEditorView()
     this.editorView = new EditorView({
@@ -364,6 +377,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
           insert: newContent
         }
       });
+      this.lastContent = newContent;
       this.getEditorContentAndUpdatePreview();
     }
   }
