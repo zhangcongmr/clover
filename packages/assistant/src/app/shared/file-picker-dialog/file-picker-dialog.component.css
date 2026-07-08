@@ -1,6 +1,7 @@
 .file-picker {
   display: flex;
   height: 100%;
+  align-items: normal;
 }
 
 .file-picker-container {

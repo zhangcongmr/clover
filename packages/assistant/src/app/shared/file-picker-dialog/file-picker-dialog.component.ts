@@ -1,15 +1,18 @@
 import { Component, computed, inject, output, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../ast-modal/ast-modal.component';
 import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
 import { pickParentObject, getNodeAbsolutePath } from '../ast-tree/ast-tree.component';
 import { LocalAgentService } from '../local-agent/local-agent.service';
+import { AstTabComponent } from '../ast-tab/ast-tab.component';
+import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
 
 @Component({
   selector: 'app-file-picker-dialog',
   standalone: true,
-  imports: [AstModalComponent, AstTreeComponent, FormsModule],
+  imports: [CommonModule, AstModalComponent, AstTreeComponent, FormsModule, AstTabGroupComponent, AstTabComponent],
   templateUrl: './file-picker-dialog.component.html',
   styleUrls: ['./file-picker-dialog.component.css']
 })
@@ -23,6 +26,7 @@ export class FilePickerDialogComponent {
   treeData = signal<AstTreeNode[]>([]);
   selectedNode = signal<AstTreeNode | null>(null);
   loading = signal(false);
+  activeTab = signal<'local' | 'remote'>('local');
 
   selectedNodePath = computed(() => {
     const node = this.selectedNode();
@@ -35,6 +39,8 @@ export class FilePickerDialogComponent {
     this.mode.set('folder');
     this.title.set('Open Folder');
     this.selectedNode.set(null);
+    this.activeTab.set('local');
+    this.localAgentService.setAgentUrl('https://localhost:4200');
     this.visible.set(true);
     this.loadDirectory(startPath);
   }
@@ -43,6 +49,8 @@ export class FilePickerDialogComponent {
     this.mode.set('file');
     this.title.set('Open File');
     this.selectedNode.set(null);
+    this.activeTab.set('local');
+    this.localAgentService.setAgentUrl('https://localhost:4200');
     this.visible.set(true);
     this.loadDirectory(startPath);
   }
@@ -109,6 +117,17 @@ export class FilePickerDialogComponent {
   }
 
   expandFolderFn = (node: AstTreeNode) => this.expandFolder(node);
+
+  onTabChange(tabId: string) {
+    if (tabId === 'local') {
+      this.localAgentService.setAgentUrl('https://localhost:4200');
+    } else {
+      this.localAgentService.setAgentUrl(window.location.origin);
+    }
+    this.activeTab.set(tabId as 'local' | 'remote');
+    this.localAgentService.disconnect();
+    this.loadDirectory('/');
+  }
 
   // Handle click from ast-tree component
   onTreeNodeClick(node: AstTreeNode) {

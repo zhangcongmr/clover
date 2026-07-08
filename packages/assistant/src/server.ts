@@ -35,7 +35,7 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine({
-  allowedHosts: ['localhost', '192.168.153.1', '127.0.0.1', '192.168.253.110'],
+  allowedHosts: ['localhost', '192.168.153.129', '127.0.0.1', '192.168.253.110'],
 });
 let client: A2AClient | null = null;
 const enableStreaming = process.env['ENABLE_STREAMING'] !== 'false';
@@ -55,6 +55,10 @@ const allowedOrigins = [
   'http://127.0.0.1:4000',
   'https://127.0.0.1:4200',
   'https://127.0.0.1:4000',
+  'http://192.168.153.129:4200',
+  'http://192.168.153.129:4000',
+  'https://192.168.153.129:4200',
+  'https://192.168.153.129:4000',
 ];
 
 // CORS middleware
@@ -65,6 +69,7 @@ app.use((req, res, next) => {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -394,7 +399,7 @@ app.use((req, res, next) => {
  * Supports HTTPS via SSL_CERT_PATH and SSL_KEY_PATH environment variables, falling back to HTTP if certificates are not found.
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
+  const port = process.env['PORT'] || 4200;
   const sslConfig = loadSslConfig();
 
   const httpServer = sslConfig

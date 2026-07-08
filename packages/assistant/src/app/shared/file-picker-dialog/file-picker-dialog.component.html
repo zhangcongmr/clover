@@ -1,38 +1,48 @@
 <ast-modal [visible]="visible()" [title]="title()" modalSize="large" (close)="cancel()">
   <div class="codigma-ast-modal-body file-picker">
-    <div class="file-picker-container">
-      <!-- Path navigation bar -->
-      <div class="path-bar">
-        <button (click)="goUp()" class="nav-btn" title="Go up">../</button>
-        <input [value]="currentPath()" (keyup.enter)="loadDirectory($any($event.target).value)" class="path-input"
-          placeholder="Enter path...">
-        <button (click)="refresh()" class="nav-btn" title="Refresh">&#x21bb;</button>
-      </div>
+    <ng-template #filePickerContent>
+      <div class="file-picker-container">
+        <!-- Path navigation bar -->
+        <div class="path-bar">
+          <button (click)="goUp()" class="nav-btn" title="Go up">../</button>
+          <input [value]="currentPath()" (keyup.enter)="loadDirectory($any($event.target).value)" class="path-input"
+            placeholder="Enter path...">
+          <button (click)="refresh()" class="nav-btn" title="Refresh">&#x21bb;</button>
+        </div>
 
-      <!-- File tree -->
-      <div class="tree-container">
-        @if (loading()) {
-        <div class="loading">Loading...</div>
-        } @else {
-        <div ast-tree [data]="treeData()" [fobiddenContextMenu]="true" (nodeClick)="onTreeNodeClick($event)"
-          [folderBeforeToggle]="expandFolderFn"
-          class="custom-scroll file-tree"></div>
-        }
-      </div>
-
-      <!-- Footer buttons -->
-      <div class="dialog-footer">
-        <span class="selected-info">
-          @if (selectedNode()) {
-          Selected: {{ selectedNodePath() }}
+        <!-- File tree -->
+        <div class="tree-container">
+          @if (loading()) {
+          <div class="loading">Loading...</div>
+          } @else {
+          <div ast-tree [data]="treeData()" [fobiddenContextMenu]="true" (nodeClick)="onTreeNodeClick($event)"
+            [folderBeforeToggle]="expandFolderFn"
+            class="custom-scroll file-tree"></div>
           }
-        </span>
-        <div class="footer-buttons">
-          <button (click)="confirm()" class="btn-confirm" [disabled]="!selectedNode()">Open</button>
-          <button (click)="cancel()" class="btn-cancel">Cancel</button>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="dialog-footer">
+          <span class="selected-info">
+            @if (selectedNode()) {
+            Selected: {{ selectedNodePath() }}
+            }
+          </span>
+          <div class="footer-buttons">
+            <button (click)="confirm()" class="btn-confirm" [disabled]="!selectedNode()">Open</button>
+            <button (click)="cancel()" class="btn-cancel">Cancel</button>
+          </div>
         </div>
       </div>
+    </ng-template>
+
+    <div ast-tab-group [closable]="false" [fobiddenContextMenu]="true" [tabType]="{'type':'lightcolorselection'}">
+      <div ast-tab [label]="'Local Files'" [id]="'local'" [isActivated]="true" (onClickTab)="onTabChange($event.id)">
+        <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
+      </div>
+      <div ast-tab [label]="'Remote Files'" [id]="'remote'" (onClickTab)="onTabChange($event.id)">
+        <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
+      </div>
     </div>
-   
   </div>
 </ast-modal>
