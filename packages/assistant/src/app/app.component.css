@@ -17,6 +17,16 @@
   border-bottom: 2px solid var(--vscode-editorGroup-border);
 }
 
+.app-menu {
+  cursor: pointer;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-activityBar-background);
+}
+
 .codigma-left-app-header {
   display: flex;
   height: 42px;

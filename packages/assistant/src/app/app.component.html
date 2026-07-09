@@ -1,4 +1,10 @@
 <div data-layer="app-header" class="AppHeader codigma-app-header">
+  <div class="app-menu">
+    <!-- TODO : add navigation menu -->
+    <svg width="16" height="18">
+      <use href="#icon-menu"></use>
+    </svg>
+  </div>
   <div ast-tab-group [headerOnly]="true" [fobiddenContextMenu]="true"  [tabType]="{'type':'lightcolorselection', 'height':'42px'}">
     @if (openedList.length>0) {
       @for (openedTab of openedList; track openedTab.id) {
