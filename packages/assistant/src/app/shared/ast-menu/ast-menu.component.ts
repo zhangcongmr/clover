@@ -24,15 +24,33 @@ export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
 
   documentClickHandler = (e: any) => {
     if (this.isOpen()) {
-      if (e.target !== this.elementRef.nativeElement && !this.elementRef.nativeElement.contains(e.target)) {
-        this.closeMenu();
+      const target = e.target as HTMLElement;
+      if (this.elementRef.nativeElement.contains(target)) {
+        return;
       }
+      const submenus = this.elementRef.nativeElement.querySelectorAll('[ast-submenu]');
+      for (const submenu of submenus) {
+        if (submenu.contains(target)) {
+          return;
+        }
+      }
+      this.closeMenu();
     }
   };
 
   windowBlurHandler = (e: any) => {
-    e.preventDefault()
+    e.preventDefault();
     if (this.isOpen()) {
+      const relatedTarget = e.relatedTarget as HTMLElement;
+      if (relatedTarget && this.elementRef.nativeElement.contains(relatedTarget)) {
+        return;
+      }
+      const submenus = this.elementRef.nativeElement.querySelectorAll('[ast-submenu]');
+      for (const submenu of submenus) {
+        if (submenu.contains(relatedTarget)) {
+          return;
+        }
+      }
       this.closeMenu();
     }
   };
@@ -60,7 +78,7 @@ export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
     if(changes["isOpen"]) {
       if(changes["isOpen"].currentValue != changes["isOpen"].previousValue) {
         if(changes["isOpen"].currentValue == false) {
-          this.positionStyle = this.positionStyle.replace(/(block|flex|flex-inline)/g, 'none');
+          this.positionStyle = this.positionStyle.replace(/position:fixed/g, 'position:static').replace(/(block|flex|flex-inline)/g, 'none');
           this.display = 'none';
           return;
         }
@@ -71,7 +89,7 @@ export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
         // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
         let horizontalComputed = this.getHorizontalComputed(menuInitiator);
         let verticalComputed = this.getVerticalComputed(menuInitiator);
-        this.positionStyle = horizontalComputed + 'px;' + verticalComputed + 'px;'
+        this.positionStyle = 'position:fixed;' + horizontalComputed + 'px;' + verticalComputed + 'px;'
         this.display = 'block';
 
       }

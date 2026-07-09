@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
 import { ContentComponent } from './luxio/content/content.component';
 import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
+import { AstSubmenuComponent } from './shared/ast-menu/ast-submenu.component';
 import { SettingsComponent } from './luxio/settings/settings.component';
 import { UserCenterComponent } from './luxio/user-center/user-center.component';
 import { file } from 'opfs-tools';
@@ -30,7 +31,7 @@ import { DatePipe } from '@angular/common';
       '(mousemove)': 'whenMouseMove($event)'
     },
     standalone: true,
-    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstTabGroupComponent,
+    imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
        SurfaceComponent, ComponentHostComponent], // Add TerminalComponent to imports
 })
@@ -82,6 +83,23 @@ export class AppComponent implements OnInit, AfterViewInit {
   blurSwitch = true;
   isOpen = false;
   menuInitiator: DOMRect | undefined;
+
+  isMenuOpen = false;
+  menuAnchor: DOMRect | undefined;
+
+  @ViewChild('fileSubmenu') fileSubmenuRef!: AstSubmenuComponent;
+  @ViewChild('viewSubmenu') viewSubmenuRef!: AstSubmenuComponent;
+  @ViewChild('settingsSubmenu') settingsSubmenuRef!: AstSubmenuComponent;
+
+  get fileSubmenuEl(): HTMLElement | undefined {
+    return this.fileSubmenuRef?.nativeElement?.parentElement ?? undefined;
+  }
+  get viewSubmenuEl(): HTMLElement | undefined {
+    return this.viewSubmenuRef?.nativeElement?.parentElement ?? undefined;
+  }
+  get settingsSubmenuEl(): HTMLElement | undefined {
+    return this.settingsSubmenuRef?.nativeElement?.parentElement ?? undefined;
+  }
 
   dataList: Array<any> = [];
 
@@ -1094,6 +1112,72 @@ For each fileIcons entry:
   closeMenu() {
     this.blurSwitch = true;
     this.isOpen = false;
+  }
+
+  toggleMenu(evt: MouseEvent) {
+    if (this.isMenuOpen) {
+      this.isMenuOpen = false;
+    } else {
+      this.menuAnchor = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+      this.isMenuOpen = true;
+    }
+  }
+
+  onMenuAction(action: string) {
+    this.isMenuOpen = false;
+    switch (action) {
+      case 'new-file': {
+        const contentComp = this.contentComp();
+        if (contentComp) {
+          contentComp.openTab({
+            id: 'untitled-' + Date.now(),
+            type: 'untitled',
+            label: 'Untitled'
+          });
+          contentComp.storeOpenedList();
+        }
+        break;
+      }
+      case 'open-file':
+        this.toggleDisplayViewId(1);
+        break;
+      case 'import-api':
+        this.toggleDisplayViewId(1);
+        break;
+      case 'search':
+        this.toggleDisplayViewId(2);
+        break;
+      case 'terminal':
+        this.toggleTerminal();
+        break;
+      case 'theme-prompt':
+        this.openThemePrompt();
+        break;
+      case 'settings':
+        this.toggleDisplayViewId(5);
+        break;
+      case 'user-center':
+        this.toggleDisplayViewId(6);
+        break;
+      case 'sign-in':
+        this.redirectToLogin('/assistant');
+        break;
+      case 'sign-out':
+        this.handleSignOut();
+        break;
+    }
+  }
+
+  closeAppMenu() {
+    this.isMenuOpen = false;
+  }
+
+  onMenuMouseEnter() {
+    this.blurSwitch = false;
+  }
+
+  onMenuMouseLeave() {
+    this.blurSwitch = true;
   }
 
   clickMoreBtn(evt: any) {

@@ -27,6 +27,34 @@
   background: var(--vscode-activityBar-background);
 }
 
+/* App Menu Dropdown */
+.app-menu-dropdown .app-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  font-size: var(--vscode-menu-font-size, 13px);
+  background: var(--vscode-editorWidget-background);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.app-menu-dropdown .app-menu-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.app-menu-dropdown .app-menu-item .icon {
+  flex-shrink: 0;
+}
+
+.app-menu-separator {
+  height: 1px;
+  background: var(--vscode-editorGroup-border);
+  margin: 4px 0;
+}
+
 .codigma-left-app-header {
   display: flex;
   height: 42px;
