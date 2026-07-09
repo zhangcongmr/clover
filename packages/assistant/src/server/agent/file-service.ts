@@ -264,15 +264,30 @@ export class FileService {
   startWatching(filePath: string, callback: (eventType: string) => void): void {
     if (this.watchers.has(filePath)) return;
 
-    try {
-      const resolved = resolve(filePath);
-      const watcher = watch(resolved, { persistent: false }, (eventType: string) => {
-        callback(eventType);
-      });
-      this.watchers.set(filePath, watcher);
-    } catch (err) {
-      console.error(`Failed to watch file: ${filePath}`, err);
-    }
+    const resolved = resolve(filePath);
+
+    let changeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const doWatch = () => {
+      try {
+        const watcher = watch(resolved, { persistent: false }, (eventType: string) => {
+          if (eventType === 'rename') {
+            callback(eventType);
+            this.stopWatching(filePath);
+            setTimeout(() => doWatch(), 200);
+          } else {
+            if (changeTimer) clearTimeout(changeTimer);
+            changeTimer = setTimeout(() => callback(eventType), 50);
+          }
+        });
+        this.watchers.set(filePath, watcher);
+        console.log(`[FileService] Started watching: ${resolved}`);
+      } catch (err) {
+        console.error(`[FileService] Failed to watch file: ${resolved}`, err);
+      }
+    };
+
+    doWatch();
   }
 
   stopWatching(filePath: string): void {

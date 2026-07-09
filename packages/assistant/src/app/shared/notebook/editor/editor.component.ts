@@ -31,6 +31,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
   textInfo = input<any>();
   readonly saved = output();
   readonly contentChanged = output<void>();
+
+  private isUpdatingContent = false;
   private editorView!: EditorView;
   originalNewlineType!: string;
   
@@ -46,7 +48,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   constructor(private viewContainerRef: ViewContainerRef) {
     effect(() => {
       const textInfo = this.textInfo();
-      if (textInfo && this.editorView && this.lastContent !== undefined) {
+      if (textInfo && this.editorView) {
         const newContent = textInfo.content;
         if (newContent !== undefined && newContent !== this.lastContent) {
           this.updateContent(newContent);
@@ -108,7 +110,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
           }
         }),
         EditorView.updateListener.of((update) => {
-          if(update.docChanged) {
+          if(update.docChanged && !this.isUpdatingContent) {
             this.getEditorContentAndUpdatePreview()
             this.contentChanged.emit()
           }
@@ -370,6 +372,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
   updateContent(newContent: string): void {
     if (this.editorView && this.editorView.state.doc.toString() !== newContent) {
+      this.isUpdatingContent = true;
       this.editorView.dispatch({
         changes: {
           from: 0,
@@ -377,6 +380,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
           insert: newContent
         }
       });
+      this.isUpdatingContent = false;
       this.lastContent = newContent;
       this.getEditorContentAndUpdatePreview();
     }

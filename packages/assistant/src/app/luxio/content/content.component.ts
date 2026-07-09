@@ -69,6 +69,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // lock state for the entire content, which can be set based on user permissions or other factors; when true, all nodes are effectively read-only and UI will reflect this state
   isLocked: boolean = false;
 
+  // 记录正在保存的文件路径，用于忽略保存触发的fileWatch事件
+  private savingFilePath: string = '';
+
   /***aside */
   serverList: Array<any> = [];
   dataList= signal<Array<AstTreeNode>>([]);
@@ -245,6 +248,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       if (found) {
         console.log('[Content] Connected to local agent at', this.localAgentService.getAgentUrl());
         this.startWatchProjectRoot();
+        this.startWatchOpenedFiles();
       } else {
         console.warn('[Content] Local agent not available');
         this.notificationService.showNotification(
@@ -256,13 +260,27 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
   }
 
+  private startWatchOpenedFiles() {
+    const openedTabs = this.openedList();
+    for (const tab of openedTabs) {
+      if (tab.nodeType === 'file') {
+        const filePath = getNodeAbsolutePath(this.dataList(), tab);
+        this.localAgentService.startFileWatch(filePath, (eventType) => {
+          this.onExternalFileChange(tab, eventType);
+        });
+      }
+    }
+  }
+
   private startWatchProjectRoot() {
     const list = this.dataList();
     if (list.length === 0 || !list[0].rootPath) return;
 
     const rootPath = list[0].rootPath;
     this.localAgentService.startFileWatch(rootPath, (eventType) => {
-      this.onProjectRootChanged(rootPath, eventType);
+      if (eventType === 'rename') {
+        this.onProjectRootChanged(rootPath, eventType);
+      }
     });
   }
 
@@ -301,6 +319,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
             list[0].children = newChildren;
             assignDeepLevel(list[0].children, (list[0].deepLevel || 0) + 1);
             this.dataList.update(value => [...value]);
+            this.storeApi();
             this.notificationService.showNotification('Project files updated', 'info');
           }
         }
@@ -1203,13 +1222,17 @@ Always use the welcome_greeting tool.`;
     if (this.isLocalProject() && evt.nodeType === 'file') {
       try {
         const filePath = getNodeAbsolutePath(this.dataList(), evt);
+        this.savingFilePath = filePath;
         await this.localAgentService.writeFile(filePath, evt.content || '');
         this.notificationService.showNotification('File saved locally', 'success');
       } catch (err: any) {
         console.error('[Content] Failed to save file via local agent:', err);
         this.notificationService.showNotification(`Failed to save: ${err.message}`, 'error');
+      } finally {
+        this.savingFilePath = '';
       }
       this.storeApi();
+      this.storeOpenedList();
       return;
     }
 
@@ -1404,26 +1427,32 @@ Always use the welcome_greeting tool.`;
   }
 
   private async onExternalFileChange(tab: any, eventType: string): Promise<void> {
-    if (eventType === 'change') {
-      try {
-        const filePath = getNodeAbsolutePath(this.dataList(), tab);
-        const newContent = await this.localAgentService.readFile(filePath);
+    // 忽略保存触发的事件
+    const filePath = getNodeAbsolutePath(this.dataList(), tab);
+    if (this.savingFilePath === filePath) {
+      return;
+    }
+
+    try {
+      const newContent = await this.localAgentService.readFile(filePath);
+      
+      if (tab.content !== newContent) {
+        tab.content = newContent;
         
-        if (tab.content !== newContent) {
-          tab.content = newContent;
-          tab['saved'] = false;
-          
-          this.notificationService.showNotification(
-            'File changed externally. Content updated.', 'info'
-          );
+        const openeds = this.openedList();
+        const index = openeds.findIndex((t: any) => t.id === tab.id);
+        if (index !== -1) {
+          openeds[index] = { ...openeds[index], content: newContent };
+          this.openedList.update(value => [...value]);
         }
-      } catch (err) {
-        console.error('Failed to read updated file:', err);
+        
+        this.notificationService.showNotification(
+          'File changed externally. Content updated.', 'info'
+        );
+        this.storeOpenedList();
       }
-    } else if (eventType === 'rename') {
-      this.notificationService.showNotification(
-        'File was renamed or deleted externally.', 'warning'
-      );
+    } catch (err) {
+      console.error('[Content] Failed to read updated file:', err);
     }
   }
 

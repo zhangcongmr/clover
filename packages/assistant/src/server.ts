@@ -440,11 +440,11 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
 
     if (isFileWatch) {
       const watchedFiles = new Set<string>();
+      console.log('[Server] File-watch WebSocket connected');
 
       ws.on('message', (data) => {
         try {
           const msg = JSON.parse(data.toString());
-
           if (msg.type === 'file-watch-start') {
             const startMsg = msg as FileWatchStartMessage;
             fileService.startWatching(startMsg.path, (eventType) => {
