@@ -14,6 +14,7 @@ import {sql} from "@codemirror/lang-sql"
 import {yaml} from "@codemirror/lang-yaml"
 import { rust } from "@codemirror/lang-rust"
 import { marked } from 'marked';
+import { AstTreeNode } from '../../model';
 
 @Component({
     selector: 'ast-editor',
@@ -28,8 +29,8 @@ import { marked } from 'marked';
 })
 export class EditorComponent implements OnInit, AfterViewInit {
   textEditorView = viewChild<ElementRef<HTMLElement>>('textEditor');
-  textInfo = input<any>();
-  readonly saved = output();
+  data = input<AstTreeNode>();
+  readonly saved = output<AstTreeNode>();
   readonly contentChanged = output<void>();
 
   private isUpdatingContent = false;
@@ -47,9 +48,9 @@ export class EditorComponent implements OnInit, AfterViewInit {
   
   constructor(private viewContainerRef: ViewContainerRef) {
     effect(() => {
-      const textInfo = this.textInfo();
-      if (textInfo && this.editorView) {
-        const newContent = textInfo.content;
+      const data = this.data();
+      if (data && this.editorView) {
+        const newContent = data.content;
         if (newContent !== undefined && newContent !== this.lastContent) {
           this.updateContent(newContent);
         }
@@ -65,13 +66,13 @@ export class EditorComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     const parser = this.getParser();
     // --- 4. 检测原始换行符 ---
-    this.originalNewlineType = detectNewlineType(this.textInfo().content);
-    this.lastContent = this.textInfo().content;
+    this.originalNewlineType = detectNewlineType(this.data()?.content ?? '');
+    this.lastContent = this.data()?.content ?? '';
 
     const textEditorView = this.textEditorView()
     this.editorView = new EditorView({
       parent: textEditorView?.nativeElement,
-      doc: this.textInfo().content,
+      doc: this.data()?.content,
       extensions: [basicSetup, parser, EditorView.lineWrapping, // ✅ 正确用法 启用软换行（soft wrapping）
         EditorView.theme({
           '&': {
@@ -124,7 +125,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   }
 
   private getParser() {
-    const langType = this.textInfo().label.substring(this.textInfo().label.lastIndexOf('.') + 1);
+    const langType = this.data()?.label.substring((this.data()?.label ?? '').lastIndexOf('.') + 1);
     switch (langType) {
       case 'md':
         this.showToolbar.set(true);
@@ -351,17 +352,19 @@ export class EditorComponent implements OnInit, AfterViewInit {
     if (evt.code == "KeyS" && (navigator.platform.match("Mac") ? evt.metaKey : evt.ctrlKey)) {
       evt.preventDefault();
       //如果api已经保存了,则不需要再次保存
-      // if(this.textInfo['saved']) {
+      // if(this.data()['saved']) {
       //   return;
       // }
 
       const contentWithLF = this.getEditorContentAndUpdatePreview();
       // 将 \n 转换回我们之前检测到的原始格式
       const contentWithOriginalNewlines = convertToOriginalNewlines(contentWithLF, this.originalNewlineType);
-
-      this.textInfo()['saved'] = true;
-      this.textInfo()['content'] = contentWithOriginalNewlines;
-      this.saved.emit(this.textInfo());
+      const data = this.data();
+      if(data) {
+        data['saved'] = true;
+        data['content'] = contentWithOriginalNewlines;
+        this.saved.emit(data);
+      }
     }
   }
 

@@ -3740,7 +3740,7 @@
           ],
           "properties": [
             "textEditorView",
-            "textInfo",
+            "data",
             "saved",
             "editorView",
             "originalNewlineType",
