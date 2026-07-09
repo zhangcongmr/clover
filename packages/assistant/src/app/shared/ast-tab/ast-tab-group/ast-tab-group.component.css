@@ -87,12 +87,12 @@ li[data-layer="tab"].active-tab .tab-close {
     background-color: var(--vscode-list-hoverBackground);
 }
 
-.padding_left_space {
+.padding_left_crumb {
     width: 5px;
     height: 100%;
 }
 
-.padding_right_space {
+.padding_right_crumb {
     width: 5px;
     height: 100%;
 }
@@ -160,11 +160,11 @@ li[data-layer="tab"].active-tab .tab-close {
     background-color: var(--primary-color, rgb(103, 137, 186));
 }
 
-.bilateral-border-tab .padding_left_space {
+.bilateral-border-tab .padding_left_crumb {
     border-left: 1px var(--vscode-tabborder-background) solid;
 }
 
-.bilateral-border-tab .padding_right_space {
+.bilateral-border-tab .padding_right_crumb {
     border-right: 1px var(--vscode-tabborder-background) solid;
 }
 

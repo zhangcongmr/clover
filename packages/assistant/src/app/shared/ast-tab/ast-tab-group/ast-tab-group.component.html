@@ -6,7 +6,7 @@
       @for (tab of topLevelTabs(); track tab; let tabIndex = $index) {
       <li data-layer="tab" data-tab_type="tab_header" (click)="clickTab(tab)" (contextmenu)="showContextMenu($event, tab)" [class]="tab.activeClass()"
         [style.min-width]="tab.minWidth" cdkDrag>
-        <div data-layer="padding_left_space" class="padding_left_space"></div>
+        <div data-layer="padding_left_crumb" class="padding_left_crumb"></div>
         <div class="tab-label-area">{{tab['label']()}}</div>
         @if (closable()&&(tab.closable==null||tab.closable==true)) {
           @if(tab['saved']()==false) {
@@ -27,7 +27,7 @@
             </div>
           }
         }
-        <div data-layer="padding_right_space" class="padding_right_space"></div>
+        <div data-layer="padding_right_crumb" class="padding_right_crumb"></div>
       </li>
       }
       <div data-layer="remaining_space" class="RemainingSpace codigma-remaining-space" (dblclick)="dblclickAddTab()" [style.cursor]="addTabEnable()?'pointer': ''"
