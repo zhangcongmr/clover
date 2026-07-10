@@ -31,9 +31,17 @@
           <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
           <span>Open File</span>
         </div>
+        <div class="app-menu-item" (click)="onMenuAction('open-folder')">
+          <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
+          <span>Open Folder</span>
+        </div>
         <div class="app-menu-item" (click)="onMenuAction('import-api')">
           <svg class="icon" width="16" height="16"><use href="#icon-import-btn"></use></svg>
           <span>Import API</span>
+        </div>
+        <div class="app-menu-item" (click)="onMenuAction('close-folder')">
+          <svg class="icon" width="16" height="16"><use href="#icon-close-icon"></use></svg>
+          <span>Close Folder</span>
         </div>
       </div>
     </div>

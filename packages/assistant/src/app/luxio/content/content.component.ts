@@ -1702,6 +1702,17 @@ Always use the welcome_greeting tool.`;
     }
   }
 
+  async closeFolder() {
+    this.localAgentService.disconnect();
+    this.disconnectTerminal.emit();
+    this.nodeDef = null;
+    this.isLocalProject.set(false);
+    this.dataList.set([]);
+    this.openedList.set([]);
+    await this.storeApi();
+    await this.storeOpenedList();
+  }
+
   // 删除节点及其所有后代节点在IndexedDB中的handle
   private async deleteHandlesForNodeAndDescendants(node: any) {
     // 如果节点有folderHandleKey，删除它

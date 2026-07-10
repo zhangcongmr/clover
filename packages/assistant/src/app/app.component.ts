@@ -1144,6 +1144,12 @@ For each fileIcons entry:
       case 'open-file':
         this.toggleDisplayViewId(1);
         break;
+      case 'open-folder':
+        this.contentComp()?.openFolderInContent('readwrite');
+        break;
+      case 'close-folder':
+        this.contentComp()?.closeFolder();
+        break;
       case 'import-api':
         this.toggleDisplayViewId(1);
         break;
