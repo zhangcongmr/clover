@@ -21,7 +21,7 @@
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </span>
-      <div #fileSubmenu ast-submenu [parentItem]="fileSubmenuEl" class="submenu-container codigma-right-menu"
+      <div #fileSubmenu ast-submenu class="submenu-container codigma-right-menu"
         (mouseenter)="fileSubmenu.onMouseEnter()" (mouseleave)="fileSubmenu.onMouseLeave()">
         <div class="app-menu-item" (click)="onMenuAction('new-file')">
           <svg class="icon" width="16" height="16"><use href="#icon-add-file"></use></svg>
@@ -59,7 +59,7 @@
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </span>
-      <div #viewSubmenu ast-submenu [parentItem]="viewSubmenuEl" class="submenu-container codigma-right-menu"
+      <div #viewSubmenu ast-submenu class="submenu-container codigma-right-menu"
         (mouseenter)="viewSubmenu.onMouseEnter()" (mouseleave)="viewSubmenu.onMouseLeave()">
         <div class="app-menu-item" (click)="onMenuAction('search')">
           <svg class="icon" width="16" height="16"><use href="#icon-search"></use></svg>
@@ -95,7 +95,7 @@
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </span>
-      <div #settingsSubmenu ast-submenu [parentItem]="settingsSubmenuEl" class="submenu-container codigma-right-menu"
+      <div #settingsSubmenu ast-submenu class="submenu-container codigma-right-menu"
         (mouseenter)="settingsSubmenu.onMouseEnter()" (mouseleave)="settingsSubmenu.onMouseLeave()">
         <div class="app-menu-item" (click)="onMenuAction('settings')">
           <svg class="icon" width="16" height="16"><use href="#icon-settings"></use></svg>

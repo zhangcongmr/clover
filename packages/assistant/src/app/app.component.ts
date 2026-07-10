@@ -91,16 +91,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   @ViewChild('viewSubmenu') viewSubmenuRef!: AstSubmenuComponent;
   @ViewChild('settingsSubmenu') settingsSubmenuRef!: AstSubmenuComponent;
 
-  get fileSubmenuEl(): HTMLElement | undefined {
-    return this.fileSubmenuRef?.nativeElement?.parentElement ?? undefined;
-  }
-  get viewSubmenuEl(): HTMLElement | undefined {
-    return this.viewSubmenuRef?.nativeElement?.parentElement ?? undefined;
-  }
-  get settingsSubmenuEl(): HTMLElement | undefined {
-    return this.settingsSubmenuRef?.nativeElement?.parentElement ?? undefined;
-  }
-
   dataList: Array<any> = [];
 
   openedList: Array<any> = [
@@ -254,6 +244,16 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    if (this.fileSubmenuRef) {
+      this.fileSubmenuRef.parentItem = this.fileSubmenuRef.nativeElement.parentElement ?? undefined;
+    }
+    if (this.viewSubmenuRef) {
+      this.viewSubmenuRef.parentItem = this.viewSubmenuRef.nativeElement.parentElement ?? undefined;
+    }
+    if (this.settingsSubmenuRef) {
+      this.settingsSubmenuRef.parentItem = this.settingsSubmenuRef.nativeElement.parentElement ?? undefined;
+    }
+
     const rt = this.addTexts()
     var sequence = new Sequence({name: "block1"});
 
