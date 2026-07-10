@@ -26,6 +26,13 @@
   width: 100%;
 }
 
+:host(.codigma-right-menu) .has-submenu > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
 :host(.codigma-right-menu) .submenu-arrow {
   margin-left: auto;
   width: 16px;

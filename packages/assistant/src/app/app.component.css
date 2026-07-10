@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   color: var(--vscode-foreground);
   font-size: var(--vscode-menu-font-size, 13px);
@@ -47,6 +47,13 @@
 
 .app-menu-dropdown .app-menu-item .icon {
   flex-shrink: 0;
+}
+
+.app-menu-dropdown .app-menu-item > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
 }
 
 .app-menu-separator {
