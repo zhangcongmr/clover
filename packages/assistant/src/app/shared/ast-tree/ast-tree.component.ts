@@ -316,7 +316,16 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
           //  evtObj.item.label = this.currentContextMenuEvt.rawLabel;  //恢复原始名称
         }
       }
-      this.menuItemAction.emit("Rename")
+
+      const ctxAction = this.currentContextMenuEvt['action'];
+      if (ctxAction === 'NewFile' || ctxAction === 'NewFolder') {
+        this.menuItemAction.emit({
+          action: ctxAction + ':confirm',
+          target: evtObj.item
+        })
+      } else {
+        this.menuItemAction.emit("Rename")
+      }
     }
   }
 

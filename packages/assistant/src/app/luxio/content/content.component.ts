@@ -1368,6 +1368,21 @@ Always use the welcome_greeting tool.`;
     if (evt.action == 'Delete' || evt.action == 'Duplicate') {
       this.storeApi()
     }
+    if (evt.action == 'NewFile:confirm' || evt.action == 'NewFolder:confirm') {
+      if (this.isLocalProject() && evt.target) {
+        const filePath = getNodeAbsolutePath(this.dataList(), evt.target);
+        const op = evt.action === 'NewFile:confirm'
+          ? this.localAgentService.createFile(filePath)
+          : this.localAgentService.createDir(filePath);
+        op.then(() => {
+          this.notificationService.showNotification('Created: ' + evt.target.label, 'success');
+        }).catch(err => {
+          console.error('[Content] Failed to create file/folder:', err);
+          this.notificationService.showNotification('Failed to create: ' + err.message, 'error');
+        });
+      }
+      this.storeApi()
+    }
     if (evt.action == 'NewApi' || evt.action == 'NewFile' || evt.action == 'NewFolder') {
       if (evt.target != NoN_SELECTION) {
         this.newNodeAction(evt.target, evt.action)
