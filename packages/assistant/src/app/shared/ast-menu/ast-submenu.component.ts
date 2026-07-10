@@ -17,11 +17,6 @@ export class AstSubmenuComponent implements OnDestroy {
   positionStyle: string = '';
   display: string = 'none';
 
-  private openDelayTimer: any = null;
-  private closeDelayTimer: any = null;
-  private readonly OPEN_DELAY = 200;
-  private readonly CLOSE_DELAY = 300;
-
   constructor(private elementRef: ElementRef) {
     effect(() => {
       const open = this.isOpen();
@@ -37,39 +32,17 @@ export class AstSubmenuComponent implements OnDestroy {
   }
 
   onParentHover(): void {
-    this.clearTimers();
-    this.openDelayTimer = setTimeout(() => {
-      this.isOpen.set(true);
-    }, this.OPEN_DELAY);
+    this.isOpen.set(true);
   }
 
   onParentLeave(): void {
-    this.clearTimers();
-    this.closeDelayTimer = setTimeout(() => {
-      this.isOpen.set(false);
-    }, this.CLOSE_DELAY);
+    this.isOpen.set(false);
   }
 
-  onMouseEnter(): void {
-    this.clearTimers();
-  }
+  onMouseEnter(): void {}
 
   onMouseLeave(): void {
-    this.clearTimers();
-    this.closeDelayTimer = setTimeout(() => {
-      this.isOpen.set(false);
-    }, this.CLOSE_DELAY);
-  }
-
-  private clearTimers(): void {
-    if (this.openDelayTimer) {
-      clearTimeout(this.openDelayTimer);
-      this.openDelayTimer = null;
-    }
-    if (this.closeDelayTimer) {
-      clearTimeout(this.closeDelayTimer);
-      this.closeDelayTimer = null;
-    }
+    this.isOpen.set(false);
   }
 
   private computePosition(): void {
@@ -101,7 +74,5 @@ export class AstSubmenuComponent implements OnDestroy {
     return this.elementRef.nativeElement;
   }
 
-  ngOnDestroy(): void {
-    this.clearTimers();
-  }
+  ngOnDestroy(): void {}
 }
