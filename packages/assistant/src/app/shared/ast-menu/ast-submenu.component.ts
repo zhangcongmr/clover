@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, model, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, effect, model } from '@angular/core';
 
 @Component({
   selector: 'div[ast-submenu]',
@@ -9,7 +9,7 @@ import { Component, ElementRef, Input, model, OnChanges, OnDestroy, SimpleChange
     '[style]': 'positionStyle',
   },
 })
-export class AstSubmenuComponent implements OnChanges, OnDestroy {
+export class AstSubmenuComponent implements OnDestroy {
   isOpen = model<boolean>(false);
   @Input() parentItem?: HTMLElement;
   @Input() submenuWidth: number = 200;
@@ -22,11 +22,10 @@ export class AstSubmenuComponent implements OnChanges, OnDestroy {
   private readonly OPEN_DELAY = 200;
   private readonly CLOSE_DELAY = 300;
 
-  constructor(private elementRef: ElementRef) {}
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['isOpen']) {
-      if (changes['isOpen'].currentValue) {
+  constructor(private elementRef: ElementRef) {
+    effect(() => {
+      const open = this.isOpen();
+      if (open) {
         this.computePosition();
         this.display = 'block';
         this.positionStyle = this.positionStyle.replace(/position:static/g, 'position:fixed');
@@ -34,7 +33,7 @@ export class AstSubmenuComponent implements OnChanges, OnDestroy {
         this.positionStyle = this.positionStyle.replace(/position:fixed/g, 'position:static');
         this.display = 'none';
       }
-    }
+    });
   }
 
   onParentHover(): void {
