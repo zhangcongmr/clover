@@ -308,6 +308,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
               rootPath: rootPath,
               nodeType: item.kind === 'directory' ? 'folder' : 'file',
               children: [],
+              parentItem: pickParentObject(list[0]),
             };
           });
 
@@ -1329,15 +1330,31 @@ Always use the welcome_greeting tool.`;
     }
     
     if (evt.action == 'Delete') {
+      const deletedNode = evt.target.item;
+
+      // 本地项目：通过 Local Agent 删除文件/文件夹
+      if (this.isLocalProject() && deletedNode) {
+        const filePath = evt.deletedPath || getNodeAbsolutePath(this.dataList(), deletedNode);
+        this.localAgentService.deleteFile(filePath).then(() => {
+          this.notificationService.showNotification('Deleted: ' + deletedNode.label, 'success');
+        }).catch(err => {
+          console.error('[Content] Failed to delete file/folder:', err);
+          this.notificationService.showNotification('Failed to delete: ' + err.message, 'error');
+        });
+
+        // 停止被删除节点及其后代的文件监听
+        this.stopFileWatchForNodeAndDescendants(deletedNode);
+      }
+
       // 删除节点及其后代在IndexedDB中的handle
-      this.deleteHandlesForNodeAndDescendants(evt.target.item).then(() => {
+      this.deleteHandlesForNodeAndDescendants(deletedNode).then(() => {
         console.log('Handles deleted for node and descendants');
       }).catch(error => {
         console.error('Error deleting handles for node and descendants:', error);
       });
       
       // 检查是否删除的是根目录
-      if (evt.target.item && !evt.target.parentItem) {
+      if (deletedNode && !deletedNode.parentItem) {
         // 删除的是根目录，断开终端连接
         this.disconnectTerminal.emit();
         // 通知父组件dataList已变更
@@ -1728,6 +1745,19 @@ Always use the welcome_greeting tool.`;
     if (node.children) {
       for (const child of node.children) {
         await this.deleteHandlesForNodeAndDescendants(child);
+      }
+    }
+  }
+
+  // 停止节点及其所有后代节点的文件监听
+  private stopFileWatchForNodeAndDescendants(node: any) {
+    if (node.nodeType === 'file') {
+      const filePath = getNodeAbsolutePath(this.dataList(), node);
+      this.localAgentService.stopFileWatch(filePath);
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        this.stopFileWatchForNodeAndDescendants(child);
       }
     }
   }

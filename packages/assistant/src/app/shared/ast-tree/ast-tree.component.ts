@@ -202,6 +202,7 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
     let current = this.currentContextMenuEvt;
     
     if (action == 'Delete') {
+      const deletedPath = getNodeAbsolutePath(this.data(), current.item);
       if (current.item && current.parentItem) {
         current.parentItem.children = current.parentItem.children.filter((val: any) => val.id != current.item.id)
       }
@@ -212,7 +213,8 @@ export class AstTreeComponent implements OnInit, OnChanges, AfterViewInit {
 
       this.menuItemAction.emit({
         action: action,
-        target: current
+        target: current,
+        deletedPath: deletedPath
       })
     } else if (action == 'Rename') {
       current.item['rename'] = true;
