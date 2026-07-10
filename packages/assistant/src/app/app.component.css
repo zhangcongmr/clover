@@ -39,10 +39,12 @@
   background: var(--vscode-editorWidget-background);
   width: 100%;
   box-sizing: border-box;
+  transition: background 0.15s ease, box-shadow 0.2s ease;
 }
 
 .app-menu-dropdown .app-menu-item:hover {
   background: var(--vscode-list-hoverBackground);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .app-menu-dropdown .app-menu-item .icon {

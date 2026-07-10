@@ -2,4 +2,12 @@
   position: fixed;
   z-index: 1001;
   display: none;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
+  border-radius: var(--vscode-radius-sm, 4px);
+  min-width: 160px;
+  font-size: var(--vscode-menu-font-size, 13px);
+  color: var(--vscode-foreground);
+  transition: box-shadow 0.2s ease;
 }
