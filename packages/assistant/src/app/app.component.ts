@@ -1125,6 +1125,9 @@ For each fileIcons entry:
 
   onMenuAction(action: string) {
     this.isMenuOpen = false;
+    this.fileSubmenuRef?.resetState();
+    this.viewSubmenuRef?.resetState();
+    this.settingsSubmenuRef?.resetState();
     switch (action) {
       case 'new-file': {
         const contentComp = this.contentComp();

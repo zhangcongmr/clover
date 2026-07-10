@@ -45,6 +45,10 @@ export class AstSubmenuComponent implements OnDestroy {
     this.isOpen.set(false);
   }
 
+  resetState(): void {
+    this.isOpen.set(false);
+  }
+
   private computePosition(): void {
     if (!this.parentItem) return;
 
