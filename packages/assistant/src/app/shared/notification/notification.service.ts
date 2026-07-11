@@ -15,6 +15,8 @@ export class NotificationService {
 
   public notificationCount = computed(() => this.notifications().length);
 
+  autoCloseDuration = 5000;
+
   showNotification(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
     const notification: Notification = {
       id: Math.random().toString(36).substring(2, 9),
@@ -27,10 +29,11 @@ export class NotificationService {
     currentNotifications.unshift(notification);
     this.notifications.set([...currentNotifications]);
 
-    // 5秒后自动移除通知
-    setTimeout(() => {
-      this.removeNotification(notification.id);
-    }, 5000);
+    if (this.autoCloseDuration > 0) {
+      setTimeout(() => {
+        this.removeNotification(notification.id);
+      }, this.autoCloseDuration);
+    }
   }
 
   removeNotification(id: string): void {

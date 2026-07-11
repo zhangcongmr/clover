@@ -1,1 +1,369 @@
-<div>Settings</div>
+<div class="settings-container">
+  <div class="settings-sidebar">
+    @for (cat of categories; track cat.id) {
+      <div
+        class="settings-category-item"
+        [class.active]="activeCategoryId() === cat.id"
+        (click)="setActiveCategory(cat.id)"
+      >
+        @if (cat.icon) {
+          <svg class="cat-icon" width="16" height="16">
+            <use [attr.href]="cat.icon"></use>
+          </svg>
+        }
+        <span>{{ cat.label }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="settings-content">
+    @if (activeCategoryId() === 'general') {
+      <div class="settings-section">
+        <h2 class="section-title">General Settings</h2>
+
+        <!-- Agent URL -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Agent URL</label>
+            <p class="setting-desc">Local agent server address for file operations and terminal</p>
+          </div>
+          <div class="setting-control">
+            <div class="input-row">
+              <input
+                type="text"
+                class="setting-input"
+                placeholder="http://localhost:3000"
+                [(ngModel)]="agentUrlInput"
+              />
+              <button class="btn btn-primary" (click)="saveAgentUrl()">Save</button>
+            </div>
+            @if (showSavedToast()) {
+              <span class="toast-saved">Saved</span>
+            }
+          </div>
+        </div>
+
+        <!-- Agent Status -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Agent Status</label>
+            <p class="setting-desc">Connection status of the local agent</p>
+          </div>
+          <div class="setting-control">
+            <div class="status-row">
+              <span
+                class="status-indicator"
+                [class.status-connected]="agentStatus() === 'connected'"
+                [class.status-disconnected]="agentStatus() === 'disconnected'"
+                [class.status-unknown]="agentStatus() === 'unknown'"
+              ></span>
+              <span class="status-text">
+                @if (agentStatus() === 'connected') {
+                  Connected
+                } @else if (agentStatus() === 'disconnected') {
+                  Disconnected
+                } @else {
+                  Checking...
+                }
+              </span>
+              <button
+                class="btn btn-secondary"
+                (click)="testAgentConnection()"
+                [disabled]="agentTesting()"
+              >
+                @if (agentTesting()) {
+                  Testing...
+                } @else {
+                  Test Connection
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Folder Read/Write Mode -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Folder Read/Write Mode</label>
+            <p class="setting-desc">File system access permission mode for local folders</p>
+          </div>
+          <div class="setting-control">
+            <div class="radio-group">
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  name="folderMode"
+                  value="read"
+                  [checked]="folderReadWriteMode() === 'read'"
+                  (change)="onFolderReadWriteModeChange('read')"
+                />
+                <span class="radio-label">Read only</span>
+              </label>
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  name="folderMode"
+                  value="readwrite"
+                  [checked]="folderReadWriteMode() === 'readwrite'"
+                  (change)="onFolderReadWriteModeChange('readwrite')"
+                />
+                <span class="radio-label">Read & Write</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto Refresh -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Auto Refresh</label>
+            <p class="setting-desc">Automatically refresh opened files when changes are detected</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="autoRefreshEnabled()"
+                (change)="onAutoRefreshChange($event)"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Notification Duration -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Notification Auto-Close</label>
+            <p class="setting-desc">Time in seconds before notifications auto-dismiss (0 = never)</p>
+          </div>
+          <div class="setting-control">
+            <input
+              type="number"
+              class="setting-input setting-input-narrow"
+              min="0"
+              max="60"
+              [value]="notificationDuration()"
+              (change)="onNotificationDurationChange($event)"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeCategoryId() === 'appearance') {
+      <div class="settings-section">
+        <h2 class="section-title">Appearance</h2>
+
+        <!-- Theme -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Theme</label>
+            <p class="setting-desc">Switch between light and dark theme</p>
+          </div>
+          <div class="setting-control">
+            <div class="theme-selector">
+              <label class="theme-card" [class.active]="currentTheme() === 'default'" (click)="setTheme('default')">
+                <div class="theme-preview theme-preview-light"></div>
+                <span class="theme-name">Light</span>
+              </label>
+              <label class="theme-card" [class.active]="currentTheme() === 'dark'" (click)="setTheme('dark')">
+                <div class="theme-preview theme-preview-dark"></div>
+                <span class="theme-name">Dark</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Font Family -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Terminal Font Family</label>
+            <p class="setting-desc">Font used in the integrated terminal</p>
+          </div>
+          <div class="setting-control">
+            <input
+              type="text"
+              class="setting-input"
+              placeholder="Consolas, 'Courier New', monospace"
+              [value]="terminalFontFamily()"
+              (change)="onTerminalFontFamilyChange($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Terminal Font Size -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Terminal Font Size</label>
+            <p class="setting-desc">Font size in the integrated terminal (px)</p>
+          </div>
+          <div class="setting-control">
+            <input
+              type="number"
+              class="setting-input setting-input-narrow"
+              min="8"
+              max="48"
+              [value]="terminalFontSize()"
+              (change)="onTerminalFontSizeChange($event)"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeCategoryId() === 'editor') {
+      <div class="settings-section">
+        <h2 class="section-title">Editor Settings</h2>
+
+        <!-- UI Font Family -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">UI Font Family</label>
+            <p class="setting-desc">Font used for the application interface</p>
+          </div>
+          <div class="setting-control">
+            <input
+              type="text"
+              class="setting-input"
+              placeholder="-apple-system, 'Segoe UI', sans-serif"
+              [value]="uiFontFamily()"
+              (change)="onUiFontFamilyChange($event)"
+            />
+          </div>
+        </div>
+
+        <!-- UI Font Size -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">UI Font Size</label>
+            <p class="setting-desc">Base font size for the interface (px)</p>
+          </div>
+          <div class="setting-control">
+            <input
+              type="number"
+              class="setting-input setting-input-narrow"
+              min="10"
+              max="24"
+              [value]="uiFontSize()"
+              (change)="onUiFontSizeChange($event)"
+            />
+          </div>
+        </div>
+
+        <!-- UI Line Height -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Line Height</label>
+            <p class="setting-desc">Line height multiplier for text content</p>
+          </div>
+          <div class="setting-control">
+            <input
+              type="number"
+              class="setting-input setting-input-narrow"
+              min="1"
+              max="3"
+              step="0.1"
+              [value]="uiLineHeight()"
+              (change)="onUiLineHeightChange($event)"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeCategoryId() === 'data') {
+      <div class="settings-section">
+        <h2 class="section-title">Data Management</h2>
+
+        <!-- OPFS Storage Info -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">OPFS Storage</label>
+            <p class="setting-desc">Origin Private File System usage for app data</p>
+          </div>
+          <div class="setting-control">
+            <div class="opfs-info">
+              <div class="opfs-total">
+                <span class="opfs-label">Total usage:</span>
+                <span class="opfs-value">{{ opfsInfo()?.totalSize || 'Unknown' }}</span>
+              </div>
+              <div class="opfs-files">
+                @for (f of opfsInfo()?.files || []; track f.name) {
+                  <div class="opfs-file-row">
+                    <span class="opfs-dot" [class.opfs-dot-yes]="f.exists" [class.opfs-dot-no]="!f.exists"></span>
+                    <span class="opfs-fname">{{ f.name }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clear Data -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Clear All Data</label>
+            <p class="setting-desc">Remove all locally stored app data (project tree, tabs, server lists)</p>
+          </div>
+          <div class="setting-control">
+            <button
+              class="btn btn-danger"
+              (click)="clearAllOpfsData()"
+              [disabled]="opfsClearing()"
+            >
+              @if (opfsClearing()) {
+                Clearing...
+              } @else {
+                Clear All Data
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeCategoryId() === 'advanced') {
+      <div class="settings-section">
+        <h2 class="section-title">Advanced Settings</h2>
+
+        <!-- AI Model -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">AI Model</label>
+            <p class="setting-desc">Default AI model used for chat and theme generation</p>
+          </div>
+          <div class="setting-control">
+            <select
+              class="setting-select"
+              [value]="selectedModel()"
+              (change)="onModelChange($event)"
+            >
+              @for (opt of modelOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Plugins View -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Plugins View</label>
+            <p class="setting-desc">Enable the plugins section in the sidebar</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="pluginsEnabled()"
+                (change)="onPluginsEnabledChange($event)"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

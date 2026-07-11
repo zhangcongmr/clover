@@ -25,6 +25,7 @@ import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';
 import { normalizeApiSpec } from "api-render-ui"
 import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
+import { SettingsService } from '../settings/settings.service';
 
 interface WebSocketRequest {
   action: string;
@@ -62,6 +63,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   public coreService = inject(CoreService);
   private notificationService = inject(NotificationService);
   private localAgentService = inject(LocalAgentService);
+  private settingsService = inject(SettingsService);
 
   // 本地项目检测
   isLocalProject = signal(false);
@@ -75,8 +77,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   /***aside */
   serverList: Array<any> = [];
   dataList= signal<Array<AstTreeNode>>([]);
-  // folder persistence mode
-  folderReadWriteMode: 'read' | 'readwrite' = 'read';
   /***aside */
 
   // 添加位置选择器相关的属性
@@ -92,7 +92,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   disconnectTerminal = output<void>();
 
   // 添加自动刷新控制变量
-  autoRefreshEnabled = signal<boolean>(true);
+  get autoRefreshEnabled() { return this.settingsService.autoRefreshEnabled; }
   refreshIntervalMs = 10; // 后续如果有必要，从2秒改为10秒，减少性能影响
 
   openedList = signal<Array<any>>([]);
@@ -1724,8 +1724,8 @@ Always use the welcome_greeting tool.`;
 
   // 切换自动刷新状态
   toggleAutoRefresh() {
-    const newState = !this.autoRefreshEnabled();
-    this.autoRefreshEnabled.set(newState);
+    const newState = !this.settingsService.autoRefreshEnabled();
+    this.settingsService.setAutoRefreshEnabled(newState);
     
     if (newState) {
       this.startAutoRefresh();
