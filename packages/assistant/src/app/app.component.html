@@ -1,10 +1,10 @@
 <div data-layer="app-header" class="AppHeader codigma-app-header">
-  <div class="btn-svg app-menu" (click)="toggleMenu($event)">
+  <div #menuBtn class="btn-svg app-menu" (click)="toggleMenu($event)">
     <svg width="16" height="18">
       <use href="#icon-menu"></use>
     </svg>
   </div>
-  <div ast-menu [(isOpen)]="isMenuOpen" [menuInitiator]="menuAnchor"
+  <div ast-menu [(isOpen)]="isMenuOpen" [menuInitiator]="menuAnchor" [verticalOffset]="menuBtn.offsetHeight - 10"
     (mouseentermenu)="onMenuMouseEnter()" (mouseleavemenu)="onMenuMouseLeave()"
     class="app-menu-dropdown codigma-right-menu">
 

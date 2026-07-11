@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, effect, model } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, effect, input, model } from '@angular/core';
 
 @Component({
   selector: 'div[ast-menu]',
@@ -18,7 +18,12 @@ export class AstMenuComponent implements OnInit, OnDestroy {
   @Output() mouseentermenu = new EventEmitter<MouseEvent>();
   @Output() mouseleavemenu = new EventEmitter<MouseEvent>();
 
+  horizontalOffset = input<number | undefined>(undefined);
+  verticalOffset = input<number | undefined>(undefined);
+
   positionStyle: string = '';
+  // 宽336px, 参考 .codigma-right-menu
+  // 高36px，参考 .codigma-menu-every-item
   width: number = 240; // 菜单宽度
   display: string | null = null;
 
@@ -63,7 +68,7 @@ export class AstMenuComponent implements OnInit, OnDestroy {
         if (!menuInitiator) {
           return;
         }
-        // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
+        // 显示自定义菜单并定位 
         let horizontalComputed = this.getHorizontalComputed(menuInitiator);
         let verticalComputed = this.getVerticalComputed(menuInitiator);
         this.positionStyle = 'position:fixed;' + horizontalComputed + 'px;' + verticalComputed + 'px;';
@@ -91,12 +96,12 @@ export class AstMenuComponent implements OnInit, OnDestroy {
   }
 
   private getHorizontalComputed(menuInitiator: DOMRect) {
-    let offset = menuInitiator.left == menuInitiator.right ? 10 : 10;
+    let offset = this.horizontalOffset() ?? (menuInitiator.left == menuInitiator.right ? 10 : 10);
     return (window.innerWidth - menuInitiator.left) > this.width ? "left:" + (menuInitiator.left + offset) : "right:" + (window.innerWidth - menuInitiator.left - menuInitiator.width);
   }
 
   private getVerticalComputed(menuInitiator: DOMRect) {
-    let offset = menuInitiator.top == menuInitiator.bottom ? 5 : 30;
+    let offset = this.verticalOffset() ?? (menuInitiator.top == menuInitiator.bottom ? 5 : 30);
     return (window.innerHeight - menuInitiator.top) > 3 * 36 ? "top:" + (menuInitiator.top + offset) : "bottom:" + (window.innerHeight - menuInitiator.top);
   }
 
