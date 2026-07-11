@@ -1,7 +1,12 @@
-import { Component, inject, OnInit } from "@angular/core";
+import { Component, inject, signal } from "@angular/core";
 
 import { CoreService } from '../../core.service';
 import { NotificationService } from '../../shared/notification/notification.service';
+
+interface DashboardCategory {
+  id: string;
+  label: string;
+}
 
 @Component({
   selector: 'div[user-center]',
@@ -10,75 +15,31 @@ import { NotificationService } from '../../shared/notification/notification.serv
   templateUrl: './user-center.component.html',
   styleUrls: ['./user-center.component.css']
 })
-export class UserCenterComponent implements OnInit {
+export class UserCenterComponent {
   protected coreService = inject(CoreService)
   protected notificationService = inject(NotificationService)
-  userInfo: any = {}
-  menuItems = [
-    { label: '首页', link: '#' },
-    { label: '我的内容', link: '#' },
-    { label: '我的积分', link: '#' },
-    { label: '我的优惠券', link: '#' },
-    { label: '我的购物卡', link: '#' },
-    { label: '设备管理', link: '#' },
-    { label: '账号安全', link: '#' }
+
+  categories: DashboardCategory[] = [
+    { id: 'profile', label: 'Profile' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'activity', label: 'Activity' },
+    { id: 'account', label: 'Account' },
   ];
 
-  products = [
-    {
-      image: '📱',
-      name: '旗舰1',
-      desc: '骁龙8 Gen3 5G手机',
-      price: '¥5999'
-    },
-    {
-      image: '📱',
-      name: '旗舰2',
-      desc: '第三代骁龙8 8G+256G',
-      price: '¥2099'
-    },
-    {
-      image: '💻',
-      name: '普通3',
-      desc: '省芯超A 大内存',
-      price: '¥1899'
-    },
-    {
-      image: '📱',
-      name: '家庭1',
-      desc: '性能旗舰新选择',
-      price: '¥3199'
-    },
-    {
-      image: '💻',
-      name: '企业1',
-      desc: '骁龙8 Gen3 8G+128G',
-      price: '¥2699'
-    }
-  ];
-  statistics: any = {}
+  selectedCategory = signal<string>('profile');
 
-  ngOnInit() {
-    // 初始化逻辑可以放在这里
-    // 例如，从服务器获取用户数据等 curl https://127.0.0.1:8980/user/info/1234
-    const userId = this.coreService.userData?.id;
-    fetch(`/user/info/${userId}`)
-      .then(response => response.json())
-      .then(data => {
-        this.userInfo = data;
-        this.statistics = {
-          points: data.points,
-          coupons: data.coupons,
-          shoppingCards: data.shoppingCards
-        };
-      });
+  get serverCount(): number {
+    return this.coreService.serverList?.length || 0;
   }
 
-  checkin() {
-    // Mock签到逻辑
-    console.log('签到成功！');
-    this.notificationService.showNotification('签到成功！', 'success');
+  setActiveCategory(id: string) {
+    this.selectedCategory.set(id);
   }
 
-
+  signOut() {
+    localStorage.clear();
+    sessionStorage.clear();
+    this.coreService.isAuthenticated.set(false);
+    this.notificationService.showNotification('Signed out successfully', 'info');
+  }
 }

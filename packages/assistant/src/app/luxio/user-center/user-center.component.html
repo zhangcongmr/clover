@@ -1,140 +1,109 @@
-<!-- 头部导航 -->
-<div class="header">
-    <div class="logo">
-        <span>Luxio User</span>
+<div class="profile-container">
+  <div class="profile-sidebar">
+    <div class="profile-header">
+      @if (coreService.userData; as user) {
+        <img
+          [src]="user.avatar || '/assets/default-avatar.png'"
+          alt="Avatar"
+          class="avatar"
+        />
+        <div class="username">{{ user.username || 'User' }}</div>
+        <div class="email">{{ user.email || '' }}</div>
+      } @else {
+        <div class="avatar-placeholder"></div>
+        <div class="username">Not signed in</div>
+      }
     </div>
-    <div class="nav">
-        <a href="#">专区1</a>
-        <a href="#">专区2</a>
-        <a href="#">智能硬件</a>
-        <a href="#">服务</a>
-    </div>
-    <div class="search-box">
-        <input type="text" placeholder="数目10万+，好物任你挑">
-    </div>
-</div>
-
-<!-- 主内容区域 -->
-<div class="main-content">
-    <!-- 左侧边栏 -->
-    <div class="sidebar">
-        <div class="user-info">
-            <div class="avatar">
-                            <img src={{ userInfo.avatar }} alt="User"
-                                class="w-full h-full object-cover">
-                </div>
-            <div class="username">{{ userInfo.username }}</div>
-            <div class="phone">{{ userInfo.phone }}</div>
-            <button class="checkin-btn" (click)="checkin()">签到</button>
+    <nav class="profile-nav">
+      @for (cat of categories; track cat.id) {
+        <div
+          class="profile-nav-item"
+          [class.active]="selectedCategory() === cat.id"
+          (click)="setActiveCategory(cat.id)"
+        >
+          <span>{{ cat.label }}</span>
         </div>
-        <ul class="menu">
-            <li><a href="#">{{ menuItems[0].label }}</a></li>
-            <li><a href="#">{{ menuItems[1].label }}</a></li>
-            <li><a href="#">{{ menuItems[2].label }}</a></li>
-            <li><a href="#">{{ menuItems[3].label }}</a></li>
-            <li><a href="#">{{ menuItems[4].label }}</a></li>
-            <li><a href="#">{{ menuItems[5].label }}</a></li>
-            <li><a href="#">{{ menuItems[6].label }}</a></li>
-        </ul>
-    </div>
+      }
+    </nav>
+  </div>
 
-    <!-- 右侧主内容 -->
-    <div class="content">
-        <!-- 数据概览 -->
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-value">{{ statistics.points }}</div>
-                <div class="stat-label">我的积分</div>
+  <div class="profile-content">
+    @if (selectedCategory() === 'profile') {
+      <div class="profile-section">
+        <h2 class="section-title">Profile</h2>
+        @if (coreService.userData; as user) {
+          <div class="detail-list">
+            <div class="detail-row">
+              <span class="detail-label">Username</span>
+              <span class="detail-value">{{ user.username || '-' }}</span>
             </div>
-            <div class="stat-item">
-                <div class="stat-value">{{ statistics.coupons }}</div>
-                <div class="stat-label">我的优惠券</div>
+            <div class="detail-row">
+              <span class="detail-label">Email</span>
+              <span class="detail-value">{{ user.email || '-' }}</span>
             </div>
-            <div class="stat-item">
-                <div class="stat-value">¥{{ statistics.shoppingCards }}</div>
-                <div class="stat-label">回收代金券</div>
+            <div class="detail-row">
+              <span class="detail-label">Phone</span>
+              <span class="detail-value">{{ user.phone || '-' }}</span>
             </div>
-        </div>
+            <div class="detail-row">
+              <span class="detail-label">User ID</span>
+              <span class="detail-value">{{ user.id || '-' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Member since</span>
+              <span class="detail-value">{{ user.createtime || '-' }}</span>
+            </div>
+          </div>
+        } @else {
+          <p class="empty-text">Sign in to view your profile details.</p>
+        }
+      </div>
+    }
 
-        <!-- 功能导航 -->
-        <div class="function-nav">
-            <div class="function-item">
-                <div class="function-icon">📋</div>
-                <div class="function-label">全部订单</div>
-            </div>
-            <div class="function-item">
-                <div class="function-icon">💳</div>
-                <div class="function-label">待付款</div>
-            </div>
-            <div class="function-item">
-                <div class="function-icon">📦</div>
-                <div class="function-label">待收货</div>
-            </div>
-            <div class="function-item">
-                <div class="function-icon">⭐</div>
-                <div class="function-label">待评价</div>
-            </div>
-            <div class="function-item">
-                <div class="function-icon">🔄</div>
-                <div class="function-label">退换货</div>
-            </div>
-            <div class="function-item">
-                <div class="function-icon" style="color: #ff3b30;">♻️</div>
-                <div class="function-label" style="color: #ff3b30;">回收单</div>
-            </div>
+    @if (selectedCategory() === 'overview') {
+      <div class="profile-section">
+        <h2 class="section-title">Overview</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ serverCount }}</div>
+            <div class="stat-label">Connected Servers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ coreService.isAuthenticated() ? 'Signed in' : 'Guest' }}</div>
+            <div class="stat-label">Auth Status</div>
+          </div>
         </div>
+      </div>
+    }
 
-        <!-- 最近订单 -->
-        <div class="recent-orders">
-            <div class="section-title">最近订单</div>
-            <div class="no-orders">暂无订单记录</div>
+    @if (selectedCategory() === 'activity') {
+      <div class="profile-section">
+        <h2 class="section-title">Activity</h2>
+        <div class="placeholder-area">
+          <div class="placeholder-icon">⚡</div>
+          <p class="placeholder-text">Activity tracking coming soon</p>
+          <p class="placeholder-desc">You will see recently edited files, API calls, and terminal sessions here.</p>
         </div>
+      </div>
+    }
 
-        <!-- 为你推荐 -->
-        <div class="recommendations">
-            <div class="section-title">为你推荐</div>
-            <div class="recommendation-list">
-                <div class="product-item">
-                    <div class="product-image">{{ products[0].image }}</div>
-                    <div class="product-info">
-                        <div class="product-name">{{ products[0].name }}</div>
-                        <div class="product-desc">{{ products[0].desc }}</div>
-                        <div class="product-price">{{ products[0].price }}</div>
-                    </div>
-                </div>
-                <div class="product-item">
-                    <div class="product-image">{{ products[1].image }}</div>
-                    <div class="product-info">
-                        <div class="product-name">{{ products[1].name }}</div>
-                        <div class="product-desc">{{ products[1].desc }}</div>
-                        <div class="product-price">{{ products[1].price }}</div>
-                    </div>
-                </div>
-                <div class="product-item">
-                    <div class="product-image">{{ products[2].image }}</div>
-                    <div class="product-info">
-                        <div class="product-name">{{ products[2].name }}</div>
-                        <div class="product-desc">{{ products[2].desc }}</div>
-                        <div class="product-price">{{ products[2].price }}</div>
-                    </div>
-                </div>
-                <div class="product-item">
-                    <div class="product-image">{{ products[3].image }}</div>
-                    <div class="product-info">
-                        <div class="product-name">{{ products[3].name }}</div>
-                        <div class="product-desc">{{ products[3].desc }}</div>
-                        <div class="product-price">{{ products[3].price }}</div>
-                    </div>
-                </div>
-                <div class="product-item">
-                    <div class="product-image">{{ products[4].image }}</div>
-                    <div class="product-info">
-                        <div class="product-name">{{ products[4].name }}</div>
-                        <div class="product-desc">{{ products[4].desc }}</div>
-                        <div class="product-price">{{ products[4].price }}</div>
-                    </div>
-                </div>
+    @if (selectedCategory() === 'account') {
+      <div class="profile-section">
+        <h2 class="section-title">Account</h2>
+        @if (coreService.isAuthenticated()) {
+          <div class="status-card">
+            <div class="status-row">
+              <span class="status-dot status-dot-connected"></span>
+              <span class="status-label-text">Signed in</span>
             </div>
-        </div>
-    </div>
+          </div>
+          <div class="action-area">
+            <button class="btn btn-danger" (click)="signOut()">Sign Out</button>
+          </div>
+        } @else {
+          <p class="empty-text">You are not signed in.</p>
+        }
+      </div>
+    }
+  </div>
 </div>

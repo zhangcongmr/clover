@@ -89,7 +89,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('fileSubmenu') fileSubmenuRef!: AstSubmenuComponent;
   @ViewChild('viewSubmenu') viewSubmenuRef!: AstSubmenuComponent;
-  @ViewChild('settingsSubmenu') settingsSubmenuRef!: AstSubmenuComponent;
 
   dataList: Array<any> = [];
 
@@ -250,10 +249,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (this.viewSubmenuRef) {
       this.viewSubmenuRef.parentItem = this.viewSubmenuRef.nativeElement.parentElement ?? undefined;
     }
-    if (this.settingsSubmenuRef) {
-      this.settingsSubmenuRef.parentItem = this.settingsSubmenuRef.nativeElement.parentElement ?? undefined;
-    }
-
     const rt = this.addTexts()
     var sequence = new Sequence({name: "block1"});
 
@@ -990,7 +985,7 @@ For each fileIcons entry:
         this.currentDisplayViewId = 5;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
-      case 'user-center':
+      case 'profile':
         this.currentDisplayViewId = 6;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
@@ -1052,11 +1047,11 @@ For each fileIcons entry:
           this.openTab(settingBar);
           break;
         case 6:
-          const userCenterBar: any = {
-            id: 'user-center',
-            title: 'User Center'
+          const profileBar: any = {
+            id: 'profile',
+            title: 'Profile'
           };
-          this.openTab(userCenterBar);
+          this.openTab(profileBar);
           break;
       }
     }
@@ -1127,7 +1122,6 @@ For each fileIcons entry:
     this.isMenuOpen = false;
     this.fileSubmenuRef?.resetState();
     this.viewSubmenuRef?.resetState();
-    this.settingsSubmenuRef?.resetState();
     switch (action) {
       case 'new-file': {
         const contentComp = this.contentComp();
@@ -1165,7 +1159,7 @@ For each fileIcons entry:
       case 'settings':
         this.toggleDisplayViewId(5);
         break;
-      case 'user-center':
+      case 'profile':
         this.toggleDisplayViewId(6);
         break;
       case 'sign-in':
