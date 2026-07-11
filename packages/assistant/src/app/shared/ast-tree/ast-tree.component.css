@@ -96,6 +96,10 @@
     margin-left: 0.25rem;
     top: 3px;
 }
+.tree-spacer {
+    flex-shrink: 0;
+}
+
 .textrenameclass {
     width: 100%;
     border: 1px solid #ccc;
