@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, model, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, effect, model } from '@angular/core';
 
 @Component({
   selector: 'div[ast-menu]',
@@ -12,7 +12,7 @@ import { Component, ElementRef, EventEmitter, Input, model, OnChanges, OnDestroy
     '(mouseleave)': 'onMouseleaveMenu($event)'
   },
 })
-export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
+export class AstMenuComponent implements OnInit, OnDestroy {
   isOpen = model<boolean>(false); // 菜单打开状态
   @Input() menuInitiator?: DOMRect; // 菜单触发元素位置信息
   @Output() mouseentermenu = new EventEmitter<MouseEvent>();
@@ -56,6 +56,23 @@ export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   constructor(private elementRef: ElementRef) {
+    effect(() => {
+      const open = this.isOpen();
+      if (open) {
+        const menuInitiator = this.menuInitiator;
+        if (!menuInitiator) {
+          return;
+        }
+        // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
+        let horizontalComputed = this.getHorizontalComputed(menuInitiator);
+        let verticalComputed = this.getVerticalComputed(menuInitiator);
+        this.positionStyle = 'position:fixed;' + horizontalComputed + 'px;' + verticalComputed + 'px;';
+        this.display = 'block';
+      } else {
+        this.positionStyle = this.positionStyle.replace(/position:fixed/g, 'position:static').replace(/(block|flex|flex-inline)/g, 'none');
+        this.display = 'none';
+      }
+    });
   }
 
   ngOnInit() {
@@ -64,36 +81,13 @@ export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
     }
     // 监听文档点击事件以关闭菜单（如果点击不在菜单上
     document.addEventListener('click', this.documentClickHandler);
-    // 浏览器窗口之外点击鼠标，浏览器内部右键菜单响应关闭事件  
+    // 浏览器窗口之外点击鼠标，浏览器内部右键菜单响应关闭事件
     window.addEventListener('blur', this.windowBlurHandler);
   }
 
   closeMenu() {
     this.display = 'none';
     this.isOpen.set(false);
-  }
-
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if(changes["isOpen"]) {
-      if(changes["isOpen"].currentValue != changes["isOpen"].previousValue) {
-        if(changes["isOpen"].currentValue == false) {
-          this.positionStyle = this.positionStyle.replace(/position:fixed/g, 'position:static').replace(/(block|flex|flex-inline)/g, 'none');
-          this.display = 'none';
-          return;
-        }
-        let menuInitiator = this.menuInitiator;
-        if(!menuInitiator) {
-          return;
-        }
-        // 显示自定义菜单并定位 336px 宽, 参考 .codigma-right-menu，36px 高， 参考 .codigma-menu-every-item
-        let horizontalComputed = this.getHorizontalComputed(menuInitiator);
-        let verticalComputed = this.getVerticalComputed(menuInitiator);
-        this.positionStyle = 'position:fixed;' + horizontalComputed + 'px;' + verticalComputed + 'px;'
-        this.display = 'block';
-
-      }
-    }
   }
 
   private getHorizontalComputed(menuInitiator: DOMRect) {
