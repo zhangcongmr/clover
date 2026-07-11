@@ -115,6 +115,9 @@ export class AstMenuComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
     // 组件销毁时，务必移除事件监听器
     document.removeEventListener('click', this.documentClickHandler);
     window.removeEventListener('blur', this.windowBlurHandler);
