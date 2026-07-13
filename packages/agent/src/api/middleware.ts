@@ -14,8 +14,18 @@ export function createCORSMiddleware(ports: number[], extraHosts?: string[]): ex
 
   return (req, res, next) => {
     const origin = req.headers.origin || '';
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
-      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    if (!origin) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    } else if (allowedOrigins.some(o => origin.startsWith(o))) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+      // Origin without explicit port (e.g., https://localhost via nginx proxy)
+      try {
+        const u = new URL(origin);
+        if (!u.port && allowedOrigins.some(o => o.startsWith(`${u.protocol}//${u.hostname}`))) {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+        }
+      } catch {}
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
