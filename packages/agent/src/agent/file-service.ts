@@ -12,7 +12,7 @@ import { join, basename, resolve, dirname } from 'node:path';
 import { statSync, watch, type FSWatcher } from 'node:fs';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { LocalFileRequest, LocalFileResponse } from './protocol.ts';
+import type { LocalFileRequest, LocalFileResponse } from './protocol.js';
 
 const execAsync = promisify(exec);
 

@@ -2,6 +2,7 @@
 
 # Compiled output
 /dist
+/dist-server
 /dist-lib
 /dist-app
 /tmp

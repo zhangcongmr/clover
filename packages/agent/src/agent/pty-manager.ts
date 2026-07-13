@@ -19,18 +19,20 @@ export interface IPty {
   resize(cols: number, rows: number): void;
 }
 
-function loadNodePty() {
+async function loadNodePty(): Promise<NodePty> {
   const moduleName = 'node-pty';
-  const runtimeRequire = (globalThis as any)['require']
-    || (() => {
-      const req = new Function('return require')();
-      return (name: string) => req(name);
-    })();
+
+  if ((globalThis as any)['require']) {
+    return (globalThis as any)['require'](moduleName) as NodePty;
+  }
 
   try {
-    return runtimeRequire(moduleName) as NodePty;
-  } catch (error) {
-    throw new Error(`Failed to load node-pty at runtime: ${error instanceof Error ? error.message : String(error)}`);
+    const req = new Function('return require')();
+    return req(moduleName) as NodePty;
+  } catch {
+    const { createRequire } = await import('node:module');
+    const req = createRequire(import.meta.url);
+    return req(moduleName) as NodePty;
   }
 }
 
@@ -51,7 +53,7 @@ export class PtyManager {
     this.startIdleCheck();
   }
 
-  create(cols: number, rows: number, cwd: string): PtyInstance {
+  async create(cols: number, rows: number, cwd: string): Promise<PtyInstance> {
     if (this.instances.size >= this.maxInstances) {
       throw new Error(`Max PTY instances (${this.maxInstances}) reached`);
     }
@@ -60,7 +62,7 @@ export class PtyManager {
     const shell = platform() === 'win32' ? 'powershell.exe' : (process.env['SHELL'] || '/bin/bash');
 
     const validCwd = (cwd && existsSync(cwd)) ? cwd : process.cwd();
-    const { spawn } = loadNodePty();
+    const { spawn } = await loadNodePty();
 
     const pty = spawn(shell, [], {
       name: 'xterm-color',

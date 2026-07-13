@@ -21,7 +21,6 @@
   },
   "public": true,
   "dependencies": {
-    "@a2a-js/sdk": "^0.3.13",
     "@a2ui/markdown-it": "^0.0.4",
     "@angular/animations": "^21.2.4",
     "@angular/cdk": "^20.2.14",
@@ -48,6 +47,7 @@
     "@codemirror/lang-rust": "^6.0.2",
     "@codemirror/lang-go": "^6.0.1",
     "@codemirror/view": "^6.39.13",
+    "@luxio/agent": "workspace:*",
     "@luxio/common": "workspace:*",
     "@luxio/community-widget": "workspace:*",
     "@mlc-ai/web-llm": "^0.2.80",
@@ -64,12 +64,10 @@
     "jszip": "^3.10.1",
     "marked": "^14.1.4",
     "opfs-tools": "^0.6.2",
-    "ws": "^8.18.0",
     "tailwindcss": "^4.1.18",
     "tslib": "^2.8.1",
     "@a2ui/angular": "^0.10.1",
-    "@a2ui/web_core": "^0.10.2",
-    "uuid": "^14.0.0"
+    "@a2ui/web_core": "^0.10.2"
   },
   "devDependencies": {
     "@angular/build": "^21.2.2",
