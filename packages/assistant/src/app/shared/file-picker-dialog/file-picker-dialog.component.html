@@ -40,9 +40,9 @@
       <div ast-tab [label]="'Local Files'" [id]="'local'" [isActivated]="true" (onClickTab)="onTabChange($event.id)">
         <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
       </div>
-      <div ast-tab [label]="'Remote Files'" [id]="'remote'" (onClickTab)="onTabChange($event.id)">
+      <!-- <div ast-tab [label]="'Remote Files'" [id]="'remote'" (onClickTab)="onTabChange($event.id)">
         <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
-      </div>
+      </div> -->
     </div>
   </div>
 </ast-modal>
