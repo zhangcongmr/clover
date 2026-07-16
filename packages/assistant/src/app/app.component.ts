@@ -17,7 +17,7 @@ import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import * as Types from '@a2ui/web_core/types/types';
-import { A2uiRendererService, ComponentHostComponent, SurfaceComponent } from '@a2ui/angular/v0_9';
+import { A2uiRendererService, SurfaceComponent } from '@a2ui/angular/v0_9';
 import { Client } from './client';
 import { NotificationService } from './shared/notification/notification.service';
 import { DatePipe } from '@angular/common';
@@ -33,7 +33,7 @@ import { DatePipe } from '@angular/common';
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
-       SurfaceComponent, ComponentHostComponent], // Add TerminalComponent to imports
+       SurfaceComponent], // Add TerminalComponent to imports
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);

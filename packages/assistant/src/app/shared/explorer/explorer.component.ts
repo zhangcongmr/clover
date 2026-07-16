@@ -1,7 +1,5 @@
 import { AfterViewChecked, AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, OnInit, inject, input, output, viewChild } from '@angular/core';
-import { ServerTreeComponent } from '../server-tree/server.tree.component';
 import { AstTableComponent } from '../ast-table/ast-table.component';
-import { PrivacyErrorDialogComponent } from '../privacy-error-dialog/privacy-error-dialog.component';
 import { CoreService } from '../../core.service';
 import { basicSetup, EditorView } from 'codemirror';
 import { json } from '@codemirror/lang-json';
@@ -12,7 +10,7 @@ import { json } from '@codemirror/lang-json';
   styleUrls: ['./explorer.component.css'],
   standalone: true,
    schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [ServerTreeComponent, AstTableComponent, PrivacyErrorDialogComponent]
+  imports: [AstTableComponent]
 })
 export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewInit {
   coreService = inject(CoreService);

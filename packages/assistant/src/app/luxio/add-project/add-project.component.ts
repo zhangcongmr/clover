@@ -1,6 +1,5 @@
 import { Component, OnInit, inject, output } from '@angular/core';
 import { CoreService } from '../../core.service';
-import { AstTableComponent } from '../../shared/ast-table/ast-table.component';
 import { FormsModule } from '@angular/forms';
 
 import { AstTreeComponent } from '../../shared/ast-tree/ast-tree.component';
@@ -8,7 +7,6 @@ import { AstTreeNode } from '../../shared/model';
 import { NotificationService } from '../../shared/notification/notification.service';
 
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
-import { ServerTreeComponent } from '../../shared/server-tree/server.tree.component';
 import { FileInputComponent } from '../../shared/file-input/file-input.component';
 import { ExplorerComponent } from '../../shared/explorer/explorer.component';
 
@@ -17,7 +15,7 @@ import { ExplorerComponent } from '../../shared/explorer/explorer.component';
     templateUrl: './add-project.component.html',
     styleUrls: ['./add-project.component.css'],
     standalone: true,
-    imports: [ExplorerComponent, AstModalComponent, ServerTreeComponent, FileInputComponent, FormsModule, AstTableComponent, AstTreeComponent]
+    imports: [ExplorerComponent, AstModalComponent, FileInputComponent, FormsModule, AstTreeComponent]
 })
 export class AddProjectComponent implements OnInit {
   private coreService = inject(CoreService);
