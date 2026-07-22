@@ -1,0 +1,170 @@
+.acp-tool-calls-container {
+  background-color: var(--vscode-sideBar-background);
+  border-radius: var(--vscode-radius-sm);
+  border: 1px solid var(--vscode-editorGroup-border);
+  overflow: hidden;
+}
+
+.acp-tool-calls-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background-color: var(--vscode-panel-background);
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+  font-weight: 600;
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+}
+
+.acp-tool-calls-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tool-call-count {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--vscode-radius-pill);
+  background-color: var(--vscode-activityBarBadge-background);
+  color: var(--vscode-activityBarBadge-foreground);
+  font-size: var(--vscode-badge-font-size);
+  font-weight: 500;
+}
+
+.acp-tool-calls-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.acp-tool-call-item {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-tool-call-item:last-child {
+  border-bottom: none;
+}
+
+.acp-tool-call-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-call-status {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.status-icon.status-pending {
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+}
+
+.status-icon.status-running {
+  color: var(--vscode-focusBorder);
+}
+
+.status-icon.status-completed {
+  color: #4ec9b0;
+}
+
+.status-icon.status-failed {
+  color: #f44747;
+}
+
+.spinner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--vscode-focusBorder);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tool-call-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-call-title {
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tool-call-id {
+  font-size: var(--vscode-small-font-size);
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  font-family: var(--vscode-font-mono);
+}
+
+.tool-call-badge {
+  padding: 2px 8px;
+  border-radius: var(--vscode-radius-sm);
+  font-size: var(--vscode-badge-font-size);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.tool-call-badge.status-pending {
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+}
+
+.tool-call-badge.status-running {
+  background-color: rgba(0, 120, 212, 0.2);
+  color: var(--vscode-focusBorder);
+}
+
+.tool-call-badge.status-completed {
+  background-color: rgba(78, 201, 176, 0.2);
+  color: #4ec9b0;
+}
+
+.tool-call-badge.status-failed {
+  background-color: rgba(244, 71, 71, 0.2);
+  color: #f44747;
+}
+
+.tool-call-kind {
+  margin-top: 8px;
+  padding-left: 30px;
+  font-size: var(--vscode-small-font-size);
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+}
+
+.kind-label {
+  margin-right: 4px;
+}
+
+.kind-value {
+  font-family: var(--vscode-font-mono);
+}

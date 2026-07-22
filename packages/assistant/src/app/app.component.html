@@ -193,6 +193,10 @@
   <app-settings></app-settings>
 } @else if(currentDisplayViewId==6) {
   <div user-center></div>
+} @else if(currentDisplayViewId==8) {
+  <div class="acp-panel-container">
+    <app-acp-panel />
+  </div>
 } @else {
   <div data-layer="app-body" class="AppBody codigma-app-body">
     <div data-layer="left-side-area" class="LeftSideArea codigma-left-side-area">
@@ -226,6 +230,11 @@
           <svg  class="icon" width="25" height="25" viewBox="0 0 24 24">
             <!--generate surface path icon-->
               <use href="#icon-preview"></use>
+          </svg>
+        </div>
+        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleDisplayViewId(8)">
+          <svg class="icon" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
         </div>
         <!-- <div data-svg-wrapper="" data-layer="clean-up" class="btn-svg CleanUp" title="Clean Up" (click)="cleanUp()">

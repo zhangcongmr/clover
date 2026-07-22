@@ -16,6 +16,7 @@ import { computeFileIcons } from './shared/ast-tree/ast-tree.component';
 import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
+import { AcpPanelComponent } from './shared/acp/acp-panel.component';
 import * as Types from '@a2ui/web_core/types/types';
 import { A2uiRendererService, SurfaceComponent } from '@a2ui/angular/v0_9';
 import { Client } from './client';
@@ -32,8 +33,8 @@ import { DatePipe } from '@angular/common';
     },
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
-      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
-       SurfaceComponent], // Add TerminalComponent to imports
+      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, AcpPanelComponent, DatePipe,
+       SurfaceComponent], // Add TerminalComponent and AcpPanelComponent to imports
 })
 export class AppComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
@@ -991,6 +992,10 @@ For each fileIcons entry:
         break;
       case 'terminal': // Handle terminal tab activation
         this.currentDisplayViewId = 7; // Assign a unique ID for terminal
+        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
+        break;
+      case 'acp-agent':
+        this.currentDisplayViewId = 8; // Assign a unique ID for ACP agent
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
     }

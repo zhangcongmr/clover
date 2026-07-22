@@ -1,0 +1,193 @@
+.acp-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.acp-dialog {
+  width: 420px;
+  max-width: 90vw;
+  background-color: var(--vscode-editorWidget-background);
+  border-radius: var(--vscode-radius-md);
+  box-shadow: var(--vscode-shadow-lg);
+  border: 1px solid var(--vscode-editorGroup-border);
+  animation: slideIn var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.acp-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+}
+
+.acp-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+}
+
+.acp-dialog-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--vscode-focusBorder);
+}
+
+.acp-dialog-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--vscode-radius-sm);
+  background-color: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity var(--vscode-motion-duration) var(--vscode-motion-easing),
+              background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-dialog-close:hover {
+  opacity: 1;
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.acp-dialog-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.acp-dialog-content {
+  padding: 20px;
+}
+
+.acp-dialog-tool-info {
+  margin-bottom: 16px;
+}
+
+.tool-title {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  margin-bottom: 4px;
+}
+
+.tool-id {
+  font-size: var(--vscode-small-font-size);
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  font-family: var(--vscode-font-mono);
+}
+
+.acp-dialog-message {
+  margin-bottom: 20px;
+}
+
+.acp-dialog-message p {
+  margin: 0;
+  color: var(--vscode-foreground);
+  line-height: 1.5;
+}
+
+.acp-dialog-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acp-option-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--vscode-radius-sm);
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing),
+              border-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-option-button:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.acp-option-button.primary {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+
+.acp-option-button.primary:hover {
+  background-color: var(--vscode-focusBorder);
+  border-color: var(--vscode-focusBorder);
+}
+
+.option-label {
+  font-weight: 500;
+  font-size: var(--vscode-font-size);
+}
+
+.option-description {
+  font-size: var(--vscode-small-font-size);
+  opacity: 0.7;
+}
+
+.acp-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--vscode-editorGroup-border);
+}
+
+.acp-cancel-button {
+  padding: 8px 16px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--vscode-radius-sm);
+  background-color: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: var(--vscode-font-size);
+  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-cancel-button:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}

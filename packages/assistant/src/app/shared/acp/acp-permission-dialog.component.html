@@ -1,0 +1,50 @@
+@if (isVisible()) {
+  <div class="acp-dialog-overlay" (click)="cancel()">
+    <div class="acp-dialog" (click)="$event.stopPropagation()">
+      <div class="acp-dialog-header">
+        <div class="acp-dialog-title">
+          <svg class="acp-dialog-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span>Permission Required</span>
+        </div>
+        <button class="acp-dialog-close" (click)="cancel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="acp-dialog-content">
+        <div class="acp-dialog-tool-info">
+          <div class="tool-title">{{ toolTitle() }}</div>
+          <div class="tool-id">ID: {{ toolCallId() }}</div>
+        </div>
+
+        <div class="acp-dialog-message">
+          <p>The agent wants to execute a tool that requires your permission.</p>
+        </div>
+
+        <div class="acp-dialog-options">
+          @for (option of options(); track option.optionId) {
+            <button
+              class="acp-option-button"
+              [class.primary]="$first"
+              (click)="selectOption(option.optionId)"
+            >
+              <span class="option-label">{{ option.label || option.optionId }}</span>
+              @if (option.description) {
+                <span class="option-description">{{ option.description }}</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="acp-dialog-footer">
+        <button class="acp-cancel-button" (click)="cancel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

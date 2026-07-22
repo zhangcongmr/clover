@@ -1,0 +1,275 @@
+.acp-session-manager {
+  background-color: var(--vscode-sideBar-background);
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+}
+
+.acp-session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.acp-session-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+}
+
+.acp-session-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.acp-session-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.acp-icon-button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--vscode-radius-sm);
+  background-color: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity var(--vscode-motion-duration) var(--vscode-motion-easing),
+              background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-icon-button:hover {
+  opacity: 1;
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.acp-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.acp-disconnect-button {
+  padding: 6px 12px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--vscode-radius-sm);
+  background-color: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: var(--vscode-small-font-size);
+  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-disconnect-button:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.acp-session-settings {
+  padding: 12px 14px;
+  border-top: 1px solid var(--vscode-editorGroup-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-label {
+  font-size: var(--vscode-small-font-size);
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+}
+
+.settings-input {
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--vscode-radius-sm);
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-foreground);
+  font-size: var(--vscode-font-size);
+  font-family: var(--vscode-font-mono);
+  outline: none;
+  transition: border-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.settings-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.settings-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-input::placeholder {
+  color: var(--vscode-foreground);
+  opacity: 0.4;
+}
+
+.transport-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.transport-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--vscode-radius-sm);
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font-size: var(--vscode-small-font-size);
+  transition: all var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.transport-btn:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.transport-btn.active {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+
+.acp-connect-form {
+  padding: 12px 14px;
+  border-top: 1px solid var(--vscode-editorGroup-border);
+}
+
+.acp-connect-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--vscode-radius-sm);
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
+  font-size: var(--vscode-font-size);
+  font-weight: 500;
+  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-connect-button:hover:not(:disabled) {
+  background-color: var(--vscode-focusBorder);
+}
+
+.acp-connect-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.acp-connect-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--vscode-button-foreground);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.acp-error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 0 14px 12px;
+  border-radius: var(--vscode-radius-sm);
+  background-color: rgba(244, 71, 71, 0.1);
+  border: 1px solid rgba(244, 71, 71, 0.3);
+  color: #f44747;
+  font-size: var(--vscode-small-font-size);
+}
+
+.acp-error-message svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.acp-error-message span {
+  flex: 1;
+}
+
+.acp-error-dismiss {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: var(--vscode-radius-sm);
+  background-color: transparent;
+  color: #f44747;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity var(--vscode-motion-duration) var(--vscode-motion-easing);
+}
+
+.acp-error-dismiss:hover {
+  opacity: 1;
+}
+
+.acp-error-dismiss svg {
+  width: 12px;
+  height: 12px;
+}
+
+.acp-connection-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--vscode-editorGroup-border);
+  font-size: var(--vscode-small-font-size);
+}
+
+.connection-badge {
+  padding: 2px 6px;
+  border-radius: var(--vscode-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.connection-badge.websocket {
+  background-color: rgba(78, 201, 176, 0.2);
+  color: #4ec9b0;
+}
+
+.connection-badge.http {
+  background-color: rgba(0, 120, 212, 0.2);
+  color: var(--vscode-focusBorder);
+}
+
+.connection-status {
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+}

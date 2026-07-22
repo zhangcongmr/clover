@@ -1,0 +1,90 @@
+<div class="acp-session-manager">
+  <div class="acp-session-header">
+    <div class="acp-session-title">
+      <svg class="acp-session-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 16v-4m0-4h.01"/>
+      </svg>
+      <span>ACP Connection</span>
+    </div>
+    <div class="acp-session-actions">
+      <button class="acp-icon-button" (click)="toggleSettings()" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      @if (acpService.sessionState().isConnected) {
+        <button class="acp-icon-button" (click)="clearChat()" title="Clear Chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </button>
+        <button class="acp-disconnect-button" (click)="disconnect()">
+          Disconnect
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (showSettings()) {
+    <div class="acp-session-settings">
+      <div class="settings-field">
+        <label class="settings-label">WebSocket URL</label>
+        <input
+          type="text"
+          class="settings-input"
+          [ngModel]="serverUrl()"
+          (ngModelChange)="serverUrl.set($event)"
+          placeholder="ws://localhost:9315/ws"
+          [disabled]="acpService.sessionState().isConnected"
+        />
+      </div>
+    </div>
+  }
+
+  @if (!acpService.sessionState().isConnected) {
+    <div class="acp-connect-form">
+      <button
+        class="acp-connect-button"
+        (click)="connect()"
+        [disabled]="!serverUrl().trim() || acpService.sessionState().isConnecting"
+      >
+        @if (acpService.sessionState().isConnecting) {
+          <div class="button-spinner"></div>
+          <span>Connecting...</span>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14m-7-7v14"/>
+          </svg>
+          <span>Connect</span>
+        }
+      </button>
+    </div>
+  }
+
+  @if (acpService.sessionState().error) {
+    <div class="acp-error-message">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      <span>{{ acpService.sessionState().error }}</span>
+      <button class="acp-error-dismiss" (click)="acpService.clearError()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  }
+
+  @if (acpService.sessionState().isConnected) {
+    <div class="acp-connection-info">
+      <div class="connection-badge ws">WS</div>
+      <span class="connection-status">Connected</span>
+    </div>
+  }
+</div>
