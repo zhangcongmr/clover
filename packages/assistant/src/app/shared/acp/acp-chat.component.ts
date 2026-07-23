@@ -2,11 +2,12 @@ import { Component, inject, signal, ViewChild, ElementRef, AfterViewChecked } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService, AcpMessage } from './acp.service';
+import { AcpToolCallsComponent } from './acp-tool-calls.component';
 
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AcpToolCallsComponent],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
