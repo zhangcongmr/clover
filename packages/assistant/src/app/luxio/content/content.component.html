@@ -12,7 +12,7 @@
   </div>
   <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
 </div>
-<div style="position: relative;display: flex;width: calc(100vw - 42px);height: 100%;">
+<div style="position: relative;display: flex;flex: 1;height: 100%;">
   @if (sideOpen()) {
     <div class="left-side-section" [style.width]="leftWidth * 100 + '%'">
       @if(currentDisplayViewId()==1) {

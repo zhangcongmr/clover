@@ -130,7 +130,7 @@
     }
   </div>
   <div data-layer="right-app-header" class="RightAppHeader ast-right-app-header">
-    <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleDisplayViewId(8)">
+    <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleRightPanel()">
       <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
@@ -198,10 +198,6 @@
   <app-settings></app-settings>
 } @else if(currentDisplayViewId==6) {
   <div user-center></div>
-} @else if(currentDisplayViewId==8) {
-  <div class="acp-panel-container">
-    <app-acp-panel />
-  </div>
 } @else {
   <div data-layer="app-body" class="AppBody ast-app-body">
     <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area">
@@ -276,9 +272,22 @@
         </div>
       }
     </div>
-    <div class="ast-right-panel">
-      <!-- TODO: Right panel content can be added here if needed. -->
-    </div>
+    @if(rightPanelOpen) {
+      <div class="ast-right-panel">
+        <div class="acp-panel-header">
+          <span class="acp-panel-title">ACP Agent</span>
+          <button class="acp-panel-close" (click)="closeRightPanel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="acp-panel-container">
+          <app-acp-panel />
+        </div>
+      </div>
+    }
 
     <!-- @if(currentDisplayViewId==1) {
       <div [sideOpen]="sideOpen" [currentDisplayViewId]="currentDisplayViewId" ast-content></div>

@@ -53,6 +53,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
+  rightPanelOpen = false;
   terminalBtnShow = true;
   terminalPanelShow = false;
   themePromptOpen = false;
@@ -990,14 +991,6 @@ For each fileIcons entry:
         this.currentDisplayViewId = 6;
         this.lastSelectedDisplayViewId = this.currentDisplayViewId;
         break;
-      case 'terminal': // Handle terminal tab activation
-        this.currentDisplayViewId = 7; // Assign a unique ID for terminal
-        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
-        break;
-      case 'acp-agent':
-        this.currentDisplayViewId = 8; // Assign a unique ID for ACP agent
-        this.lastSelectedDisplayViewId = this.currentDisplayViewId;
-        break;
     }
   }
 
@@ -1063,6 +1056,14 @@ For each fileIcons entry:
     if(currentDisplayViewId == 5 || currentDisplayViewId == 6) {
       this.closeMenu();
     }
+  }
+
+  toggleRightPanel() {
+    this.rightPanelOpen = !this.rightPanelOpen;
+  }
+
+  closeRightPanel() {
+    this.rightPanelOpen = false;
   }
 
   // Method to open a new terminal tab
