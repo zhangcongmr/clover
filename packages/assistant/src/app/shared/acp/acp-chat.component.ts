@@ -2,12 +2,11 @@ import { Component, inject, signal, ViewChild, ElementRef, AfterViewChecked } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService, AcpMessage } from './acp.service';
-import { AcpToolCallsComponent } from './acp-tool-calls.component';
 
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, AcpToolCallsComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -72,5 +71,24 @@ export class AcpChatComponent implements AfterViewChecked {
 
   trackByMessageId(index: number, message: AcpMessage): string {
     return message.id;
+  }
+
+  getToolStatusIcon(status?: string): string {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'in_progress': return '🔄';
+      case 'completed': return '✅';
+      case 'failed': return '❌';
+      default: return '❓';
+    }
+  }
+
+  formatJson(obj: unknown): string {
+    if (!obj) return '';
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch {
+      return String(obj);
+    }
   }
 }

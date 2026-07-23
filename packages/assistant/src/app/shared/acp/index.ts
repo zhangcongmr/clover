@@ -1,5 +1,5 @@
 export { AcpService } from './acp.service';
-export type { AcpMessage, AcpToolCall, AcpPlan, AcpSessionState } from './acp.service';
+export type { AcpMessage, AcpPlan, AcpSessionState } from './acp.service';
 
 export { AcpWebSocketService } from './acp-websocket.service';
 export type {
@@ -61,5 +61,4 @@ export type {
 export { AcpPanelComponent } from './acp-panel.component';
 export { AcpChatComponent } from './acp-chat.component';
 export { AcpSessionManagerComponent } from './acp-session-manager.component';
-export { AcpToolCallsComponent } from './acp-tool-calls.component';
 export { AcpPermissionDialogComponent } from './acp-permission-dialog.component';

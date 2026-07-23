@@ -18,20 +18,17 @@ import {
 
 export interface AcpMessage {
   id: string;
-  role: 'user' | 'assistant' | 'thought';
+  role: 'user' | 'assistant' | 'thought' | 'tool_call';
   content: string;
   timestamp: Date;
-}
-
-export interface AcpToolCall {
-  id: string;
-  title: string;
-  status: ToolCallStatus;
-  kind?: ToolKind;
-  content?: any[];
-  locations?: Array<{ path: string; line?: number }>;
-  rawInput?: unknown;
-  rawOutput?: unknown;
+  // For tool_call messages
+  toolCallId?: string;
+  toolTitle?: string;
+  toolKind?: ToolKind;
+  toolStatus?: ToolCallStatus;
+  toolLocations?: Array<{ path: string; line?: number }>;
+  toolRawInput?: unknown;
+  toolRawOutput?: unknown;
 }
 
 export interface AcpPlan {
@@ -67,7 +64,6 @@ export class AcpService {
   });
 
   readonly messages = signal<AcpMessage[]>([]);
-  readonly toolCalls = signal<AcpToolCall[]>([]);
   readonly plan = signal<AcpPlan | null>(null);
   readonly isProcessing = signal<boolean>(false);
 
@@ -247,7 +243,6 @@ export class AcpService {
       error: null
     });
     this.messages.set([]);
-    this.toolCalls.set([]);
     this.plan.set(null);
     this.sessions.set([]);
     this.dirItems.set([]);
@@ -268,14 +263,12 @@ export class AcpService {
 
   loadSession(sessionId: string, cwd?: string): void {
     this.messages.set([]);
-    this.toolCalls.set([]);
     this.plan.set(null);
     this.wsService.loadSession(sessionId, cwd);
   }
 
   resumeSession(sessionId: string, cwd?: string): void {
     this.messages.set([]);
-    this.toolCalls.set([]);
     this.plan.set(null);
     this.wsService.resumeSession(sessionId, cwd);
   }
@@ -368,40 +361,38 @@ export class AcpService {
   }
 
   private handleToolCall(update: any): void {
-    const toolCall: AcpToolCall = {
-      id: update.toolCallId,
-      title: update.title,
-      status: update.status || 'pending',
-      kind: update.kind,
-      content: update.content,
-      locations: update.locations,
-      rawInput: update.rawInput,
-      rawOutput: update.rawOutput
+    const toolCallMsg: AcpMessage = {
+      id: update.toolCallId || crypto.randomUUID(),
+      role: 'tool_call',
+      content: '',
+      timestamp: new Date(),
+      toolCallId: update.toolCallId,
+      toolTitle: update.title,
+      toolKind: update.kind,
+      toolStatus: update.status || 'pending',
+      toolLocations: update.locations,
+      toolRawInput: update.rawInput,
+      toolRawOutput: update.rawOutput
     };
 
-    this.toolCalls.update(calls => {
-      const existing = calls.find(c => c.id === toolCall.id);
-      if (existing) {
-        return calls.map(c => c.id === toolCall.id ? { ...c, ...toolCall } : c);
-      }
-      return [...calls, toolCall];
-    });
+    this.messages.update(msgs => [...msgs, toolCallMsg]);
   }
 
   private handleToolCallUpdate(update: any): void {
-    this.toolCalls.update(calls =>
-      calls.map(c => {
-        if (c.id !== update.toolCallId) return c;
-        return {
-          ...c,
-          title: update.title ?? c.title,
-          status: update.status ?? c.status,
-          kind: update.kind ?? c.kind,
-          content: update.content ?? c.content,
-          locations: update.locations ?? c.locations,
-          rawInput: update.rawInput ?? c.rawInput,
-          rawOutput: update.rawOutput ?? c.rawOutput
-        };
+    this.messages.update(msgs =>
+      msgs.map(m => {
+        if (m.role === 'tool_call' && m.toolCallId === update.toolCallId) {
+          return {
+            ...m,
+            toolTitle: update.title ?? m.toolTitle,
+            toolStatus: update.status ?? m.toolStatus,
+            toolKind: update.kind ?? m.toolKind,
+            toolLocations: update.locations ?? m.toolLocations,
+            toolRawInput: update.rawInput ?? m.toolRawInput,
+            toolRawOutput: update.rawOutput ?? m.toolRawOutput
+          };
+        }
+        return m;
       })
     );
   }
@@ -467,7 +458,6 @@ export class AcpService {
 
   clearMessages(): void {
     this.messages.set([]);
-    this.toolCalls.set([]);
     this.plan.set(null);
     this.usage.set(null);
   }
