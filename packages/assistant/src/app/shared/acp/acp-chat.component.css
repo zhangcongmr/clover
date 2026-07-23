@@ -101,6 +101,25 @@
   align-self: flex-start;
 }
 
+.acp-message.thought {
+  align-self: flex-start;
+  opacity: 0.8;
+}
+
+.acp-message.thought .message-avatar {
+  background-color: var(--vscode-terminal-ansiYellow, #ffc107);
+}
+
+.acp-message.thought .message-avatar svg {
+  color: #333;
+}
+
+.acp-message.thought .message-text {
+  background-color: var(--vscode-textCodeBlock-background, #f5f5f5);
+  font-style: italic;
+  border-left: 3px solid var(--vscode-terminal-ansiYellow, #ffc107);
+}
+
 .message-avatar {
   width: 32px;
   height: 32px;

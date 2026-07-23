@@ -8,6 +8,19 @@
       <span>ACP Connection</span>
     </div>
     <div class="acp-session-actions">
+      @if (acpService.sessionState().isConnected) {
+        <button class="acp-icon-button" (click)="toggleSessionHistory()" title="Session History">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+        <button class="acp-icon-button" (click)="toggleFileExplorer()" title="File Explorer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+      }
       <button class="acp-icon-button" (click)="toggleSettings()" title="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"/>
@@ -40,6 +53,97 @@
           placeholder="ws://localhost:9315/ws"
           [disabled]="acpService.sessionState().isConnected"
         />
+      </div>
+    </div>
+  }
+
+  @if (showSessionHistory()) {
+    <div class="acp-session-history">
+      <div class="session-history-header">
+        <span>Session History</span>
+        <button class="acp-icon-button" (click)="toggleSessionHistory()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      @if (acpService.sessionsLoading()) {
+        <div class="session-loading">Loading sessions...</div>
+      } @else if (acpService.sessions().length === 0) {
+        <div class="session-empty">No sessions found</div>
+      } @else {
+        <div class="session-list">
+          @for (session of acpService.sessions(); track session.sessionId) {
+            <div class="session-item">
+              <div class="session-info">
+                <div class="session-title">{{ session.title || 'Untitled Session' }}</div>
+                <div class="session-meta">
+                  <span class="session-id">{{ session.sessionId }}</span>
+                  @if (session.updatedAt) {
+                    <span class="session-date">{{ session.updatedAt }}</span>
+                  }
+                </div>
+              </div>
+              <div class="session-actions">
+                <button class="session-action-btn" (click)="loadSession(session.sessionId)" title="Load Session">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                    <polyline points="13 2 13 9 20 9"/>
+                  </svg>
+                </button>
+                <button class="session-action-btn" (click)="resumeSession(session.sessionId)" title="Resume Session">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (showFileExplorer()) {
+    <div class="acp-file-explorer">
+      <div class="file-explorer-header">
+        <span>File Explorer</span>
+        <div class="file-explorer-actions">
+          <button class="acp-icon-button" (click)="goBackDir()" title="Go Back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+          </button>
+          <button class="acp-icon-button" (click)="toggleFileExplorer()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="file-path">{{ acpService.currentDirPath() || '/' }}</div>
+      <div class="file-list">
+        @for (item of acpService.dirItems(); track item.name) {
+          <div class="file-item" (click)="item.type === 'directory' ? navigateDir(item.name) : openFile(item.name)">
+            @if (item.type === 'directory') {
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            } @else {
+              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+              </svg>
+            }
+            <span class="file-name">{{ item.name }}</span>
+            @if (item.size !== undefined) {
+              <span class="file-size">{{ item.size }} bytes</span>
+            }
+          </div>
+        }
       </div>
     </div>
   }
@@ -85,6 +189,9 @@
     <div class="acp-connection-info">
       <div class="connection-badge ws">WS</div>
       <span class="connection-status">Connected</span>
+      @if (acpService.currentModelId()) {
+        <span class="connection-model">Model: {{ getModelName() }}</span>
+      }
     </div>
   }
 </div>

@@ -23,12 +23,17 @@
     }
 
     @for (message of acpService.messages(); track trackByMessageId($index, message)) {
-      <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+      <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'" [class.thought]="message.role === 'thought'">
         <div class="message-avatar">
           @if (message.role === 'user') {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
+            </svg>
+          } @else if (message.role === 'thought') {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4m0-4h.01"/>
             </svg>
           } @else {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -38,7 +43,15 @@
         </div>
         <div class="message-content">
           <div class="message-header">
-            <span class="message-role">{{ message.role === 'user' ? 'You' : 'Agent' }}</span>
+            <span class="message-role">
+              @if (message.role === 'user') {
+                You
+              } @else if (message.role === 'thought') {
+                Thought
+              } @else {
+                Agent
+              }
+            </span>
             <span class="message-time">{{ formatTime(message.timestamp) }}</span>
           </div>
           <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>

@@ -1,9 +1,24 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { AcpWebSocketService, SessionUpdate, PermissionRequest } from './acp-websocket.service';
+import {
+  AcpWebSocketService,
+  SessionUpdate,
+  PermissionRequest,
+  SessionInfo,
+  PromptCapabilities,
+  ModelState,
+  DirItem,
+  FileChange,
+  ContentBlock,
+  ToolCall,
+  ToolCallUpdate,
+  Plan,
+  ToolCallStatus,
+  ToolKind
+} from './acp-websocket.service';
 
 export interface AcpMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'thought';
   content: string;
   timestamp: Date;
 }
@@ -11,9 +26,20 @@ export interface AcpMessage {
 export interface AcpToolCall {
   id: string;
   title: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  kind?: string;
+  status: ToolCallStatus;
+  kind?: ToolKind;
   content?: any[];
+  locations?: Array<{ path: string; line?: number }>;
+  rawInput?: unknown;
+  rawOutput?: unknown;
+}
+
+export interface AcpPlan {
+  entries: Array<{
+    content: string;
+    priority: 'high' | 'medium' | 'low';
+    status: 'pending' | 'in_progress' | 'completed';
+  }>;
 }
 
 export interface AcpSessionState {
@@ -21,6 +47,10 @@ export interface AcpSessionState {
   isConnected: boolean;
   isConnecting: boolean;
   error: string | null;
+  promptCapabilities?: PromptCapabilities;
+  models?: ModelState;
+  currentMode?: string;
+  title?: string;
 }
 
 @Injectable({
@@ -38,7 +68,25 @@ export class AcpService {
 
   readonly messages = signal<AcpMessage[]>([]);
   readonly toolCalls = signal<AcpToolCall[]>([]);
+  readonly plan = signal<AcpPlan | null>(null);
   readonly isProcessing = signal<boolean>(false);
+
+  // Session history
+  readonly sessions = signal<SessionInfo[]>([]);
+  readonly sessionsLoading = signal<boolean>(false);
+
+  // File explorer
+  readonly currentDirPath = signal<string>('');
+  readonly dirItems = signal<DirItem[]>([]);
+  readonly fileContent = signal<string | null>(null);
+  readonly currentFilePath = signal<string | null>(null);
+  readonly fileChanges = signal<FileChange[]>([]);
+
+  // Model
+  readonly currentModelId = signal<string | null>(null);
+
+  // Usage
+  readonly usage = signal<{ inputTokens?: number; outputTokens?: number; totalTokens?: number } | null>(null);
 
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
@@ -67,6 +115,61 @@ export class AcpService {
         ...s,
         sessionId
       }));
+      // Load root directory
+      this.wsService.listDir('');
+    });
+
+    this.wsService.onSessionList((sessions, nextCursor) => {
+      console.log('[ACP] Sessions listed:', sessions.length);
+      this.sessions.set(sessions);
+      this.sessionsLoading.set(false);
+    });
+
+    this.wsService.onSessionLoaded((sessionId, promptCapabilities, models) => {
+      console.log('[ACP] Session loaded:', sessionId);
+      this.sessionState.update(s => ({
+        ...s,
+        sessionId,
+        promptCapabilities,
+        models
+      }));
+      this.currentModelId.set(models?.currentModelId ?? null);
+      // Load root directory
+      this.wsService.listDir('');
+    });
+
+    this.wsService.onSessionResumed((sessionId, promptCapabilities, models) => {
+      console.log('[ACP] Session resumed:', sessionId);
+      this.sessionState.update(s => ({
+        ...s,
+        sessionId,
+        promptCapabilities,
+        models
+      }));
+      this.currentModelId.set(models?.currentModelId ?? null);
+      // Load root directory
+      this.wsService.listDir('');
+    });
+
+    this.wsService.onModelChanged((modelId) => {
+      console.log('[ACP] Model changed:', modelId);
+      this.currentModelId.set(modelId);
+    });
+
+    this.wsService.onDirListing((path, items) => {
+      console.log('[ACP] Dir listing:', path, items.length);
+      this.currentDirPath.set(path);
+      this.dirItems.set(items);
+    });
+
+    this.wsService.onFileContent((content) => {
+      console.log('[ACP] File content received');
+      this.fileContent.set(content);
+    });
+
+    this.wsService.onFileChanges((changes) => {
+      console.log('[ACP] File changes:', changes.length);
+      this.fileChanges.set(changes);
     });
 
     // Sync connection state from WebSocket service
@@ -83,6 +186,10 @@ export class AcpService {
     // Watch for state changes
     const interval = setInterval(syncState, 100);
   }
+
+  // ============================================================================
+  // Connection management
+  // ============================================================================
 
   async connect(url: string): Promise<void> {
     this.sessionState.update(s => ({ ...s, isConnecting: true, error: null }));
@@ -141,9 +248,66 @@ export class AcpService {
     });
     this.messages.set([]);
     this.toolCalls.set([]);
+    this.plan.set(null);
+    this.sessions.set([]);
+    this.dirItems.set([]);
+    this.fileContent.set(null);
+    this.currentFilePath.set(null);
+    this.fileChanges.set([]);
+    this.usage.set(null);
   }
 
+  // ============================================================================
+  // Session history
+  // ============================================================================
+
+  listSessions(cwd?: string, cursor?: string): void {
+    this.sessionsLoading.set(true);
+    this.wsService.listSessions(cwd, cursor);
+  }
+
+  loadSession(sessionId: string, cwd?: string): void {
+    this.messages.set([]);
+    this.toolCalls.set([]);
+    this.plan.set(null);
+    this.wsService.loadSession(sessionId, cwd);
+  }
+
+  resumeSession(sessionId: string, cwd?: string): void {
+    this.messages.set([]);
+    this.toolCalls.set([]);
+    this.plan.set(null);
+    this.wsService.resumeSession(sessionId, cwd);
+  }
+
+  // ============================================================================
+  // Model management
+  // ============================================================================
+
+  setModel(modelId: string): void {
+    this.wsService.setModel(modelId);
+  }
+
+  // ============================================================================
+  // File explorer
+  // ============================================================================
+
+  listDir(path: string): void {
+    this.wsService.listDir(path);
+  }
+
+  readFile(path: string): void {
+    this.currentFilePath.set(path);
+    this.wsService.readFile(path);
+  }
+
+  // ============================================================================
+  // Private handlers
+  // ============================================================================
+
   private handleSessionUpdate(update: SessionUpdate): void {
+    console.log('[ACP] Session update:', update.sessionUpdate);
+
     switch (update.sessionUpdate) {
       case 'agent_message_chunk':
         if (update.content?.type === 'text' && update.content.text) {
@@ -151,25 +315,101 @@ export class AcpService {
         }
         break;
 
-      case 'tool_call':
-        this.updateToolCall({
-          id: update.toolCallId,
-          title: update.title,
-          status: update.status as 'pending' | 'running' | 'completed' | 'failed',
-          content: update.content
-        });
-        break;
-
-      case 'tool_call_update':
-        if (update.status) {
-          this.updateToolCallStatus(update.toolCallId, update.status);
+      case 'agent_thought_chunk':
+        if (update.content?.type === 'text' && update.content.text) {
+          this.appendThoughtMessage(update.content.text);
         }
         break;
 
+      case 'user_message_chunk':
+        // User message chunks are echoed back, we already added the user message
+        break;
+
+      case 'tool_call':
+        this.handleToolCall(update);
+        break;
+
+      case 'tool_call_update':
+        this.handleToolCallUpdate(update);
+        break;
+
       case 'plan':
-        // Handle plan updates if needed
+        this.handlePlanUpdate(update);
+        break;
+
+      case 'current_mode_update':
+        this.sessionState.update(s => ({
+          ...s,
+          currentMode: update.currentModeId
+        }));
+        break;
+
+      case 'session_info_update':
+        if (update.title) {
+          this.sessionState.update(s => ({
+            ...s,
+            title: update.title
+          }));
+        }
+        break;
+
+      case 'usage_update':
+        this.usage.set(update.usage ?? null);
+        break;
+
+      case 'available_commands_update':
+        console.log('[ACP] Available commands:', update.availableCommands.length);
+        break;
+
+      case 'config_option_update':
+        console.log('[ACP] Config options updated:', update.configOptions.length);
         break;
     }
+  }
+
+  private handleToolCall(update: any): void {
+    const toolCall: AcpToolCall = {
+      id: update.toolCallId,
+      title: update.title,
+      status: update.status || 'pending',
+      kind: update.kind,
+      content: update.content,
+      locations: update.locations,
+      rawInput: update.rawInput,
+      rawOutput: update.rawOutput
+    };
+
+    this.toolCalls.update(calls => {
+      const existing = calls.find(c => c.id === toolCall.id);
+      if (existing) {
+        return calls.map(c => c.id === toolCall.id ? { ...c, ...toolCall } : c);
+      }
+      return [...calls, toolCall];
+    });
+  }
+
+  private handleToolCallUpdate(update: any): void {
+    this.toolCalls.update(calls =>
+      calls.map(c => {
+        if (c.id !== update.toolCallId) return c;
+        return {
+          ...c,
+          title: update.title ?? c.title,
+          status: update.status ?? c.status,
+          kind: update.kind ?? c.kind,
+          content: update.content ?? c.content,
+          locations: update.locations ?? c.locations,
+          rawInput: update.rawInput ?? c.rawInput,
+          rawOutput: update.rawOutput ?? c.rawOutput
+        };
+      })
+    );
+  }
+
+  private handlePlanUpdate(update: any): void {
+    this.plan.set({
+      entries: update.entries || []
+    });
   }
 
   private handlePermissionRequest(request: PermissionRequest): void {
@@ -201,21 +441,25 @@ export class AcpService {
     });
   }
 
-  private updateToolCall(toolCall: AcpToolCall): void {
-    this.toolCalls.update(calls => {
-      const existing = calls.find(c => c.id === toolCall.id);
-      if (existing) {
-        return calls.map(c => c.id === toolCall.id ? { ...c, ...toolCall } : c);
+  private appendThoughtMessage(text: string): void {
+    this.messages.update(msgs => {
+      const lastMsg = msgs[msgs.length - 1];
+      if (lastMsg && lastMsg.role === 'thought') {
+        lastMsg.content += text;
+        return [...msgs];
       }
-      return [...calls, toolCall];
+      return [...msgs, {
+        id: crypto.randomUUID(),
+        role: 'thought',
+        content: text,
+        timestamp: new Date()
+      }];
     });
   }
 
-  private updateToolCallStatus(id: string, status: string): void {
-    this.toolCalls.update(calls =>
-      calls.map(c => c.id === id ? { ...c, status: status as any } : c)
-    );
-  }
+  // ============================================================================
+  // Utility methods
+  // ============================================================================
 
   clearError(): void {
     this.sessionState.update(s => ({ ...s, error: null }));
@@ -224,5 +468,12 @@ export class AcpService {
   clearMessages(): void {
     this.messages.set([]);
     this.toolCalls.set([]);
+    this.plan.set(null);
+    this.usage.set(null);
+  }
+
+  clearFileContent(): void {
+    this.fileContent.set(null);
+    this.currentFilePath.set(null);
   }
 }
