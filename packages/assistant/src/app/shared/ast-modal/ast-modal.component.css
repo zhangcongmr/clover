@@ -28,7 +28,7 @@
     margin-bottom: 0.5rem;
 }
 
-.codigma-ast-modal {
+.ast-modal {
     align-items: flex-start;
     justify-content: flex-start;
     position: relative;
@@ -42,7 +42,7 @@
     height: 100%;
 }
 
-.codigma-ast-modal-header {
+.ast-modal-header {
     align-items: center;
     align-self: stretch;
     border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid;
@@ -55,7 +55,7 @@
     /* 禁止文本选中 */
 }
 
-.codigma-title {
+.ast-title {
     color: black;
     font-size: 20px;
     font-weight: 400;
@@ -79,7 +79,7 @@
     color: white;
 }
 
-ast-modal .codigma-ast-modal-body {
+ast-modal .ast-modal-body {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -89,7 +89,7 @@ ast-modal .codigma-ast-modal-body {
 }
 
 
-ast-modal .codigma-describe-btns {
+ast-modal .ast-describe-btns {
     align-items: center;
     align-self: stretch;
     border-top: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid;
@@ -102,7 +102,7 @@ ast-modal .codigma-describe-btns {
 }
 
 
-.codigma-confirm-btn {
+.ast-confirm-btn {
     border: none;
     align-items: center;
     background: #0D99FF;
@@ -112,13 +112,13 @@ ast-modal .codigma-describe-btns {
     padding: 4px 8px 4px 8px;
 }
 
-.codigma-confirm {
+.ast-confirm {
     color: white;
     font-weight: 400;
     word-wrap: break-word
 }
 
-.codigma-cancel-btn {
+.ast-cancel-btn {
     border: 1px solid gainsboro;
     align-items: center;
     background: white;
@@ -128,7 +128,7 @@ ast-modal .codigma-describe-btns {
     padding: 4px 8px 4px 8px;
 }
 
-.codigma-cancel {
+.ast-cancel {
     color: black;
     font-weight: 400;
     word-wrap: break-word
@@ -139,12 +139,12 @@ button[type="submit"] {
     cursor: pointer;
 }
 
-.codigma-confirm-btn:hover {
+.ast-confirm-btn:hover {
     background-color: #0056b3;
     /* 鼠标悬停时改变背景颜色 */
 }
 
-.codigma-cancel-btn:hover {
+.ast-cancel-btn:hover {
     background-color: gray;
     /* 鼠标悬停时改变背景颜色 */
 }

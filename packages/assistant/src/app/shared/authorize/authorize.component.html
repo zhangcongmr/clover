@@ -1,5 +1,5 @@
 <ast-modal [title]="'Authorize'"   [visible]="visible" (close)="close()">
-  <div class="codigma-ast-modal-body">
+  <div class="ast-modal-body">
     <form class="flat-form">
       <label for="username">username:</label>
       <input type="text" placeholder="username" name="username" [(ngModel)]="data.userName"
@@ -10,26 +10,26 @@
         autocomplete="off">
     </form>
   </div>
-  <div class="codigma-describe-btns">
-    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn codigma-confirm-btn" (click)="confirm()">
-      <div data-layer="Confirm" class="Confirm codigma-confirm">Confirm</div>
+  <div class="ast-describe-btns">
+    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn ast-confirm-btn" (click)="confirm()">
+      <div data-layer="Confirm" class="Confirm ast-confirm">Confirm</div>
     </button>
-    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancel()">
-      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn ast-cancel-btn" (click)="cancel()">
+      <div data-layer="Cancel" class="Cancel ast-cancel">Cancel</div>
     </button>
   </div>
 </ast-modal>
 
 
 <ast-modal [title]="'Authorize'"   [visible]="visible" (close)="close()">
-  <div class="codigma-ast-modal-body">
+  <div class="ast-modal-body">
     <div style="display: flex;height: 100%;">
       <span>{{contentTip}}</span>
     </div>
   </div>
-  <div class="codigma-describe-btns">
-    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancelTipDlg()">
-      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+  <div class="ast-describe-btns">
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn ast-cancel-btn" (click)="cancelTipDlg()">
+      <div data-layer="Cancel" class="Cancel ast-cancel">Cancel</div>
     </button>
   </div>
 </ast-modal>

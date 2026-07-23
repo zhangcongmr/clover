@@ -52,14 +52,14 @@ Sign In / Sign Out
 **Modified:** `packages/assistant/src/app/shared/ast-menu/ast-menu.component.css`
 
 ```css
-:host(.codigma-right-menu) .has-submenu {
+:host(.ast-right-menu) .has-submenu {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
 }
 
-:host(.codigma-right-menu) .submenu-arrow {
+:host(.ast-right-menu) .submenu-arrow {
   margin-left: auto;
   width: 16px;
   height: 16px;
@@ -70,7 +70,7 @@ Sign In / Sign Out
   flex-shrink: 0;
 }
 
-:host(.codigma-right-menu) .submenu-container {
+:host(.ast-right-menu) .submenu-container {
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorGroup-border);
   box-shadow: var(--vscode-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));

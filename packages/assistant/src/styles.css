@@ -305,7 +305,7 @@ img, svg {
   cursor: text;
 }
 
-.codigma-menu-every-item {
+.ast-menu-every-item {
     align-items: center;
     /* 垂直居中 */
     color: var(--vscode-foreground);
@@ -324,15 +324,15 @@ img, svg {
     background-color: var(--vscode-sideBar-background);
 }
 
-.codigma-menu-every-item:hover {
+.ast-menu-every-item:hover {
     background-color: var(--vscode-list-hoverBackground);
 }
 
-.codigma-menu-every-item:last-child {
+.ast-menu-every-item:last-child {
   border-bottom: none;
 }
 
-.codigma-menu-every-item svg, .codigma-menu-every-item img {
+.ast-menu-every-item svg, .ast-menu-every-item img {
     margin-right: 16px; /* 调整图标与文本间的距离 */
     color: var(--vscode-icon-foreground);
 }

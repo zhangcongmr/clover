@@ -17,53 +17,53 @@ padding-left: 6px;
 }
 .add-project-tree .btn-item { margin-right: 6px; }
 </style>
-<div class="codigma-ast-modal-body">
-  <div data-layer="import-type" class="ImportType codigma-import-type">
-    <div data-layer="from-remote" class="FromRemote codigma-from-remote"
+<div class="ast-modal-body">
+  <div data-layer="import-type" class="ImportType ast-import-type">
+    <div data-layer="from-remote" class="FromRemote ast-from-remote"
       [class.selected-imported-type]="importType=='1'" (click)="importTypeChangeFn('1')">
       <div data-svg-wrapper="" data-layer="remote-icon" class="RemoteIcon">
         <svg class="icon" width="24" height="26">
           <use href="#icon-remote-server"></use>
         </svg>
       </div>
-      <div data-layer="From Remote Server" class="FromRemoteServer codigma-from-remote-server">From API Definition
+      <div data-layer="From Remote Server" class="FromRemoteServer ast-from-remote-server">From API Definition
       </div>
     </div>
-    <div data-layer="from-local" class="FromLocal codigma-from-local" [class.selected-imported-type]="importType=='3'"
+    <div data-layer="from-local" class="FromLocal ast-from-local" [class.selected-imported-type]="importType=='3'"
       (click)="importTypeChangeFn('3')">
       <div data-svg-wrapper="" data-layer="local-icon" class="LocalIcon">
         <svg class="icon" width="24" height="24">
           <use href="#icon-local-res"></use>
         </svg>
       </div>
-      <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Local</div>
+      <div data-layer="From Local" class="FromLocal ast-from-remote-server">From Local</div>
     </div>
   </div>
-  <div data-layer="import-content" class="ImportContent codigma-import-content">
+  <div data-layer="import-content" class="ImportContent ast-import-content">
     @if(importType=='1') {
-      <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section">
-        <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
-          <div data-layer="import-desc" class="ImportDesc codigma-import-desc">
+      <div data-layer="import-content-section" class="ImportContentSection ast-import-content-section">
+        <div data-layer="import-desc-title" class="ImportDescTitle ast-import-desc-title">
+          <div data-layer="import-desc" class="ImportDesc ast-import-desc">
             <div>Import from API Definition</div>
           </div>
-          <div data-layer="import-desc-details" class="ImportDescDetails codigma-import-desc-details">
+          <div data-layer="import-desc-details" class="ImportDescDetails ast-import-desc-details">
             <div>Paste URL of OpenAPI 2.0, OpenAPI 3.0+ or cURL into the
             following input box.</div>
           </div>
         </div>
-        <div data-layer="input-box-section" class="InputBoxSection codigma-input-box-section">
+        <div data-layer="input-box-section" class="InputBoxSection ast-input-box-section">
           <input type="text" name="ccdd" class="ccdd" [(ngModel)]="importFromApiDefUrl"
-            placeholder="Input url of the api definition to fetch the api data."  class="InputBox codigma-input-box" autocomplete="off">
+            placeholder="Input url of the api definition to fetch the api data."  class="InputBox ast-input-box" autocomplete="off">
           </div>
-          <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
-            <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importFromApiDef($event)">
+          <div data-layer="fetch-btn" class="FetchBtn ast-fetch-btn">
+            <div data-layer="fetch-btn-text" class="btn-text ast-fetch-btn-text" (click)="importFromApiDef($event)">
             Import</div>
           </div>
         </div>
       } @else if(importType=='2'){
         <app-api-explorer (importOut)="importOutFromEcosystem($event)"></app-api-explorer>
       } @else {
-        <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section" style="flex:none">
+        <div data-layer="import-content-section" class="ImportContentSection ast-import-content-section" style="flex:none">
           <div>Open file:</div>
           <div style="display: flex;max-height: 300px;gap: 0.5rem;">
             <!-- file picker -->
@@ -76,8 +76,8 @@ padding-left: 6px;
               </div>
             }
           </div>
-          <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
-            <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importOutFromLocal()">
+          <div data-layer="fetch-btn" class="FetchBtn ast-fetch-btn">
+            <div data-layer="fetch-btn-text" class="btn-text ast-fetch-btn-text" (click)="importOutFromLocal()">
             Import</div>
           </div>
         </div>

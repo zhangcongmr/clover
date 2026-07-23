@@ -8,7 +8,7 @@
   overflow: hidden;
 }
 
-.codigma-app-header {
+.ast-app-header {
   align-items: center;
   align-self: stretch;
   background: var(--vscode-titleBar-activeBackground);
@@ -69,7 +69,7 @@
   margin: 4px 0;
 }
 
-.codigma-left-app-header {
+.ast-left-app-header {
   display: flex;
   height: 42px;
   flex: 1 1 0;
@@ -89,7 +89,7 @@
   cursor: pointer;
 }
 
-.codigma-right-app-header {
+.ast-right-app-header {
   align-items: center;
   display: inline-flex;
   gap: 10px;
@@ -99,7 +99,7 @@
 }
 
 
-.codigma-app-body {
+.ast-app-body {
   align-items: flex-start;
   align-self: stretch;
   display: inline-flex;
@@ -108,7 +108,7 @@
   background-color: var(--vscode-editor-background);
 }
 
-.codigma-left-side-area {
+.ast-left-side-area {
   align-items: center;
   align-self: stretch;
   background: var(--vscode-activityBar-background);
@@ -123,7 +123,7 @@
   color: var(--vscode-activityBar-foreground);
 }
 
-.codigma-up-btnlist {
+.ast-up-btnlist {
   align-items: flex-start;
   display: flex;
   flex-direction: column;
@@ -131,12 +131,12 @@
   gap: 33px;
   justify-content: flex-start
 }
-.codigma-justfill-place {
+.ast-justfill-place {
   flex: 1 1 0;
   display: flex;
 }
 
-.right-panel {
+.ast-middle-panel {
   flex: 1;
   display: flex;
   position: relative;
@@ -175,7 +175,7 @@
   }
 }
 
-.codigma-overview-longstrip {
+.ast-overview-longstrip {
   height: 1.5rem;
   align-items: center;
   align-self: stretch;
@@ -190,12 +190,12 @@
   border-top: 1px solid var(--vscode-editorGroup-border);
 }
 
-.codigma-notification-cnr {
+.ast-notification-cnr {
   cursor: pointer;
   align-items: center;
   display: flex;
 }
-.codigma-notification-cnr:hover {
+.ast-notification-cnr:hover {
   background-color: var(--vscode-list-hoverBackground);
   color: var(--vscode-foreground);
 }

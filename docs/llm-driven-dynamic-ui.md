@@ -487,7 +487,7 @@ system prompt 约束：
 | 文件 | 替换数 | 位置 |
 |------|--------|------|
 | `app.component.css` | 3 | `.indicator-panel` / `.theme-prompt-panel` / `.testSurface-panel` |
-| `ast-menu.component.css` | 1 | `:host(.codigma-right-menu)` |
+| `ast-menu.component.css` | 1 | `:host(.ast-right-menu)` |
 | `ast-modal.component.css` | 1 | `.ast-modal-overlay` |
 
 ---
@@ -561,7 +561,7 @@ system prompt 约束：
 
 | 文件 | 替换数 | 位置 |
 |------|--------|------|
-| `styles.css` | 1 | `.codigma-menu-every-item` transition |
+| `styles.css` | 1 | `.ast-menu-every-item` transition |
 | `app.component.css` | 4 | 3 个面板动画 + 进度条 transition |
 | `ast-api.component.css` | 1 | `transition: clip-path / opacity`（使用 `replaceAll` 为渐进值，`clip-path` 和 `opacity` 值不同故需独立替换） |
 
@@ -654,6 +654,6 @@ system prompt 约束：
 
 ### 不纳入渐变范围
 
-- 所有组件背景色（`.codigma-app-body`、面板、侧栏、菜单等）— 保持纯色
+- 所有组件背景色（`.ast-app-body`、面板、侧栏、菜单等）— 保持纯色
 - `@a2ui` 组件库背景— 后续阶段
 - `body::before / body::after` — 布局辅助伪元素，不需要渐变

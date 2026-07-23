@@ -90,27 +90,27 @@
 }
 
 @if(dataType() != 'subData' && isOpen && !isLocked()) {
-  <div ast-menu  [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content codigma-right-menu">
+  <div ast-menu  [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content ast-right-menu">
     @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'file') {
-      <div data-layer="New Api" class="New codigma-menu-every-item" (click)="menuSelectAction('NewApi')">
+      <div data-layer="New Api" class="New ast-menu-every-item" (click)="menuSelectAction('NewApi')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New Api</span></div>
     }
     @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&currentContextMenuEvt['item']['nodeType'] == 'folder') {
-      <div data-layer="New File" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFile')">
+      <div data-layer="New File" class="New ast-menu-every-item" (click)="menuSelectAction('NewFile')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New File</span></div>
-      <div data-layer="New Folder" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFolder')">
+      <div data-layer="New Folder" class="New ast-menu-every-item" (click)="menuSelectAction('NewFolder')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New Folder</span></div>
     }
     @if(currentContextMenuEvt&&currentContextMenuEvt['item']) {
-      <div data-layer="Open in File Explorer" class="Open codigma-menu-every-item" (click)="menuSelectAction('openInFileExplorer')">
+      <div data-layer="Open in File Explorer" class="Open ast-menu-every-item" (click)="menuSelectAction('openInFileExplorer')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
         <span>Open in File Explorer</span></div>
     }
     @if(currentContextMenuEvt&&currentContextMenuEvt['item'] == 'NoN_SELECTION') {
-      <div data-layer="New Folder" class="New codigma-menu-every-item" (click)="menuSelectAction('NewFolder')">
+      <div data-layer="New Folder" class="New ast-menu-every-item" (click)="menuSelectAction('NewFolder')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
         <span>New Folder</span></div>
     }
@@ -121,19 +121,19 @@
          ||currentContextMenuEvt['item']['nodeType'] == 'file'
          ||currentContextMenuEvt['item']['nodeType'] == 'folder')
          &&!(currentContextMenuEvt['item']['nodeType'] == 'folder' && !currentContextMenuEvt['parentItem'])) {
-      <div data-layer="Delete" class="Delete codigma-menu-every-item" (click)="menuSelectAction('Delete')">
+      <div data-layer="Delete" class="Delete ast-menu-every-item" (click)="menuSelectAction('Delete')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"   fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z"></path></svg>
         <span>Delete</span></div>
-      <div data-layer="Rename" class="Rename codigma-menu-every-item" (click)="menuSelectAction('Rename')">
+      <div data-layer="Rename" class="Rename ast-menu-every-item" (click)="menuSelectAction('Rename')">
       <svg t="1770033793953" class="icon" viewBox="0 0 1024 1024"  height="16" width="16"   version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5638" width="16" height="16"><path d="M561.024 652.032H136.96V371.904h424a8 8 0 0 0 8-8v-56a8 8 0 0 0-8-8h-464a32 32 0 0 0-32 32v360a32 32 0 0 0 32 32h464a8 8 0 0 0 8-7.936v-56.064a8 8 0 0 0-8-7.936z m140.992-344.064v56c0 4.48 3.584 8 8 8h176v280h-176a8 8 0 0 0-8 8.064v55.936c0 4.48 3.584 8.064 8 8.064h216a32 32 0 0 0 32-32V331.904a32 32 0 0 0-32-32h-216a8 8 0 0 0-8 8zM668.032 192h74.944a8 8 0 0 0 8-8v-48A8 8 0 0 0 743.04 128H529.024a8 8 0 0 0-8 8v48c0 4.416 3.584 8 8 8h74.944v638.976H529.088a8 8 0 0 0-8 8v48c0 4.48 3.584 8 8 8h213.952a8 8 0 0 0 8-8v-48a8 8 0 0 0-8-8h-74.944V192zM194.944 480h275.968v64H195.008v-64z" fill="#000000" p-id="5639"></path></svg>
         <span>Rename</span></div>
-      <div data-layer="Duplicate" class="Duplicate codigma-menu-every-item" (click)="menuSelectAction('Duplicate')">
+      <div data-layer="Duplicate" class="Duplicate ast-menu-every-item" (click)="menuSelectAction('Duplicate')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16" fill="currentColor"><path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z"></path></svg>
         <span>Duplicate</span></div>
     }
 
     @if(currentContextMenuEvt&&currentContextMenuEvt['item']&&(currentContextMenuEvt['item']['nodeType'] == 'folder' || currentContextMenuEvt['item']['nodeType'] == 'file')) {
-      <div data-layer="Share" class="Share codigma-menu-every-item" (click)="menuSelectAction('Share')">
+      <div data-layer="Share" class="Share ast-menu-every-item" (click)="menuSelectAction('Share')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="16" width="16"  fill="currentColor"><path d="M13.1202 17.0228L8.92129 14.7324C8.19135 15.5125 7.15261 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8C7.15255 8 8.19125 8.48746 8.92118 9.26746L13.1202 6.97713C13.0417 6.66441 13 6.33707 13 6C13 3.79086 14.7909 2 17 2C19.2091 2 21 3.79086 21 6C21 8.20914 19.2091 10 17 10C15.8474 10 14.8087 9.51251 14.0787 8.73246L9.87977 11.0228C9.9583 11.3355 10 11.6629 10 12C10 12.3371 9.95831 12.6644 9.87981 12.9771L14.0788 15.2675C14.8087 14.4875 15.8474 14 17 14C19.2091 14 21 15.7909 21 18C21 20.2091 19.2091 22 17 22C14.7909 22 13 20.2091 13 18C13 17.6629 13.0417 17.3355 13.1202 17.0228ZM6 14C7.10457 14 8 13.1046 8 12C8 10.8954 7.10457 10 6 10C4.89543 10 4 10.8954 4 12C4 13.1046 4.89543 14 6 14ZM17 8C18.1046 8 19 7.10457 19 6C19 4.89543 18.1046 4 17 4C15.8954 4 15 4.89543 15 6C15 7.10457 15.8954 8 17 8ZM17 20C18.1046 20 19 19.1046 19 18C19 16.8954 18.1046 16 17 16C15.8954 16 15 16.8954 15 18C15 19.1046 15.8954 20 17 20Z"></path></svg>
         <span>Share on Community</span></div>
     }

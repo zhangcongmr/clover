@@ -9,8 +9,8 @@
 @if(subPanelType === 1) {
   <community-widget style="flex: 1 1 0;" [attr.base-href]="baseHref" (widgetAction)="onWidgetAction($event)"></community-widget>
 } @else if(subPanelType === 2) {
-  <div data-layer="api-content" class="ApiContent codigma-api-content">
-    <div data-layer="overview-type" class="OverviewType codigma-overview-type">
+  <div data-layer="api-content" class="ApiContent ast-api-content">
+    <div data-layer="overview-type" class="OverviewType ast-overview-type">
       <div data-svg-wrapper="" data-layer="back" class="back" (click)="backFn()">
         <svg class="icon" width="24" height="24">
           <use href="#icon-back"></use>

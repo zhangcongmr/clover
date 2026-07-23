@@ -195,7 +195,7 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 /* 
-.codigma-tab-closeable {
+.ast-tab-closeable {
     align-items: center;
     background: white;
     display: flex;
@@ -205,12 +205,12 @@ li[data-layer="tab"].active-tab .tab-close {
     min-width: 122px
 } */
 
-.codigma-remaining-space {
+.ast-remaining-space {
     background: var(--vscode-tab-inactiveBackground);
     /* border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid; */
     flex: 1 1 0;
 }
-.codigma-right-app-header {
+.ast-right-app-header {
   align-items: center;
   display: flex;
   gap: 10px;

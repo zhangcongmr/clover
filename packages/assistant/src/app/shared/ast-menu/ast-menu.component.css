@@ -3,7 +3,7 @@
   z-index: 1000;
   display: none;
 }
-:host(.codigma-right-menu) {
+:host(.ast-right-menu) {
   align-items: flex-start;
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorGroup-border);
@@ -16,25 +16,25 @@
   transition: box-shadow 0.2s ease;
 }
 
-:host(.codigma-right-menu) .codigma-menu-every-item {
+:host(.ast-right-menu) .ast-menu-every-item {
   background: var(--vscode-editorWidget-background);
 }
 
-:host(.codigma-right-menu) .has-submenu {
+:host(.ast-right-menu) .has-submenu {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
 }
 
-:host(.codigma-right-menu) .has-submenu > div {
+:host(.ast-right-menu) .has-submenu > div {
   display: flex;
   align-items: center;
   gap: 8px;
   flex: 1;
 }
 
-:host(.codigma-right-menu) .submenu-arrow {
+:host(.ast-right-menu) .submenu-arrow {
   margin-left: auto;
   width: 16px;
   height: 16px;
@@ -45,7 +45,7 @@
   flex-shrink: 0;
 }
 
-:host(.codigma-right-menu) .submenu-container {
+:host(.ast-right-menu) .submenu-container {
   background: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorGroup-border);
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));

@@ -1,6 +1,6 @@
 @if(editApiSourceCodeEnable == false) {
   <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
-    <div data-layer="edit-btn" class="EditBtn codigma-edit-btn" [style.clip-path]="showEditBtn" [style.display]="!editApiSourceCodeEnable?'inline-flex':'none'" (click)="editApiSourceCodeFn($event)">
+    <div data-layer="edit-btn" class="EditBtn ast-edit-btn" [style.clip-path]="showEditBtn" [style.display]="!editApiSourceCodeEnable?'inline-flex':'none'" (click)="editApiSourceCodeFn($event)">
       <div data-svg-wrapper="" data-layer="Frame" class="Frame">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -8,7 +8,7 @@
             fill="var(--primary-color, rgb(103, 137, 186))"></path>
         </svg>
       </div>
-      <div data-layer="Edit" class="Edit codigma-edit" title="Open API data in editor">Edit API</div>
+      <div data-layer="Edit" class="Edit ast-edit" title="Open API data in editor">Edit API</div>
     </div>
   </div>
   <div style="display: flex;flex-wrap: nowrap;margin-top: 0.5rem;">
@@ -97,26 +97,26 @@
               }
             </div>
           } @else {
-            <div data-layer="add-content-panel" class="AddContentPanel codigma-add-content-panel">
-              <div data-layer="no-content" class="NoContent codigma-no-content">
+            <div data-layer="add-content-panel" class="AddContentPanel ast-add-content-panel">
+              <div data-layer="no-content" class="NoContent ast-no-content">
                 <svg width="107" height="86" viewBox="0 0 107 86" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M89 0V86L70.4783 75.8888L53.5 85.1568L36.5217 75.8888L18 86V0H89ZM85.913 3.0888H21.087V80.7954L36.5217 72.3722L53.5 81.6386L70.4783 72.3722L85.913 80.7969V3.0888ZM76.6522 50.9653V54.0541H30.3478V50.9653H76.6522ZM76.6522 35.5212V38.61H30.3478V35.5212H76.6522ZM64.3043 20.0772V23.166H30.3478V20.0772H64.3043Z"
                     fill="#F2F2F7" />
                 </svg>
               </div>
-              <div data-layer="no-content-tips" class="NoContentTips codigma-no-content-tips">
+              <div data-layer="no-content-tips" class="NoContentTips ast-no-content-tips">
                 <div data-layer="The request has no any parameters"
-                  class="TheRequestHasNoAnyParameters codigma-no-content-tips-text">No parameters available.
+                  class="TheRequestHasNoAnyParameters ast-no-content-tips-text">No parameters available.
                 </div>
               </div>
-              <div data-layer="add-new-content" class="AddNewContent codigma-add-new-content-btn" (click)="addCustomParams(apiInfo.customQueryparameters)">
+              <div data-layer="add-new-content" class="AddNewContent ast-add-new-content-btn" (click)="addCustomParams(apiInfo.customQueryparameters)">
                 <div data-svg-wrapper="" data-layer="add-icon" class="AddIcon">
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8.25 8.25V3.75H9.75V8.25H14.25V9.75H9.75V14.25H8.25V9.75H3.75V8.25H8.25Z" fill="#5B6371" />
                   </svg>
                 </div>
-                <div data-layer="Add New" class="AddNew codigma-add-new">Add New</div>
+                <div data-layer="Add New" class="AddNew ast-add-new">Add New</div>
               </div>
             </div>
           }
@@ -154,26 +154,26 @@
               }
             </div>
           } @else {
-            <div data-layer="add-content-panel" class="AddContentPanel codigma-add-content-panel">
-              <div data-layer="no-content" class="NoContent codigma-no-content">
+            <div data-layer="add-content-panel" class="AddContentPanel ast-add-content-panel">
+              <div data-layer="no-content" class="NoContent ast-no-content">
                 <svg width="107" height="86" viewBox="0 0 107 86" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M89 0V86L70.4783 75.8888L53.5 85.1568L36.5217 75.8888L18 86V0H89ZM85.913 3.0888H21.087V80.7954L36.5217 72.3722L53.5 81.6386L70.4783 72.3722L85.913 80.7969V3.0888ZM76.6522 50.9653V54.0541H30.3478V50.9653H76.6522ZM76.6522 35.5212V38.61H30.3478V35.5212H76.6522ZM64.3043 20.0772V23.166H30.3478V20.0772H64.3043Z"
                     fill="#F2F2F7" />
                 </svg>
               </div>
-              <div data-layer="no-content-tips" class="NoContentTips codigma-no-content-tips">
+              <div data-layer="no-content-tips" class="NoContentTips ast-no-content-tips">
                 <div data-layer="The request has no any parameters"
-                  class="TheRequestHasNoAnyParameters codigma-no-content-tips-text">No parameters available.
+                  class="TheRequestHasNoAnyParameters ast-no-content-tips-text">No parameters available.
                 </div>
               </div>
-              <div data-layer="add-new-content" class="AddNewContent codigma-add-new-content-btn" (click)="addCustomParams(apiInfo.customHeaderparameters)">
+              <div data-layer="add-new-content" class="AddNewContent ast-add-new-content-btn" (click)="addCustomParams(apiInfo.customHeaderparameters)">
                 <div data-svg-wrapper="" data-layer="add-icon" class="AddIcon">
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8.25 8.25V3.75H9.75V8.25H14.25V9.75H9.75V14.25H8.25V9.75H3.75V8.25H8.25Z" fill="#5B6371" />
                   </svg>
                 </div>
-                <div data-layer="Add New" class="AddNew codigma-add-new">Add New</div>
+                <div data-layer="Add New" class="AddNew ast-add-new">Add New</div>
               </div>
             </div>
           }
@@ -334,11 +334,11 @@
         </div>
       </div>
 
-      <div data-layer="app-header" class="AppHeader codigma-app-header">
-        <div data-layer="left-app-header" class="LeftAppHeader codigma-left-app-header">
-          <div data-layer="Project" class="Project codigma-project">Body</div>
+      <div data-layer="app-header" class="AppHeader ast-app-header">
+        <div data-layer="left-app-header" class="LeftAppHeader ast-left-app-header">
+          <div data-layer="Project" class="Project ast-project">Body</div>
         </div>
-        <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
+        <div data-layer="right-app-header" class="RightAppHeader ast-right-app-header">
           <div data-svg-wrapper="" data-layer="user-btn" class="UserBtn">
             Status: {{response.status}} {{response.statusText}} Time: {{requestDuration}}
           </div>

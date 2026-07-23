@@ -22,8 +22,8 @@ export class AstMenuComponent implements OnInit, OnDestroy {
   verticalOffset = input<number | undefined>(undefined);
 
   positionStyle: string = '';
-  // 宽336px, 参考 .codigma-right-menu
-  // 高36px，参考 .codigma-menu-every-item
+  // 宽336px, 参考 .ast-right-menu
+  // 高36px，参考 .ast-menu-every-item
   width: number = 240; // 菜单宽度
   display: string | null = null;
 

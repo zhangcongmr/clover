@@ -54,7 +54,7 @@
     /* 去除聚焦时的默认轮廓 */
 }
 
-.codigma-import-type {
+.ast-import-type {
     align-items: flex-start;
     align-self: stretch;
     border-right: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid;
@@ -65,7 +65,7 @@
     overflow-y: auto;
 }
 
-.codigma-from-remote {
+.ast-from-remote {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -80,14 +80,14 @@
     background: var(--ast-header-1, #F3F3F8);
 }
 
-.codigma-from-remote-server {
+.ast-from-remote-server {
     color: black;
     font-size: 12px;
     font-weight: 400;
     word-wrap: break-word
 }
 
-.codigma-from-local {
+.ast-from-local {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -98,7 +98,7 @@
     padding-left: 5px
 }
 
-.codigma-import-content {
+.ast-import-content {
     align-items: flex-start;
     align-self: stretch;
     display: flex;
@@ -110,25 +110,25 @@
 }
 
 /* 滚动条样式（可选） */
-.codigma-import-content {
+.ast-import-content {
     scrollbar-width: thin;
     scrollbar-color: #ccc #f1f1f1;
 }
 
-.codigma-import-content::-webkit-scrollbar {
+.ast-import-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.codigma-import-content::-webkit-scrollbar-track {
+.ast-import-content::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
 
-.codigma-import-content::-webkit-scrollbar-thumb {
+.ast-import-content::-webkit-scrollbar-thumb {
     background: #ccc;
     border-radius: 3px;
 }
 
-.codigma-import-content-section {
+.ast-import-content-section {
     align-items: flex-start;
     align-self: stretch;
     background: white;
@@ -140,7 +140,7 @@
     padding-bottom: 20px;
     padding-top: 1rem
 }
-.codigma-import-desc-title {
+.ast-import-desc-title {
     align-items: flex-start;
     display: flex;
     flex-direction: column;
@@ -150,7 +150,7 @@
     padding-right: 10px;
 }
 
-.codigma-import-desc {
+.ast-import-desc {
     align-items: center;
     display: inline-flex;
     gap: 10px;
@@ -161,7 +161,7 @@
     justify-content: center
 }
 
-.codigma-import-desc-details {
+.ast-import-desc-details {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -169,13 +169,13 @@
     justify-content: flex-start
 }
 
-.codigma-desc {
+.ast-desc {
     color: black;
     font-size: 20px;
     font-weight: 400;
     word-wrap: break-word
 }
-.codigma-input-box-section {
+.ast-input-box-section {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -185,7 +185,7 @@
     padding: 10px;
 }
 
-.codigma-input-box {
+.ast-input-box {
     align-items: center;
     background: var(--Component-Fill, #F5F5F5);
     border-radius: 5px;
@@ -200,7 +200,7 @@
     box-sizing: border-box;
 }
 
-.codigma-input-url-tips {
+.ast-input-url-tips {
     color: #787777;
     font-family: Segoe UI;
     font-size: 16px;
@@ -208,7 +208,7 @@
     word-wrap: break-word
 }
 
-.codigma-fetch-btn {
+.ast-fetch-btn {
     align-items: center;
     align-self: stretch;
     background: var(--primary-color, rgb(103, 137, 186));
@@ -219,7 +219,7 @@
     justify-content: center
 }
 
-.codigma-fetch-btn-text {
+.ast-fetch-btn-text {
     align-self: stretch;
     color: white;
     display: flex;
@@ -235,7 +235,7 @@
 
 
 
-.codigma-project-tree-panel {
+.ast-project-tree-panel {
     align-items: flex-start;
     align-self: stretch;
     display: inline-flex;
@@ -245,7 +245,7 @@
     min-width: 180px;
 }
 
-.codigma-collection-panel {
+.ast-collection-panel {
     align-items: flex-start;
     align-self: stretch;
     display: inline-flex;
@@ -257,7 +257,7 @@
     padding-top: 10px
 }
 
-.codigma-collection-tree {
+.ast-collection-tree {
     align-items: flex-start;
     align-self: stretch;
     display: inline-flex;
@@ -284,14 +284,14 @@
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
-.codigma-c1 {
+.ast-c1 {
     align-items: center;
     display: inline-flex;
     gap: 15px;
     justify-content: flex-start
 }
 
-.codigma-menu1 {
+.ast-menu1 {
     align-items: flex-start;
     align-self: stretch;
     display: flex;
@@ -301,7 +301,7 @@
     padding-right: 23px
 }
 
-.codigma-menu {
+.ast-menu {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -312,7 +312,7 @@
     padding-right: 32px
 }
 
-.codigma-send-a-get-request {
+.ast-send-a-get-request {
     color: black;
     font-size: 16px;
     font-weight: 400;
@@ -320,7 +320,7 @@
     word-wrap: break-word
 }
 
-.codigma-apioperatortable {
+.ast-apioperatortable {
     align-items: flex-start;
     align-self: stretch;
     display: flex;
@@ -328,7 +328,7 @@
     justify-content: flex-start
 }
 
-.codigma-table-header {
+.ast-table-header {
     align-items: center;
     align-self: stretch;
     display: inline-flex;
@@ -338,7 +338,7 @@
     outline: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid
 }
 
-.codigma-id {
+.ast-id {
     color: var(--Labels---Vibrant---Controls-Primary-√, #404040);
     flex: 1 1 0;
     font-size: 16px;
@@ -346,7 +346,7 @@
     word-wrap: break-word
 }
 
-.codigma-data01 {
+.ast-data01 {
     align-items: center;
     align-self: stretch;
     border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid;
@@ -357,7 +357,7 @@
     justify-content: flex-start
 }
 
-.codigma-id {
+.ast-id {
     color: var(--Labels---Vibrant---Controls-Primary-√, #404040);
     flex: 1 1 0;
     font-size: 16px;

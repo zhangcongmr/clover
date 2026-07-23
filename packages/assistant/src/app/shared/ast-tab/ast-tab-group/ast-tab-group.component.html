@@ -30,7 +30,7 @@
         <div data-layer="padding_right_crumb" class="padding_right_crumb"></div>
       </li>
       }
-      <div data-layer="remaining_space" class="RemainingSpace codigma-remaining-space" (dblclick)="dblclickAddTab()" [style.cursor]="addTabEnable()?'pointer': ''"
+      <div data-layer="remaining_space" class="RemainingSpace ast-remaining-space" (dblclick)="dblclickAddTab()" [style.cursor]="addTabEnable()?'pointer': ''"
         [style.border-bottom]="tabType() && (tabType()['type']=='bilateral')?'1px var(--vscode-tabborder-background) solid':''">
       </div>
 
@@ -38,7 +38,7 @@
   }
 
   @if (moreButtons().length>0) {
-    <div class="RightAppHeader codigma-right-app-header">
+    <div class="RightAppHeader ast-right-app-header">
       @for (item of moreButtons(); track item.action) {
         @if(item.action == 'down' && showButtonAdded) {
           <div class="btn-svg MoreBtn"  tabindex="1" (click)="onDownButtonClick($event, item.action)" (blur)="blurDownBtn($event)" title="{{item.label}}">
@@ -67,11 +67,11 @@
 </div>
 
 @if(isOpen) {
-  <div ast-menu [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content codigma-right-menu">
-  <div data-layer="closeall" class="codigma-menu-every-item" (click)="closeTabs('close-all')">
+  <div ast-menu [(isOpen)]="isOpen"  [menuInitiator]="menuInitiator"  class="more-btn-dropdown-content ast-right-menu">
+  <div data-layer="closeall" class="ast-menu-every-item" (click)="closeTabs('close-all')">
     <svg t="1770186219664" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12615" width="16" height="16"><path d="M450.3 625.5L557.8 733 502 784.8 398.5 677.3 291 784.8 239.2 733l107.5-107.5L239.2 522l51.8-55.8 107.5 107.5L502 466.2l55.8 55.8-107.5 103.5zM287 291H135.7L64 362.7v525.7l71.7 71.7h525.7l71.7-71.7V737.1h151.3l75.7-75.7V139.7L884.4 64H362.7L287 139.7V291z m75.7-151.3h521.7v521.7H733.1V362.7L661.4 291H362.7V139.7z m298.6 748.6H135.7V362.7h525.7v525.7z" p-id="12616"></path></svg>
     <span>Close All</span></div>
-  <div data-layer="closeothers" class="codigma-menu-every-item" (click)="closeTabs('close-others')">
+  <div data-layer="closeothers" class="ast-menu-every-item" (click)="closeTabs('close-others')">
     <svg t="1770186174559" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="11634" width="16" height="16"><path d="M512 0a512 512 0 1 1 0 1024A512 512 0 0 1 512 0z m0 76.8a435.2 435.2 0 1 0 0 870.4 435.2 435.2 0 0 0 0-870.4z m243.2 396.8c21.211429 0 38.4 21.211429 38.4 47.542857 0 26.258286-17.188571 47.542857-38.4 47.542857h-486.4c-21.211429 0-38.4-21.284571-38.4-47.542857 0-26.331429 17.188571-47.542857 38.4-47.542857z" p-id="11635"></path></svg>
     <span>Close Others</span></div>
 </div>
@@ -79,9 +79,9 @@
 
 @if(downMenuOpen && hiddenTabs().length > 0) {
   <div ast-menu [(isOpen)]="downMenuOpen" style="width: 400px;" [menuInitiator]="downMenuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
-      class="more-btn-dropdown-content codigma-right-menu">
+      class="more-btn-dropdown-content ast-right-menu">
       @for (tab of hiddenTabs(); track tab.id) {
-        <div data-layer="hiddenTab" class="hiddenTab codigma-menu-every-item" (click)="clickOpenedTab(tab)">
+        <div data-layer="hiddenTab" class="hiddenTab ast-menu-every-item" (click)="clickOpenedTab(tab)">
           <span>{{tab.label()}}</span>
         </div>
       }

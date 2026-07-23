@@ -1,8 +1,8 @@
-<div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
-  <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
-    <div data-layer="ProjectName" class="Projectname codigma-projectname">Environment:</div>
+<div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
+  <div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
+    <div data-layer="ProjectName" class="Projectname ast-projectname">Environment:</div>
   </div>
-  <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
+  <div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
     <!-- 这个 div 添加了 tabindex="0"，可以触发 blur -->
     <div data-svg-wrapper="" data-layer="more-btn" tabindex="0" (click)="clickMoreBtn($event)"
       (blur)="blurMoreBtn($event)" class="btn-svg MoreBtn">
@@ -13,21 +13,21 @@
       </svg>
     </div>
     <div ast-menu [(isOpen)]="isOpen" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
-        class="more-btn-dropdown-content codigma-right-menu">
-      <div data-layer="Add Server" class="AddServer codigma-menu-every-item" (click)="addServerDlg()"><span>Add
+        class="more-btn-dropdown-content ast-right-menu">
+      <div data-layer="Add Server" class="AddServer ast-menu-every-item" (click)="addServerDlg()"><span>Add
           Server</span></div>
-      <div data-layer="Delete Sever" class="DeleteSever codigma-menu-every-item" (click)="deleteServerDlg()">
+      <div data-layer="Delete Sever" class="DeleteSever ast-menu-every-item" (click)="deleteServerDlg()">
         <span>Delete Sever</span>
       </div>
-      <div data-layer="Add Service" class="AddService codigma-menu-every-item" (click)="addServiceDlg()"><span>Add
+      <div data-layer="Add Service" class="AddService ast-menu-every-item" (click)="addServiceDlg()"><span>Add
           Service</span></div>
-      <div data-layer="Delete Service" class="DeleteService codigma-menu-every-item" (click)="deleteServiceDlg()">
+      <div data-layer="Delete Service" class="DeleteService ast-menu-every-item" (click)="deleteServiceDlg()">
         <span>Delete Service</span>
       </div>
-      <div data-layer="Reset Service" class="ResetService codigma-menu-every-item" (click)="resetServiceDlg()">
+      <div data-layer="Reset Service" class="ResetService ast-menu-every-item" (click)="resetServiceDlg()">
         <span>Reset Service</span>
       </div>
-      <div data-layer="Exit" class="Exit codigma-menu-every-item" (click)="clearAuthorize(currentServer)">
+      <div data-layer="Exit" class="Exit ast-menu-every-item" (click)="clearAuthorize(currentServer)">
         <span>Exit</span>
       </div>
     </div>

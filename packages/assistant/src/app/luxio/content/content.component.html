@@ -29,12 +29,12 @@
             </div>
           </div>
         } @else {
-          <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
-            <div data-layer="ProjectName-cnr" class="ProjectnameCnr codigma-projectname-cnr">
-              <!-- <div data-layer="ProjectName" class="Projectname codigma-projectname">ProjectName</div> -->
-              <div data-layer="ProjectName" class="Projectname codigma-projectname"></div>
+          <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
+            <div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
+              <!-- <div data-layer="ProjectName" class="Projectname ast-projectname">ProjectName</div> -->
+              <div data-layer="ProjectName" class="Projectname ast-projectname"></div>
             </div>
-            <div data-layer="quickly-bars" class="QuicklyBars codigma-quickly-bars">
+            <div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
               <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
                 <svg class="icon" width="20" height="20">
                   <use href="#icon-add-file"></use>
@@ -86,8 +86,8 @@
                 <div ast-menu [(isOpen)]="isMoreMenuOpen" [menuInitiator]="moreMenuInitiator" 
                     (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)"
                     id="more-menu"
-                    class="more-btn-dropdown-content codigma-right-menu">
-                  <div data-layer="Delete project" class="DeleteProject codigma-menu-every-item" (click)="deleteProject()">
+                    class="more-btn-dropdown-content ast-right-menu">
+                  <div data-layer="Delete project" class="DeleteProject ast-menu-every-item" (click)="deleteProject()">
                     <svg t="1770104100879" class="icon" viewBox="0 0 1024 1024" width="16" height="16" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5780">
                       <path d="M872 385.6c0-1.6-1.6-1.6-1.6-3.2v-1.6c0-1.6-1.6-3.2-3.2-4.8-1.6-1.6-1.6-3.2-3.2-3.2-1.6-1.6-3.2-1.6-3.2-3.2h-1.6c-1.6-1.6-3.2-1.6-4.8-1.6h-1.6l-158.4-57.6 46.4-204.8c3.2-17.6-6.4-35.2-24-38.4s-35.2 6.4-38.4 24L633.6 288l-198.4-72c-1.6 0-3.2-1.6-4.8-1.6h-4.8-1.6-1.6c-16 1.6-28.8 14.4-28.8 32 0 11.2-4.8 272-256 420.8h-1.6c-1.6 0-1.6 1.6-3.2 1.6l-1.6 1.6c-3.2-1.6-3.2 0-3.2 0l-1.6 1.6c0 1.6-1.6 1.6-1.6 3.2s-1.6 1.6-1.6 3.2v3.2c0 1.6 0 3.2-1.6 3.2v14.4c0 1.6 1.6 3.2 1.6 4.8 0 1.6 0 1.6 1.6 3.2l1.6 1.6c0 1.6 1.6 1.6 1.6 3.2l6.4 6.4 1.6 1.6H140.8l649.6 236.8c16 6.4 32-1.6 40-16v-1.6c132.8-260.8 46.4-540.8 41.6-553.6zM452.8 288L816 420.8c6.4 22.4 16 67.2 20.8 126.4l-401.6-145.6c-3.2-1.6-4.8-1.6-8-1.6 14.4-44.8 22.4-84.8 25.6-112z m-48 168c3.2 1.6 4.8 3.2 8 4.8L832 612.8c3.2 1.6 4.8 1.6 8 1.6 0 81.6-12.8 179.2-54.4 273.6l-177.6-64 57.6-84.8c9.6-14.4 6.4-35.2-8-44.8-14.4-9.6-35.2-6.4-44.8 8l-67.2 99.2-123.2-44.8 65.6-97.6c9.6-14.4 6.4-35.2-8-44.8-14.4-9.6-35.2-6.4-44.8 8l-75.2 112-139.2-51.2c94.4-68.8 150.4-152 184-227.2z" fill="#666666"></path>
                     </svg>
@@ -99,7 +99,7 @@
           </div>
           <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" [folderBeforeToggle]="onFolderBeforeToggle" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
           <ast-modal [title]="'Share on Community'" [visible]="shareOnMenuVisible" [modalSize]="'small'" (close)="shareOnMenuVisible = false">
-            <div class="codigma-ast-modal-body">
+            <div class="ast-modal-body">
               <div class="ShareOnMessage">
                 Are you sure to share on Community?
               </div>
@@ -110,7 +110,7 @@
             </div>
           </ast-modal>
           <ast-modal [title]="'Duplicate Entry'" [visible]="duplicateModalVisible()" [modalSize]="'small'" (close)="cancelDuplicate()">
-            <div class="codigma-ast-modal-body">
+            <div class="ast-modal-body">
               <div class="ShareOnMessage">
                 This name and username combination already exists. Jump to the existing project?
               </div>
@@ -121,7 +121,7 @@
             </div>
           </ast-modal>
           <ast-modal [title]="'Select Save Location'" [visible]="showLocationSelector()" [modalSize]="'large'" (close)="cancelLocation()">
-            <div class="codigma-ast-modal-body select-location-modal-body">
+            <div class="ast-modal-body select-location-modal-body">
               <div class="select-location-message">
                 Please select a folder in the tree below to save the imported files/folders.
               </div>
@@ -137,13 +137,13 @@
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
       } @else if(currentDisplayViewId()==2) {
-        <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
+        <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
           <div>Search:</div>
         </div>
         <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
         <div>{{searchResults}}</div>
       } @else if(currentDisplayViewId()==3) {
-        <div data-layer="collection-headers" class="CollectionHeaders codigma-collection-headers">
+        <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
           <div>Plugins:</div>
         </div>
         <div>The function is under development.</div>
