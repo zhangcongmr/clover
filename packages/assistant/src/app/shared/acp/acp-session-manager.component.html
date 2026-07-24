@@ -5,7 +5,14 @@
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 16v-4m0-4h.01"/>
       </svg>
-      <span>ACP Connection</span>
+      <span>ACP Agent</span>
+      @if (acpService.sessionState().isConnected) {
+        <span class="status-dot connected"></span>
+      } @else if (acpService.sessionState().isConnecting) {
+        <span class="status-dot connecting"></span>
+      } @else {
+        <span class="status-dot disconnected"></span>
+      }
     </div>
     <div class="acp-session-actions">
       @if (acpService.sessionState().isConnected) {
@@ -38,6 +45,12 @@
           Disconnect
         </button>
       }
+      <button class="acp-panel-close" (click)="closePanel.emit()" title="Close Panel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -185,13 +198,4 @@
     </div>
   }
 
-  @if (acpService.sessionState().isConnected) {
-    <div class="acp-connection-info">
-      <div class="connection-badge ws">WS</div>
-      <span class="connection-status">Connected</span>
-      @if (acpService.currentModelId()) {
-        <span class="connection-model">Model: {{ getModelName() }}</span>
-      }
-    </div>
-  }
 </div>

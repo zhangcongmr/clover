@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
@@ -12,6 +12,7 @@ import { SessionInfo, DirItem } from './acp-websocket.service';
   styleUrls: ['./acp-session-manager.component.css']
 })
 export class AcpSessionManagerComponent {
+  closePanel = output<void>();
   protected acpService = inject(AcpService);
 
   serverUrl = signal<string>('ws://localhost:9315/ws');
@@ -83,11 +84,4 @@ export class AcpSessionManagerComponent {
     this.acpService.listDir(parentPath);
   }
 
-  getModelName(): string {
-    const modelId = this.acpService.currentModelId();
-    const models = this.acpService.sessionState().models?.models;
-    if (!modelId || !models) return 'Unknown';
-    const model = models.find(m => m.modelId === modelId);
-    return model?.name || modelId;
-  }
 }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService } from './acp.service';
 import { AcpSessionManagerComponent } from './acp-session-manager.component';
@@ -16,7 +16,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
   ],
   template: `
     <div class="acp-panel-container">
-      <app-acp-session-manager />
+      <app-acp-session-manager (closePanel)="closePanel.emit()" />
       <app-acp-chat />
       <app-acp-permission-dialog />
     </div>
@@ -31,5 +31,6 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
   `]
 })
 export class AcpPanelComponent {
+  closePanel = output<void>();
   protected acpService = inject(AcpService);
 }

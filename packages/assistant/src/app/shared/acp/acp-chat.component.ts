@@ -35,10 +35,26 @@ export class AcpChatComponent implements AfterViewChecked {
     this.inputValue.set('');
     this.shouldScroll = true;
 
+    const textarea = this.messageInput?.nativeElement;
+    if (textarea) {
+      textarea.style.height = 'auto';
+    }
+
     try {
       await this.acpService.sendPrompt(text);
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);
+    }
+  }
+
+  onInput(): void {
+    const textarea = this.messageInput?.nativeElement;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      const maxHeight = 120;
+      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+      textarea.style.height = newHeight + 'px';
+      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
   }
 
