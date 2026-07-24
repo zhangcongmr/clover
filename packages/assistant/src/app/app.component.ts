@@ -21,22 +21,19 @@ import * as Types from '@a2ui/web_core/types/types';
 import { A2uiRendererService, SurfaceComponent } from '@a2ui/angular/v0_9';
 import { Client } from './client';
 import { NotificationService } from './shared/notification/notification.service';
+import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.css'],
-    host: {
-      '(mouseup)': 'dragEnd($event)',
-      '(mousemove)': 'whenMouseMove($event)'
-    },
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, AcpPanelComponent, DatePipe,
        SurfaceComponent], // Add TerminalComponent and AcpPanelComponent to imports
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit {
   protected coreService = inject(CoreService);
   protected themeService = inject(ThemeService);
   protected notificationService = inject(NotificationService);
@@ -67,7 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   keepTerminalInstance = {
     value: false,
-    dragHeight: 0.75,
+    topPct: 0.75,
   }
 
   /**
@@ -108,6 +105,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   terminalOpenedList: Array<any> = [];
 
   constructor(injector: Injector,) {
+    super();
     let me = this;
     afterNextRender(() => {
       if (chrome && chrome.tabs) {
@@ -1073,12 +1071,12 @@ For each fileIcons entry:
     }
     if(this.terminalPanelShow) {
       this.terminalPanelShow = false;
-      this.dragHeight = 1;
+      this.topPct = 1;
     } else {
       this.terminalPanelShow = true;
-      this.dragHeight = 0.75;
+      this.topPct = 0.75;
       if(this.keepTerminalInstance.value) {
-        this.dragHeight = this.keepTerminalInstance.dragHeight;
+        this.topPct = this.keepTerminalInstance.topPct;
       }
       // 新增：首次打开时自动添加一个终端tab
       if(this.terminalOpenedList.length === 0) {
@@ -1298,9 +1296,9 @@ For each fileIcons entry:
     }
     if(this.terminalOpenedList.length == 0) {
       this.terminalPanelShow = false;
-      this.dragHeight = 1;
+      this.topPct = 1;
       this.keepTerminalInstance.value = false;
-      this.keepTerminalInstance.dragHeight = 0.75;
+      this.keepTerminalInstance.topPct = 0.75;
     }
     if (currentActived) {
       if (evt.isFirst) {
@@ -1354,56 +1352,19 @@ For each fileIcons entry:
   disconnectAllTerminals(): void {
     // 关闭终端面板
     this.terminalPanelShow = false;
-    this.dragHeight = 1;
+    this.topPct = 1;
     this.keepTerminalInstance.value = false;
-    this.keepTerminalInstance.dragHeight = 0.75;
+    this.keepTerminalInstance.topPct = 0.75;
     // 清空终端列表
     this.terminalOpenedList = [];
     // 清空dataList，防止重新打开终端时连接到原项目
     this.dataList = [];
   }
 
-  dragHeight: number = 1;
-  active = false;
-
-  // 用于存储当前拖动元素的父元素，以便在拖动结束时恢复样式
-  maskLayerElement: any;
-
-  initialY: number = 0;
-  topSectionHeight: number = 0;
-  bottomSectionHeight: number = 0;
-
-  dragStart(evt: any, currentCursorType: string = 'ns') {
-    this.maskLayerElement = evt.target.parentElement; // 获取父元素作为遮罩层
-    evt.target.parentElement.style.zIndex = 90; // 提升遮罩层的 z-index，使其覆盖其他元素
-    document.body.style.cursor = currentCursorType.toLowerCase() + '-resize'; // 更改光标样式
-
-    const currentTarget = evt.currentTarget;
-    const parentParent = currentTarget.parentElement.parentElement.childNodes;
-    this.topSectionHeight = parentParent[1].clientHeight
-    this.bottomSectionHeight = parentParent[2].clientHeight
-    this.initialY = evt.clientY;
-    evt.preventDefault()
-    this.active = true;
-  }
-
-  dragEnd(evt: any) {
-    // initialX = currentX;  
-    // initialY = currentY;  
-    this.active = false;
-    if (this.maskLayerElement) {
-      this.maskLayerElement.style.zIndex = "";
-    }
-    document.body.style.cursor = 'default'; // 恢复默认光标
-  }
-
-  whenMouseMove(evt: any) {
+  override whenMouseMove(evt: any) {
+    super.whenMouseMove(evt);
     if (this.active) {
-      evt.preventDefault()
-      const yOffset = evt.clientY - this.initialY;
-      this.dragHeight = (this.topSectionHeight + yOffset) / (this.topSectionHeight + this.bottomSectionHeight)
-      this.keepTerminalInstance.dragHeight = this.dragHeight; // 保存当前拖动高度到 keepTerminalInstance，以便在重新打开终端时恢复
-      return;
+      this.keepTerminalInstance.topPct = this.topPct;
     }
   }
 

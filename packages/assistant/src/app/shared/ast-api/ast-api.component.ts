@@ -1,5 +1,6 @@
-import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, output, viewChild, HostListener } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnInit, afterNextRender, output, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
+import { AstDraggableComponent } from '../ast-draggable/ast-draggable.component';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
 
@@ -14,15 +15,13 @@ import { json } from "@codemirror/lang-json";
   templateUrl: './ast-api.component.html',
   styleUrls: ['./ast-api.component.css'],
   host: {
-    '(mouseup)': 'dragEnd($event)',
-    '(mousemove)': 'whenMouseMove($event)',
     '[tabIndex]': '-1',
     '(keydown)': 'saveApi($event)'
   },
   standalone: true,
   imports: [FormsModule, AstSelectComponent, AstTabGroupComponent, AstTabComponent]
 })
-export class AstApiComponent implements OnInit, AfterViewInit {
+export class AstApiComponent extends AstDraggableComponent implements OnInit, AfterViewInit {
   reqEditorContainerView = viewChild<ElementRef<HTMLElement>>('reqEditorContainer');
   editApiSourceCodeContainerView = viewChild<ElementRef<HTMLElement>>('editApiSourceCodeContainer');
   @Input() apiInfo: any;
@@ -106,6 +105,7 @@ export class AstApiComponent implements OnInit, AfterViewInit {
   ifChangedFlag: boolean = true;
 
   constructor() {
+    super();
     afterNextRender(() => {
       this.updateReqEditorContainerView();
     });
@@ -713,49 +713,15 @@ export class AstApiComponent implements OnInit, AfterViewInit {
     }
   }
 
-  dragHeight: number = 0.6;
-  active = false;
-
-  // 用于存储当前拖动元素的父元素，以便在拖动结束时恢复样式
-  maskLayerElement: any;
-
-  initialY: number = 0;
-  topSectionHeight: number = 0;
-  bottomSectionHeight: number = 0;
-
-  dragStart(evt: any, currentCursorType: string = 'ns') {
-    this.maskLayerElement = evt.target.parentElement; // 获取父元素作为遮罩层
-    evt.target.parentElement.style.zIndex = 90; // 提升遮罩层的 z-index，使其覆盖其他元素
-    document.body.style.cursor = currentCursorType.toLowerCase() + '-resize'; // 更改光标样式
-
-    const currentTarget = evt.currentTarget;
-    const parentParent = currentTarget.parentElement.parentElement.childNodes;
-    this.topSectionHeight = parentParent[1].clientHeight
-    this.bottomSectionHeight = parentParent[2].clientHeight
-    this.initialY = evt.clientY;
-    evt.preventDefault()
-    this.active = true;
+  protected override getDefaultTopPct(): number {
+    return 0.6;
   }
 
-  dragEnd(evt: any) {
-    // initialX = currentX;  
-    // initialY = currentY;  
-    this.active = false;
-    if (this.maskLayerElement) {
-      this.maskLayerElement.style.zIndex = "";
-    }
-    document.body.style.cursor = 'default'; // 恢复默认光标
-  }
+  override whenMouseMove(evt: any) {
+    super.whenMouseMove(evt);
+    if (this.active) return;
 
-  whenMouseMove(evt: any) {
-    if (this.active) {
-      evt.preventDefault()
-      const yOffset = evt.clientY - this.initialY;
-      this.dragHeight = (this.topSectionHeight + yOffset) / (this.topSectionHeight + this.bottomSectionHeight)
-      return;
-    }
-
-    const threshold = 50; // px from right edge
+    const threshold = 50;
     const x = evt.clientX;
     const w = window.innerWidth;
     const shouldShow = w - x < threshold;

@@ -251,14 +251,14 @@
       <!-- 垂直拖动条 -->
       <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
         <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;"
-          [style.top]="dragHeight * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
+          [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
       </div>
 
       <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
-        (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)" (disconnectTerminal)="disconnectAllTerminals()" [style.height]="dragHeight * 100 + '%'"></div>
+        (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)" (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'"></div>
       @if(terminalPanelShow || keepTerminalInstance.value) {
 
-        <div ast-tab-group [fobiddenContextMenu]="true"  [style.display]="terminalPanelShow ? '' : 'none'" [style.height]="(1 - dragHeight) * 100 + '%'" style="position: relative;" [tabType]="{'type':'lightcolorselection', 'height':'42px'}"
+        <div ast-tab-group [fobiddenContextMenu]="true"  [style.display]="terminalPanelShow ? '' : 'none'" [style.height]="(1 - topPct) * 100 + '%'" style="position: relative;" [tabType]="{'type':'lightcolorselection', 'height':'42px'}"
             [addTabEnable]="true"  (addNewTab)="onAddNewTerminalTab($event)">
           @if (terminalOpenedList.length>0) {
             @for (openedTab of terminalOpenedList; track openedTab.id) {

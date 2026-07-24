@@ -24,12 +24,12 @@
 
     <!-- 垂直拖动条 -->
     <div style="position: absolute;width: 100%;height: 100%;">
-      <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;" [style.top]="dragHeight * 100 + '%'"
+      <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;" [style.top]="topPct * 100 + '%'"
         (mousedown)="dragStart($event, 'ns')"></div>
     </div>
 
     <div id="req_section_{{apiInfo.id}}" class="flat-form" style="position: relative;height: 60%;background-color: white;"
-      [style.height]="dragHeight * 100 + '%'">
+      [style.height]="topPct * 100 + '%'">
       <div ast-tab-group [closable]="false" [fobiddenContextMenu]="true"  [tabType]="{'type':'textbottom'}">
         <div ast-tab [label]="'Parameters'" [id]="'request_parameters'" [minWidth]="'122px'" role="tabpanel"
           aria-hidden="false" [isActivated]="true" (onClickTab)="onParamsClickTab($event)">
@@ -324,7 +324,7 @@
     </div>
     <div id="resp_section_{{apiInfo.id}}" class="flat-form"
       style="position: relative;height: 40%;border-top: 0.8px solid rgb(240, 240, 240);border-radius:0;display: inline-flex;flex-direction: column;"
-      [style.height]="(1 - dragHeight) * 100 + '%'">
+      [style.height]="(1 - topPct) * 100 + '%'">
       <div style="position: absolute;width: 100%;height: 100%;display: none;background-color: #ffffff;opacity: 0.8;"
         [style.display]="ifSendingRequest?'block':'none'">
         <div style="margin: 50px 40%;">Sending request...</div>
