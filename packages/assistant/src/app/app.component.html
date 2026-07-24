@@ -247,47 +247,59 @@
         </div>
       }
     </div>
-    <div class="ast-middle-panel">
-      <!-- 垂直拖动条 -->
-      <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
-        <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;"
-          [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
+    <div class="ast-panel-container">
+      <!-- 水平拖动条 -->
+      <div style="position: absolute;width: 100%;height: 100%;">
+        <div class="split-line-ew" style="height: 100%;width: 4px;position: absolute;z-index: 100;"
+          [style.left]="leftPct * 100 + '%'" (mousedown)="dragStart($event, 'ew')"></div>
       </div>
+      <div class="ast-middle-panel" [style.width]="rightPanelOpen ? (leftPct * 100 + '%') : '100%'">
+        <!-- 垂直拖动条 -->
+        <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
+          <div class="split-line-ns" style="height: 4px;width: 100%;position: absolute;z-index: 100;"
+            [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
+        </div>
 
-      <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
-        (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)" (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'"></div>
-      @if(terminalPanelShow || keepTerminalInstance.value) {
-
-        <div ast-tab-group [fobiddenContextMenu]="true"  [style.display]="terminalPanelShow ? '' : 'none'" [style.height]="(1 - topPct) * 100 + '%'" style="position: relative;" [tabType]="{'type':'lightcolorselection', 'height':'42px'}"
-            [addTabEnable]="true"  (addNewTab)="onAddNewTerminalTab($event)">
+        <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
+          (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
+          (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'"></div>
+        @if(terminalPanelShow || keepTerminalInstance.value) {
+      
+        <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
+          [style.height]="(1 - topPct) * 100 + '%'" style="position: relative;"
+          [tabType]="{'type':'lightcolorselection', 'height':'42px'}" [addTabEnable]="true"
+          (addNewTab)="onAddNewTerminalTab($event)">
           @if (terminalOpenedList.length>0) {
             @for (openedTab of terminalOpenedList; track openedTab.id) {
-              <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)" [saved]="openedTab['saved']" [minWidth]="'10rem'"
-                [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
+              <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
+                [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
+                aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
                 (onClickTab)="onClickTerminalTab($event)">
                 <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
               </div>
             }
           }
         </div>
+        }
+      </div>
+      @if(rightPanelOpen) {
+        <div class="ast-right-panel" [style.width]="((1 - leftPct) * 100 + '%')">
+          <div class="acp-panel-header">
+            <span class="acp-panel-title">ACP Agent</span>
+            <button class="acp-panel-close" (click)="closeRightPanel()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="acp-panel-container">
+            <app-acp-panel />
+          </div>
+        </div>
       }
     </div>
-    @if(rightPanelOpen) {
-      <div class="ast-right-panel">
-        <div class="acp-panel-header">
-          <span class="acp-panel-title">ACP Agent</span>
-          <button class="acp-panel-close" (click)="closeRightPanel()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="acp-panel-container">
-          <app-acp-panel />
-        </div>
-      </div>
-    }
+
 
     <!-- @if(currentDisplayViewId==1) {
       <div [sideOpen]="sideOpen" [currentDisplayViewId]="currentDisplayViewId" ast-content></div>

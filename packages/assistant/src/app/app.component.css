@@ -136,6 +136,13 @@
   display: flex;
 }
 
+.ast-panel-container {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  height: 100%;
+}
+
 .ast-middle-panel {
   flex: 1;
   display: flex;
@@ -202,7 +209,12 @@
   overflow-y: auto;
 }
 
-.split-line:hover {
+.split-line-ew:hover {
+  cursor: ew-resize;
+  background-color: var(--vscode-statusBar-background);
+}
+
+.split-line-ns:hover {
   cursor: ns-resize;
   background-color: var(--vscode-statusBar-background);
 }

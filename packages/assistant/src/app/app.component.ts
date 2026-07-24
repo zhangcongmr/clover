@@ -1361,6 +1361,10 @@ For each fileIcons entry:
     this.dataList = [];
   }
 
+  protected override getDefaultLeftPct(): number {
+    return 0.75;
+  }
+
   override whenMouseMove(evt: any) {
     super.whenMouseMove(evt);
     if (this.active) {
