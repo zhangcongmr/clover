@@ -4,20 +4,82 @@
       <div class="file-picker-container">
         <!-- Path navigation bar -->
         <div class="path-bar">
-          <button (click)="goUp()" class="nav-btn" title="Go up">../</button>
+          <button (click)="goUp()" class="nav-btn" title="Go up">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
           <input [value]="currentPath()" (keyup.enter)="loadDirectory($any($event.target).value)" class="path-input"
             placeholder="Enter path...">
-          <button (click)="refresh()" class="nav-btn" title="Refresh">&#x21bb;</button>
+          <button (click)="refresh()" class="nav-btn" title="Refresh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </button>
+          <div class="view-toggle">
+            <button (click)="setViewMode('tree')" class="view-btn" [class.active]="viewMode() === 'tree'" title="Tree view">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </button>
+            <button (click)="setViewMode('icon')" class="view-btn" [class.active]="viewMode() === 'icon'" title="Icon view">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <!-- File tree -->
-        <div class="tree-container">
+        <!-- Content area -->
+        <div class="content-container">
           @if (loading()) {
-          <div class="loading">Loading...</div>
+            <div class="loading">Loading...</div>
+          } @else if (viewMode() === 'tree') {
+            <div ast-tree [data]="treeData()" [fobiddenContextMenu]="true" (nodeClick)="onTreeNodeClick($event)"
+              [folderBeforeToggle]="expandFolderFn"
+              class="custom-scroll file-tree"></div>
           } @else {
-          <div ast-tree [data]="treeData()" [fobiddenContextMenu]="true" (nodeClick)="onTreeNodeClick($event)"
-            [folderBeforeToggle]="expandFolderFn"
-            class="custom-scroll file-tree"></div>
+            <div class="icon-grid custom-scroll">
+              @for (item of directoryItems(); track item.id) {
+                <div class="icon-item"
+                     [class.selected]="selectedNode()?.id === item.id"
+                     [class.folder-item]="item.nodeType === 'folder'"
+                     [class.file-item]="item.nodeType === 'file'"
+                     (click)="onIconClick(item)"
+                     (dblclick)="onIconDblClick(item)">
+                  <div class="icon-thumb">
+                    @if (item.nodeType === 'folder') {
+                      <svg class="icon-folder-svg" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 12C4 10.8954 4.89543 10 6 10H18L22 6H42C43.1046 6 44 6.89543 44 8V12H4Z" fill="#5B9BD5"/>
+                        <path d="M2 14C2 12.8954 2.89543 12 4 12H44C45.1046 12 46 12.8954 46 14V38C46 39.1046 45.1046 40 44 40H4C2.89543 40 2 39.1046 2 38V14Z" fill="#4472C4"/>
+                        <path d="M2 14C2 12.8954 2.89543 12 4 12H44C45.1046 12 46 12.8954 46 14V16H2V14Z" fill="#5B9BD5"/>
+                      </svg>
+                    } @else {
+                      <svg class="icon-file-svg" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 4H30L38 12V44C38 45.1046 37.1046 46 36 46H10C8.89543 46 8 45.1046 8 44V6C8 4.89543 8.89543 4 10 4Z" fill="#E8E8E8"/>
+                        <path d="M30 4L38 12H32C30.8954 12 30 11.1046 30 10V4Z" fill="#D0D0D0"/>
+                        <svg x="12" y="18" width="24" height="24">
+                          <use [attr.href]="'#' + getFileIconName(item.label)"></use>
+                        </svg>
+                      </svg>
+                    }
+                  </div>
+                  <span class="icon-label" [title]="item.label">{{ item.label }}</span>
+                </div>
+              }
+              @if (directoryItems().length === 0) {
+                <div class="empty-folder">This folder is empty</div>
+              }
+            </div>
           }
         </div>
 
@@ -25,7 +87,7 @@
         <div class="dialog-footer">
           <span class="selected-info">
             @if (selectedNode()) {
-            Selected: {{ selectedNodePath() }}
+              Selected: {{ selectedNodePath() }}
             }
           </span>
           <div class="footer-buttons">
@@ -40,9 +102,6 @@
       <div ast-tab [label]="'Local Files'" [id]="'local'" [isActivated]="true" (onClickTab)="onTabChange($event.id)">
         <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
       </div>
-      <!-- <div ast-tab [label]="'Remote Files'" [id]="'remote'" (onClickTab)="onTabChange($event.id)">
-        <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
-      </div> -->
     </div>
   </div>
 </ast-modal>

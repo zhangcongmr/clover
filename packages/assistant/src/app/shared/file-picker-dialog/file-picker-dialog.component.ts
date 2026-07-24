@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AstModalComponent } from '../ast-modal/ast-modal.component';
 import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
-import { pickParentObject, getNodeAbsolutePath } from '../ast-tree/ast-tree.component';
+import { pickParentObject, getNodeAbsolutePath, getFileIcon, computeFileIcons } from '../ast-tree/ast-tree.component';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
@@ -27,6 +27,8 @@ export class FilePickerDialogComponent {
   selectedNode = signal<AstTreeNode | null>(null);
   loading = signal(false);
   activeTab = signal<'local' | 'remote'>('local');
+  viewMode = signal<'tree' | 'icon'>('icon');
+  directoryItems = signal<AstTreeNode[]>([]);
 
   selectedNodePath = computed(() => {
     const node = this.selectedNode();
@@ -40,6 +42,7 @@ export class FilePickerDialogComponent {
     this.title.set('Open Folder');
     this.selectedNode.set(null);
     this.activeTab.set('local');
+    this.viewMode.set('icon');
     this.localAgentService.setAgentUrl('https://localhost:4200');
     this.visible.set(true);
     this.loadDirectory(startPath);
@@ -50,6 +53,7 @@ export class FilePickerDialogComponent {
     this.title.set('Open File');
     this.selectedNode.set(null);
     this.activeTab.set('local');
+    this.viewMode.set('icon');
     this.localAgentService.setAgentUrl('https://localhost:4200');
     this.visible.set(true);
     this.loadDirectory(startPath);
@@ -68,6 +72,10 @@ export class FilePickerDialogComponent {
 
       const rootNode = this.scanNodeToTreeNode(data, path, undefined, true);
       this.treeData.set([rootNode]);
+
+      const items = (rootNode.children || []).map(c => ({ ...c }));
+      computeFileIcons(items);
+      this.directoryItems.set(items);
     } catch (err) {
       console.error('Failed to load directory:', err);
     } finally {
@@ -95,7 +103,6 @@ export class FilePickerDialogComponent {
     if (node.nodeType !== 'folder') return;
     node.isExpanded = !node.isExpanded;
 
-    // Lazy load children on first expand
     if (node.isExpanded && node.children && node.children.length === 0) {
       this.expandFolder(node);
     }
@@ -129,7 +136,6 @@ export class FilePickerDialogComponent {
     this.loadDirectory('/');
   }
 
-  // Handle click from ast-tree component
   onTreeNodeClick(node: AstTreeNode) {
     if (this.mode() === 'folder' && node.nodeType === 'folder') {
       this.selectedNode.set(node);
@@ -148,6 +154,30 @@ export class FilePickerDialogComponent {
       }
       this.selectedNode.set(node);
     }
+  }
+
+  onIconClick(item: AstTreeNode) {
+    if (this.mode() === 'folder' && item.nodeType === 'folder') {
+      this.selectedNode.set(item);
+    } else if (this.mode() === 'file' && item.nodeType === 'file') {
+      this.selectedNode.set(item);
+    }
+  }
+
+  async onIconDblClick(item: AstTreeNode) {
+    if (item.nodeType === 'folder') {
+      const fullPath = getNodeAbsolutePath(this.treeData(), item);
+      await this.loadDirectory(fullPath);
+      this.selectedNode.set(null);
+    }
+  }
+
+  setViewMode(mode: 'tree' | 'icon') {
+    this.viewMode.set(mode);
+  }
+
+  getFileIconName(label: string): string {
+    return getFileIcon(label);
   }
 
   async goUp() {
