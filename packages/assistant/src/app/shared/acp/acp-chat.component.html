@@ -7,7 +7,7 @@
     </button>
     <span class="acp-chat-title">{{ acpService.sessionState().title || 'Chat' }}</span>
   </div>
-  <div class="acp-chat-messages custom-scroll" #messagesContainer>
+  <div class="acp-chat-messages custom-scroll" #messagesContainer (scroll)="onScroll()">
   @if (acpService.messages().length === 0) {
   <div class="acp-chat-empty">
     <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -15,9 +15,11 @@
     </svg>
     <p>Start a conversation with the ACP agent</p>
   </div>
+  } @else {
+  @if (hasMoreMessages) {
+  <div class="load-more-hint">Scroll up to load older messages</div>
   }
-
-  @for (message of acpService.messages(); track trackByMessageId($index, message)) {
+  @for (message of visibleMessages; track trackByMessageId($index, message)) {
     @if (message.role === 'tool_call') {
       <div class="acp-message tool-call">
         <div class="message-avatar tool-call-avatar">
@@ -102,6 +104,7 @@
       </div>
     }
   }
+  }
 
   @if (acpService.isProcessing()) {
   <div class="acp-message assistant">
@@ -120,4 +123,5 @@
     </div>
   </div>
   }
+  </div>
 </div>

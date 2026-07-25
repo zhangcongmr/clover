@@ -65,6 +65,14 @@
   gap: 16px;
 }
 
+.load-more-hint {
+  text-align: center;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  font-size: 12px;
+  padding: 8px 0;
+}
+
 .acp-chat-empty {
   display: flex;
   flex-direction: column;
