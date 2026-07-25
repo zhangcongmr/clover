@@ -389,6 +389,11 @@
   height: 12px;
 }
 
+.session-action-btn--delete:hover {
+  background: var(--vscode-errorForeground, #e81123);
+  color: white;
+}
+
 .file-path {
   margin-bottom: 4px;
   padding: 2px 6px;

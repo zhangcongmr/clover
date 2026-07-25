@@ -276,6 +276,11 @@ export class AcpService {
     this.wsService.resumeSession(sessionId, cwd);
   }
 
+  deleteSession(sessionId: string): void {
+    this.wsService.deleteSession(sessionId);
+    this.sessions.update(sessions => sessions.filter(s => s.sessionId !== sessionId));
+  }
+
   // ============================================================================
   // Model management
   // ============================================================================

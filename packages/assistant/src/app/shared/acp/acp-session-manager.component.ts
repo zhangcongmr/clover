@@ -22,6 +22,7 @@ export class AcpSessionManagerComponent {
   showSettings = signal<boolean>(false);
   showSessionHistory = signal<boolean>(false);
   showFileExplorer = signal<boolean>(false);
+  protected canDeleteSession = signal<boolean>(false);
 
   constructor() {
     effect(() => {
@@ -92,6 +93,12 @@ export class AcpSessionManagerComponent {
   resumeSession(sessionId: string): void {
     this.acpService.resumeSession(sessionId);
     this.showSessionHistory.set(false);
+  }
+
+  deleteSession(sessionId: string): void {
+    if (confirm('Are you sure you want to delete this session?')) {
+      this.acpService.deleteSession(sessionId);
+    }
   }
 
   navigateDir(path: string): void {

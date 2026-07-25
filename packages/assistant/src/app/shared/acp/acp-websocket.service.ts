@@ -252,6 +252,7 @@ export type ProxyMessage =
   | { type: 'list_sessions'; payload?: { cwd?: string; cursor?: string } }
   | { type: 'load_session'; payload: { sessionId: string; cwd?: string } }
   | { type: 'resume_session'; payload: { sessionId: string; cwd?: string } }
+  | { type: 'delete_session'; payload: { sessionId: string } }
   // File explorer
   | { type: 'list_dir'; payload: { path: string } }
   | { type: 'read_file'; payload: { path: string } }
@@ -724,6 +725,10 @@ export class AcpWebSocketService {
 
   resumeSession(sessionId: string, cwd?: string): void {
     this.send({ type: 'resume_session', payload: { sessionId, cwd } });
+  }
+
+  deleteSession(sessionId: string): void {
+    this.send({ type: 'delete_session', payload: { sessionId } });
   }
 
   // ============================================================================
