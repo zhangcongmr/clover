@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService } from './acp.service';
 import { AcpSessionManagerComponent } from './acp-session-manager.component';
 import { AcpChatComponent } from './acp-chat.component';
+import { AcpChatInputComponent } from './acp-chat-input.component';
 import { AcpPermissionDialogComponent } from './acp-permission-dialog.component';
 
 @Component({
@@ -12,12 +13,14 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     CommonModule,
     AcpSessionManagerComponent,
     AcpChatComponent,
+    AcpChatInputComponent,
     AcpPermissionDialogComponent
   ],
   template: `
     <div class="acp-panel-container">
       <app-acp-session-manager (closePanel)="closePanel.emit()" />
       <app-acp-chat />
+      <app-acp-chat-input />
       <app-acp-permission-dialog />
     </div>
   `,
@@ -32,5 +35,4 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 })
 export class AcpPanelComponent {
   closePanel = output<void>();
-  protected acpService = inject(AcpService);
 }
