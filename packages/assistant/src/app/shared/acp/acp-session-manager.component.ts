@@ -31,6 +31,14 @@ export class AcpSessionManagerComponent {
         this.connect();
       }
     });
+
+    effect(() => {
+      const show = this.acpService.showSessionHistory();
+      const connected = this.acpService.isConnected();
+      if (show && connected) {
+        this.acpService.listSessions(this.acpService.workingDirHint());
+      }
+    });
   }
 
   async connect(): Promise<void> {

@@ -93,6 +93,7 @@ export class AcpService {
 
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
+  readonly isConnected = computed(() => this.sessionState().isConnected);
 
   constructor() {
     this.setupWebSocketCallbacks();
