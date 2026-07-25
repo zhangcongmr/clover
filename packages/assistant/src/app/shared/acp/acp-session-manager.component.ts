@@ -16,6 +16,8 @@ export class AcpSessionManagerComponent {
   protected acpService = inject(AcpService);
 
   serverUrl = signal<string>('ws://localhost:9315/ws');
+  authToken = signal<string>('');
+  workingDir = signal<string>('');
   showSettings = signal<boolean>(false);
   showSessionHistory = signal<boolean>(false);
   showFileExplorer = signal<boolean>(false);
@@ -27,8 +29,18 @@ export class AcpSessionManagerComponent {
     }
 
     try {
-      await this.acpService.connect(url);
-      await this.acpService.createSession();
+      const token = this.authToken().trim();
+      const cwd = this.workingDir().trim();
+      let connectUrl = url;
+      
+      if (token) {
+        const urlObj = new URL(connectUrl);
+        urlObj.searchParams.set('token', token);
+        connectUrl = urlObj.toString();
+      }
+
+      await this.acpService.connect(connectUrl);
+      await this.acpService.createSession(cwd || undefined);
     } catch (error: any) {
       console.error('[ACP Session] Connection failed:', error);
     }

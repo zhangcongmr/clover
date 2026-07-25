@@ -116,6 +116,21 @@
   color: var(--vscode-foreground, #666);
 }
 
+.settings-input-wrapper {
+  position: relative;
+}
+
+.settings-input-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--vscode-foreground, #999);
+  pointer-events: none;
+}
+
 .settings-input {
   width: 100%;
   padding: 4px 8px;
@@ -124,6 +139,10 @@
   font-size: 12px;
   background: var(--vscode-input-background, white);
   color: var(--vscode-foreground, #333);
+}
+
+.settings-input-wrapper .settings-input {
+  padding-left: 28px;
 }
 
 .settings-input:focus {
