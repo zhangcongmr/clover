@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 
@@ -9,17 +9,21 @@ import { AcpService, AcpMessage } from './acp.service';
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
-export class AcpChatComponent {
+export class AcpChatComponent implements AfterViewInit {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   protected acpService = inject(AcpService);
 
   private lastMessageCount = 0;
 
+  ngAfterViewInit(): void {
+    setTimeout(() => this.scrollToBottom(), 100);
+  }
+
   ngAfterViewChecked(): void {
     const count = this.acpService.messages().length;
     if (count > this.lastMessageCount) {
-      this.scrollToBottom();
+      setTimeout(() => this.scrollToBottom(), 50);
     }
     this.lastMessageCount = count;
   }
@@ -41,6 +45,16 @@ export class AcpChatComponent {
     if (this.messagesContainer) {
       const element = this.messagesContainer.nativeElement;
       element.scrollTop = element.scrollHeight;
+    }
+  }
+
+  scrollToBottomSmooth(): void {
+    if (this.messagesContainer) {
+      const element = this.messagesContainer.nativeElement;
+      element.scrollTo({
+        top: element.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }
 
