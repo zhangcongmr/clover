@@ -1,4 +1,4 @@
-import { Component, inject, signal, output } from '@angular/core';
+import { Component, inject, signal, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
@@ -15,12 +15,23 @@ export class AcpSessionManagerComponent {
   closePanel = output<void>();
   protected acpService = inject(AcpService);
 
-  serverUrl = signal<string>('ws://localhost:9315/ws');
+  protected wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  serverUrl = signal<string>(`${this.wsProtocol}://localhost:9315/ws`);
   authToken = signal<string>('');
   workingDir = signal<string>('');
   showSettings = signal<boolean>(false);
   showSessionHistory = signal<boolean>(false);
   showFileExplorer = signal<boolean>(false);
+
+  constructor() {
+    effect(() => {
+      const hint = this.acpService.workingDirHint();
+      this.workingDir.set(hint);
+      if (hint && !this.acpService.sessionState().isConnected && !this.acpService.sessionState().isConnecting) {
+        this.connect();
+      }
+    });
+  }
 
   async connect(): Promise<void> {
     const url = this.serverUrl().trim();
@@ -41,6 +52,7 @@ export class AcpSessionManagerComponent {
 
       await this.acpService.connect(connectUrl);
       await this.acpService.createSession(cwd || undefined);
+      this.showSettings.set(false);
     } catch (error: any) {
       console.error('[ACP Session] Connection failed:', error);
     }

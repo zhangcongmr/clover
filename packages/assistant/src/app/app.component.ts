@@ -17,6 +17,7 @@ import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import { AcpPanelComponent } from './shared/acp/acp-panel.component';
+import { AcpService } from './shared/acp/acp.service';
 import * as Types from '@a2ui/web_core/types/types';
 import { A2uiRendererService, SurfaceComponent } from '@a2ui/angular/v0_9';
 import { Client } from './client';
@@ -37,6 +38,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected coreService = inject(CoreService);
   protected themeService = inject(ThemeService);
   protected notificationService = inject(NotificationService);
+  protected acpService = inject(AcpService);
   contentComp = viewChild(ContentComponent);
   http = inject(HttpClient);
   injector = inject(Injector);
@@ -1147,6 +1149,10 @@ For each fileIcons entry:
         break;
       case 'close-folder':
         this.contentComp()?.closeFolder();
+        this.acpService.workingDirHint.set('');
+        if (this.acpService.sessionState().isConnected) {
+          this.acpService.disconnect();
+        }
         break;
       case 'import-api':
         this.toggleDisplayViewId(1);

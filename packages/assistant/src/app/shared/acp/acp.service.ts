@@ -78,6 +78,9 @@ export class AcpService {
   readonly currentFilePath = signal<string | null>(null);
   readonly fileChanges = signal<FileChange[]>([]);
 
+  // Working directory hint from file picker
+  readonly workingDirHint = signal<string>('');
+
   // Model
   readonly currentModelId = signal<string | null>(null);
 

@@ -26,6 +26,7 @@ import { normalizeApiSpec } from "api-render-ui"
 import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 import { SettingsService } from '../settings/settings.service';
+import { AcpService } from '../../shared/acp/acp.service';
 
 interface WebSocketRequest {
   action: string;
@@ -64,6 +65,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private notificationService = inject(NotificationService);
   private localAgentService = inject(LocalAgentService);
   private settingsService = inject(SettingsService);
+  private acpService = inject(AcpService);
 
   // 本地项目检测
   isLocalProject = signal(false);
@@ -201,6 +203,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     // 检测是否为本地项目
     this.checkIsLocalProject();
+
+    // 刷新 ACP working directory hint
+    const rootNode = this.dataList()?.[0];
+    if (rootNode?.rootPath) {
+      this.acpService.workingDirHint.set(rootNode.rootPath);
+    }
 
     this.generateWelcomeContent();
 
@@ -843,6 +851,7 @@ Always use the welcome_greeting tool.`;
 
   // Callback from FilePickerDialog when a folder is selected
   async onFilePickerSelected(result: { path: string; kind: 'folder' | 'file' }) {
+    this.acpService.workingDirHint.set(result.path);
     if (result.kind === 'folder') {
       await this.openFolderViaNodeApi(result.path);
     } else {

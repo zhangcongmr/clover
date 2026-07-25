@@ -145,6 +145,10 @@
   padding-left: 28px;
 }
 
+.settings-input-readonly.placeholder {
+  color: var(--vscode-input-placeholderForeground, #999);
+}
+
 .settings-input:focus {
   outline: none;
   border-color: var(--vscode-focusBorder, #0066cc);
