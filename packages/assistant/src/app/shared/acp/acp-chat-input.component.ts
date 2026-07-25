@@ -195,6 +195,11 @@ export class AcpChatInputComponent {
     }
 
     try {
+      if (!this.acpService.hasOpenedSession()) {
+        await this.acpService.createSession(this.acpService.workingDirHint() || undefined);
+        this.acpService.hasOpenedSession.set(true);
+        this.acpService.showSessionHistory.set(false);
+      }
       await this.acpService.sendPrompt(text);
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);

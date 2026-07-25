@@ -694,6 +694,26 @@ export class AcpWebSocketService {
     this.send({ type: 'new_session', payload: { cwd } });
   }
 
+  createSessionAsync(cwd?: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.onSessionCreatedCallback = originalCallback;
+        reject(new Error('createSession timed out'));
+      }, 10000);
+
+      const originalCallback = this.onSessionCreatedCallback;
+      this.onSessionCreatedCallback = (sessionId) => {
+        clearTimeout(timeout);
+        if (originalCallback) {
+          originalCallback(sessionId);
+        }
+        resolve(sessionId);
+      };
+
+      this.send({ type: 'new_session', payload: { cwd } });
+    });
+  }
+
   sendPrompt(text: string): void {
     this.send({
       type: 'prompt',

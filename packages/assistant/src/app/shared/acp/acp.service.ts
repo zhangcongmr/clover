@@ -81,6 +81,10 @@ export class AcpService {
   // Working directory hint from file picker
   readonly workingDirHint = signal<string>('');
 
+  // Session display state (persisted across panel show/hide)
+  readonly showSessionHistory = signal<boolean>(true);
+  readonly hasOpenedSession = signal<boolean>(false);
+
   // Model
   readonly currentModelId = signal<string | null>(null);
 
@@ -210,8 +214,8 @@ export class AcpService {
     }
   }
 
-  async createSession(cwd?: string): Promise<void> {
-    this.wsService.createSession(cwd);
+  async createSession(cwd?: string): Promise<string> {
+    return this.wsService.createSessionAsync(cwd);
   }
 
   async sendPrompt(text: string): Promise<void> {
@@ -267,12 +271,16 @@ export class AcpService {
   loadSession(sessionId: string, cwd?: string): void {
     this.messages.set([]);
     this.plan.set(null);
+    this.hasOpenedSession.set(true);
+    this.showSessionHistory.set(false);
     this.wsService.loadSession(sessionId, cwd);
   }
 
   resumeSession(sessionId: string, cwd?: string): void {
     this.messages.set([]);
     this.plan.set(null);
+    this.hasOpenedSession.set(true);
+    this.showSessionHistory.set(false);
     this.wsService.resumeSession(sessionId, cwd);
   }
 

@@ -20,7 +20,6 @@ export class AcpSessionManagerComponent {
   authToken = signal<string>('');
   workingDir = signal<string>('');
   showSettings = signal<boolean>(false);
-  showSessionHistory = signal<boolean>(false);
   showFileExplorer = signal<boolean>(false);
   protected canDeleteSession = signal<boolean>(false);
 
@@ -52,7 +51,6 @@ export class AcpSessionManagerComponent {
       }
 
       await this.acpService.connect(connectUrl);
-      await this.acpService.createSession(cwd || undefined);
       this.showSettings.set(false);
     } catch (error: any) {
       console.error('[ACP Session] Connection failed:', error);
@@ -68,9 +66,9 @@ export class AcpSessionManagerComponent {
   }
 
   toggleSessionHistory(): void {
-    this.showSessionHistory.update(v => !v);
-    if (this.showSessionHistory()) {
-      this.acpService.listSessions();
+    this.acpService.showSessionHistory.update(v => !v);
+    if (this.acpService.showSessionHistory()) {
+      this.acpService.listSessions(this.acpService.workingDirHint());
     }
   }
 
@@ -87,12 +85,10 @@ export class AcpSessionManagerComponent {
 
   loadSession(sessionId: string): void {
     this.acpService.loadSession(sessionId);
-    this.showSessionHistory.set(false);
   }
 
   resumeSession(sessionId: string): void {
     this.acpService.resumeSession(sessionId);
-    this.showSessionHistory.set(false);
   }
 
   deleteSession(sessionId: string): void {

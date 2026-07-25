@@ -8,6 +8,54 @@
   font-size: var(--vscode-font-size);
 }
 
+.acp-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.acp-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--vscode-editorGroup-border);
+  background-color: var(--vscode-background);
+  flex-shrink: 0;
+}
+
+.acp-back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--vscode-radius-sm);
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.acp-back-button:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.acp-back-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.acp-chat-title {
+  font-weight: 600;
+  font-size: var(--vscode-font-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .acp-chat-messages {
   flex: 1 1 0;
   overflow-y: auto;

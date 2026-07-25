@@ -1,4 +1,13 @@
-<div class="acp-chat-messages custom-scroll" #messagesContainer>
+<div class="acp-chat-container">
+  <div class="acp-chat-header">
+    <button class="acp-back-button" (click)="goBackToSessionList()" title="Back to sessions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5m7-7-7 7 7 7"/>
+      </svg>
+    </button>
+    <span class="acp-chat-title">{{ acpService.sessionState().title || 'Chat' }}</span>
+  </div>
+  <div class="acp-chat-messages custom-scroll" #messagesContainer>
   @if (acpService.messages().length === 0) {
   <div class="acp-chat-empty">
     <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

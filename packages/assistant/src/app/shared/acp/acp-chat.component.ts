@@ -66,4 +66,9 @@ export class AcpChatComponent {
       return String(obj);
     }
   }
+
+  goBackToSessionList(): void {
+    this.acpService.showSessionHistory.set(true);
+    this.acpService.hasOpenedSession.set(false);
+  }
 }
