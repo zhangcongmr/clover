@@ -282,7 +282,7 @@
         }
       </div>
       @if(rightPanelOpen) {
-        <app-acp-panel (closePanel)="closeRightPanel()" [style.width]="((1 - leftPct) * 100 + '%')" />
+        <app-acp-panel (closePanel)="closeRightPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" [isMaximized]="leftPct === 0" [style.width]="((1 - leftPct) * 100 + '%')" />
       }
     </div>
 

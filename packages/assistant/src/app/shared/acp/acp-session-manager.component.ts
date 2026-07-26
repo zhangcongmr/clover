@@ -1,4 +1,4 @@
-import { Component, inject, signal, output, effect } from '@angular/core';
+import { Component, inject, signal, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
@@ -13,6 +13,9 @@ import { SessionInfo, DirItem } from './acp-websocket.service';
 })
 export class AcpSessionManagerComponent {
   closePanel = output<void>();
+  maximizePanel = output<void>();
+  restorePanel = output<void>();
+  isMaximized = input<boolean>(false);
   protected acpService = inject(AcpService);
 
   protected wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';

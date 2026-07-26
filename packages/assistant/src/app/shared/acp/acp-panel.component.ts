@@ -1,4 +1,4 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService } from './acp.service';
 import { AcpSessionManagerComponent } from './acp-session-manager.component';
@@ -19,7 +19,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
   ],
   template: `
     <div class="acp-panel-container" [class.has-chat]="acpService.hasOpenedSession()">
-      <app-acp-session-manager (closePanel)="closePanel.emit()" />
+      <app-acp-session-manager (closePanel)="closePanel.emit()" (maximizePanel)="maximizePanel.emit()" (restorePanel)="restorePanel.emit()" [isMaximized]="isMaximized()" />
       @if (acpService.hasOpenedSession()) {
         <app-acp-chat />
       }
@@ -52,5 +52,8 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 })
 export class AcpPanelComponent {
   closePanel = output<void>();
+  maximizePanel = output<void>();
+  restorePanel = output<void>();
+  isMaximized = input<boolean>(false);
   protected acpService = inject(AcpService);
 }

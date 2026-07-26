@@ -1371,6 +1371,17 @@ For each fileIcons entry:
     return 0.75;
   }
 
+  private previousLeftPct: number = this.getDefaultLeftPct();
+
+  maximizeRightPanel() {
+    this.previousLeftPct = this.leftPct;
+    this.leftPct = 0;
+  }
+
+  restoreRightPanel() {
+    this.leftPct = this.previousLeftPct;
+  }
+
   override whenMouseMove(evt: any) {
     super.whenMouseMove(evt);
     if (this.active) {
