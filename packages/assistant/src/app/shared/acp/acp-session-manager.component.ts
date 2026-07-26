@@ -22,12 +22,14 @@ export class AcpSessionManagerComponent {
   showSettings = signal<boolean>(false);
   showFileExplorer = signal<boolean>(false);
   protected canDeleteSession = signal<boolean>(false);
+  private autoConnectAttempted = false;
 
   constructor() {
     effect(() => {
       const hint = this.acpService.workingDirHint();
       this.workingDir.set(hint);
-      if (hint && !this.acpService.sessionState().isConnected && !this.acpService.sessionState().isConnecting) {
+      if (hint && !this.autoConnectAttempted && !this.acpService.sessionState().isConnected && !this.acpService.sessionState().isConnecting) {
+        this.autoConnectAttempted = true;
         this.connect();
       }
     });
