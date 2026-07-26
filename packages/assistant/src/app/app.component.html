@@ -249,7 +249,7 @@
     </div>
     <div class="ast-panel-container">
       <!-- 水平拖动条 -->
-      <div style="position: absolute;width: 100%;height: 100%;">
+      <div style="position: absolute;width: 100%;height: 100%;" [style.display]="rightPanelOpen ? 'block' : 'none'">
         <div class="split-line-ew" style="height: 100%;width: 4px;position: absolute;z-index: 100;"
           [style.left]="leftPct * 100 + '%'" (mousedown)="dragStart($event, 'ew')"></div>
       </div>
@@ -264,22 +264,21 @@
           (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
           (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'"></div>
         @if(terminalPanelShow || keepTerminalInstance.value) {
-      
-        <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
-          [style.height]="(1 - topPct) * 100 + '%'" style="position: relative;"
-          [tabType]="{'type':'lightcolorselection', 'height':'42px'}" [addTabEnable]="true"
-          (addNewTab)="onAddNewTerminalTab($event)">
-          @if (terminalOpenedList.length>0) {
-            @for (openedTab of terminalOpenedList; track openedTab.id) {
-              <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
-                [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
-                aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
-                (onClickTab)="onClickTerminalTab($event)">
-                <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
-              </div>
+          <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
+            [style.height]="(1 - topPct) * 100 + '%'" style="position: relative;"
+            [tabType]="{'type':'lightcolorselection', 'height':'42px'}" [addTabEnable]="true"
+            (addNewTab)="onAddNewTerminalTab($event)">
+            @if (terminalOpenedList.length>0) {
+              @for (openedTab of terminalOpenedList; track openedTab.id) {
+                <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
+                  [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
+                  aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
+                  (onClickTab)="onClickTerminalTab($event)">
+                  <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
+                </div>
+              }
             }
-          }
-        </div>
+          </div>
         }
       </div>
       @if(rightPanelOpen) {
