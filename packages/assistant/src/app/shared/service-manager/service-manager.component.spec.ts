@@ -1,7 +1,4 @@
-/* tslint:disable:no-unused-variable */
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ServiceManagerComponent } from './service-manager.component';
 
@@ -9,12 +6,12 @@ describe('ServiceManagerComponent', () => {
   let component: ServiceManagerComponent;
   let fixture: ComponentFixture<ServiceManagerComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(async () => {
     TestBed.configureTestingModule({
     imports: [ServiceManagerComponent]
 })
     .compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(ServiceManagerComponent);

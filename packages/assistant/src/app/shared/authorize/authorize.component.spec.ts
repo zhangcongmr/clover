@@ -1,7 +1,4 @@
-/* tslint:disable:no-unused-variable */
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AuthorizeComponent } from './authorize.component';
 
@@ -9,12 +6,12 @@ describe('AuthorizeComponent', () => {
   let component: AuthorizeComponent;
   let fixture: ComponentFixture<AuthorizeComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(async () => {
     TestBed.configureTestingModule({
     imports: [AuthorizeComponent]
 })
     .compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(AuthorizeComponent);

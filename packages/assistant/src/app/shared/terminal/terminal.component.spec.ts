@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { TerminalComponent } from './terminal.component';
 
 describe('TerminalComponent', () => {
@@ -7,7 +8,7 @@ describe('TerminalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [TerminalComponent]
+      imports: [TerminalComponent]
     })
     .compileComponents();
 
@@ -21,14 +22,14 @@ describe('TerminalComponent', () => {
   });
 
   it('should initialize terminal on ngOnInit', () => {
-    spyOn(component as any, 'initializeTerminal');
+    vi.spyOn(component as any, 'initializeTerminal');
     component.ngOnInit();
-    expect((component as any, 'initializeTerminal')).toHaveBeenCalled();
+    expect((component as any).initializeTerminal).toHaveBeenCalled();
   });
 
-  it('should clear terminal when clear is called', () => {
-    spyOn(component, 'clear');
-    component.clear();
-    expect(component.clear).toHaveBeenCalled();
+  it('should disconnect on ngOnDestroy', () => {
+    vi.spyOn(component, 'disconnect');
+    component.ngOnDestroy();
+    expect(component.disconnect).toHaveBeenCalled();
   });
 });

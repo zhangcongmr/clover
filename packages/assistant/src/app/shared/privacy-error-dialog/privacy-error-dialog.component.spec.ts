@@ -1,7 +1,4 @@
-/* tslint:disable:no-unused-variable */
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PrivacyErrorDialogComponent } from './privacy-error-dialog.component';
 
@@ -9,12 +6,12 @@ describe('PrivacyErrorDialogComponent', () => {
   let component: PrivacyErrorDialogComponent;
   let fixture: ComponentFixture<PrivacyErrorDialogComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(async () => {
     TestBed.configureTestingModule({
     imports: [PrivacyErrorDialogComponent]
 })
     .compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(PrivacyErrorDialogComponent);
