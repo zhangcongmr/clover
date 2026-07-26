@@ -31,7 +31,11 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     :host {
       display: flex;
       flex-direction: column;
+      overflow: auto;
+      position: relative;
+      z-index: 10;
       height: 100%;
+      border-left: 1px solid var(--vscode-editorGroup-border);
     }
     .acp-panel-container {
       display: flex;
@@ -40,19 +44,9 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       min-height: 0;
       background-color: var(--vscode-background);
     }
-    .acp-panel-container app-acp-session-manager {
-      flex: 1;
-      min-height: 0;
-    }
+
     .acp-panel-container.has-chat app-acp-session-manager {
       flex: none;
-    }
-    .acp-panel-container app-acp-chat {
-      flex: 1;
-      min-height: 0;
-    }
-    .acp-panel-container app-acp-chat-input {
-      flex-shrink: 0;
     }
   `]
 })

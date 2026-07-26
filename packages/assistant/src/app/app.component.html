@@ -283,11 +283,7 @@
         }
       </div>
       @if(rightPanelOpen) {
-        <div class="ast-right-panel" [style.width]="((1 - leftPct) * 100 + '%')">
-          <div class="acp-panel-container">
-            <app-acp-panel (closePanel)="closeRightPanel()" />
-          </div>
-        </div>
+        <app-acp-panel (closePanel)="closeRightPanel()" [style.width]="((1 - leftPct) * 100 + '%')" />
       }
     </div>
 

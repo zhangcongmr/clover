@@ -152,19 +152,6 @@
   height: 100%;
 }
 
-.ast-right-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-width: 0;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
-  width: 480px;
-  flex-shrink: 0;
-  border-left: 1px solid var(--vscode-editorGroup-border);
-}
-
 .split-line-ew:hover {
   cursor: ew-resize;
   background-color: var(--vscode-statusBar-background);
@@ -576,20 +563,3 @@ form {
   justify-content: center;
   opacity: 0.8;
 }
-
-/* ACP Panel Container */
-.acp-panel-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.acp-panel-container app-acp-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-

@@ -1,3 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .acp-session-manager {
   padding: 4px 8px;
   border-bottom: 1px solid var(--vscode-panel-border, #e0e0e0);
@@ -280,6 +287,9 @@
 
 .acp-session-history,
 .acp-file-explorer {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
   margin-bottom: 4px;
   padding: 6px 8px;
   background: var(--vscode-settings-headerForeground, #f5f5f5);
@@ -315,7 +325,7 @@
 }
 
 .session-list {
-  max-height: 200px;
+  flex: 1 1 0;
   overflow-y: auto;
 }
 

@@ -65,6 +65,7 @@ import { AcpService } from './acp.service';
   styles: [`
     :host {
       display: block;
+      flex-shrink: 0;
     }
     .acp-chat-input-container {
       padding: 8px 12px 12px;

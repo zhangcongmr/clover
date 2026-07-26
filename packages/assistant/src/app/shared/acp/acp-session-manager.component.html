@@ -1,234 +1,226 @@
-<div class="acp-session-manager">
-  <div class="acp-session-header">
-    <div class="acp-session-title">
-      <svg class="acp-session-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 16v-4m0-4h.01"/>
-      </svg>
-      <span>ACP Agent</span>
-      @if (acpService.sessionState().isConnected) {
-        <span class="status-dot connected"></span>
-      } @else if (acpService.sessionState().isConnecting) {
-        <span class="status-dot connecting"></span>
-      } @else {
-        <span class="status-dot disconnected"></span>
-      }
-    </div>
-    <div class="acp-session-actions">
-      @if (acpService.sessionState().isConnected) {
-        <button class="acp-icon-button" (click)="toggleSessionHistory()" title="Session History">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-        </button>
-        <button class="acp-icon-button" (click)="toggleFileExplorer()" title="File Explorer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-          </svg>
-        </button>
-      }
-      <button class="acp-icon-button" (click)="toggleSettings()" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
-      @if (acpService.sessionState().isConnected) {
-        <button class="acp-icon-button" (click)="clearChat()" title="Clear Chat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-        </button>
-        <button class="acp-disconnect-button" (click)="disconnect()">
-          Disconnect
-        </button>
-      }
-      <button class="acp-panel-close" (click)="closePanel.emit()" title="Close Panel">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
+<div class="acp-session-header">
+  <div class="acp-session-title">
+    <svg class="acp-session-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 16v-4m0-4h.01"/>
+    </svg>
+    <span>ACP Agent</span>
+    @if (acpService.sessionState().isConnected) {
+      <span class="status-dot connected"></span>
+    } @else if (acpService.sessionState().isConnecting) {
+      <span class="status-dot connecting"></span>
+    } @else {
+      <span class="status-dot disconnected"></span>
+    }
   </div>
-
-  @if (showSettings()) {
-    <div class="acp-session-settings">
-      <div class="settings-field">
-        <label class="settings-label">WebSocket URL</label>
+  <div class="acp-session-actions">
+    <!-- @if (acpService.sessionState().isConnected) {
+      <button class="acp-icon-button" (click)="toggleSessionHistory()" title="Session History">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </button>
+      <button class="acp-icon-button" (click)="toggleFileExplorer()" title="File Explorer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+      </button>
+    } -->
+    <button class="acp-icon-button" (click)="toggleSettings()" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+    @if (acpService.sessionState().isConnected) {
+      <button class="acp-icon-button" (click)="clearChat()" title="Clear Chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </button>
+      <button class="acp-disconnect-button" (click)="disconnect()">
+        Disconnect
+      </button>
+    }
+    <button class="acp-panel-close" (click)="closePanel.emit()" title="Close Panel">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+</div>
+@if (showSettings()) {
+  <div class="acp-session-settings">
+    <div class="settings-field">
+      <label class="settings-label">WebSocket URL</label>
+      <input
+        type="text"
+        class="settings-input"
+        [ngModel]="serverUrl()"
+        (ngModelChange)="serverUrl.set($event)"
+        placeholder="{{ wsProtocol }}://localhost:9315/ws"
+        [disabled]="acpService.sessionState().isConnected"
+      />
+    </div>
+    <div class="settings-field">
+      <label class="settings-label">Auth Token</label>
+      <div class="settings-input-wrapper">
+        <svg class="settings-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+        </svg>
         <input
-          type="text"
+          type="password"
           class="settings-input"
-          [ngModel]="serverUrl()"
-          (ngModelChange)="serverUrl.set($event)"
-          placeholder="{{ wsProtocol }}://localhost:9315/ws"
+          [ngModel]="authToken()"
+          (ngModelChange)="authToken.set($event)"
+          placeholder="Optional auth token"
           [disabled]="acpService.sessionState().isConnected"
         />
       </div>
-      <div class="settings-field">
-        <label class="settings-label">Auth Token</label>
-        <div class="settings-input-wrapper">
-          <svg class="settings-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-          </svg>
-          <input
-            type="password"
-            class="settings-input"
-            [ngModel]="authToken()"
-            (ngModelChange)="authToken.set($event)"
-            placeholder="Optional auth token"
-            [disabled]="acpService.sessionState().isConnected"
-          />
-        </div>
-      </div>
-      <div class="settings-field">
-        <label class="settings-label">Working Directory</label>
-        <div class="settings-input-wrapper">
-          <svg class="settings-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-          </svg>
-          <div class="settings-input settings-input-readonly" [class.placeholder]="!workingDir()">{{ workingDir() || 'Optional /path/to/project' }}</div>
-        </div>
+    </div>
+    <div class="settings-field">
+      <label class="settings-label">Working Directory</label>
+      <div class="settings-input-wrapper">
+        <svg class="settings-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <div class="settings-input settings-input-readonly" [class.placeholder]="!workingDir()">{{ workingDir() || 'Optional /path/to/project' }}</div>
       </div>
     </div>
-  }
-
-  @if (acpService.showSessionHistory()) {
-    <div class="acp-session-history">
-      <div class="session-history-header">
-        <span>Session History</span>
-        <button class="acp-icon-button" (click)="toggleSessionHistory()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      @if (acpService.sessionsLoading()) {
-        <div class="session-loading">Loading sessions...</div>
-      } @else if (acpService.sessions().length === 0) {
-        <div class="session-empty">No sessions found</div>
-      } @else {
-        <div class="session-list">
-          @for (session of acpService.sessions(); track session.sessionId) {
-            <div class="session-item">
-              <div class="session-info">
-                <div class="session-title">{{ session.title || 'Untitled Session' }}</div>
-                <div class="session-meta">
-                  <span class="session-id">{{ session.sessionId }}</span>
-                  @if (session.updatedAt) {
-                    <span class="session-date">{{ session.updatedAt }}</span>
-                  }
-                </div>
-              </div>
-              <div class="session-actions">
-                <button class="session-action-btn" (click)="loadSession(session.sessionId)" title="Load Session">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                    <polyline points="13 2 13 9 20 9"/>
-                  </svg>
-                </button>
-                <button class="session-action-btn" (click)="resumeSession(session.sessionId)" title="Resume Session">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
-                  </svg>
-                </button>
-                @if (canDeleteSession()) {
-                  <button class="session-action-btn session-action-btn--delete" (click)="deleteSession(session.sessionId)" title="Delete Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                  </button>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  }
-
-  @if (showFileExplorer()) {
-    <div class="acp-file-explorer">
-      <div class="file-explorer-header">
-        <span>File Explorer</span>
-        <div class="file-explorer-actions">
-          <button class="acp-icon-button" (click)="goBackDir()" title="Go Back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
-            </svg>
-          </button>
-          <button class="acp-icon-button" (click)="toggleFileExplorer()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="file-path">{{ acpService.currentDirPath() || '/' }}</div>
-      <div class="file-list">
-        @for (item of acpService.dirItems(); track item.name) {
-          <div class="file-item" (click)="item.type === 'directory' ? navigateDir(item.name) : openFile(item.name)">
-            @if (item.type === 'directory') {
-              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-              </svg>
-            } @else {
-              <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                <polyline points="13 2 13 9 20 9"/>
-              </svg>
-            }
-            <span class="file-name">{{ item.name }}</span>
-            @if (item.size !== undefined) {
-              <span class="file-size">{{ item.size }} bytes</span>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  }
-
-  @if (!acpService.sessionState().isConnected) {
-    <div class="acp-connect-form">
-      <button
-        class="acp-connect-button"
-        (click)="connect()"
-        [disabled]="!serverUrl().trim() || acpService.sessionState().isConnecting"
-      >
-        @if (acpService.sessionState().isConnecting) {
-          <div class="button-spinner"></div>
-          <span>Connecting...</span>
-        } @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14m-7-7v14"/>
-          </svg>
-          <span>Connect</span>
-        }
-      </button>
-    </div>
-  }
-
-  @if (acpService.sessionState().error) {
-    <div class="acp-error-message">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="15" y1="9" x2="9" y2="15"/>
-        <line x1="9" y1="9" x2="15" y2="15"/>
-      </svg>
-      <span>{{ acpService.sessionState().error }}</span>
-      <button class="acp-error-dismiss" (click)="acpService.clearError()">
+  </div>
+}
+@if (acpService.showSessionHistory()) {
+  <div class="acp-session-history">
+    <div class="session-history-header">
+      <span>Session History</span>
+      <button class="acp-icon-button" (click)="toggleSessionHistory()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
-  }
-
-</div>
+    @if (acpService.sessionsLoading()) {
+      <div class="session-loading">Loading sessions...</div>
+    } @else if (acpService.sessions().length === 0) {
+      <div class="session-empty">No sessions found</div>
+    } @else {
+      <div class="session-list">
+        @for (session of acpService.sessions(); track session.sessionId) {
+          <div class="session-item">
+            <div class="session-info">
+              <div class="session-title">{{ session.title || 'Untitled Session' }}</div>
+              <div class="session-meta">
+                <span class="session-id">{{ session.sessionId }}</span>
+                @if (session.updatedAt) {
+                  <span class="session-date">{{ session.updatedAt }}</span>
+                }
+              </div>
+            </div>
+            <div class="session-actions">
+              <button class="session-action-btn" (click)="loadSession(session.sessionId)" title="Load Session">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                  <polyline points="13 2 13 9 20 9"/>
+                </svg>
+              </button>
+              <button class="session-action-btn" (click)="resumeSession(session.sessionId)" title="Resume Session">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </button>
+              @if (canDeleteSession()) {
+                <button class="session-action-btn session-action-btn--delete" (click)="deleteSession(session.sessionId)" title="Delete Session">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}
+@if (showFileExplorer()) {
+  <div class="acp-file-explorer">
+    <div class="file-explorer-header">
+      <span>File Explorer</span>
+      <div class="file-explorer-actions">
+        <button class="acp-icon-button" (click)="goBackDir()" title="Go Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <button class="acp-icon-button" (click)="toggleFileExplorer()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="file-path">{{ acpService.currentDirPath() || '/' }}</div>
+    <div class="file-list">
+      @for (item of acpService.dirItems(); track item.name) {
+        <div class="file-item" (click)="item.type === 'directory' ? navigateDir(item.name) : openFile(item.name)">
+          @if (item.type === 'directory') {
+            <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          } @else {
+            <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+              <polyline points="13 2 13 9 20 9"/>
+            </svg>
+          }
+          <span class="file-name">{{ item.name }}</span>
+          @if (item.size !== undefined) {
+            <span class="file-size">{{ item.size }} bytes</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+@if (!acpService.sessionState().isConnected) {
+  <div class="acp-connect-form">
+    <button
+      class="acp-connect-button"
+      (click)="connect()"
+      [disabled]="!serverUrl().trim() || acpService.sessionState().isConnecting"
+    >
+      @if (acpService.sessionState().isConnecting) {
+        <div class="button-spinner"></div>
+        <span>Connecting...</span>
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14m-7-7v14"/>
+        </svg>
+        <span>Connect</span>
+      }
+    </button>
+  </div>
+}
+@if (acpService.sessionState().error) {
+  <div class="acp-error-message">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+    <span>{{ acpService.sessionState().error }}</span>
+    <button class="acp-error-dismiss" (click)="acpService.clearError()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+}
