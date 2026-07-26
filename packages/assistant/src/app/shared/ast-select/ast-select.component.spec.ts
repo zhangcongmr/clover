@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AstSelectComponent } from './ast-select.component';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 describe('AstSelectComponent', () => {
   let component: AstSelectComponent;

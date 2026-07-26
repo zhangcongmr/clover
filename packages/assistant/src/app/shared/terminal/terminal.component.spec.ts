@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TerminalComponent } from './terminal.component';
 
 describe('TerminalComponent', () => {

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AstTabComponent } from './ast-tab.component';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 describe('AstTabComponent', () => {
   let component: AstTabComponent;

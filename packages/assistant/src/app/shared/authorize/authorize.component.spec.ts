@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AuthorizeComponent } from './authorize.component';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 describe('AuthorizeComponent', () => {
   let component: AuthorizeComponent;

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AstTreeComponent } from './ast-tree.component';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 describe('AstTreeComponent', () => {
   let component: AstTreeComponent;

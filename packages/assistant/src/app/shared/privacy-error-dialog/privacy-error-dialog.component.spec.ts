@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PrivacyErrorDialogComponent } from './privacy-error-dialog.component';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 describe('PrivacyErrorDialogComponent', () => {
   let component: PrivacyErrorDialogComponent;
