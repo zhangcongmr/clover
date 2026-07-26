@@ -197,6 +197,7 @@ export class AcpChatInputComponent {
 
     try {
       if (!this.acpService.hasOpenedSession()) {
+        this.acpService.clearMessages();
         await this.acpService.createSession(this.acpService.workingDirHint() || undefined);
         this.acpService.hasOpenedSession.set(true);
         this.acpService.showSessionHistory.set(false);
