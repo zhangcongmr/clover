@@ -1,31 +1,30 @@
 
-<div style="position: absolute;width: 100%;height: 100%;left: 0;top: 0;">
-  <div class="split-line" style="height: 100%;width: 4px;position: absolute;z-index: 100;" [style.left]="sideOpen() ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
+<div class="ast-content-drag-overlay">
+  <div class="split-line ast-content-split-handle" [style.left]="sideOpen() ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
     (mousedown)="sideOpen() && dragStart($event, 'ew')"></div>
 </div>
 
-<div style="position: absolute;width: 100%;height: 100%;left: 0;top: 0;">
-  <div [style.display]="addMarkFile?'block': 'none'" class="new_file"
-    style="width: 20%;;height: 3rem;position: absolute;z-index: 100;top:30%;left: 50%;padding-left:5px;padding-right: 5px ;align-content: center;background-color: aliceblue;box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);">
+<div class="ast-content-drag-overlay">
+  <div [style.display]="addMarkFile?'block': 'none'" class="new_file ast-content-new-file-popup">
     <input type="text" name="createNewFile" [(ngModel)]="newFileName" (keyup)="newFileKeyUp($event, newFileName)"
       autocomplete="off" required>
   </div>
   <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
 </div>
-<div style="position: relative;display: flex;flex: 1;height: 100%;">
+<div class="ast-content-main">
   @if (sideOpen()) {
     <div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
       @if(currentDisplayViewId()==1) {
         @if(showButtonPlaceholder()) {
-          <div style="text-align:center; color: var(--vscode-foreground);">
-            <div style="border:1px solid var(--vscode-statusBar-background); padding:1.25rem; border-radius:4px; background:var(--vscode-background); display:inline-block;">
-              <div style="font-weight:600; margin-bottom:0.5rem;">NO FOLDER/FILE OPENED</div>
-              <div style="margin-bottom:1rem; color:var(--vscode-textSeparator-foreground);">You have not yet opened a folder or file.</div>
-              <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;margin-bottom:0.6rem;">
-                <button (click)="openFolderInContent('readwrite')" style="background:var(--primary-color, rgb(103, 137, 186));color:#fff;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open Folder</button>
-                <button (click)="openFileInContent()" style="background:#e1e1e1;color:#222;border:none;padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;">Open File</button>
+          <div class="ast-content-empty-state">
+            <div class="ast-content-empty-card">
+              <div class="ast-content-empty-title">NO FOLDER/FILE OPENED</div>
+              <div class="ast-content-empty-desc">You have not yet opened a folder or file.</div>
+              <div class="ast-content-empty-actions">
+                <button (click)="openFolderInContent('readwrite')" class="ast-content-empty-primary-btn">Open Folder</button>
+                <button (click)="openFileInContent()" class="ast-content-empty-secondary-btn">Open File</button>
               </div>
-              <div style="margin-top:0.2rem; color:var(--vscode-textSeparator-foreground); font-size:0.9rem;">Click to browse and select a local folder or file.</div>
+              <div class="ast-content-empty-hint">Click to browse and select a local folder or file.</div>
             </div>
           </div>
         } @else {
@@ -60,7 +59,7 @@
                   </svg>
                 </div>
                 @if(coreService.forking()) {
-                  <span style="margin-left: 0.5rem; color: var(--vscode-foreground);">Forking...</span>
+                  <span class="ast-content-forking-text">Forking...</span>
                 }
               }
 
@@ -97,7 +96,7 @@
               }
             </div>
           </div>
-          <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" [folderBeforeToggle]="onFolderBeforeToggle" class="custom-scroll"  style="flex: 1 1 0;overflow: auto;"></div>
+          <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" [folderBeforeToggle]="onFolderBeforeToggle" class="custom-scroll ast-content-tree"></div>
           <ast-modal [title]="'Share on Community'" [visible]="shareOnMenuVisible" [modalSize]="'small'" (close)="shareOnMenuVisible = false">
             <div class="ast-modal-body">
               <div class="ShareOnMessage">
@@ -151,7 +150,7 @@
     </div>
   }
 
-  <div style="display: flex; flex: 1;">
+  <div class="ast-content-tabs-wrapper">
     @if (openedList().length>0) {
       <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
       [tabType]="{'type':'bilateral'}"

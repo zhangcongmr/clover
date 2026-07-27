@@ -155,16 +155,6 @@
   overflow: hidden;
 }
 
-.split-line-ew:hover {
-  cursor: ew-resize;
-  background-color: var(--vscode-statusBar-background);
-}
-
-.split-line-ns:hover {
-  cursor: ns-resize;
-  background-color: var(--vscode-statusBar-background);
-}
-
 /* Saving and Forking indicators */
 .saving-indicator, .forking-indicator {
   display: flex;
@@ -565,4 +555,33 @@ form {
   align-items: center;
   justify-content: center;
   opacity: 0.8;
+}
+
+.split-line-ew:hover {
+  cursor: ew-resize;
+  background-color: var(--vscode-statusBar-background);
+}
+
+.split-line-ns:hover {
+  cursor: ns-resize;
+  background-color: var(--vscode-statusBar-background);
+}
+
+/* 内联样式提取 */
+.ast-split-handle-ew {
+  height: 100%;
+  width: 4px;
+  position: absolute;
+  z-index: 100;
+}
+
+.ast-split-handle-ns {
+  height: 4px;
+  width: 100%;
+  position: absolute;
+  z-index: 100;
+}
+
+.ast-terminal-tab-container {
+  position: relative;
 }

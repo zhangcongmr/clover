@@ -220,3 +220,16 @@
 .ViewSource:hover {
     background-color: #ccc;
 }
+
+/* 内联样式提取 */
+.ast-explorer-table {
+  overflow-y: auto;
+  width: 100%;
+}
+
+.ast-explorer-code-container {
+  flex: 1 1 0;
+  overflow: hidden;
+  border: 1px solid gainsboro;
+  width: 100%;
+}

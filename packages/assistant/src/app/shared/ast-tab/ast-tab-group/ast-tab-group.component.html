@@ -58,9 +58,8 @@
   }
 
   <div data-layer="tab_presentation" [style.width]="'100%'" aria-hidden="true"
-    style="position: absolute; height: 3px; left: 0px; bottom: 0px;color: rgb(97, 97, 97);z-index: 10;display: none;">
-    <div class="slider" style="position: absolute; top: 0px; left: 0px; height: 3px; transform: translate3d(0px, 0px, 0px);z-index: 100;
-      contain: strict; color: rgb(97, 97, 97);background-color: rgba(100, 100, 100, 0.4)"
+    class="ast-tab-presentation">
+    <div class="slider ast-tab-slider"
       [style.width]="computedScrollBarLength" [style.left]="scrollBarLeft + 'px'">
     </div>
   </div>
@@ -78,7 +77,7 @@
 }
 
 @if(downMenuOpen && hiddenTabs().length > 0) {
-  <div ast-menu [(isOpen)]="downMenuOpen" style="width: 400px;" [menuInitiator]="downMenuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
+  <div ast-menu [(isOpen)]="downMenuOpen" class="ast-tab-down-menu" [menuInitiator]="downMenuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
       class="more-btn-dropdown-content ast-right-menu">
       @for (tab of hiddenTabs(); track tab.id) {
         <div data-layer="hiddenTab" class="hiddenTab ast-menu-every-item" (click)="clickOpenedTab(tab)">

@@ -63,15 +63,14 @@ padding-left: 6px;
       } @else if(importType=='2'){
         <app-api-explorer (importOut)="importOutFromEcosystem($event)"></app-api-explorer>
       } @else {
-        <div data-layer="import-content-section" class="ImportContentSection ast-import-content-section" style="flex:none">
+        <div data-layer="import-content-section" class="ImportContentSection ast-import-content-section ast-add-project-import-section">
           <div>Open file:</div>
-          <div style="display: flex;max-height: 300px;gap: 0.5rem;">
+          <div class="ast-add-project-file-row">
             <!-- file picker -->
             <file-input (fileContentChanged)="fileContentChangedFn($event)" (clearSelectd)="clearFileSelected()" />
             <!-- show tree if folder selected -->
             @if (directoryTreeData.length>0) {
-              <div class="add-project-tree"
-                style="overflow:auto; border:1px solid #ccc;padding:4px;width: 300px;">
+              <div class="add-project-tree ast-add-project-tree-wrapper">
                 <div ast-tree [data]="directoryTreeData" [fobiddenContextMenu]="true"></div>
               </div>
             }

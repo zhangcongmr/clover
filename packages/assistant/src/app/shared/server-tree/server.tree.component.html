@@ -34,21 +34,21 @@
   </div>
 </div>
 
-<div ast-tree [data]="serverList" [isSearch]="true" (nodeClick)="listClick($event)" [fobiddenContextMenu]="true" style="margin-top: 0.5rem;"></div>
+<div ast-tree [data]="serverList" [isSearch]="true" (nodeClick)="listClick($event)" [fobiddenContextMenu]="true" class="ast-server-tree"></div>
 
 @if (currentServer && currentServer.data != null && shouldAuthorize) {
-<div id="aside_basic_info" style="padding: 3px; border: 1px solid #96a5b4;">
-  <form class="example-form" style="font-size: 0.7rem;">
+<div id="aside_basic_info" class="ast-server-auth-panel">
+  <form class="example-form ast-server-auth-form">
     <label>Login</label>
     <input placeholder="username" name="username"
-      style="height: 1.5rem; margin-top:0.5rem; border: 1px solid #96a5b4;width: 100%;"
+      class="ast-server-auth-input"
       [(ngModel)]="currentServer.data.userName" autocomplete="off">
     <input placeholder="password" name="password" type="password"
-      style="height: 1.5rem; margin-top:0.5rem; border: 1px solid #96a5b4;width: 100%;"
+      class="ast-server-auth-input"
       [(ngModel)]="currentServer.data.passwd" autocomplete="off">
-    <div style="margin-top: 0.5rem;font-size: 0.7rem;">
+    <div class="ast-server-auth-actions">
       <button mat-button color="primary" id="confirm_authorize_id" name="confirm_authorize_id"
-        style="width: 100%;text-align: center;color: white;background-color: #5a98de;width: 100%;"
+        class="ast-server-auth-btn"
         (click)="confirmAuthorize(currentServer)">{{authorizeBtnLabel}}</button>
       <br>
     </div>

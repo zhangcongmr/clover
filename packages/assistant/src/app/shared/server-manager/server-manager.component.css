@@ -72,3 +72,23 @@
 .confirm-button:hover {
   background-color: #0056b3;
 }
+
+/* 内联样式提取 */
+.ast-server-manager-delete-body {
+  display: flex;
+  height: 100%;
+}
+
+.ast-server-manager-list {
+  overflow: auto;
+}
+
+.ast-server-manager-name {
+  margin-right: 1rem;
+}
+
+.ast-server-manager-delete-btn {
+  border: 0;
+  background-color: white;
+  color: mediumvioletred;
+}

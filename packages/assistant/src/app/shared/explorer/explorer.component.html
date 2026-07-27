@@ -27,10 +27,10 @@
         </svg>
       </div>
     </div>
-    <ast-table [columns]="columns" [data]="data" [headerSticky]="true" style="overflow-y: auto;width: 100%;"
+    <ast-table [columns]="columns" [data]="data" [headerSticky]="true" class="ast-explorer-table"
       [showCheckBox]="false" [style.display]="showPreviewOrCode?'flex':'none'"
       (selected)="apiCheckedFun($event)"></ast-table>
     <div #apiSourceCodeContainer [style.display]="!showPreviewOrCode?'flex':'none'"
-     style="flex: 1 1 0;overflow: hidden;border: 1px solid gainsboro;width: 100%;"></div>
+     class="ast-explorer-code-container"></div>
   </div>
 }

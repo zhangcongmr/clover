@@ -2,7 +2,7 @@
   <thead>
     <tr [class.stickyHeader]="headerSticky()">
       @if(showCheckBox()) {
-        <th><input type="checkbox" name="selectAllBox" style="margin: 0;" (change)="onAllCheckboxChange($event)"></th>
+        <th><input type="checkbox" name="selectAllBox" class="ast-table-checkbox" (change)="onAllCheckboxChange($event)"></th>
       }
       @for (col of columnArray; track col; let i = $index) {
         <th>{{col['title']}}</th>
@@ -13,7 +13,7 @@
     @for (item of dataArray; track item; let i = $index) {
       <tr (click)="clickTableRow($event, i)" [style.backgroundColor]="item.selected?'#c4bdbd':''">
         @if(showCheckBox()) {
-          <td><input type="checkbox" name="row_check_status" style="margin: 0;"  [(ngModel)]="item.selected" (change)="onCheckboxChange(i, $event)"></td>
+          <td><input type="checkbox" name="row_check_status" class="ast-table-checkbox"  [(ngModel)]="item.selected" (change)="onCheckboxChange(i, $event)"></td>
         }
         @for (prop of item; track prop) {
           <td>{{prop}}</td>

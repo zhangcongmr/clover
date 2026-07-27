@@ -36,3 +36,36 @@
     justify-content: flex-start
 }
 
+/* 内联样式提取 */
+.ast-server-tree {
+    margin-top: 0.5rem;
+}
+
+.ast-server-auth-panel {
+    padding: 3px;
+    border: 1px solid #96a5b4;
+}
+
+.ast-server-auth-form {
+    font-size: 0.7rem;
+}
+
+.ast-server-auth-input {
+    height: 1.5rem;
+    margin-top: 0.5rem;
+    border: 1px solid #96a5b4;
+    width: 100%;
+}
+
+.ast-server-auth-actions {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+}
+
+.ast-server-auth-btn {
+    width: 100%;
+    text-align: center;
+    color: white;
+    background-color: #5a98de;
+}
+

@@ -250,13 +250,13 @@
     <div class="ast-panel-container">
       <!-- 水平拖动条 -->
       <div style="position: absolute;width: 100%;height: 100%;" [style.display]="rightPanelOpen ? 'block' : 'none'">
-        <div class="split-line-ew" style="height: 100%;width: 4px;position: absolute;z-index: 100;"
+        <div class="split-line-ew ast-split-handle-ew"
           [style.left]="leftPct * 100 + '%'" (mousedown)="dragStart($event, 'ew')"></div>
       </div>
       <div class="ast-middle-panel" [style.width]="rightPanelOpen ? (leftPct * 100 + '%') : '100%'">
         <!-- 垂直拖动条 -->
         <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
-          <div class="split-line-ns" style="height: 4px;width: 100%;position: absolute;z-index: 100;"
+          <div class="split-line-ns ast-split-handle-ns"
             [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
         </div>
 
@@ -265,7 +265,7 @@
           (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'"></div>
         @if(terminalPanelShow || keepTerminalInstance.value) {
           <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
-            [style.height]="(1 - topPct) * 100 + '%'" style="position: relative;"
+            [style.height]="(1 - topPct) * 100 + '%'" class="ast-terminal-tab-container"
             [tabType]="{'type':'lightcolorselection', 'height':'42px'}" [addTabEnable]="true"
             (addNewTab)="onAddNewTerminalTab($event)">
             @if (terminalOpenedList.length>0) {

@@ -65,3 +65,8 @@
 .clear-button:hover {
     background: gainsboro;
 }
+
+/* 内联样式提取 */
+.ast-file-input-open-folder {
+  margin-right: 2rem;
+}

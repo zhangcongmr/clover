@@ -1,5 +1,5 @@
 @if(editApiSourceCodeEnable == false) {
-  <div style="position: absolute;width: 100%;height: 100%;pointer-events: none;">
+  <div class="ast-api-overlay">
     <div data-layer="edit-btn" class="EditBtn ast-edit-btn" [style.clip-path]="showEditBtn" [style.display]="!editApiSourceCodeEnable?'inline-flex':'none'" (click)="editApiSourceCodeFn($event)">
       <div data-svg-wrapper="" data-layer="Frame" class="Frame">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -11,24 +11,22 @@
       <div data-layer="Edit" class="Edit ast-edit" title="Open API data in editor">Edit API</div>
     </div>
   </div>
-  <div style="display: flex;flex-wrap: nowrap;margin-top: 0.5rem;">
+  <div class="ast-api-url-bar">
     <ast-select [data]="methodOptions" [inputValue]="apiInfo.method.toUpperCase()" (selected)="methodChange($event)" [readonly]="true"></ast-select>
     <input type="text" name="uri" [(ngModel)]="apiInfo.url"
-      style=" flex-grow: 1;display: inline;border-top-left-radius: 0;border-bottom-left-radius: 0;"
+      class="ast-api-url-input"
       autocomplete="off" spellcheck="false">
     <button class="sendRequestBtn" (click)="sendRequest()">Send</button>
   </div>
-  <div
-    style="position: relative;text-align:left; margin-top: 0.5rem;background-color: white;
-          border-top-left-radius: 0.25rem;border-top-right-radius: 0.25rem;display: flex;flex-direction: column;flex: 1 1 0;">
+  <div class="ast-api-main-content">
 
     <!-- 垂直拖动条 -->
-    <div style="position: absolute;width: 100%;height: 100%;">
-      <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;" [style.top]="topPct * 100 + '%'"
+    <div class="ast-api-drag-container">
+      <div class="split-line ast-api-split-handle" [style.top]="topPct * 100 + '%'"
         (mousedown)="dragStart($event, 'ns')"></div>
     </div>
 
-    <div id="req_section_{{apiInfo.id}}" class="flat-form" style="position: relative;height: 60%;background-color: white;"
+    <div id="req_section_{{apiInfo.id}}" class="flat-form ast-api-request-section"
       [style.height]="topPct * 100 + '%'">
       <div ast-tab-group [closable]="false" [fobiddenContextMenu]="true"  [tabType]="{'type':'textbottom'}">
         <div ast-tab [label]="'Parameters'" [id]="'request_parameters'" [minWidth]="'122px'" role="tabpanel"
@@ -302,12 +300,12 @@
             <!-- Monaco Editor will be initialized here -->
             <div class="parameter-content">
               <div>
-                <label style="margin: 0 1rem;">Content-Type</label>
+                <label class="ast-api-content-type-label">Content-Type</label>
                 <ast-select [data]="consumeOpts" [inputValue]="apiInfo.currentConsume"  [width]="'18rem'" (selected)="consumeChange($event)" [readonly]="true">
                 </ast-select>
               </div>
               @if(apiInfo.currentConsume== null || apiInfo.currentConsume=='application/json' || apiInfo.currentConsume=='application/xml' || apiInfo.currentConsume=='None' || apiInfo.currentConsume=='text/plain') {
-                <div #reqEditorContainer style="overflow: hidden;height: 100%;"></div>
+                <div #reqEditorContainer class="ast-api-editor-container"></div>
               } @else if(apiInfo["requestBody"]&&(apiInfo.currentConsume=='application/x-www-form-urlencoded'||apiInfo.currentConsume=='multipart/form-data')) {
                 @for(parameter of apiInfo["requestBody"]["content"][apiInfo.currentConsume]; track parameter; let paraIndex = $index) {
                   <div class="parameter-item">
@@ -322,14 +320,13 @@
         </div>
       </div>
     </div>
-    <div id="resp_section_{{apiInfo.id}}" class="flat-form"
-      style="position: relative;height: 40%;border-top: 0.8px solid rgb(240, 240, 240);border-radius:0;display: inline-flex;flex-direction: column;"
+    <div id="resp_section_{{apiInfo.id}}" class="flat-form ast-api-response-section"
       [style.height]="(1 - topPct) * 100 + '%'">
-      <div style="position: absolute;width: 100%;height: 100%;display: none;background-color: #ffffff;opacity: 0.8;"
+      <div class="ast-api-loading-overlay"
         [style.display]="ifSendingRequest?'block':'none'">
-        <div style="margin: 50px 40%;">Sending request...</div>
-        <div style="margin-top: 0px;margin-left: 40%;margin-right: 40%;">
-          <button class="request-cancel-btn" style="height: 2rem;width: 80px;border: 0;"
+        <div class="ast-api-sending-text">Sending request...</div>
+        <div class="ast-api-cancel-wrapper">
+          <button class="request-cancel-btn ast-api-cancel-btn"
             (click)="clickAbortRequest()">Cancel</button>
         </div>
       </div>
@@ -345,16 +342,16 @@
         </div>
       </div>
 
-      <textarea style="border: 0px solid lightgrey;width: 100%;resize: none;padding: 0;flex: 1 1 0;" readonly>{{response.body}}</textarea>
+      <textarea class="ast-api-response-textarea" readonly>{{response.body}}</textarea>
     </div>
   </div>
 } @else {
-  <div style="height: 1.5rem;line-height: 1.5rem;display: flex;justify-content: center;gap: 3px;margin-top: 0.5rem;">
-    <div style="cursor: pointer;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
-      <div style="width: 4rem;text-align: center;display: inline-block;" (click)="apiBackFn()">Back</div>
-      <div style="width: 4rem;text-align: center;display: inline-block;" (click)="apiSaveFn()">Save</div>
+  <div class="ast-api-toolbar">
+    <div class="ast-api-toolbar-btns">
+      <div class="ast-api-toolbar-btn" (click)="apiBackFn()">Back</div>
+      <div class="ast-api-toolbar-btn" (click)="apiSaveFn()">Save</div>
     </div>
     <div class="esc-hint" [style.display]="showEscHint ? 'block' : 'none'">Press the ESC key to exit</div>
   </div>
-  <div #editApiSourceCodeContainer style="overflow: hidden;height: 100%;"></div>
+  <div #editApiSourceCodeContainer class="ast-api-editor-container"></div>
 }

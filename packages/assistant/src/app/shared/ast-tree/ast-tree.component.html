@@ -1,5 +1,5 @@
 @if (dataType() != 'subData' && isSearch()) {
-  <div style="margin-bottom: 0.5rem;">
+  <div class="ast-tree-search-wrapper">
     <input type="text"  [(ngModel)]="searchValue" (keyup)="keyUpSearch(searchValue, $event)" (paste)="pasteSearch(searchValue, $event)"
       (cut)="cutSearch(searchValue, $event)" autocomplete="off" placeholder="Input keywords filtering" class="input_filter">
   </div>
@@ -21,11 +21,11 @@
     }
     <div class="lyout-item" [style.flex]="item.nodeType == 'api' ? '0 0 2rem':''">
       @if(item.nodeType == 'api') {
-        <div style="text-align: left;font-size: 10px;" [style.color]="item.symbolColor">
+        <div class="ast-tree-api-symbol" [style.color]="item.symbolColor">
           {{item.symbol}}
         </div>
       } @else if(item.nodeType=='folder') {
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6b7280;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ast-tree-folder-icon">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
         </svg>
       } @else if(item.nodeType=='file') {
@@ -58,11 +58,11 @@
       }
       <div class="lyout-item" [style.flex]="childItem.nodeType == 'api' ? '0 0 2rem':''">
         @if(childItem.nodeType == 'api') {
-          <div style="text-align: left;font-size: 10px;" [style.color]="childItem.symbolColor">
+          <div class="ast-tree-api-symbol" [style.color]="childItem.symbolColor">
             {{childItem.symbol}}
           </div>
         } @else if(childItem.nodeType=='folder') {
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6b7280;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ast-tree-folder-icon">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
           </svg>
         } @else if(childItem.nodeType=='file') {

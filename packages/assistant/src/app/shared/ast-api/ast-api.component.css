@@ -368,3 +368,126 @@ table tr:hover {
     opacity: 1;
     z-index: 100;
 }
+
+/* 内联样式提取 */
+.ast-api-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ast-api-url-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-top: 0.5rem;
+}
+
+.ast-api-url-input {
+    flex-grow: 1;
+    display: inline;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.ast-api-main-content {
+    position: relative;
+    text-align: left;
+    margin-top: 0.5rem;
+    background-color: white;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+}
+
+.ast-api-drag-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.ast-api-split-handle {
+    height: 4px;
+    width: 100%;
+    position: absolute;
+    z-index: 100;
+}
+
+.ast-api-request-section {
+    position: relative;
+    height: 60%;
+    background-color: white;
+}
+
+.ast-api-content-type-label {
+    margin: 0 1rem;
+}
+
+.ast-api-editor-container {
+    overflow: hidden;
+    height: 100%;
+}
+
+.ast-api-response-section {
+    position: relative;
+    height: 40%;
+    border-top: 0.8px solid rgb(240, 240, 240);
+    border-radius: 0;
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.ast-api-loading-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background-color: #ffffff;
+    opacity: 0.8;
+}
+
+.ast-api-sending-text {
+    margin: 50px 40%;
+}
+
+.ast-api-cancel-wrapper {
+    margin-top: 0px;
+    margin-left: 40%;
+    margin-right: 40%;
+}
+
+.ast-api-cancel-btn {
+    height: 2rem;
+    width: 80px;
+    border: 0;
+}
+
+.ast-api-response-textarea {
+    border: 0px solid lightgrey;
+    width: 100%;
+    resize: none;
+    padding: 0;
+    flex: 1 1 0;
+}
+
+.ast-api-toolbar {
+    height: 1.5rem;
+    line-height: 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 0.5rem;
+}
+
+.ast-api-toolbar-btns {
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ast-api-toolbar-btn {
+    width: 4rem;
+    text-align: center;
+    display: inline-block;
+}

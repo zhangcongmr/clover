@@ -12,3 +12,11 @@ body {
   /* max-width: 900px; */
   margin: 10px 10px;
 }
+
+/* 内联样式提取 */
+.ast-api-notebook-container {
+  overflow-y: auto;
+  align-self: stretch;
+  align-items: center;
+  flex: 1 1 0;
+}

@@ -25,11 +25,11 @@
 
 <ast-modal [title]="'Delete server'"  [visible]="deleteServerVisible" (visibleChange)="visibleChangeDeleteDlg($event)"  (close)="close()">
   <div class="ast-modal-body">
-    <div style="display: flex;height: 100%;">
+    <div class="ast-server-manager-delete-body">
       <div>
         @for (server of servers; track server) {
-          <ul style="overflow: auto;">
-            <li><span style="margin-right: 1rem;">{{server.text}}</span><button (click)="deleteAction(server)" style="border: 0px;background-color: white;color: mediumvioletred;">Delete</button></li>
+          <ul class="ast-server-manager-list">
+            <li><span class="ast-server-manager-name">{{server.text}}</span><button (click)="deleteAction(server)" class="ast-server-manager-delete-btn">Delete</button></li>
           </ul>
         }
       </div>

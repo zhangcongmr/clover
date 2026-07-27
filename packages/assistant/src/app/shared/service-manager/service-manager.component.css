@@ -72,3 +72,18 @@
 .confirm-button:hover {
     background-color: #0056b3;
 }
+
+/* 内联样式提取 */
+.ast-service-list {
+    overflow: auto;
+}
+
+.ast-service-name {
+    margin-right: 1rem;
+}
+
+.ast-service-delete-btn {
+    border: 0;
+    background-color: white;
+    color: mediumvioletred;
+}

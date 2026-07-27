@@ -63,3 +63,9 @@
 .confirm-button:hover {
   background-color: #0056b3;
 }
+
+/* 内联样式提取 */
+.ast-authorize-tip-body {
+  display: flex;
+  height: 100%;
+}

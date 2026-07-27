@@ -108,3 +108,17 @@
     padding: 4px;
     cursor: text;
 }
+
+/* 内联样式提取 */
+.ast-tree-search-wrapper {
+    margin-bottom: 0.5rem;
+}
+
+.ast-tree-api-symbol {
+    text-align: left;
+    font-size: 10px;
+}
+
+.ast-tree-folder-icon {
+    color: #6b7280;
+}

@@ -364,3 +364,21 @@
     font-weight: 400;
     word-wrap: break-word
 }
+
+/* 内联样式提取 */
+.ast-add-project-import-section {
+    flex: none;
+}
+
+.ast-add-project-file-row {
+    display: flex;
+    max-height: 300px;
+    gap: 0.5rem;
+}
+
+.ast-add-project-tree-wrapper {
+    overflow: auto;
+    border: 1px solid #ccc;
+    padding: 4px;
+    width: 300px;
+}

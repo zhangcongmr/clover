@@ -38,9 +38,9 @@
   <div class="ast-modal-body">
     <div>
         @for (service of services; track service) {
-          <ul style="overflow: auto;">
-            <li><span style="margin-right: 1rem;">{{service.routeName}}</span><button (click)="deleteAction(service)"
-          style="border: 0px;background-color: white;color: mediumvioletred;">Delete</button></li>
+          <ul class="ast-service-list">
+            <li><span class="ast-service-name">{{service.routeName}}</span><button (click)="deleteAction(service)"
+          class="ast-service-delete-btn">Delete</button></li>
         </ul>
       }
     </div>
@@ -62,8 +62,8 @@
   <div class="ast-modal-body">
       <div>
         @for (service of services; track service) {
-          <ul style="overflow: auto;">
-            <li><span style="margin-right: 1rem;">{{service.routeName}}</span></li>
+          <ul class="ast-service-list">
+            <li><span class="ast-service-name">{{service.routeName}}</span></li>
           </ul>
         }
       </div>

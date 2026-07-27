@@ -28,3 +28,9 @@
 .confirm-button:hover {
     background-color: #0056b3;
 }
+
+/* 内联样式提取 */
+.ast-privacy-dialog-body {
+  display: flex;
+  height: 100%;
+}

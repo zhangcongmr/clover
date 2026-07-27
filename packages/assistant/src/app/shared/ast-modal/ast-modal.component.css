@@ -148,3 +148,8 @@ button[type="submit"] {
     background-color: gray;
     /* 鼠标悬停时改变背景颜色 */
 }
+
+/* 内联样式提取 */
+.ast-modal-close-icon {
+  margin: auto;
+}

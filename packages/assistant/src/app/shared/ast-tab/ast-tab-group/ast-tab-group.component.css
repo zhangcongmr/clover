@@ -243,3 +243,30 @@ li[data-layer="tab"]:last-child {
 ul[data-layer="tablist"].cdk-drop-list-dragging li[data-layer="tab"]:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
+
+/* 内联样式提取 */
+.ast-tab-presentation {
+  position: absolute;
+  height: 3px;
+  left: 0px;
+  bottom: 0px;
+  color: rgb(97, 97, 97);
+  z-index: 10;
+  display: none;
+}
+
+.ast-tab-slider {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 3px;
+  transform: translate3d(0px, 0px, 0px);
+  z-index: 100;
+  contain: strict;
+  color: rgb(97, 97, 97);
+  background-color: rgba(100, 100, 100, 0.4);
+}
+
+.ast-tab-down-menu {
+  width: 400px;
+}
