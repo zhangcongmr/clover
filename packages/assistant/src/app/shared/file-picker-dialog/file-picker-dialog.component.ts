@@ -6,6 +6,7 @@ import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
 import { pickParentObject, getNodeAbsolutePath, getFileIcon, computeFileIcons } from '../ast-tree/ast-tree.component';
 import { LocalAgentService } from '../local-agent/local-agent.service';
+import { SettingsService } from '../../luxio/settings/settings.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
 
@@ -18,6 +19,7 @@ import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.com
 })
 export class FilePickerDialogComponent {
   private localAgentService = inject(LocalAgentService);
+  private settingsService = inject(SettingsService);
 
   visible = signal(false);
   mode = signal<'folder' | 'file'>('folder');
@@ -43,7 +45,7 @@ export class FilePickerDialogComponent {
     this.selectedNode.set(null);
     this.activeTab.set('local');
     this.viewMode.set('icon');
-    this.localAgentService.setAgentUrl('https://localhost:4200');
+    this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
     this.visible.set(true);
     this.loadDirectory(startPath);
   }
@@ -54,7 +56,7 @@ export class FilePickerDialogComponent {
     this.selectedNode.set(null);
     this.activeTab.set('local');
     this.viewMode.set('icon');
-    this.localAgentService.setAgentUrl('https://localhost:4200');
+    this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
     this.visible.set(true);
     this.loadDirectory(startPath);
   }
@@ -127,7 +129,7 @@ export class FilePickerDialogComponent {
 
   onTabChange(tabId: string) {
     if (tabId === 'local') {
-      this.localAgentService.setAgentUrl('https://localhost:4200');
+      this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
     } else {
       this.localAgentService.setAgentUrl(window.location.origin);
     }
