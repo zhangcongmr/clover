@@ -39,5 +39,5 @@ export { loadSslConfig, isJson } from './helpers/index.js';
 export type { SslConfig } from './helpers/index.js';
 
 // Server
-export { createServer } from './server.js';
-export type { ServerConfig, ServerInstance } from './server.js';
+export { createServer, setupAgentMiddleware } from './server.js';
+export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';

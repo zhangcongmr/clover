@@ -6,7 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { createServer } from '@luxio/agent';
+import { createServer, setupAgentMiddleware } from '@luxio/agent';
 
 const rootDir = join(import.meta.dirname, '..');
 const browserDistFolder = join(rootDir, 'browser');
@@ -37,6 +37,12 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     rootDir,
     staticDir: browserDistFolder,
     app,
+  });
+} else {
+  setupAgentMiddleware(app, {
+    corsPorts: [4200, 4000],
+    corsOrigins: ['192.168.153.129'],
+    staticDir: browserDistFolder,
   });
 }
 

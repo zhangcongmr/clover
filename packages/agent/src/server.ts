@@ -41,30 +41,30 @@ export interface ServerInstance {
   ptyManager: PtyManager;
 }
 
-export function createServer(config: ServerConfig): ServerInstance {
+export interface AgentMiddlewareOptions {
+  corsPorts: number[];
+  corsOrigins?: string[];
+  tokenSecret?: string;
+  tokenSecretEnvKey?: string;
+  staticDir?: string;
+  staticOptions?: StaticOptions;
+}
+
+export function setupAgentMiddleware(
+  app: express.Express,
+  options: AgentMiddlewareOptions,
+): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager } {
   const {
-    port: portInput,
-    portEnvKey = 'PORT',
-    defaultPort = 4200,
-    tokenSecret: tokenSecretInput,
-    tokenSecretEnvKey = 'LUXIO_TOKEN_SECRET',
     corsPorts,
     corsOrigins = [],
-    rootDir,
-    sslDir: sslDirInput,
-    logPrefix = '',
-    app: existingApp,
+    tokenSecret,
+    tokenSecretEnvKey = 'LUXIO_TOKEN_SECRET',
     staticDir,
     staticOptions = { maxAge: '1y', index: false, redirect: false },
-  } = config;
+  } = options;
 
-  const port = portInput ?? (Number(process.env[portEnvKey]) || defaultPort);
-  const tokenSecret = tokenSecretInput ?? process.env[tokenSecretEnvKey];
-  const sslDir = sslDirInput ?? (rootDir ? join(rootDir, 'ssl') : undefined);
-
-  const app = existingApp || express();
-
-  const tokenManager = new TokenManager(tokenSecret, 30);
+  const secret = tokenSecret ?? process.env[tokenSecretEnvKey];
+  const tokenManager = new TokenManager(secret, 30);
   const fileService = new FileService(process.env['LUXIO_READONLY'] === 'true');
   const ptyManager = new PtyManager();
 
@@ -76,6 +76,27 @@ export function createServer(config: ServerConfig): ServerInstance {
 
   setupAgentRoutes(app, { fileService, tokenManager });
   setupA2ARoute(app);
+
+  return { tokenManager, fileService, ptyManager };
+}
+
+export function createServer(config: ServerConfig): ServerInstance {
+  const {
+    port: portInput,
+    portEnvKey = 'PORT',
+    defaultPort = 4200,
+    rootDir,
+    sslDir: sslDirInput,
+    logPrefix = '',
+    app: existingApp,
+    ...middlewareOptions
+  } = config;
+
+  const port = portInput ?? (Number(process.env[portEnvKey]) || defaultPort);
+  const sslDir = sslDirInput ?? (rootDir ? join(rootDir, 'ssl') : undefined);
+  const app = existingApp || express();
+
+  const services = setupAgentMiddleware(app, middlewareOptions);
 
   const sslConfig = sslDir ? loadSslConfig(sslDir) : null;
 
@@ -89,9 +110,7 @@ export function createServer(config: ServerConfig): ServerInstance {
     console.log(`${prefix}Server listening on ${protocol}://localhost:${port}`);
   });
 
-  setupWebSocket(httpServer, { tokenManager, fileService, ptyManager }, sslConfig, {
-    logPrefix,
-  });
+  setupWebSocket(httpServer, services, sslConfig, { logPrefix });
 
-  return { app, httpServer, tokenManager, fileService, ptyManager };
+  return { app, httpServer, ...services };
 }
