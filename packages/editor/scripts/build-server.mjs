@@ -16,7 +16,7 @@ const esbuildFile = resolve(
 const { build } = await import(pathToFileURL(esbuildFile).href);
 
 await build({
-  entryPoints: [resolve(rootDir, 'src/server/server.ts')],
+  entryPoints: [resolve(rootDir, 'src/server.ts')],
   outfile: resolve(rootDir, 'dist-server/server.js'),
   bundle: true,
   platform: 'node',
