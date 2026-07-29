@@ -106,7 +106,7 @@ export const AVAILABLE_AGENTS: AgentConfig[] = [
       border: 1px solid var(--vscode-input-border, #3c3c3c);
       border-radius: 12px;
       background-color: var(--vscode-input-background, #1e1e1e);
-      overflow: hidden;
+      overflow: visible;
       transition: border-color var(--vscode-motion-duration) var(--vscode-motion-easing);
     }
     .acp-chat-input-box:focus-within {
