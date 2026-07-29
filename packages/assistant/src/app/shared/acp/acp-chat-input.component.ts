@@ -214,10 +214,10 @@ export const AVAILABLE_AGENTS: AgentConfig[] = [
       left: 0;
       margin-bottom: 4px;
       min-width: 200px;
-      background-color: var(--vscode-dropdown-background, #1e1e1e);
-      border: 1px solid var(--vscode-dropdown-border, #3c3c3c);
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      background-color: var(--vscode-dropdown-background, #ffffff);
+      border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
       overflow: hidden;
     }
@@ -225,28 +225,30 @@ export const AVAILABLE_AGENTS: AgentConfig[] = [
       display: flex;
       flex-direction: column;
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 14px;
       border: none;
       background: transparent;
-      color: var(--vscode-foreground);
+      color: var(--vscode-foreground, #333333);
       cursor: pointer;
       text-align: left;
-      transition: background-color 0.1s;
+      transition: background-color 0.15s;
     }
     .agent-option:hover {
-      background-color: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.1));
+      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
     }
     .agent-option.active {
-      background-color: var(--vscode-list-activeSelectionBackground, #094771);
+      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
     }
     .agent-name {
       font-size: 13px;
       font-weight: 500;
+      color: var(--vscode-foreground, #333333);
     }
     .agent-desc {
       font-size: 11px;
       opacity: 0.6;
       margin-top: 2px;
+      color: var(--vscode-descriptionForeground, #666666);
     }
   `]
 })
