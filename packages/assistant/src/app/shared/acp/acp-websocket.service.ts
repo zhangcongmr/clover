@@ -240,7 +240,7 @@ export type SessionUpdate =
 
 export type ProxyMessage =
   // Connection management
-  | { type: 'connect' }
+  | { type: 'connect'; payload?: { command?: string; args?: string[] } }
   | { type: 'disconnect' }
   | { type: 'ping' }
   // Session management
@@ -520,7 +520,7 @@ export class AcpWebSocketService {
   // Connection management
   // ============================================================================
 
-  connect(url: string): Promise<void> {
+  connect(url: string, agent?: { command: string; args?: string[] }): Promise<void> {
     if (this.ws) {
       this.disconnect();
     }
@@ -537,7 +537,10 @@ export class AcpWebSocketService {
 
         this.ws.onopen = () => {
           console.log('[ACP WebSocket] Connected, sending connect command');
-          this.send({ type: 'connect' });
+          this.send({
+            type: 'connect',
+            payload: agent ? { command: agent.command, args: agent.args } : undefined,
+          });
         };
 
         this.ws.onmessage = (event) => {

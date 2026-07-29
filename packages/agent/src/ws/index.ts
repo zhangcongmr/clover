@@ -41,9 +41,8 @@ export function setupWebSocket(
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
-    } else {
-      socket.destroy();
     }
+    // Do NOT destroy other paths — let other upgrade handlers (e.g. /ws/acp) handle them
   });
 
   wss.on('connection', (ws, req) => {

@@ -41,3 +41,16 @@ export type { SslConfig } from './helpers/index.js';
 // Server
 export { createServer, setupAgentMiddleware } from './server.js';
 export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';
+
+// ACP Client
+export { setupAcpWebSocket } from './acp/index.js';
+export type { AcpWebSocketOptions } from './acp/index.js';
+export { AcpClient } from './acp/client.js';
+export type { AcpClientConfig } from './acp/client.js';
+export { AgentProcess } from './acp/agent-process.js';
+export type { AgentProcessConfig } from './acp/agent-process.js';
+export type {
+  AcpWsMessage,
+  AcpWsResponse,
+  PendingPermission,
+} from './acp/types.js';

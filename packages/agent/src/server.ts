@@ -10,6 +10,7 @@ import { PtyManager } from './agent/pty-manager.js';
 import { setupAgentRoutes } from './api/routes.js';
 import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
+import { setupAcpWebSocket } from './acp/index.js';
 
 export interface StaticOptions {
   maxAge?: string | number;
@@ -31,6 +32,8 @@ export interface ServerConfig {
   app?: express.Express;
   staticDir?: string;
   staticOptions?: StaticOptions;
+  agentCommand?: string;
+  agentArgs?: string[];
 }
 
 export interface ServerInstance {
@@ -89,6 +92,8 @@ export function createServer(config: ServerConfig): ServerInstance {
     sslDir: sslDirInput,
     logPrefix = '',
     app: existingApp,
+    agentCommand,
+    agentArgs,
     ...middlewareOptions
   } = config;
 
@@ -111,6 +116,14 @@ export function createServer(config: ServerConfig): ServerInstance {
   });
 
   setupWebSocket(httpServer, services, sslConfig, { logPrefix });
+
+  // ACP WebSocket: bridges browser to ACP agent processes via stdio
+  setupAcpWebSocket(httpServer, sslConfig, {
+    logPrefix,
+    defaultCwd: rootDir || process.cwd(),
+    agentCommand,
+    agentArgs,
+  });
 
   return { app, httpServer, ...services };
 }

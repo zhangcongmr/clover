@@ -18,7 +18,7 @@ const angularApp = new AngularNodeAppEngine({
 
 // Angular SSR handler — skip API routes so agent routes can handle them
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/ws')) {
     next();
     return;
   }
@@ -37,6 +37,8 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     rootDir,
     staticDir: browserDistFolder,
     app,
+    agentCommand: 'opencode',
+    agentArgs: ['acp'],
   });
 } else {
   setupAgentMiddleware(app, {

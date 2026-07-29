@@ -1,7 +1,24 @@
-import { Component, inject, signal, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
+
+export interface AgentConfig {
+  id: string;
+  name: string;
+  command: string;
+  args?: string[];
+  description?: string;
+}
+
+export const AVAILABLE_AGENTS: AgentConfig[] = [
+  { id: 'opencode', name: 'OpenCode', command: 'opencode', args: ['acp'], description: 'Open-source terminal AI assistant' },
+  { id: 'claude', name: 'Claude Code', command: 'acp-proxy', args: ['--no-auth', 'claude-code-acp'], description: "Anthropic's coding agent" },
+  { id: 'codex', name: 'Codex CLI', command: 'acp-proxy', args: ['--no-auth', 'codex-acp'], description: "OpenAI's coding agent" },
+  { id: 'gemini', name: 'Gemini CLI', command: 'gemini', args: ['--', '--experimental-acp'], description: "Google's AI agent" },
+  { id: 'qwen', name: 'Qwen Code', command: 'qwen', args: ['--', '--acp'], description: 'Free coding agent' },
+  { id: 'augment', name: 'Augment Code', command: 'auggie', args: ['--', '--acp'], description: "Augment's AI coding agent" },
+];
 
 @Component({
   selector: 'app-acp-chat-input',
@@ -22,16 +39,31 @@ import { AcpService } from './acp.service';
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </button>
-            <button class="toolbar-tag-btn" title="Agent">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <circle cx="12" cy="12" r="4"/>
-                <line x1="21.17" y1="8" x2="12" y2="8"/>
-                <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
-                <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
-              </svg>
-              <span>Agent</span>
-            </button>
+            <div class="agent-selector">
+              <button class="toolbar-tag-btn" (click)="toggleAgentDropdown($event)" title="Agent">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <line x1="21.17" y1="8" x2="12" y2="8"/>
+                  <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
+                  <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+                </svg>
+                <span>{{ selectedAgent()?.name || 'Agent' }}</span>
+              </button>
+              @if (showAgentDropdown()) {
+                <div class="agent-dropdown">
+                  @for (agent of agents; track agent.id) {
+                    <button class="agent-option" (click)="selectAgent(agent)"
+                      [class.active]="selectedAgent()?.id === agent.id">
+                      <span class="agent-name">{{ agent.name }}</span>
+                      @if (agent.description) {
+                        <span class="agent-desc">{{ agent.description }}</span>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
             <button class="toolbar-tag-btn" title="Auto">
               <span>Auto</span>
             </button>
@@ -173,6 +205,49 @@ import { AcpService } from './acp.service';
       opacity: 0.4;
       cursor: not-allowed;
     }
+    .agent-selector {
+      position: relative;
+    }
+    .agent-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 4px;
+      min-width: 200px;
+      background-color: var(--vscode-dropdown-background, #1e1e1e);
+      border: 1px solid var(--vscode-dropdown-border, #3c3c3c);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      overflow: hidden;
+    }
+    .agent-option {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.1s;
+    }
+    .agent-option:hover {
+      background-color: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.1));
+    }
+    .agent-option.active {
+      background-color: var(--vscode-list-activeSelectionBackground, #094771);
+    }
+    .agent-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .agent-desc {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 2px;
+    }
   `]
 })
 export class AcpChatInputComponent {
@@ -181,6 +256,28 @@ export class AcpChatInputComponent {
   @ViewChild('messageInput') private messageInput!: ElementRef;
 
   inputValue = signal<string>('');
+  selectedAgent = signal<AgentConfig | null>(AVAILABLE_AGENTS[0]);
+  showAgentDropdown = signal<boolean>(false);
+  protected agents = AVAILABLE_AGENTS;
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.agent-selector')) {
+      this.showAgentDropdown.set(false);
+    }
+  }
+
+  toggleAgentDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    this.showAgentDropdown.update(v => !v);
+  }
+
+  selectAgent(agent: AgentConfig): void {
+    this.selectedAgent.set(agent);
+    this.showAgentDropdown.set(false);
+    this.acpService.setSelectedAgent(agent);
+  }
 
   async sendMessage(): Promise<void> {
     const text = this.inputValue().trim();
