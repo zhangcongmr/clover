@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { SessionInfo, DirItem } from './acp-websocket.service';
+import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
   selector: 'app-acp-session-manager',
@@ -16,10 +17,12 @@ export class AcpSessionManagerComponent {
   maximizePanel = output<void>();
   restorePanel = output<void>();
   isMaximized = input<boolean>(false);
+  protected localAgentService = inject(LocalAgentService);
   protected acpService = inject(AcpService);
 
   protected wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  serverUrl = signal<string>(`${this.wsProtocol}://localhost:9315/ws`);
+  protected ipAndPort = this.localAgentService.getBaseUrl().replace(/^((https|http)?:\/\/)?/, '').replace(/\/$/, '');
+  serverUrl = signal<string>(`${this.wsProtocol}://${this.ipAndPort}/ws/acp`);
   authToken = signal<string>('');
   workingDir = signal<string>('');
   showSettings = signal<boolean>(false);

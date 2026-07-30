@@ -45,7 +45,6 @@ export class FilePickerDialogComponent {
     this.selectedNode.set(null);
     this.activeTab.set('local');
     this.viewMode.set('icon');
-    this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
     this.visible.set(true);
     this.loadDirectory(startPath);
   }
@@ -56,7 +55,6 @@ export class FilePickerDialogComponent {
     this.selectedNode.set(null);
     this.activeTab.set('local');
     this.viewMode.set('icon');
-    this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
     this.visible.set(true);
     this.loadDirectory(startPath);
   }
@@ -128,8 +126,8 @@ export class FilePickerDialogComponent {
   expandFolderFn = (node: AstTreeNode) => this.expandFolder(node);
 
   onTabChange(tabId: string) {
-    if (tabId === 'local') {
-      this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
+    if (tabId === 'local') { 
+      // this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
     } else {
       this.localAgentService.setAgentUrl(window.location.origin);
     }

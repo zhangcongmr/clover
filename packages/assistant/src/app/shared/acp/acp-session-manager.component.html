@@ -74,7 +74,7 @@
         class="settings-input"
         [ngModel]="serverUrl()"
         (ngModelChange)="serverUrl.set($event)"
-        placeholder="{{ wsProtocol }}://localhost:9315/ws"
+        placeholder="{{ wsProtocol }}://{{ ipAndPort }}/ws/acp"
         [disabled]="acpService.sessionState().isConnected"
       />
     </div>

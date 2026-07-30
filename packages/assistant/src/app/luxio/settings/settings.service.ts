@@ -31,7 +31,6 @@ export class SettingsService {
 
   activeCategoryId = signal<string>('general');
 
-  agentUrl = signal<string>('');
   folderReadWriteMode: WritableSignal<'read' | 'readwrite'> = signal<'read' | 'readwrite'>('read');
   autoRefreshEnabled = signal<boolean>(true);
 
@@ -53,12 +52,6 @@ export class SettingsService {
   pluginsEnabled = signal<boolean>(false);
 
   constructor() {
-    if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem('assistant_agentUrl');
-      if (stored) {
-        this.agentUrl.set(stored);
-      }
-    }
     this.currentTheme.set(this.themeService.getCurrentTheme());
 
     if (typeof localStorage !== 'undefined') {
@@ -107,11 +100,6 @@ export class SettingsService {
 
   setActiveCategory(id: string) {
     this.activeCategoryId.set(id);
-  }
-
-  setAgentUrl(url: string) {
-    this.agentUrl.set(url);
-    this.localAgentService.setAgentUrl(url);
   }
 
   setFolderReadWriteMode(mode: 'read' | 'readwrite') {

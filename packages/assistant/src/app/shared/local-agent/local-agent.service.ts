@@ -21,7 +21,7 @@ export interface LocalFileResponse {
 
 @Injectable({ providedIn: 'root' })
 export class LocalAgentService {
-  private agentUrl = '';
+  public agentUrl = '';
   private cachedToken: string | null = null;
   private tokenExpiry: number = 0;
 
@@ -44,12 +44,7 @@ export class LocalAgentService {
   }
 
   /** Get base URL for API requests (same-origin or agentUrl) */
-  private getBaseUrl(): string {
-    return this.agentUrl || window.location.origin;
-  }
-
-  /** Get the configured agentUrl (for display/terminal use) */
-  getAgentUrl(): string {
+  public getBaseUrl(): string {
     return this.agentUrl || window.location.origin;
   }
 

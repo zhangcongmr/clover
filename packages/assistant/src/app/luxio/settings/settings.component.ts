@@ -13,13 +13,12 @@ import { CoreService } from "../../core.service";
 })
 export class SettingsComponent {
   private settingsService = inject(SettingsService);
-  private localAgentService = inject(LocalAgentService);
+  protected localAgentService = inject(LocalAgentService);
   private coreService = inject(CoreService);
 
   categories = this.settingsService.categories;
   activeCategoryId = this.settingsService.activeCategoryId;
 
-  agentUrlInput = this.settingsService.agentUrl();
   folderReadWriteMode = this.settingsService.folderReadWriteMode;
   autoRefreshEnabled = this.settingsService.autoRefreshEnabled;
 
@@ -64,7 +63,6 @@ export class SettingsComponent {
   }
 
   saveAgentUrl() {
-    this.settingsService.setAgentUrl(this.agentUrlInput);
     this.showToast();
     this.checkAgentStatus();
   }
@@ -146,7 +144,7 @@ export class SettingsComponent {
 
   async testAgentConnection() {
     this.agentTesting.set(true);
-    const ok = await this.localAgentService.checkAgentAvailable(this.agentUrlInput);
+    const ok = await this.localAgentService.checkAgentAvailable();
     this.agentStatus.set(ok ? 'connected' : 'disconnected');
     this.agentTesting.set(false);
   }

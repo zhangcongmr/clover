@@ -32,8 +32,8 @@
               <input
                 type="text"
                 class="setting-input"
-                placeholder="http://localhost:3000"
-                [(ngModel)]="agentUrlInput"
+                placeholder="http(s)://{ip}:{port}"
+                [(ngModel)]="localAgentService.agentUrl"
               />
               <button class="btn btn-primary" (click)="saveAgentUrl()">Save</button>
             </div>

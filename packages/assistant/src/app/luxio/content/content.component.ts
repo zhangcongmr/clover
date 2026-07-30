@@ -254,7 +254,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     try {
       const found = await this.localAgentService.probeAndConnect();
       if (found) {
-        console.log('[Content] Connected to local agent at', this.localAgentService.getAgentUrl());
         this.startWatchProjectRoot();
         this.startWatchOpenedFiles();
       } else {
