@@ -36,6 +36,7 @@ export class AcpClient {
   private clientApp: ClientApp | null = null;
   private clientConnection: ClientConnection | null = null;
   private activeSession: ActiveSession | null = null;
+  private loadedSessionId: string | null = null;
   private pendingPermissions: Map<string, PendingPermission> = new Map();
 
   constructor(
@@ -247,6 +248,7 @@ export class AcpClient {
 
       // Dispose previous session if any
       this.activeSession?.dispose();
+      this.loadedSessionId = null;
 
       // Create and start a new session
       this.activeSession = await this.clientConnection.agent
@@ -299,14 +301,19 @@ export class AcpClient {
   }
 
   private async prompt(params: { content: acp.ContentBlock[] }): Promise<void> {
-    if (!this.activeSession) {
+    const sessionId = this.activeSession?.sessionId ?? this.loadedSessionId;
+
+    if (!sessionId || !this.clientConnection) {
       send(this.ws, 'error', { message: 'No active session' });
       return;
     }
 
     try {
-      console.log('[ACP Client] Sending prompt');
-      const result = await this.activeSession.prompt(params.content);
+      console.log('[ACP Client] Sending prompt to session:', sessionId);
+      const result = await this.clientConnection.agent.request('session/prompt', {
+        sessionId,
+        prompt: params.content,
+      });
 
       console.log('[ACP Client] Prompt completed:', result.stopReason);
       send(this.ws, 'prompt_complete', result);
@@ -320,7 +327,8 @@ export class AcpClient {
   }
 
   private async cancel(): Promise<void> {
-    if (!this.clientConnection || !this.activeSession) {
+    const sessionId = this.activeSession?.sessionId ?? this.loadedSessionId;
+    if (!this.clientConnection || !sessionId) {
       return;
     }
 
@@ -328,7 +336,7 @@ export class AcpClient {
 
     try {
       await this.clientConnection.agent.notify('session/cancel', {
-        sessionId: this.activeSession.sessionId,
+        sessionId,
       });
       console.log('[ACP Client] Cancel sent');
     } catch (error) {
@@ -366,18 +374,32 @@ export class AcpClient {
 
       this.activeSession?.dispose();
 
-      const result = await this.clientConnection.agent.request('session/load', {
+      // Load session metadata
+      const loadResult = await this.clientConnection.agent.request('session/load', {
         sessionId: params.sessionId,
         cwd,
         mcpServers: [],
       });
 
+      // Resume session to make it active (without replay)
+      await this.clientConnection.agent.request('session/resume', {
+        sessionId: params.sessionId,
+        cwd,
+        mcpServers: [],
+      });
+
+      // Store session ID so prompt() can send directly
+      this.loadedSessionId = params.sessionId;
+
+      console.log('[ACP Client] Session loaded and resumed:', params.sessionId);
+
       send(this.ws, 'session_loaded', {
         sessionId: params.sessionId,
-        ...result,
+        ...loadResult,
       });
 
     } catch (error) {
+      console.error('[ACP Client] Failed to load session:', error);
       send(this.ws, 'error', {
         message: `Failed to load session: ${(error as Error).message}`,
       });
@@ -400,6 +422,11 @@ export class AcpClient {
         cwd,
         mcpServers: [],
       });
+
+      // Store session ID so prompt() can send directly
+      this.loadedSessionId = params.sessionId;
+
+      console.log('[ACP Client] Session resumed:', params.sessionId);
 
       send(this.ws, 'session_resumed', {
         sessionId: params.sessionId,
@@ -462,6 +489,7 @@ export class AcpClient {
 
     this.activeSession?.dispose();
     this.activeSession = null;
+    this.loadedSessionId = null;
 
     this.clientConnection?.close();
     this.clientConnection = null;
