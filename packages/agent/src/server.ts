@@ -12,7 +12,6 @@ import { PtyManager } from './agent/pty-manager.js';
 import { setupAgentRoutes } from './api/routes.js';
 import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
-import { setupAcpWebSocket } from './acp/index.js';
 
 export interface StaticOptions {
   maxAge?: string | number;
@@ -34,8 +33,6 @@ export interface ServerConfig {
   app?: express.Express;
   staticDir?: string;
   staticOptions?: StaticOptions;
-  agentCommand?: string;
-  agentArgs?: string[];
 }
 
 export interface ServerInstance {
@@ -53,14 +50,12 @@ export interface AgentMiddlewareOptions {
   tokenSecretEnvKey?: string;
   staticDir?: string;
   staticOptions?: StaticOptions;
-  agentCommand?: string;
-  agentArgs?: string[];
 }
 
 export function setupAgentMiddleware(
   app: express.Express,
   options: AgentMiddlewareOptions,
-): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; setupAcp: (httpServer: http.Server | https.Server, sslConfig?: { cert: Buffer; key: Buffer } | null) => void } {
+): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager } {
   const {
     corsPorts,
     corsOrigins = [],
@@ -68,8 +63,6 @@ export function setupAgentMiddleware(
     tokenSecretEnvKey = 'LUXIO_TOKEN_SECRET',
     staticDir,
     staticOptions = { maxAge: '1y', index: false, redirect: false },
-    agentCommand,
-    agentArgs,
   } = options;
 
   const secret = tokenSecret ?? process.env[tokenSecretEnvKey];
@@ -86,14 +79,7 @@ export function setupAgentMiddleware(
   setupAgentRoutes(app, { fileService, tokenManager });
   setupA2ARoute(app);
 
-  const setupAcp = (httpServer: http.Server | https.Server, sslConfig?: { cert: Buffer; key: Buffer } | null) => {
-    setupAcpWebSocket(httpServer, sslConfig, {
-      agentCommand,
-      agentArgs,
-    });
-  };
-
-  return { tokenManager, fileService, ptyManager, setupAcp };
+  return { tokenManager, fileService, ptyManager };
 }
 
 export function createServer(config: ServerConfig): ServerInstance {
@@ -112,7 +98,7 @@ export function createServer(config: ServerConfig): ServerInstance {
   const sslDir = sslDirInput ?? (rootDir ? join(rootDir, 'ssl') : undefined);
   const app = existingApp || express();
 
-  const { setupAcp, ...services } = setupAgentMiddleware(app, middlewareOptions);
+  const services = setupAgentMiddleware(app, middlewareOptions);
 
   const sslConfig = sslDir ? loadSslConfig(sslDir) : null;
 
@@ -127,9 +113,6 @@ export function createServer(config: ServerConfig): ServerInstance {
   });
 
   setupWebSocket(httpServer, services, sslConfig, { logPrefix });
-
-  // ACP WebSocket: bridges browser to ACP agent processes via stdio
-  setupAcp(httpServer, sslConfig);
 
   return { app, httpServer, ...services };
 }

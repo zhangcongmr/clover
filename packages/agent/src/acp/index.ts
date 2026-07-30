@@ -11,6 +11,83 @@ export interface AcpWebSocketOptions {
   agentArgs?: string[];
 }
 
+export interface AcpConfig {
+  command?: string;
+  args?: string[];
+}
+
+// ============================================================================
+// Lazy ACP state
+// ============================================================================
+
+const acpState = {
+  config: null as AcpConfig | null,
+  httpServer: null as http.Server | https.Server | null,
+  sslConfig: null as { cert: Buffer; key: Buffer } | null,
+  setupDone: false,
+};
+
+/**
+ * Returns the current ACP config (command + args).
+ */
+export function getAcpConfig(): AcpConfig | null {
+  return acpState.config;
+}
+
+/**
+ * Returns true if the httpServer has been registered.
+ */
+export function isAcpHttpServerReady(): boolean {
+  return acpState.httpServer !== null;
+}
+
+/**
+ * Stores the httpServer reference without triggering setup.
+ * Use this when you want to set httpServer and config separately.
+ */
+export function storeAcpHttpServer(
+  httpServer: http.Server | https.Server,
+  sslConfig?: { cert: Buffer; key: Buffer } | null,
+): void {
+  acpState.httpServer = httpServer;
+  acpState.sslConfig = sslConfig ?? null;
+}
+
+/**
+ * Stores the ACP config and triggers setupAcpWebSocket if httpServer is ready.
+ */
+export function setAcpConfig(config: AcpConfig): void {
+  acpState.config = config;
+  console.log(`[ACP] Config set: command=${config.command}, args=${JSON.stringify(config.args)}`);
+  trySetup();
+}
+
+/**
+ * Stores the httpServer reference and triggers setupAcpWebSocket if config is ready.
+ */
+export function setAcpHttpServer(
+  httpServer: http.Server | https.Server,
+  sslConfig?: { cert: Buffer; key: Buffer } | null,
+): void {
+  acpState.httpServer = httpServer;
+  acpState.sslConfig = sslConfig ?? null;
+  trySetup();
+}
+
+/**
+ * Internal: attempts to call setupAcpWebSocket once both config and httpServer are available.
+ */
+function trySetup(): void {
+  if (acpState.setupDone || !acpState.httpServer || !acpState.config) {
+    return;
+  }
+  acpState.setupDone = true;
+  setupAcpWebSocket(acpState.httpServer, acpState.sslConfig, {
+    agentCommand: acpState.config.command,
+    agentArgs: acpState.config.args,
+  });
+}
+
 /**
  * Sets up the ACP WebSocket endpoint on an HTTP server.
  *

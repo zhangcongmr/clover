@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
@@ -246,6 +246,14 @@ export class AcpChatInputComponent {
   showAgentDropdown = signal<boolean>(false);
   protected agents = AVAILABLE_AGENTS;
 
+  constructor() {
+    // Set ACP config on init with the default agent
+    const agent = this.acpService.selectedAgent();
+    if (agent) {
+      this.acpService.setAcpConfig({ command: agent.command, args: agent.args }).catch(() => {});
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
@@ -262,6 +270,7 @@ export class AcpChatInputComponent {
   selectAgent(agent: AgentConfig): void {
     this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
+    this.acpService.setAcpConfig({ command: agent.command, args: agent.args }).catch(() => {});
   }
 
   async sendMessage(): Promise<void> {

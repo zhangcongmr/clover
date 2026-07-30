@@ -37,17 +37,16 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     rootDir,
     staticDir: browserDistFolder,
     app,
-    agentCommand: 'opencode',
-    agentArgs: ['acp'],
   });
 } else {
   setupAgentMiddleware(app, {
     corsPorts: [4200, 4000],
     corsOrigins: ['192.168.153.129'],
     staticDir: browserDistFolder,
-    agentCommand: 'opencode',
-    agentArgs: ['acp'],
   });
+  // Note: In dev mode, ACP WebSocket setup requires httpServer access.
+  // The config endpoint (POST /api/local/acp/config) will work,
+  // but WebSocket /ws/acp won't be available until setAcpHttpServer is called.
 }
 
 export const reqHandler = createNodeRequestHandler(app);

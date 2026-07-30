@@ -2,6 +2,7 @@ import express from 'express';
 import { TokenManager } from '../agent/auth.js';
 import { FileService } from '../agent/file-service.js';
 import { createRequireAuth } from './middleware.js';
+import { setAcpConfig, getAcpConfig, storeAcpHttpServer, isAcpHttpServerReady } from '../acp/index.js';
 
 export interface AgentServices {
   tokenManager: TokenManager;
@@ -24,6 +25,26 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
   // Health check
   app.get('/api/local/health', (_req, res) => {
     res.json({ status: 'ok', readonly: process.env['LUXIO_READONLY'] === 'true' });
+  });
+
+  // ACP config endpoint
+  app.post('/api/local/acp/config', (req, res) => {
+    const { command, args } = req.body;
+    if (!command) {
+      res.status(400).json({ success: false, message: 'command is required' });
+      return;
+    }
+
+    // Register httpServer from the request if not already registered
+    if (!isAcpHttpServerReady()) {
+      const httpServer = (req.socket as any)?.server;
+      if (httpServer) {
+        storeAcpHttpServer(httpServer);  // Store without triggering trySetup
+      }
+    }
+
+    setAcpConfig({ command, args });  // This will trigger trySetup once
+    res.json({ success: true, config: getAcpConfig() });
   });
 
   // File operation endpoints

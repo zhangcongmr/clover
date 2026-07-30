@@ -200,6 +200,27 @@ export class AcpService {
   // Connection management
   // ============================================================================
 
+  /**
+   * Sends ACP agent config (command + args) to the server.
+   * This triggers the server to set up the ACP WebSocket endpoint.
+   */
+  async setAcpConfig(agent: { command: string; args?: string[] }): Promise<void> {
+    try {
+      const response = await fetch('/api/local/acp/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: agent.command, args: agent.args }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to set ACP config');
+      }
+    } catch (error) {
+      console.error('[ACP] Failed to set config:', error);
+      throw error;
+    }
+  }
+
   async connect(url: string): Promise<void> {
     this.sessionState.update(s => ({ ...s, isConnecting: true, error: null }));
 

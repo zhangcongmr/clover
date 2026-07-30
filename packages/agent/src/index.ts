@@ -43,8 +43,8 @@ export { createServer, setupAgentMiddleware } from './server.js';
 export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';
 
 // ACP Client
-export { setupAcpWebSocket } from './acp/index.js';
-export type { AcpWebSocketOptions } from './acp/index.js';
+export { setupAcpWebSocket, setAcpConfig, getAcpConfig, setAcpHttpServer, storeAcpHttpServer, isAcpHttpServerReady } from './acp/index.js';
+export type { AcpWebSocketOptions, AcpConfig } from './acp/index.js';
 export { AcpClient } from './acp/client.js';
 export type { AcpClientConfig } from './acp/client.js';
 export { AgentProcess } from './acp/agent-process.js';
