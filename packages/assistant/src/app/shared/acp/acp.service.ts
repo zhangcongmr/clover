@@ -93,6 +93,9 @@ export class AcpService {
   // Usage
   readonly usage = signal<{ inputTokens?: number; outputTokens?: number; totalTokens?: number } | null>(null);
 
+  // Slash commands
+  readonly availableCommands = signal<Array<{ name: string; description: string; input?: unknown }>>([]);
+
   // Agent selection
   readonly selectedAgent = signal<AgentConfig | null>(AVAILABLE_AGENTS[0]);
 
@@ -285,6 +288,7 @@ export class AcpService {
     this.currentFilePath.set(null);
     this.fileChanges.set([]);
     this.usage.set(null);
+    this.availableCommands.set([]);
   }
 
   // ============================================================================
@@ -396,6 +400,7 @@ export class AcpService {
 
       case 'available_commands_update':
         console.log('[ACP] Available commands:', update.availableCommands.length);
+        this.availableCommands.set(update.availableCommands);
         break;
 
       case 'config_option_update':
