@@ -15,7 +15,8 @@ import {
   ToolCallStatus,
   ToolKind
 } from './acp-websocket.service';
-import type { AgentConfig } from './acp-chat-input.component';
+import { AVAILABLE_AGENTS } from './acp-agent.types';
+import type { AgentConfig } from './acp-agent.types';
 
 export interface AcpMessage {
   id: string;
@@ -93,7 +94,7 @@ export class AcpService {
   readonly usage = signal<{ inputTokens?: number; outputTokens?: number; totalTokens?: number } | null>(null);
 
   // Agent selection
-  readonly selectedAgent = signal<AgentConfig | null>(null);
+  readonly selectedAgent = signal<AgentConfig | null>(AVAILABLE_AGENTS[0]);
 
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
@@ -198,10 +199,6 @@ export class AcpService {
   // ============================================================================
   // Connection management
   // ============================================================================
-
-  setSelectedAgent(agent: AgentConfig): void {
-    this.selectedAgent.set(agent);
-  }
 
   async connect(url: string): Promise<void> {
     this.sessionState.update(s => ({ ...s, isConnecting: true, error: null }));

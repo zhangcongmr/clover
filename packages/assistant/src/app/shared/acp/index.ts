@@ -1,6 +1,9 @@
 export { AcpService } from './acp.service';
 export type { AcpMessage, AcpPlan, AcpSessionState } from './acp.service';
 
+export { AVAILABLE_AGENTS } from './acp-agent.types';
+export type { AgentConfig } from './acp-agent.types';
+
 export { AcpWebSocketService } from './acp-websocket.service';
 export type {
   // ACP SDK types

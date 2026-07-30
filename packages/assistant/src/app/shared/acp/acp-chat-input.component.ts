@@ -2,23 +2,8 @@ import { Component, inject, signal, ViewChild, ElementRef, HostListener } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
-
-export interface AgentConfig {
-  id: string;
-  name: string;
-  command: string;
-  args?: string[];
-  description?: string;
-}
-
-export const AVAILABLE_AGENTS: AgentConfig[] = [
-  { id: 'opencode', name: 'OpenCode', command: 'opencode', args: ['acp'], description: 'Open-source terminal AI assistant' },
-  { id: 'claude', name: 'Claude Code', command: 'acp-proxy', args: ['--no-auth', 'claude-code-acp'], description: "Anthropic's coding agent" },
-  { id: 'codex', name: 'Codex CLI', command: 'acp-proxy', args: ['--no-auth', 'codex-acp'], description: "OpenAI's coding agent" },
-  { id: 'gemini', name: 'Gemini CLI', command: 'gemini', args: ['--', '--experimental-acp'], description: "Google's AI agent" },
-  { id: 'qwen', name: 'Qwen Code', command: 'qwen', args: ['--', '--acp'], description: 'Free coding agent' },
-  { id: 'augment', name: 'Augment Code', command: 'auggie', args: ['--', '--acp'], description: "Augment's AI coding agent" },
-];
+import { AVAILABLE_AGENTS } from './acp-agent.types';
+import type { AgentConfig } from './acp-agent.types';
 
 @Component({
   selector: 'app-acp-chat-input',
@@ -48,13 +33,13 @@ export const AVAILABLE_AGENTS: AgentConfig[] = [
                   <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
                   <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
                 </svg>
-                <span>{{ selectedAgent()?.name || 'Agent' }}</span>
+                <span>{{ acpService.selectedAgent()?.name || 'Agent' }}</span>
               </button>
               @if (showAgentDropdown()) {
                 <div class="agent-dropdown">
                   @for (agent of agents; track agent.id) {
                     <button class="agent-option" (click)="selectAgent(agent)"
-                      [class.active]="selectedAgent()?.id === agent.id">
+                      [class.active]="acpService.selectedAgent()?.id === agent.id">
                       <span class="agent-name">{{ agent.name }}</span>
                       @if (agent.description) {
                         <span class="agent-desc">{{ agent.description }}</span>
@@ -258,7 +243,6 @@ export class AcpChatInputComponent {
   @ViewChild('messageInput') private messageInput!: ElementRef;
 
   inputValue = signal<string>('');
-  selectedAgent = signal<AgentConfig | null>(AVAILABLE_AGENTS[0]);
   showAgentDropdown = signal<boolean>(false);
   protected agents = AVAILABLE_AGENTS;
 
@@ -276,9 +260,8 @@ export class AcpChatInputComponent {
   }
 
   selectAgent(agent: AgentConfig): void {
-    this.selectedAgent.set(agent);
+    this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
-    this.acpService.setSelectedAgent(agent);
   }
 
   async sendMessage(): Promise<void> {
