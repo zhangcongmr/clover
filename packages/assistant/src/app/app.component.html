@@ -200,7 +200,7 @@
   <div user-center></div>
 } @else {
   <div data-layer="app-body" class="AppBody ast-app-body">
-    <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area">
+    <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area" (click)="restoreRightPanel($event)">
       <div data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
         <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleDisplayViewId(1)">
           <svg class="icon" width="26" height="24">
