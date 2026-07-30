@@ -45,6 +45,8 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     corsPorts: [4200, 4000],
     corsOrigins: ['192.168.153.129'],
     staticDir: browserDistFolder,
+    agentCommand: 'opencode',
+    agentArgs: ['acp'],
   });
 }
 
