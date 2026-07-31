@@ -39,7 +39,8 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
     if (!isAcpHttpServerReady()) {
       const httpServer = (req.socket as any)?.server;
       if (httpServer) {
-        storeAcpHttpServer(httpServer);  // Store without triggering trySetup
+        const isHttps = req.protocol === 'https';
+        storeAcpHttpServer(httpServer, isHttps);  // Store without triggering trySetup
       }
     }
 

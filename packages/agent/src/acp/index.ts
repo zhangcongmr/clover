@@ -23,7 +23,7 @@ export interface AcpConfig {
 const acpState = {
   config: null as AcpConfig | null,
   httpServer: null as http.Server | https.Server | null,
-  sslConfig: null as { cert: Buffer; key: Buffer } | null,
+  isHttps: false,
   setupDone: false,
 };
 
@@ -47,10 +47,10 @@ export function isAcpHttpServerReady(): boolean {
  */
 export function storeAcpHttpServer(
   httpServer: http.Server | https.Server,
-  sslConfig?: { cert: Buffer; key: Buffer } | null,
+  isHttps: boolean = false,
 ): void {
   acpState.httpServer = httpServer;
-  acpState.sslConfig = sslConfig ?? null;
+  acpState.isHttps = isHttps;
 }
 
 /**
@@ -67,10 +67,10 @@ export function setAcpConfig(config: AcpConfig): void {
  */
 export function setAcpHttpServer(
   httpServer: http.Server | https.Server,
-  sslConfig?: { cert: Buffer; key: Buffer } | null,
+  isHttps: boolean = false,
 ): void {
   acpState.httpServer = httpServer;
-  acpState.sslConfig = sslConfig ?? null;
+  acpState.isHttps = isHttps;
   trySetup();
 }
 
@@ -82,7 +82,7 @@ function trySetup(): void {
     return;
   }
   acpState.setupDone = true;
-  setupAcpWebSocket(acpState.httpServer, acpState.sslConfig, {
+  setupAcpWebSocket(acpState.httpServer, acpState.isHttps, {
     agentCommand: acpState.config.command,
     agentArgs: acpState.config.args,
   });
@@ -99,11 +99,11 @@ function trySetup(): void {
  */
 export function setupAcpWebSocket(
   httpServer: http.Server | https.Server,
-  sslConfig?: { cert: Buffer; key: Buffer } | null,
+  isHttps: boolean = false,
   options: AcpWebSocketOptions = {},
 ): void {
   const { logPrefix = '[ACP]', defaultCwd = process.cwd(), agentCommand, agentArgs } = options;
-  const protocol = sslConfig ? 'https' : 'http';
+  const protocol = isHttps ? 'https' : 'http';
 
   const wss = new WebSocketServer({ noServer: true });
 
