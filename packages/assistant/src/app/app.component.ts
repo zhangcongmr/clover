@@ -1378,8 +1378,8 @@ For each fileIcons entry:
     this.leftPct = 0;
   }
 
-  restoreRightPanel(event: MouseEvent) {
-    if (event.target === event.currentTarget) return;
+  restoreRightPanel(event?: MouseEvent) {
+    if (event && event.target === event.currentTarget) return;
     this.leftPct = this.previousLeftPct;
   }
 
