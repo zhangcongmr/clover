@@ -21,8 +21,9 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--vscode-editorGroup-border);
-  background-color: var(--vscode-background);
+  border-bottom: none;
+  margin-bottom: var(--borderless-gap, 4px);
+  background-color: transparent;
   flex-shrink: 0;
 }
 
@@ -34,7 +35,7 @@
   height: 28px;
   padding: 0;
   border: none;
-  border-radius: var(--vscode-radius-sm);
+  border-radius: var(--borderless-item-radius, 8px);
   background: transparent;
   color: var(--vscode-foreground);
   cursor: pointer;
@@ -42,7 +43,7 @@
 }
 
 .acp-back-button:hover {
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .acp-back-button svg {
@@ -139,8 +140,8 @@
 .message-avatar {
   width: 32px;
   height: 32px;
-  border-radius: var(--vscode-radius-sm);
-  background-color: var(--vscode-sideBar-background);
+  border-radius: var(--borderless-item-radius, 8px);
+  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -225,28 +226,28 @@
 
 .tool-call-card {
   padding: 10px 14px;
-  border-radius: var(--vscode-radius-md);
-  background-color: var(--vscode-sideBar-background);
-  border: 1px solid var(--vscode-editorGroup-border);
+  border-radius: var(--borderless-item-radius, 8px);
+  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
+  border: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .tool-call-card.status-pending {
-  border-left: 3px solid var(--vscode-editorGroup-border);
+  border-left: 3px solid var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .tool-call-card.status-in_progress {
-  border-left: 3px solid var(--vscode-terminal-ansiBlue, #3794ff);
+  border-left: 3px solid var(--borderless-accent, #3794ff);
 }
 
 .tool-call-card.status-completed {
-  border-left: 3px solid #4ec9b0;
+  border-left: 3px solid #28a745;
 }
 
 .tool-call-card.status-failed {
-  border-left: 3px solid var(--vscode-errorForeground, #f14c4c);
+  border-left: 3px solid #dc3545;
 }
 
 .tool-call-title-row {
@@ -306,8 +307,8 @@
 .detail-content {
   margin: 0;
   padding: 8px;
-  border-radius: var(--vscode-radius-sm);
-  background-color: var(--vscode-editor-background);
+  border-radius: var(--borderless-item-radius, 8px);
+  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
   font-family: var(--vscode-font-mono);
   font-size: var(--vscode-code-font-size);
   overflow-x: auto;
@@ -320,8 +321,8 @@
   align-items: center;
   gap: 4px;
   padding: 12px 16px;
-  background-color: var(--vscode-sideBar-background);
-  border-radius: var(--vscode-radius-md);
+  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
+  border-radius: var(--borderless-item-radius, 8px);
 }
 
 .typing-indicator span {

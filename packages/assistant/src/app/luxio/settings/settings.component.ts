@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, inject, input, output, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { SettingsService } from "./settings.service";
 import { LocalAgentService } from "../../shared/local-agent/local-agent.service";
@@ -15,6 +15,9 @@ export class SettingsComponent {
   private settingsService = inject(SettingsService);
   protected localAgentService = inject(LocalAgentService);
   private coreService = inject(CoreService);
+
+  readonly previousViewId = input<number>(1);
+  readonly goBack = output<number>();
 
   categories = this.settingsService.categories;
   activeCategoryId = this.settingsService.activeCategoryId;
@@ -157,5 +160,9 @@ export class SettingsComponent {
   private showToast() {
     this.showSavedToast.set(true);
     setTimeout(() => this.showSavedToast.set(false), 2000);
+  }
+
+  onGoBack() {
+    this.goBack.emit(this.previousViewId());
   }
 }

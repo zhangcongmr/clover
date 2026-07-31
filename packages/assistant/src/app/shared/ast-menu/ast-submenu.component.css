@@ -3,9 +3,9 @@
   z-index: 1001;
   display: none;
   background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorGroup-border);
+  border: none;
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
-  border-radius: var(--vscode-radius-sm, 4px);
+  border-radius: var(--borderless-item-radius, 8px);
   min-width: 160px;
   font-size: var(--vscode-menu-font-size, 13px);
   color: var(--vscode-foreground);

@@ -1,5 +1,11 @@
 <div class="profile-container">
   <div class="profile-sidebar">
+    <div class="profile-back-btn" (click)="onGoBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+      <span>Back</span>
+    </div>
     <div class="profile-header">
       @if (coreService.userData; as user) {
         <img

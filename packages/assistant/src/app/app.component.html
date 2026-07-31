@@ -1,207 +1,136 @@
-<div data-layer="app-header" class="AppHeader ast-app-header">
-  <div #menuBtn class="btn-svg app-menu" (click)="toggleMenu($event)">
-    <svg width="16" height="18">
-      <use href="#icon-menu"></use>
-    </svg>
-  </div>
-  <div ast-menu [(isOpen)]="isMenuOpen" [menuInitiator]="menuAnchor" [verticalOffset]="menuBtn.offsetHeight - 10"
-    (mouseentermenu)="onMenuMouseEnter()" (mouseleavemenu)="onMenuMouseLeave()"
-    class="app-menu-dropdown ast-right-menu">
-
-    <!-- File Group -->
-    <div class="app-menu-item has-submenu"
-      (mouseenter)="fileSubmenu.onParentHover()"
-      (mouseleave)="fileSubmenu.onParentLeave()">
-      <div>
-        <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
-        <span>File</span>
-      </div>
-      <span class="submenu-arrow">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </span>
-      <div #fileSubmenu ast-submenu class="submenu-container ast-right-menu"
-        (mouseenter)="fileSubmenu.onMouseEnter()" (mouseleave)="fileSubmenu.onMouseLeave()">
-        <div class="app-menu-item" (click)="onMenuAction('new-file')">
-          <svg class="icon" width="16" height="16"><use href="#icon-add-file"></use></svg>
-          <span>New File</span>
-        </div>
-        <div class="app-menu-item" (click)="onMenuAction('open-file')">
-          <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
-          <span>Open File</span>
-        </div>
-        <div class="app-menu-item" (click)="onMenuAction('open-folder')">
-          <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
-          <span>Open Folder</span>
-        </div>
-        <div class="app-menu-item" (click)="onMenuAction('import-api')">
-          <svg class="icon" width="16" height="16"><use href="#icon-import-btn"></use></svg>
-          <span>Import API</span>
-        </div>
-        <div class="app-menu-item" (click)="onMenuAction('close-folder')">
-          <svg class="icon" width="16" height="16"><use href="#icon-close-icon"></use></svg>
-          <span>Close Folder</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- View Group -->
-    <div class="app-menu-item has-submenu"
-      (mouseenter)="viewSubmenu.onParentHover()"
-      (mouseleave)="viewSubmenu.onParentLeave()">
-      <div>
-        <svg class="icon" width="16" height="16"><use href="#icon-search"></use></svg>
-        <span>View</span>
-      </div>
-      <span class="submenu-arrow">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </span>
-      <div #viewSubmenu ast-submenu class="submenu-container ast-right-menu"
-        (mouseenter)="viewSubmenu.onMouseEnter()" (mouseleave)="viewSubmenu.onMouseLeave()">
-        <div class="app-menu-item" (click)="onMenuAction('search')">
-          <svg class="icon" width="16" height="16"><use href="#icon-search"></use></svg>
-          <span>Search</span>
-        </div>
-        <div class="app-menu-item" (click)="onMenuAction('terminal')">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="4 17 10 11 4 5"></polyline>
-            <line x1="12" y1="19" x2="20" y2="19"></line>
-          </svg>
-          <span>Terminal</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Theme Prompt (single item) -->
-    <div class="app-menu-item" (click)="onMenuAction('theme-prompt')">
-      <svg class="icon" width="16" height="16"><use href="#icon-theme-prompt-btn"></use></svg>
-      <span>Theme Prompt</span>
-    </div>
-
-    <!-- Settings -->
-    <div class="app-menu-item" (click)="onMenuAction('settings')">
-      <svg class="icon" width="16" height="16"><use href="#icon-settings"></use></svg>
-      <span>Settings</span>
-    </div>
-
-    <div class="app-menu-separator"></div>
-
-    <!-- Auth + Profile -->
-    @if(!coreService.isAuthenticated()) {
-      <div class="app-menu-item" (click)="onMenuAction('sign-in')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-          <polyline points="10 17 15 12 10 7"></polyline>
-          <line x1="15" y1="12" x2="3" y2="12"></line>
-        </svg>
-        <span>Sign In</span>
-      </div>
-    } @else {
-      <div class="app-menu-item" (click)="onMenuAction('profile')">
-        <svg class="icon" width="16" height="16"><use href="#icon-user-btn"></use></svg>
-        <span>Profile</span>
-      </div>
-      <div class="app-menu-separator"></div>
-      <div class="app-menu-item" (click)="onMenuAction('sign-out')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
-        <span>Sign Out</span>
-      </div>
-    }
-  </div>
-  <div ast-tab-group [headerOnly]="true" [fobiddenContextMenu]="true"  [tabType]="{'type':'lightcolorselection', 'height':'42px'}">
-    @if (openedList.length>0) {
-      @for (openedTab of openedList; track openedTab.id) {
-        <div ast-tab [label]="openedTab.title"
-          [id]="openedTab.id"  [minWidth]="'150px'"
-          role="tabpanel" aria-hidden="false" [(isActivated)]="openedTab.isActive" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTab($event)"
-          (onClickTab)="onClickTab($event)">
-        </div>
-      }
-    }
-  </div>
-  <div data-layer="right-app-header" class="RightAppHeader ast-right-app-header">
-    <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleRightPanel()">
-      <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-    </div>
-    <!-- 主题图标 -->
-    <div class="header-item" title="Theme Icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        @if (themeIconPath()) {
-          <path [attr.d]="themeIconPath()" />
-        } @else {
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2" />
-          <path d="M12 20v2" />
-          <path d="m4.93 4.93 1.41 1.41" />
-          <path d="m17.66 17.66 1.41 1.41" />
-          <path d="M2 12h2" />
-          <path d="M20 12h2" />
-          <path d="m6.34 17.66-1.41 1.41" />
-          <path d="m19.07 4.93-1.41 1.41" />
-        }
-      </svg>
-    </div>
-    <div class="header-item hover:opacity-80">
-      <a [href]="coreService.isAuthenticated() ? '/home' : '/official-site'" target="_blank">Home</a>
-    </div>
-    @if(!coreService.isAuthenticated()) {
-      <div class="header-item hover:opacity-80">
-        <a href="/signin" target="_blank" (click)="redirectToLogin('/assistant')">SignIn</a>
-      </div>
-    } @else {
-      <!-- <div class="header-item hover:opacity-80">
-        <a href="/dashboard/" target="_blank">Dashboard</a>
-      </div> -->
-      <div class="flex items-center gap-1 hover:opacity-80" tabindex="0" id="radix:0:" aria-haspopup="menu"
-        aria-expanded="true" data-state="open" aria-controls="radix:1:" (click)="clickMoreBtn($event)"
-        (blur)="blurMoreBtn($event)">
-        <div class="w-7 h-7 rounded-full overflow-hidden bg-pink-200"><img
-            src="{{coreService.userData?.avatar}}" alt="User"
-            class="w-full h-full object-cover"></div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round" class="lucide lucide-chevron-down w-3 h-3 text-gray-600">
-          <path d="m6 9 6 6 6-6"></path>
-        </svg>
-      </div>
-    }
-    @if(coreService.isAuthenticated()&&isOpen) {
-      <div ast-menu [(isOpen)]="isOpen" [menuInitiator]="menuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
-          class="more-btn-dropdown-content ast-right-menu">
-        <div data-layer="Profile" class="UserCenter ast-menu-every-item"  (click)="toggleDisplayViewId(6)">
-          <svg t="1770033972951" class="icon" viewBox="0 0 1024 1024" height="16" width="16"   version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19086" width="16" height="16"><path d="M924.4 337.8c-22.5-53.3-54.8-101.2-95.9-142.3-41.1-41.1-89-73.4-142.3-95.9C631 76.3 572.4 64.4 512 64.4c-60.4 0-119 11.8-174.2 35.2-53.3 22.5-101.2 54.8-142.3 95.9-41.1 41.1-73.4 89-95.9 142.3C76.3 393 64.4 451.6 64.4 512c0 60.4 11.8 119 35.2 174.2 22.5 53.3 54.8 101.2 95.9 142.3 45.2 23.3 113.8 35.2 174.2 35.2 60.4 0 119-11.8 174.2-35.2 53.3-22.5 101.2-54.8 142.3-95.9 43.3-55.2 35.2-113.8 35.2-174.2 0-60.4-11.9-119-35.2-174.2zM512 879.6c-89.4 0-171.4-32.1-235.1-85.3 3-103.3 105.9-186.6 231.9-186.6h6c126.2 0 229.1 83.5 231.9 187-63.7 53-145.6 84.9-234.7 84.9z m0.9-375.3c-46.8 0-84.9-38.1-84.9-84.9 0-46.8 38.1-84.9 84.9-84.9s84.9 38.1 84.9 84.9c-0.1 46.8-38.1 84.9-84.9 84.9z m301 217.2c-3.5-10.3-7.7-20.4-12.7-30.4-16.2-32.4-39.1-61.4-68.2-86.1-32.4-27.5-70.5-48.2-112-61.2 34.7-30.2 56.7-74.8 56.7-124.4 0-90.9-74-164.9-164.9-164.9S348 328.5 348 419.4c0 49.3 21.8 93.6 56.2 123.8-42.1 13-80.8 33.8-113.6 61.7-29.1 24.8-52.1 53.8-68.2 86.2-4.9 9.8-9 19.8-12.5 29.9-41.2-59.4-65.4-131.5-65.4-209.1 0-202.7 164.9-367.6 367.6-367.6 202.7 0 367.6 164.9 367.6 367.6-0.1 77.9-24.4 150.2-65.8 209.6z" fill="#333333" p-id="19087"></path></svg>
-          <span>Profile</span></div>
-        <div data-layer="Settings" class="Settings ast-menu-every-item"  (click)="toggleDisplayViewId(5)">
-          <svg t="1770034094147" class="icon" viewBox="0 0 1024 1024" height="16" width="16"   version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23678" width="16" height="16"><path d="M904.533333 422.4l-85.333333-14.933333-17.066667-38.4 49.066667-70.4c14.933333-21.333333 12.8-49.066667-6.4-68.266667l-53.333333-53.333333c-19.2-19.2-46.933333-21.333333-68.266667-6.4l-70.4 49.066666-38.4-17.066666-14.933333-85.333334c-2.133333-23.466667-23.466667-42.666667-49.066667-42.666666h-74.666667c-25.6 0-46.933333 19.2-53.333333 44.8l-14.933333 85.333333-38.4 17.066667L296.533333 170.666667c-21.333333-14.933333-49.066667-12.8-68.266666 6.4l-53.333334 53.333333c-19.2 19.2-21.333333 46.933333-6.4 68.266667l49.066667 70.4-17.066667 38.4-85.333333 14.933333c-21.333333 4.266667-40.533333 25.6-40.533333 51.2v74.666667c0 25.6 19.2 44.8 44.8 53.333333l85.333333 14.933333 17.066667 38.4L170.666667 727.466667c-14.933333 21.333333-12.8 49.066667 6.4 68.266666l53.333333 53.333334c19.2 19.2 46.933333 21.333333 68.266667 6.4l70.4-49.066667 38.4 17.066667 14.933333 85.333333c4.266667 25.6 25.6 44.8 53.333333 44.8h74.666667c25.6 0 46.933333-19.2 53.333333-44.8l14.933334-85.333333 38.4-17.066667 70.4 49.066667c21.333333 14.933333 49.066667 12.8 68.266666-6.4l53.333334-53.333334c19.2-19.2 21.333333-46.933333 6.4-68.266666l-49.066667-70.4 17.066667-38.4 85.333333-14.933334c25.6-4.266667 44.8-25.6 44.8-53.333333v-74.666667c-4.266667-27.733333-23.466667-49.066667-49.066667-53.333333z m-19.2 117.333333l-93.866666 17.066667c-10.666667 2.133333-19.2 8.533333-23.466667 19.2l-29.866667 70.4c-4.266667 10.666667-2.133333 21.333333 4.266667 29.866667l53.333333 76.8-40.533333 40.533333-76.8-53.333333c-8.533333-6.4-21.333333-8.533333-29.866667-4.266667L576 768c-10.666667 4.266667-17.066667 12.8-19.2 23.466667l-17.066667 93.866666h-57.6l-17.066666-93.866666c-2.133333-10.666667-8.533333-19.2-19.2-23.466667l-70.4-29.866667c-10.666667-4.266667-21.333333-2.133333-29.866667 4.266667l-76.8 53.333333-40.533333-40.533333 53.333333-76.8c6.4-8.533333 8.533333-21.333333 4.266667-29.866667L256 576c-4.266667-10.666667-12.8-17.066667-23.466667-19.2l-93.866666-17.066667v-57.6l93.866666-17.066666c10.666667-2.133333 19.2-8.533333 23.466667-19.2l29.866667-70.4c4.266667-10.666667 2.133333-21.333333-4.266667-29.866667l-53.333333-76.8 40.533333-40.533333 76.8 53.333333c8.533333 6.4 21.333333 8.533333 29.866667 4.266667L448 256c10.666667-4.266667 17.066667-12.8 19.2-23.466667l17.066667-93.866666h57.6l17.066666 93.866666c2.133333 10.666667 8.533333 19.2 19.2 23.466667l70.4 29.866667c10.666667 4.266667 21.333333 2.133333 29.866667-4.266667l76.8-53.333333 40.533333 40.533333-53.333333 76.8c-6.4 8.533333-8.533333 21.333333-4.266667 29.866667L768 448c4.266667 10.666667 12.8 17.066667 23.466667 19.2l93.866666 17.066667v55.466666z" fill="#666666" p-id="23679"></path><path d="M512 394.666667c-64 0-117.333333 53.333333-117.333333 117.333333s53.333333 117.333333 117.333333 117.333333 117.333333-53.333333 117.333333-117.333333-53.333333-117.333333-117.333333-117.333333z m0 170.666666c-29.866667 0-53.333333-23.466667-53.333333-53.333333s23.466667-53.333333 53.333333-53.333333 53.333333 23.466667 53.333333 53.333333-23.466667 53.333333-53.333333 53.333333z" fill="#666666" p-id="23680"></path></svg>
-          <span>Settings</span>
-        </div>
-        <div data-layer="Logout" class="Logout ast-menu-every-item" (click)="handleSignOut()">
-          <svg t="1770034136674" class="icon" viewBox="0 0 1024 1024" height="16" width="16"   version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="28255" width="16" height="16"><path d="M904.832 503.168l-252.330667 252.330667-60.330666-60.330667 149.333333-149.333333H332.501333v-85.333334h409.002667l-149.333333-149.333333 60.330666-60.330667 252.330667 252.330667z m-486.997333-320h-213.333334v640h213.333334v85.333333h-298.666667v-810.666666h298.666667v85.333333z" fill="#000000" p-id="28256"></path></svg>
-          <span>Logout</span>
-        </div>
-      </div>
-    }
-  </div>
-</div>
 @if(currentDisplayViewId==5) {
-  <app-settings></app-settings>
+  <app-settings [previousViewId]="previousViewId" (goBack)="onGoBack($event)"></app-settings>
 } @else if(currentDisplayViewId==6) {
-  <div user-center></div>
+  <div user-center [previousViewId]="previousViewId" (goBack)="onGoBack($event)"></div>
 } @else {
   <div data-layer="app-body" class="AppBody ast-app-body">
     <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area" (click)="restoreRightPanel($event)">
       <div data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
+        <div #menuBtn data-svg-wrapper="" data-layer="project-folder-btn"  class="btn-svg" (click)="toggleMenu($event)">
+          <svg width="24" height="24">
+            <use href="#icon-menu"></use>
+          </svg>
+        </div>
+        <div ast-menu [(isOpen)]="isMenuOpen" [menuInitiator]="menuAnchor" [verticalOffset]="menuBtn.offsetHeight - 10"
+          (mouseentermenu)="onMenuMouseEnter()" (mouseleavemenu)="onMenuMouseLeave()"
+          class="app-menu-dropdown ast-right-menu">
+
+          <!-- File Group -->
+          <div class="app-menu-item has-submenu"
+            (mouseenter)="fileSubmenu.onParentHover()"
+            (mouseleave)="fileSubmenu.onParentLeave()">
+            <div>
+              <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
+              <span>File</span>
+            </div>
+            <span class="submenu-arrow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </span>
+            <div #fileSubmenu ast-submenu class="submenu-container ast-right-menu"
+            (mouseenter)="fileSubmenu.onMouseEnter()" (mouseleave)="fileSubmenu.onMouseLeave()">
+            <div class="app-menu-item" (click)="onMenuAction('new-file')">
+              <svg class="icon" width="16" height="16"><use href="#icon-add-file"></use></svg>
+              <span>New File</span>
+            </div>
+            <div class="app-menu-item" (click)="onMenuAction('open-file')">
+              <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
+              <span>Open File</span>
+            </div>
+            <div class="app-menu-item" (click)="onMenuAction('open-folder')">
+              <svg class="icon" width="16" height="16"><use href="#icon-folder"></use></svg>
+              <span>Open Folder</span>
+            </div>
+            <div class="app-menu-item" (click)="onMenuAction('import-api')">
+              <svg class="icon" width="16" height="16"><use href="#icon-import-btn"></use></svg>
+              <span>Import API</span>
+            </div>
+            <div class="app-menu-item" (click)="onMenuAction('close-folder')">
+              <svg class="icon" width="16" height="16"><use href="#icon-close-icon"></use></svg>
+              <span>Close Folder</span>
+            </div>
+            </div>
+          </div>
+
+          <!-- View Group -->
+          <div class="app-menu-item has-submenu"
+            (mouseenter)="viewSubmenu.onParentHover()"
+            (mouseleave)="viewSubmenu.onParentLeave()">
+            <div>
+              <svg class="icon" width="16" height="16"><use href="#icon-search"></use></svg>
+              <span>View</span>
+            </div>
+            <span class="submenu-arrow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </span>
+            <div #viewSubmenu ast-submenu class="submenu-container ast-right-menu"
+            (mouseenter)="viewSubmenu.onMouseEnter()" (mouseleave)="viewSubmenu.onMouseLeave()">
+            <div class="app-menu-item" (click)="onMenuAction('search')">
+              <svg class="icon" width="16" height="16"><use href="#icon-search"></use></svg>
+              <span>Search</span>
+            </div>
+            <div class="app-menu-item" (click)="onMenuAction('terminal')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
+              <span>Terminal</span>
+            </div>
+            </div>
+          </div>
+
+          <!-- Theme Prompt (single item) -->
+          <div class="app-menu-item" (click)="onMenuAction('theme-prompt')">
+            <svg class="icon" width="16" height="16"><use href="#icon-theme-prompt-btn"></use></svg>
+            <span>Theme Prompt</span>
+          </div>
+
+          <!-- Settings -->
+          <div class="app-menu-item" (click)="onMenuAction('settings')">
+            <svg class="icon" width="16" height="16"><use href="#icon-settings"></use></svg>
+            <span>Settings</span>
+          </div>
+          <!-- Home -->
+          <div class="app-menu-item">
+            <svg class="icon" width="16" height="16">
+            <use href="#icon-home"></use>
+            </svg>
+            <a [href]="coreService.isAuthenticated() ? '/home' : '/official-site'" target="_blank">Home</a>
+          </div>
+          <div class="app-menu-separator"></div>
+
+          <!-- Auth + Profile -->
+          @if(!coreService.isAuthenticated()) {
+            <div class="app-menu-item" (click)="onMenuAction('sign-in')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            <span>Sign In</span>
+            </div>
+          } @else {
+            <div class="app-menu-item" (click)="onMenuAction('profile')">
+            <svg class="icon" width="16" height="16"><use href="#icon-user-btn"></use></svg>
+            <span>Profile</span>
+            </div>
+            <div class="app-menu-separator"></div>
+            <div class="app-menu-item" (click)="onMenuAction('sign-out')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Sign Out</span>
+            </div>
+          }
+        </div>
         <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleDisplayViewId(1)">
           <svg class="icon" width="26" height="24">
             <use href="#icon-folder"></use>
@@ -233,6 +162,11 @@
               <use href="#icon-preview"></use>
           </svg>
         </div>
+        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleRightPanel()">
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
         <!-- <div data-svg-wrapper="" data-layer="clean-up" class="btn-svg CleanUp" title="Clean Up" (click)="cleanUp()">
           <svg t="1770104100879" class="icon" viewBox="0 0 1024 1024" width="25" height="25" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5780"><path d="M872 385.6c0-1.6-1.6-1.6-1.6-3.2v-1.6c0-1.6-1.6-3.2-3.2-4.8-1.6-1.6-1.6-3.2-3.2-3.2-1.6-1.6-3.2-1.6-3.2-3.2h-1.6c-1.6-1.6-3.2-1.6-4.8-1.6h-1.6l-158.4-57.6 46.4-204.8c3.2-17.6-6.4-35.2-24-38.4s-35.2 6.4-38.4 24L633.6 288l-198.4-72c-1.6 0-3.2-1.6-4.8-1.6h-4.8-1.6-1.6c-16 1.6-28.8 14.4-28.8 32 0 11.2-4.8 272-256 420.8h-1.6c-1.6 0-1.6 1.6-3.2 1.6l-1.6 1.6c-3.2-1.6-3.2 0-3.2 0l-1.6 1.6c0 1.6-1.6 1.6-1.6 3.2s-1.6 1.6-1.6 3.2v3.2c0 1.6 0 3.2-1.6 3.2v14.4c0 1.6 1.6 3.2 1.6 4.8 0 1.6 0 1.6 1.6 3.2l1.6 1.6c0 1.6 1.6 1.6 1.6 3.2l6.4 6.4 1.6 1.6H140.8l649.6 236.8c16 6.4 32-1.6 40-16v-1.6c132.8-260.8 46.4-540.8 41.6-553.6zM452.8 288L816 420.8c6.4 22.4 16 67.2 20.8 126.4l-401.6-145.6c-3.2-1.6-4.8-1.6-8-1.6 14.4-44.8 22.4-84.8 25.6-112z m-48 168c3.2 1.6 4.8 3.2 8 4.8L832 612.8c3.2 1.6 4.8 1.6 8 1.6 0 81.6-12.8 179.2-54.4 273.6l-177.6-64 57.6-84.8c9.6-14.4 6.4-35.2-8-44.8-14.4-9.6-35.2-6.4-44.8 8l-67.2 99.2-123.2-44.8 65.6-97.6c9.6-14.4 6.4-35.2-8-44.8-14.4-9.6-35.2-6.4-44.8 8l-75.2 112-139.2-51.2c94.4-68.8 150.4-152 184-227.2z" p-id="5781"></path></svg>
         </div> -->
@@ -247,42 +181,53 @@
         </div>
       }
     </div>
-    <div class="ast-panel-container">
+    <div class="ast-panel-container" [class.dock-left]="dockPosition === 'left'">
       <!-- 水平拖动条 -->
-      <div style="position: absolute;width: 100%;height: 100%;" [style.display]="rightPanelOpen ? 'block' : 'none'">
-        <div class="split-line-ew ast-split-handle-ew"
-          [style.left]="leftPct * 100 + '%'" (mousedown)="dragStart($event, 'ew')"></div>
-      </div>
-      <div class="ast-middle-panel" [style.width]="rightPanelOpen ? (leftPct * 100 + '%') : '100%'">
-        <!-- 垂直拖动条 -->
-        <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
-          <div class="split-line-ns ast-split-handle-ns"
-            [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
-        </div>
-
-        <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
-          (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
-          (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'"></div>
-        @if(terminalPanelShow || keepTerminalInstance.value) {
-          <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
-            [style.height]="(1 - topPct) * 100 + '%'" class="ast-terminal-tab-container"
-            [tabType]="{'type':'lightcolorselection', 'height':'42px'}" [addTabEnable]="true"
-            (addNewTab)="onAddNewTerminalTab($event)">
-            @if (terminalOpenedList.length>0) {
-              @for (openedTab of terminalOpenedList; track openedTab.id) {
-                <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
-                  [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
-                  aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
-                  (onClickTab)="onClickTerminalTab($event)">
-                  <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
-                </div>
-              }
-            }
-          </div>
-        }
-      </div>
       @if(rightPanelOpen) {
-        <app-acp-panel (closePanel)="closeRightPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" [isMaximized]="leftPct === 0" [style.width]="((1 - leftPct) * 100 + '%')" />
+        <div style="position: absolute;width: 100%;height: 100%;">
+          <div class="split-line-ew ast-split-handle-ew"
+            [style.left]="dockPosition === 'right' ? 'calc(5px + ' + leftPct + ' * (100% - 15px))' : 'calc((1 - ' + leftPct + ') * (100% - 15px) + 5px)'"
+            (mousedown)="dragStart($event, 'ew')"></div>
+        </div>
+      }
+
+      <!-- Middle panel -->
+      @if (currentDisplayViewId==1) {
+        <div class="card-base ast-middle-panel"
+          [style.width]="rightPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
+          <!-- 垂直拖动条 -->
+          <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
+            <div class="split-line-ns ast-split-handle-ns"
+              [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
+          </div>
+
+          <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
+            (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
+            (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
+          </div>
+          @if(terminalPanelShow || keepTerminalInstance.value) {
+            <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
+              [style.height]="(1 - topPct) * 100 + '%'" class="ast-terminal-tab-container"
+              [tabType]="{'type':'lightcolorselection', 'height':'42px'}" [addTabEnable]="true"
+              (addNewTab)="onAddNewTerminalTab($event)">
+              @if (terminalOpenedList.length>0) {
+                @for (openedTab of terminalOpenedList; track openedTab.id) {
+                  <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
+                    [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
+                    aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
+                    (onClickTab)="onClickTerminalTab($event)">
+                    <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Docked ACP panel -->
+      @if(rightPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
+        <app-acp-panel (closePanel)="closeRightPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" (dockPositionChange)="onDockPositionChange($event)" [isMaximized]="leftPct === 0" [dockPosition]="dockPosition" [style.width]="'calc((1 - ' + leftPct + ') * (100% - 15px))'" />
       }
     </div>
 

@@ -13,7 +13,7 @@ import type { AgentConfig } from './acp-agent.types';
     <div class="acp-chat-input-container">
       <div class="acp-chat-input-box">
         @if (showSlashMenu()) {
-          <div class="slash-command-menu">
+          <div class="slash-command-menu custom-scroll">
             @for (cmd of filteredCommands(); track cmd.name; let i = $index) {
               <button class="slash-command-item" [class.active]="i === selectedIndex()"
                 (mousedown)="selectCommand(cmd)" (mouseenter)="selectedIndex.set(i)">

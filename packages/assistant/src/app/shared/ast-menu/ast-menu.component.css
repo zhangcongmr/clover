@@ -6,9 +6,9 @@
 :host(.ast-right-menu) {
   align-items: flex-start;
   background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorGroup-border);
+  border: none;
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
-  border-radius: var(--vscode-radius-sm, 4px);
+  border-radius: var(--borderless-item-radius, 8px);
   min-width: 160px;
   font-size: var(--vscode-menu-font-size, 13px);
   color: var(--vscode-foreground);
@@ -17,7 +17,20 @@
 }
 
 :host(.ast-right-menu) .ast-menu-every-item {
-  background: var(--vscode-editorWidget-background);
+  background: transparent;
+  border-radius: var(--borderless-item-radius, 8px);
+  margin: 0;
+  padding: 8px 12px;
+  height: auto;
+}
+
+:host(.ast-right-menu) .ast-menu-every-item:hover {
+  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+:host(.ast-right-menu) .ast-menu-every-item.active {
+  background: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+  color: var(--borderless-accent, #0066cc);
 }
 
 :host(.ast-right-menu) .has-submenu {
@@ -47,9 +60,9 @@
 
 :host(.ast-right-menu) .submenu-container {
   background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorGroup-border);
+  border: none;
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
-  border-radius: var(--vscode-radius-sm, 4px);
+  border-radius: var(--borderless-item-radius, 8px);
   min-width: 160px;
   font-size: var(--vscode-menu-font-size, 13px);
   color: var(--vscode-foreground);

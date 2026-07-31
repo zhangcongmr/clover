@@ -1,4 +1,4 @@
-/* 样式表文件 styles.css */  
+/* 样式表文件 styles.css */
 :host {
   display: flex;
   flex: 1 1 0;
@@ -12,40 +12,45 @@
   top: 0;
 }
 
-/* 移除表格边框的合并效果 */  
-table {  
-    border-collapse: collapse;  
-    width: 100%;  
-  }  
-    
-  /* 为表头和单元格添加边框 */  
-  th, td {  
-    border: 1px solid #ddd; /* 使用浅灰色边框 */  
-    padding: 12px; /* 添加适当的内边距 */  
-    text-align: left; /* 文本左对齐 */  
-  }  
-    
-  /* 为表头添加背景色 */  
-  th {  
-    background-color: #f2f2f2; /* 使用浅灰色背景 */  
-    color: #333; /* 使用深灰色文本 */  
-  }  
-    
-  /* 可选的：为表格的奇数行添加不同的背景色 */  
-  tr:nth-child(even) {  
-    background-color: #fff; /* 使用白色背景 */  
-  }  
-    
-  tr:nth-child(odd) {  
-    background-color: #f9f9f9; /* 使用浅灰色背景 */  
-  }  
-    
-  /* 移除鼠标悬停时的默认效果（如果需要的话） */  
-  table tr:hover {  
-    background-color: transparent; /* 透明背景 */  
-  }  
-    
-  /* 如果有需要，可以添加其他样式，如字体大小、行高、圆角等 */
+/* 移除表格边框的合并效果 */
+table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  /* 为表头和单元格添加无边框样式 */
+  th, td {
+    border: none;
+    padding: 12px;
+    text-align: left;
+  }
+
+  /* 为表头添加背景色 */
+  th {
+    background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
+    color: var(--vscode-foreground, #333);
+    font-weight: 600;
+  }
+
+  /* 为表格的行添加不同的背景色 */
+  tr:nth-child(even) {
+    background-color: transparent;
+  }
+
+  tr:nth-child(odd) {
+    background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.02));
+  }
+
+  /* 表格行悬停效果 */
+  table tr:hover {
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.06));
+    border-radius: var(--borderless-item-radius, 8px);
+  }
+
+  /* 表格行选中效果 */
+  tr.selected {
+    background-color: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12)) !important;
+  }
 
 /* 内联样式提取 */
 .ast-table-checkbox {

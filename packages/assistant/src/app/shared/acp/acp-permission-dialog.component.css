@@ -25,9 +25,9 @@
   width: 420px;
   max-width: 90vw;
   background-color: var(--vscode-editorWidget-background);
-  border-radius: var(--vscode-radius-md);
+  border-radius: var(--borderless-item-radius, 8px);
   box-shadow: var(--vscode-shadow-lg);
-  border: 1px solid var(--vscode-editorGroup-border);
+  border: none;
   animation: slideIn var(--vscode-motion-duration) var(--vscode-motion-easing);
 }
 
@@ -47,7 +47,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--vscode-editorGroup-border);
+  border-bottom: none;
+  margin-bottom: var(--borderless-gap, 4px);
 }
 
 .acp-dialog-title {
@@ -134,30 +135,27 @@
   align-items: flex-start;
   gap: 4px;
   padding: 12px 16px;
-  border: 1px solid var(--vscode-input-border);
-  border-radius: var(--vscode-radius-sm);
-  background-color: var(--vscode-input-background);
+  border: none;
+  border-radius: var(--borderless-item-radius, 8px);
+  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
   color: var(--vscode-foreground);
   cursor: pointer;
   text-align: left;
-  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing),
-              border-color var(--vscode-motion-duration) var(--vscode-motion-easing);
+  transition: background-color var(--vscode-motion-duration) var(--vscode-motion-easing);
 }
 
 .acp-option-button:hover {
-  background-color: var(--vscode-list-hoverBackground);
-  border-color: var(--vscode-focusBorder);
+  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .acp-option-button.primary {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border-color: var(--vscode-button-background);
+  background-color: var(--borderless-accent, #0066cc);
+  color: white;
+  border: none;
 }
 
 .acp-option-button.primary:hover {
-  background-color: var(--vscode-focusBorder);
-  border-color: var(--vscode-focusBorder);
+  background-color: var(--borderless-accent-hover, #0052a3);
 }
 
 .option-label {
@@ -174,14 +172,15 @@
   display: flex;
   justify-content: flex-end;
   padding: 16px 20px;
-  border-top: 1px solid var(--vscode-editorGroup-border);
+  border-top: none;
+  margin-top: var(--borderless-gap, 4px);
 }
 
 .acp-cancel-button {
   padding: 8px 16px;
-  border: 1px solid var(--vscode-input-border);
-  border-radius: var(--vscode-radius-sm);
-  background-color: transparent;
+  border: none;
+  border-radius: var(--borderless-item-radius, 8px);
+  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
   color: var(--vscode-foreground);
   cursor: pointer;
   font-size: var(--vscode-font-size);
@@ -189,5 +188,5 @@
 }
 
 .acp-cancel-button:hover {
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }

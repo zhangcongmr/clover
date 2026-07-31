@@ -16,9 +16,12 @@ export class AcpSessionManagerComponent {
   closePanel = output<void>();
   maximizePanel = output<void>();
   restorePanel = output<void>();
+  dockPositionChange = output<'left' | 'right'>();
   isMaximized = input<boolean>(false);
+  dockPosition = input<'left' | 'right'>('right');
   protected localAgentService = inject(LocalAgentService);
   protected acpService = inject(AcpService);
+  showDockMenu = signal<boolean>(false);
 
   protected wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   protected ipAndPort = this.localAgentService.getBaseUrl().replace(/^((https|http)?:\/\/)?/, '').replace(/\/$/, '');
@@ -125,6 +128,15 @@ export class AcpSessionManagerComponent {
     const currentPath = this.acpService.currentDirPath();
     const parentPath = currentPath.split('/').slice(0, -1).join('/');
     this.acpService.listDir(parentPath);
+  }
+
+  toggleDockMenu(): void {
+    this.showDockMenu.update(v => !v);
+  }
+
+  setDockPosition(position: 'left' | 'right'): void {
+    this.dockPositionChange.emit(position);
+    this.showDockMenu.set(false);
   }
 
 }
