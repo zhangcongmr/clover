@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnChanges, OnInit, SimpleChanges, ViewEncapsulation, afterNextRender, input, output, viewChild } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, ViewEncapsulation, afterNextRender, input, output } from '@angular/core';
 
 @Component({
   selector: 'ast-modal',
@@ -12,7 +12,6 @@ export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
   readonly title = input("");
   readonly modalSize = input<"small" | "medium" | "large" | "">("");
   readonly close = output<any>();
-  modalRef = viewChild<ElementRef>('modal');
   readonly visibleChange = output<any>();
 
   elementId = "";
@@ -31,25 +30,6 @@ export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes["visible"]) {
-      if (this.visible() == true) {
-        // 等待 Angular 渲染输入框后聚焦
-        setTimeout(() => {
-          const modalRef = this.modalRef();
-          if(modalRef) {
-            if (this.modalSize() === 'small') {
-              modalRef.nativeElement.style.width = '400px';
-              modalRef.nativeElement.style.height = '200px';
-            } else if (this.modalSize() === 'medium') {
-              modalRef.nativeElement.style.width = '600px';
-              modalRef.nativeElement.style.height = '300px';
-            } else if (this.modalSize() === 'large') {
-              modalRef.nativeElement.style.width = '800px';
-              modalRef.nativeElement.style.height = '400px';
-            }
-            this.centerInViewport(modalRef.nativeElement)
-          }
-        }, 0);
-      }
       this.visibleChange.emit(this.visible())
     }
   }
@@ -59,13 +39,6 @@ export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-  }
-
-  centerInViewport(element: any) {
-    const w = element.offsetWidth;
-    const h = element.offsetHeight;
-    element.style.top = ((window.innerHeight - h) / 2) + 'px';
-    element.style.left = ((window.innerWidth - w) / 2) + 'px';
   }
 
   closeDlg() {

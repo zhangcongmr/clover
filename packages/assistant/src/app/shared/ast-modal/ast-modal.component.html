@@ -1,5 +1,8 @@
 @if (visible()) {
-<div #modal [attr.id]="elementId" class="ast-modal-container">
+<div [attr.id]="elementId" class="ast-modal-container"
+  [class.ast-modal-small]="modalSize() === 'small'"
+  [class.ast-modal-medium]="modalSize() === 'medium'"
+  [class.ast-modal-large]="modalSize() === 'large'">
   <div data-layer="ast-modal" class="AstModal ast-modal">
     <div data-layer="ast-modal-header" class="AstModalHeader ast-modal-header" (mousedown)="startDrag($event)">
       <div data-layer="title" class="Title ast-title">{{title()}}</div>

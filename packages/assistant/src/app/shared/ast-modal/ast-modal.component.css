@@ -4,18 +4,32 @@
     position: fixed;
     /* 固定定位 */
     z-index: 1000;
-    /* 移除 top, left, transform，由 JS 控制，使元素在视口正中央。 */
-    /* top: 50%;
+    /* 始终从第一帧就居中显示，避免打开时出现闪烁/跳动 */
+    top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); */
+    transform: translate(-50%, -50%);
     width: 75%;
     height: 36rem;
-    /* min-height: 36rem; */
     pointer-events: none;
     /* 关键：允许鼠标事件穿透到下层元素 */
     /* 背景颜色 */
     background-color: transparent;
     box-shadow: var(--vscode-shadow-md, 0 0 15px 0 rgba(0, 0, 0, 0.2));
+}
+
+.ast-modal-container.ast-modal-small {
+    width: 400px;
+    height: 200px;
+}
+
+.ast-modal-container.ast-modal-medium {
+    width: 600px;
+    height: 300px;
+}
+
+.ast-modal-container.ast-modal-large {
+    width: 800px;
+    height: 400px;
 }
 
 
