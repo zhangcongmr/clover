@@ -50,7 +50,7 @@ export class AstDraggableComponent {
   topSectionHeight: number = 0;
   bottomSectionHeight: number = 0;
 
-  private _dragDirection: 'horizontal' | 'vertical' = 'horizontal';
+  protected _dragDirection: 'horizontal' | 'vertical' = 'horizontal';
 
   dragStart(evt: any, currentCursorType: string = 'ew') {
     evt.preventDefault();

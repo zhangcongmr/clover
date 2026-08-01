@@ -143,6 +143,15 @@
   --bb-grid-size-14: calc(var(--bb-grid-size) * 14);
   --bb-grid-size-15: calc(var(--bb-grid-size) * 15);
   --bb-grid-size-16: calc(var(--bb-grid-size) * 16);
+
+  /* 无边框风格变量 */
+  --borderless-gap: 4px;
+  --borderless-item-bg: rgba(0, 0, 0, 0.04);
+  --borderless-item-bg-hover: rgba(0, 0, 0, 0.08);
+  --borderless-item-bg-active: rgba(0, 102, 204, 0.12);
+  --borderless-item-radius: 8px;
+  --borderless-accent: #0066cc;
+  --borderless-accent-hover: #0052a3;
 }
 
 /* VS Code Dark Modern theme variables */
@@ -249,6 +258,15 @@
   --terminal-ansi-bright-magenta: #c586c0;
   --terminal-ansi-bright-cyan: #9cdcfe;
   --terminal-ansi-bright-white: #ffffff;
+
+  /* 无边框风格变量 - 暗色模式 */
+  --borderless-gap: 4px;
+  --borderless-item-bg: rgba(255, 255, 255, 0.06);
+  --borderless-item-bg-hover: rgba(255, 255, 255, 0.10);
+  --borderless-item-bg-active: rgba(0, 120, 212, 0.20);
+  --borderless-item-radius: 8px;
+  --borderless-accent: #4daafc;
+  --borderless-accent-hover: #6db8ff;
 }
 
 html {
@@ -319,17 +337,20 @@ img, svg {
     cursor: pointer;
 
     padding: 12px 16px;
-    border-bottom: 1px solid var(--vscode-editorGroup-border);
+    border-bottom: none;
+    margin-bottom: 0;
+    border-radius: var(--borderless-item-radius, 8px);
+    background-color: transparent;
     transition: background-color var(--vscode-motion-duration, 0.2s) var(--vscode-motion-easing, ease);
-    background-color: var(--vscode-sideBar-background);
 }
 
 .ast-menu-every-item:hover {
-    background-color: var(--vscode-list-hoverBackground);
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
-.ast-menu-every-item:last-child {
-  border-bottom: none;
+.ast-menu-every-item.active {
+    background-color: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+    color: var(--borderless-accent, #0066cc);
 }
 
 .ast-menu-every-item svg, .ast-menu-every-item img {

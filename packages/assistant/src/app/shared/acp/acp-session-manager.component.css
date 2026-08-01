@@ -7,13 +7,15 @@
 
 .acp-session-manager {
   padding: 4px 8px;
-  border-bottom: 1px solid var(--vscode-panel-border, #e0e0e0);
+  border-bottom: none;
+  margin-bottom: var(--borderless-gap, 4px);
 }
 
 .acp-session-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-left: 5px;
 }
 
 .acp-session-title {
@@ -34,6 +36,65 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.acp-dock-wrapper {
+  position: relative;
+}
+
+.acp-dock-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  min-width: 160px;
+  background: var(--vscode-editorWidget-background, #ffffff);
+  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+}
+
+.acp-dock-menu-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground, #333);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.acp-dock-menu-items {
+  display: flex;
+  gap: 4px;
+}
+
+.acp-dock-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--vscode-foreground, #666);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.acp-dock-item:hover {
+  background: var(--vscode-list-hoverBackground, #e8e8e8);
+}
+
+.acp-dock-item.active {
+  border-color: var(--vscode-focusBorder, #0066cc);
+  background: var(--vscode-list-activeSelectionBackground, #e0e0e0);
+}
+
+.acp-dock-item svg {
+  width: 20px;
+  height: 20px;
 }
 
 .acp-panel-close {
@@ -90,22 +151,23 @@
   gap: 4px;
   padding: 4px 8px;
   border: none;
-  background: var(--vscode-errorForeground, #d32f2f);
-  color: white;
-  border-radius: 4px;
+  background: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
+  color: var(--vscode-errorForeground, #d32f2f);
+  border-radius: var(--borderless-item-radius, 8px);
   cursor: pointer;
   font-size: 12px;
+  transition: background-color 0.15s ease;
 }
 
 .acp-disconnect-button:hover {
-  background: var(--vscode-errorForeground, #b71c1c);
+  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .acp-session-settings {
   margin-bottom: 4px;
   padding: 6px 8px;
-  background: var(--vscode-settings-headerForeground, #f5f5f5);
-  border-radius: 4px;
+  background: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
+  border-radius: var(--borderless-item-radius, 8px);
 }
 
 .settings-field {
@@ -292,8 +354,8 @@
   flex: 1 1 0;
   margin-bottom: 4px;
   padding: 6px 8px;
-  background: var(--vscode-settings-headerForeground, #f5f5f5);
-  border-radius: 4px;
+  background: transparent;
+  border-radius: var(--borderless-item-radius, 8px);
 }
 
 .session-history-header,
@@ -334,14 +396,19 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 6px;
-  margin-bottom: 2px;
-  background: white;
-  border-radius: 4px;
+  margin-bottom: 0;
+  background: transparent;
+  border-radius: var(--borderless-item-radius, 8px);
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .session-item:hover {
-  background: var(--vscode-list-hoverBackground, #f0f0f0);
+  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+.session-item + .session-item {
+  margin-top: 2px;
 }
 
 .session-info {
@@ -407,8 +474,8 @@
 .file-path {
   margin-bottom: 4px;
   padding: 2px 6px;
-  background: white;
-  border-radius: 4px;
+  background: transparent;
+  border-radius: var(--borderless-item-radius, 8px);
   font-family: monospace;
   font-size: 11px;
   color: var(--vscode-foreground, #666);
@@ -424,12 +491,13 @@
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
-  border-radius: 4px;
+  border-radius: var(--borderless-item-radius, 8px);
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .file-item:hover {
-  background: var(--vscode-list-hoverBackground, #f0f0f0);
+  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .file-icon {

@@ -1,8 +1,8 @@
 :host {
-    background-color: var(--vscode-editor-background);
+    background-color: transparent;
     padding: 0px;
     display: flex;
     flex: 1 1 0;
     overflow: auto;
-    border-bottom: 1px solid var(--vscode-tab-border);
+    border-bottom: none;
 }

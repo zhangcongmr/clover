@@ -20,6 +20,26 @@
   overflow-y: auto;
 }
 
+.profile-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: var(--vscode-font-size, 13px);
+  color: var(--vscode-foreground, #cccccc);
+  transition: background 0.15s;
+}
+
+.profile-back-btn:hover {
+  background: var(--vscode-list-hoverBackground, #2a2a2a);
+}
+
+.profile-back-btn svg {
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
 .profile-header {
   display: flex;
   flex-direction: column;

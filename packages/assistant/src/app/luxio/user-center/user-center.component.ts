@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, inject, input, output, signal } from "@angular/core";
 
 import { CoreService } from '../../core.service';
 import { NotificationService } from '../../shared/notification/notification.service';
@@ -18,6 +18,9 @@ interface DashboardCategory {
 export class UserCenterComponent {
   protected coreService = inject(CoreService)
   protected notificationService = inject(NotificationService)
+
+  readonly previousViewId = input<number>(1);
+  readonly goBack = output<number>();
 
   categories: DashboardCategory[] = [
     { id: 'profile', label: 'Profile' },
@@ -41,5 +44,9 @@ export class UserCenterComponent {
     sessionStorage.clear();
     this.coreService.isAuthenticated.set(false);
     this.notificationService.showNotification('Signed out successfully', 'info');
+  }
+
+  onGoBack() {
+    this.goBack.emit(this.previousViewId());
   }
 }

@@ -153,7 +153,7 @@
   <div class="ast-content-tabs-wrapper">
     @if (openedList().length>0) {
       <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
-      [tabType]="{'type':'bilateral'}"
+      [tabType]="{'type':'filled'}"
       [(moreButtons)]="moreButtons">
         @for (openedTab of openedList(); track openedTab.id) {
         <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"

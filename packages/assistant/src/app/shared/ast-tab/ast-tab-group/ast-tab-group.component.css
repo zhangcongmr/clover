@@ -11,7 +11,7 @@
 div[data-layer="tab-header"] {
     position: relative;
     display: flex;
-    background-color: var(--vscode-tab-inactiveBackground);
+    background-color: var(--vscode-sideBar-background, var(--vscode-editorGroupHeader-tabsBackground, rgba(0, 0, 0, 0.05)));
 }
 
 ul[data-layer="tablist"] {
@@ -39,33 +39,54 @@ div[data-layer="tab_presentation"] {
 li[data-layer="tab"] {
     position: relative;
     align-items: center;
-    background: var(--vscode-tab-inactiveBackground);
+    background: transparent;
     display: flex;
     justify-content: space-between;
     cursor: pointer;
     min-width: 5rem;
     flex-shrink: 0;
     color: var(--vscode-foreground);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 li[data-layer="tab"].active-tab {
-    background: var(--vscode-tab-activeBackground) !important;
+    background: transparent !important;
     color: var(--vscode-foreground);
 }
 
 li[data-layer="tab"]:active {
-    background-color: var(--vscode-tab-activeBackground);
+    background-color: transparent;
 }
 
 li[data-layer="tab"]:not(.lightcolorselection-tab):hover {
-    background-color: var(--vscode-list-hoverBackground);
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+li[data-layer="tab"].borderless-tab {
+    border-bottom: none;
+}
+
+li[data-layer="tab"].borderless-active-tab {
+    background-color: var(--vscode-tab-activeBackground, rgba(0, 0, 0, 0.05));
+}
+
+li[data-layer="tab"].bilateral-inactive-tab {
+    border-bottom: none;
+}
+
+li[data-layer="tab"].bilateral-inactive-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0.5px;
+    background-color: var(--vscode-tabborder-background, rgba(0, 0, 0, 0.1));
 }
 
 li[data-layer="tab"]:hover .tab-close {
     opacity: 1;
-    /* 鼠标悬停时变为可见 */
     visibility: visible;
-    /* 鼠标悬停时变为可见 */
 }
 
 li[data-layer="tab"].active-tab .tab-close {
@@ -129,23 +150,29 @@ li[data-layer="tab"].active-tab .tab-close {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 0.5px;
-    background-color: var(--vscode-tabborder-background);
+    height: 2px;
+    background-color: var(--primary-color, rgb(103, 137, 186));
+    transition: opacity 0.15s ease;
+}
+
+.bilateral-inactive-tab {
+    opacity: 0.7;
 }
 
 /* when tabType is 'textbottom'  改为在文字容器上添加底部边框 */
 .textbottom-border-tab .tab-label-area {
-  position: relative; /* 使 ::after 能相对于它定位 */
+    position: relative;
 }
 
 .textbottom-border-tab .tab-label-area::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background-color: var(--primary-color, rgb(103, 137, 186));
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background-color: var(--primary-color, rgb(103, 137, 186));
+    transition: opacity 0.15s ease;
 }
 
 /**
@@ -159,6 +186,7 @@ li[data-layer="tab"].active-tab .tab-close {
     top: 0;
     height: 2px;
     background-color: var(--primary-color, rgb(103, 137, 186));
+    transition: opacity 0.15s ease;
 }
 
 .bilateral-border-tab .padding_left_crumb {
@@ -180,8 +208,9 @@ li[data-layer="tab"].active-tab .tab-close {
 
 /* 当鼠标悬停在 .lightcolorselection-tab 上时，改变 ::after 的背景色 */
 .lightcolorselection-tab:hover::after {
-  background-color: var(--vscode-titleBar-activeBackground);
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
+
 .lightcolorselection-tab::after {
     content: '';
     position: absolute;
@@ -189,9 +218,37 @@ li[data-layer="tab"].active-tab .tab-close {
     left: 0px;
     right: 0px;
     bottom: 0px;
-    /* border-radius: 8px 8px 8px 8px; */
     z-index: -1;
-    background-color: var(--vscode-titleBar-activeBackground);
+    background-color: transparent;
+    transition: background-color 0.15s ease;
+}
+
+/**
+ * when tabType is 'filled' (VS Code风格背景填充)
+ */
+.filled-active-tab {
+    background-color: var(--vscode-editor-background, #ffffff) !important;
+    border-bottom: none;
+    z-index: 1;
+}
+
+.filled-active-tab::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background-color: var(--primary-color, rgb(103, 137, 186));
+}
+
+.filled-inactive-tab {
+    background-color: inherit;
+    border-bottom: none;
+}
+
+.filled-inactive-tab::after {
+    display: none;
 }
 
 /* 
@@ -206,7 +263,7 @@ li[data-layer="tab"].active-tab .tab-close {
 } */
 
 .ast-remaining-space {
-    background: var(--vscode-tab-inactiveBackground);
+    background: transparent;
     /* border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid; */
     flex: 1 1 0;
 }
@@ -216,7 +273,7 @@ li[data-layer="tab"].active-tab .tab-close {
   gap: 10px;
   width: 100px;
   /* border-left: 1px solid var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9); */
-  border-bottom: 1px solid var(--vscode-tabborder-background);
+  border-bottom: none;
   justify-content: flex-end;
   padding-right: 8px;
 }

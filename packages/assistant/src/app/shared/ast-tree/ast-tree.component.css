@@ -1,48 +1,65 @@
 .input_filter {
     width: 100%;
-    background-color: #fff;
-    /* background-image: none; */
-    border-radius: var(--vscode-radius-sm, 4px);
-    border: 1px solid #dcdfe6;
+    background-color: var(--vscode-input-background, #fff);
+    border-radius: var(--vscode-radius-md, 8px);
+    border: none;
     box-sizing: border-box;
-    color: #606266;
+    color: var(--vscode-foreground, #606266);
     display: inline-block;
     height: 2rem;
     line-height: 2rem;
     outline: none;
     padding: 0 10px;
-    /* transition: border-color .2s cubic-bezier(.645,.045,.355,1); */
+    transition: background-color 0.2s ease;
+}
+
+.input_filter:hover {
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+.input_filter:focus {
+    background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
 }
 
 .child-item {
     display: flex;
     align-items: center;
+    padding: 2px 8px;
+    margin: 2px 0;
+    border-radius: var(--borderless-item-radius, 8px);
+    transition: background-color 0.15s ease;
 }
 
 .child-item:hover {
     cursor: pointer;
-    background-color: var(--vscode-list-hoverBackground);
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .child-item.active {
-    background-color: var(--vscode-button-background);
+    background-color: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+    color: var(--borderless-accent, #0066cc);
 }
 
 .child-item.selected {
-    background-color: var(--vscode-list-activeSelectionBackground);
-    color: var(--vscode-list-activeSelectionForeground);
+    background-color: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+    color: var(--borderless-accent, #0066cc);
 }
 
 .child-item:focus {
-    background-color: cadetblue;
+    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .btn-item {
   display: flex;
   padding: 0;
-  border: 0rem; 
+  border: none;
   background-color: transparent;
   cursor: pointer;
+  border-radius: var(--borderless-item-radius, 8px);
+}
+
+.btn-item:hover {
+  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .lyout-item {
@@ -61,11 +78,10 @@
     position: absolute;
     content: "Local";
     display: inline-block;
-    background: var(--primary-color, rgb(103, 137, 186));
-    /* green border/background like the screenshot */
+    background: var(--borderless-accent, rgb(103, 137, 186));
     color: #fff;
     font-size: 0.6rem;
-    border-radius: var(--vscode-radius-sm, 2px);
+    border-radius: var(--vscode-radius-sm, 4px);
     padding: 0 0.25rem;
     margin-left: 0.25rem;
     top: 2px;
@@ -74,11 +90,10 @@
     position: absolute;
     content: "Deleted";
     display: inline-block;
-    background: red;
-    /* green border/background like the screenshot */
+    background: #dc3545;
     color: #fff;
     font-size: 0.6rem;
-    border-radius: var(--vscode-radius-sm, 2px);
+    border-radius: var(--vscode-radius-sm, 4px);
     padding: 0 0.25rem;
     margin-left: 0.25rem;
     top: 2px;
@@ -102,11 +117,13 @@
 
 .textrenameclass {
     width: 100%;
-    border: 1px solid #ccc;
-    background-color: white;
+    border: none;
+    background-color: var(--vscode-input-background, white);
+    color: var(--vscode-foreground);
     outline: none;
-    padding: 4px;
+    padding: 4px 8px;
     cursor: text;
+    border-radius: var(--borderless-item-radius, 8px);
 }
 
 /* 内联样式提取 */
@@ -120,5 +137,5 @@
 }
 
 .ast-tree-folder-icon {
-    color: #6b7280;
+    color: var(--vscode-icon-foreground, #6b7280);
 }

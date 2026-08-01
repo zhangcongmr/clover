@@ -31,7 +31,7 @@ export class SettingsService {
 
   activeCategoryId = signal<string>('general');
 
-  folderReadWriteMode: WritableSignal<'read' | 'readwrite'> = signal<'read' | 'readwrite'>('read');
+  folderReadWriteMode: WritableSignal<'read' | 'readwrite'> = signal<'read' | 'readwrite'>('readwrite');
   autoRefreshEnabled = signal<boolean>(true);
 
   currentTheme = signal<string>('default');

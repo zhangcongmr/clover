@@ -52,7 +52,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
+  previousViewId: number = 1;
   rightPanelOpen = false;
+  dockPosition: 'left' | 'right' = 'right';
   terminalBtnShow = true;
   terminalPanelShow = false;
   themePromptOpen = false;
@@ -1014,6 +1016,9 @@ For each fileIcons entry:
       }
     } else {
       if(currentDisplayViewId != 4) {
+        if (currentDisplayViewId === 5 || currentDisplayViewId === 6) {
+          this.previousViewId = this.currentDisplayViewId;
+        }
         this.currentDisplayViewId = currentDisplayViewId;
         this.sideOpen = true;
         this.lastSelectedDisplayViewId = currentDisplayViewId;
@@ -1058,12 +1063,21 @@ For each fileIcons entry:
     }
   }
 
+  onGoBack(viewId: number) {
+    this.currentDisplayViewId = viewId;
+    this.lastSelectedDisplayViewId = viewId;
+  }
+
   toggleRightPanel() {
     this.rightPanelOpen = !this.rightPanelOpen;
   }
 
   closeRightPanel() {
     this.rightPanelOpen = false;
+  }
+
+  onDockPositionChange(position: 'left' | 'right') {
+    this.dockPosition = position;
   }
 
   // Method to open a new terminal tab
@@ -1384,10 +1398,25 @@ For each fileIcons entry:
   }
 
   override whenMouseMove(evt: any) {
-    super.whenMouseMove(evt);
     if (this.active) {
-      this.keepTerminalInstance.topPct = this.topPct;
+      evt.preventDefault();
+      if (this._dragDirection === 'vertical') {
+        // terminal panel position calculation
+        super.whenMouseMove(evt);
+        this.keepTerminalInstance.topPct = this.topPct;
+      } else {
+        // acp panel position calculation
+        this.leftPct = this.getHorizontalPct(evt);
+      }
     }
+  }
+
+  private getHorizontalPct(evt: MouseEvent): number {
+    const raw = (evt.clientX - 32) / (window.innerWidth - 32);
+    if (this.dockPosition === 'left') {
+      return 1 - raw;
+    }
+    return raw;
   }
 
   /**

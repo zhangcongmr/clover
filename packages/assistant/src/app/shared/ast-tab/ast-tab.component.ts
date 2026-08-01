@@ -9,9 +9,9 @@ export interface AstTabType {
      * textbottom: 文字容器上添加底部边框， 使底部的宽度与文字宽度一致
      * borderless: 无边框
      * lightcolorselection: 元素容器的浅色填充
-     * 
+     * filled: 背景填充式（VS Code风格），激活tab背景填充与内容区融合
      */
-    type?: 'bilateral' | 'bottom' | 'textbottom' | 'borderless' | 'lightcolorselection';
+    type?: 'bilateral' | 'bottom' | 'textbottom' | 'borderless' | 'lightcolorselection' | 'filled';
     backgroundColor?: string;
 }
 
@@ -75,16 +75,21 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
     if (tabType == null || tabType['type'] == null) {
       return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
     }
-    if (tabType['type'] == 'bilateral') {
-      return isActivated ? 'active-tab bilateral-border-tab' : 'bottom-border-tab';
-    } else if (tabType['type'] == 'bottom') {
-      return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
-    } else if (tabType['type'] == 'textbottom') {
-      return isActivated ? 'active-tab textbottom-border-tab' : 'borderless-tab';
-    } else if (tabType['type'] == 'lightcolorselection') {
-      return isActivated ? 'active-tab lightcolorselection-tab' : 'borderless-tab';
-    } else {
-      return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
+    switch (tabType['type']) {
+      case 'bilateral':
+        return isActivated ? 'active-tab bilateral-border-tab' : 'bilateral-inactive-tab';
+      case 'bottom':
+        return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
+      case 'textbottom':
+        return isActivated ? 'active-tab textbottom-border-tab' : 'borderless-tab';
+      case 'borderless':
+        return isActivated ? 'active-tab borderless-active-tab' : 'borderless-tab';
+      case 'lightcolorselection':
+        return isActivated ? 'active-tab lightcolorselection-tab' : 'borderless-tab';
+      case 'filled':
+        return isActivated ? 'active-tab filled-active-tab' : 'filled-inactive-tab';
+      default:
+        return isActivated ? 'active-tab bottom-border-tab' : 'borderless-tab';
     }
   }
 
