@@ -78,6 +78,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
   private readonly DOCK_POSITION_KEY = 'luxio_acp_dock_position';
+  private readonly PANEL_OPEN_KEY = 'luxio_acp_panel_open';
 
   keepTerminalInstance = {
     value: false,
@@ -227,6 +228,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       const savedDock = localStorage.getItem(this.DOCK_POSITION_KEY);
       if (savedDock === 'left' || savedDock === 'right') {
         this.dockPosition = savedDock;
+      }
+      // 从 localStorage 恢复面板打开状态
+      const savedOpen = localStorage.getItem(this.PANEL_OPEN_KEY);
+      if (savedOpen !== null) {
+        this.rightPanelOpen = savedOpen === 'true';
       }
     }
   }
@@ -1101,10 +1107,12 @@ For each fileIcons entry:
 
   toggleRightPanel() {
     this.rightPanelOpen = !this.rightPanelOpen;
+    localStorage.setItem(this.PANEL_OPEN_KEY, String(this.rightPanelOpen));
   }
 
   closeRightPanel() {
     this.rightPanelOpen = false;
+    localStorage.setItem(this.PANEL_OPEN_KEY, 'false');
   }
 
   onDockPositionChange(position: 'left' | 'right') {
