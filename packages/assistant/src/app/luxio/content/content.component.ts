@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, model, output, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, input, model, output, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -1781,6 +1781,20 @@ Always use the welcome_greeting tool.`;
     if (node.children) {
       for (const child of node.children) {
         this.stopFileWatchForNodeAndDescendants(child);
+      }
+    }
+  }
+
+
+  leftOffset = input(0) // leftOffset is used to calculate the left percentage for resizing the side panel
+
+  override whenMouseMove(evt: any) {
+    if (this.active) {
+      evt.preventDefault();
+      if (this._dragDirection === 'vertical') {
+        super.whenMouseMove(evt);
+      } else {
+        this.leftPct = (evt.clientX - this.leftSideAreaWidth - this.leftOffset()) / (window.innerWidth - this.leftSideAreaWidth);
       }
     }
   }

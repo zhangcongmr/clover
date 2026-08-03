@@ -49,6 +49,7 @@ export class AstDraggableComponent {
   initialY: number = 0;
   topSectionHeight: number = 0;
   bottomSectionHeight: number = 0;
+  protected leftSideAreaWidth: number = 42;// 42px是左侧区域的宽度，拖动时需要减去这个宽度来计算leftPct
 
   protected _dragDirection: 'horizontal' | 'vertical' = 'horizontal';
 
@@ -85,7 +86,7 @@ export class AstDraggableComponent {
         const yOffset = evt.clientY - this.initialY;
         this.topPct = (this.topSectionHeight + yOffset) / (this.topSectionHeight + this.bottomSectionHeight);
       } else {
-        this.leftPct = (evt.clientX - 32) / (window.innerWidth - 32);
+        this.leftPct = (evt.clientX - this.leftSideAreaWidth) / (window.innerWidth - this.leftSideAreaWidth);
       }
     }
   }
