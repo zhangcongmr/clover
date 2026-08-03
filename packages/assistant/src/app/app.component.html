@@ -201,7 +201,7 @@
               [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
           </div>
 
-          <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" ast-content
+          <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" [leftOffset]="dockPosition === 'right' ? 0 : acpPanelWidthPx()" ast-content
             (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
             (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
           </div>
@@ -227,7 +227,7 @@
 
       <!-- Docked ACP panel -->
       @if(rightPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
-        <app-acp-panel (closePanel)="closeRightPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" (dockPositionChange)="onDockPositionChange($event)" [isMaximized]="leftPct === 0" [dockPosition]="dockPosition" [style.width]="'calc((1 - ' + leftPct + ') * (100% - 15px))'" />
+        <app-acp-panel #acpPanel (closePanel)="closeRightPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" (dockPositionChange)="onDockPositionChange($event)" [isMaximized]="leftPct === 0" [dockPosition]="dockPosition" [style.width]="acpPanelWidthPx() + 'px'" />
       }
     </div>
 

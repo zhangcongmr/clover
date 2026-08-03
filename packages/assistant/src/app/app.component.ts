@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, Injector, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -34,7 +34,7 @@ import { DatePipe } from '@angular/common';
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, AcpPanelComponent, DatePipe,
        SurfaceComponent], // Add TerminalComponent and AcpPanelComponent to imports
 })
-export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit {
+export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
   protected themeService = inject(ThemeService);
   protected notificationService = inject(NotificationService);
@@ -43,6 +43,18 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   http = inject(HttpClient);
   injector = inject(Injector);
 
+  private hostEl = inject(ElementRef<HTMLElement>);
+  private resizeObserver?: ResizeObserver;
+  protected acpPanelWidthPx = signal(0);
+
+  private refreshAcpPanelWidth(): void {
+    const baseWidth = this.hostEl.nativeElement.clientWidth;
+    const raw = getComputedStyle(this.hostEl.nativeElement)
+      .getPropertyValue('--left-side-area-width').trim();
+    const leftArea = parseFloat(raw) || this.leftSideAreaWidth;
+    this.acpPanelWidthPx.set((1 - this.leftPct) * (baseWidth - leftArea - 15));
+  }
+  
   title = 'luxio';
   luxioAppTabId: any;
   textArr: Array<String> = []
@@ -247,6 +259,12 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   }
 
   ngAfterViewInit(): void {
+    if (typeof window !== 'undefined' && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.refreshAcpPanelWidth());
+      this.resizeObserver.observe(this.hostEl.nativeElement);
+      this.refreshAcpPanelWidth();
+    }
+
     if (this.fileSubmenuRef) {
       this.fileSubmenuRef.parentItem = this.fileSubmenuRef.nativeElement.parentElement ?? undefined;
     }
@@ -300,6 +318,13 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
           }
         });
       });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = undefined;
     }
   }
 
@@ -1390,11 +1415,13 @@ For each fileIcons entry:
   maximizeRightPanel() {
     this.previousLeftPct = this.leftPct;
     this.leftPct = 0;
+    this.refreshAcpPanelWidth();
   }
 
   restoreRightPanel(event?: MouseEvent) {
     if (event && event.target === event.currentTarget) return;
     this.leftPct = this.previousLeftPct;
+    this.refreshAcpPanelWidth();
   }
 
   override whenMouseMove(evt: any) {
@@ -1407,12 +1434,13 @@ For each fileIcons entry:
       } else {
         // acp panel position calculation
         this.leftPct = this.getHorizontalPct(evt);
+        this.refreshAcpPanelWidth();
       }
     }
   }
 
   private getHorizontalPct(evt: MouseEvent): number {
-    const raw = (evt.clientX - 32) / (window.innerWidth - 32);
+    const raw = (evt.clientX - this.leftSideAreaWidth) / (window.innerWidth - this.leftSideAreaWidth);
     if (this.dockPosition === 'left') {
       return 1 - raw;
     }
