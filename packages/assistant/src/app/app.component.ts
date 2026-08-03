@@ -1415,11 +1415,13 @@ For each fileIcons entry:
   maximizeRightPanel() {
     this.previousLeftPct = this.leftPct;
     this.leftPct = 0;
+    this.refreshAcpPanelWidth();
   }
 
   restoreRightPanel(event?: MouseEvent) {
     if (event && event.target === event.currentTarget) return;
     this.leftPct = this.previousLeftPct;
+    this.refreshAcpPanelWidth();
   }
 
   override whenMouseMove(evt: any) {
