@@ -77,6 +77,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
+  private readonly DOCK_POSITION_KEY = 'luxio_acp_dock_position';
 
   keepTerminalInstance = {
     value: false,
@@ -222,6 +223,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       }
       // 从 localStorage 恢复文件图标
       this.loadSavedFileIcons();
+      // 从 localStorage 恢复停靠位置
+      const savedDock = localStorage.getItem(this.DOCK_POSITION_KEY);
+      if (savedDock === 'left' || savedDock === 'right') {
+        this.dockPosition = savedDock;
+      }
     }
   }
 
@@ -1103,6 +1109,7 @@ For each fileIcons entry:
 
   onDockPositionChange(position: 'left' | 'right') {
     this.dockPosition = position;
+    localStorage.setItem(this.DOCK_POSITION_KEY, position);
   }
 
   // Method to open a new terminal tab
