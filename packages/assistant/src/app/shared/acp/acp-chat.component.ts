@@ -1,6 +1,7 @@
-import { Component, inject, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, AfterViewInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
+import { AcpPlanComponent } from './acp-plan.component';
 
 const INITIAL_LOAD = 30;
 const LOAD_MORE = 20;
@@ -8,7 +9,7 @@ const LOAD_MORE = 20;
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AcpPlanComponent],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -23,13 +24,31 @@ export class AcpChatComponent implements AfterViewInit, OnDestroy {
 
   visibleCount = INITIAL_LOAD;
 
+  readonly activeTodosMessage = computed(() => {
+    const id = this.acpService.activeTodosId();
+    if (!id) return null;
+    return this.acpService.messages().find(m => m.id === id) ?? null;
+  });
+
+  todosCollapsed = false;
+
+  toggleTodosCollapse(): void {
+    this.todosCollapsed = !this.todosCollapsed;
+  }
+
   get visibleMessages(): AcpMessage[] {
     const all = this.acpService.messages();
-    return all.slice(-this.visibleCount);
+    const activeId = this.acpService.activeTodosId();
+    const filtered = activeId ? all.filter(m => m.id !== activeId) : all;
+    return filtered.slice(-this.visibleCount);
   }
 
   get hasMoreMessages(): boolean {
     return this.acpService.messages().length > this.visibleCount;
+  }
+
+  get hasPlans(): boolean {
+    return this.acpService.plans().size > 0;
   }
 
   ngAfterViewInit(): void {
@@ -90,6 +109,9 @@ export class AcpChatComponent implements AfterViewInit, OnDestroy {
 
   formatMessage(content: string): string {
     return content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code>$1</code>')
@@ -117,6 +139,28 @@ export class AcpChatComponent implements AfterViewInit, OnDestroy {
     } catch {
       return String(obj);
     }
+  }
+
+  hasTodos(message: AcpMessage): boolean {
+    return this.getTodos(message) !== null;
+  }
+
+  getTodos(message: AcpMessage): Array<{ content: string; status: string; priority: string }> | null {
+    const rawOutput = message.toolRawOutput as any;
+    const fromOutput = rawOutput?.metadata?.todos;
+    if (Array.isArray(fromOutput) && fromOutput.length > 0) return fromOutput;
+    const rawInput = message.toolRawInput as any;
+    const fromInput = rawInput?.todos;
+    if (Array.isArray(fromInput) && fromInput.length > 0) return fromInput;
+    return null;
+  }
+
+  completedCount(message: AcpMessage): number {
+    return this.getTodos(message)?.filter((t: any) => t.status === 'completed').length ?? 0;
+  }
+
+  totalCount(message: AcpMessage): number {
+    return this.getTodos(message)?.length ?? 0;
   }
 
   goBackToSessionList(): void {

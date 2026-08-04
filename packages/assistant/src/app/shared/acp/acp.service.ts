@@ -13,7 +13,8 @@ import {
   ToolCallUpdate,
   Plan,
   ToolCallStatus,
-  ToolKind
+  ToolKind,
+  ConfigOption,
 } from './acp-websocket.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
@@ -34,10 +35,12 @@ export interface AcpMessage {
 }
 
 export interface AcpPlan {
+  planId: string;
+  type: string;
   entries: Array<{
     content: string;
     priority: 'high' | 'medium' | 'low';
-    status: 'pending' | 'in_progress' | 'completed';
+    status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   }>;
 }
 
@@ -48,7 +51,7 @@ export interface AcpSessionState {
   error: string | null;
   promptCapabilities?: PromptCapabilities;
   models?: ModelState;
-  currentMode?: string;
+  configOptions?: ConfigOption[];
   title?: string;
 }
 
@@ -66,8 +69,9 @@ export class AcpService {
   });
 
   readonly messages = signal<AcpMessage[]>([]);
-  readonly plan = signal<AcpPlan | null>(null);
+  readonly plans = signal<Map<string, AcpPlan>>(new Map());
   readonly isProcessing = signal<boolean>(false);
+  readonly activeTodosId = signal<string | null>(null);
 
   // Session history
   readonly sessions = signal<SessionInfo[]>([]);
@@ -119,13 +123,17 @@ export class AcpService {
     this.wsService.onPromptComplete((stopReason) => {
       console.log('[ACP] Prompt completed:', stopReason);
       this.isProcessing.set(false);
+      if (stopReason === 'end_turn') {
+        this.activeTodosId.set(null);
+      }
     });
 
-    this.wsService.onSessionCreated((sessionId) => {
+    this.wsService.onSessionCreated((sessionId, configOptions) => {
       console.log('[ACP] Session created:', sessionId);
       this.sessionState.update(s => ({
         ...s,
-        sessionId
+        sessionId,
+        configOptions,
       }));
       // Load root directory
       this.wsService.listDir('');
@@ -137,26 +145,28 @@ export class AcpService {
       this.sessionsLoading.set(false);
     });
 
-    this.wsService.onSessionLoaded((sessionId, promptCapabilities, models) => {
+    this.wsService.onSessionLoaded((sessionId, promptCapabilities, models, configOptions) => {
       console.log('[ACP] Session loaded:', sessionId);
       this.sessionState.update(s => ({
         ...s,
         sessionId,
         promptCapabilities,
-        models
+        models,
+        configOptions,
       }));
       this.currentModelId.set(models?.currentModelId ?? null);
       // Load root directory
       this.wsService.listDir('');
     });
 
-    this.wsService.onSessionResumed((sessionId, promptCapabilities, models) => {
+    this.wsService.onSessionResumed((sessionId, promptCapabilities, models, configOptions) => {
       console.log('[ACP] Session resumed:', sessionId);
       this.sessionState.update(s => ({
         ...s,
         sessionId,
         promptCapabilities,
-        models
+        models,
+        configOptions,
       }));
       this.currentModelId.set(models?.currentModelId ?? null);
       // Load root directory
@@ -166,6 +176,14 @@ export class AcpService {
     this.wsService.onModelChanged((modelId) => {
       console.log('[ACP] Model changed:', modelId);
       this.currentModelId.set(modelId);
+    });
+
+    this.wsService.onConfigOptionUpdate((configOptions) => {
+      console.log('[ACP] Config options updated:', configOptions.length);
+      this.sessionState.update(s => ({
+        ...s,
+        configOptions,
+      }));
     });
 
     this.wsService.onDirListing((path, items) => {
@@ -281,7 +299,7 @@ export class AcpService {
       error: null
     });
     this.messages.set([]);
-    this.plan.set(null);
+    this.plans.set(new Map());
     this.sessions.set([]);
     this.dirItems.set([]);
     this.fileContent.set(null);
@@ -289,6 +307,7 @@ export class AcpService {
     this.fileChanges.set([]);
     this.usage.set(null);
     this.availableCommands.set([]);
+    this.activeTodosId.set(null);
   }
 
   // ============================================================================
@@ -302,7 +321,8 @@ export class AcpService {
 
   loadSession(sessionId: string, cwd?: string): void {
     this.messages.set([]);
-    this.plan.set(null);
+    this.plans.set(new Map());
+    this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
     this.showSessionHistory.set(false);
     this.wsService.loadSession(sessionId, cwd);
@@ -310,7 +330,8 @@ export class AcpService {
 
   resumeSession(sessionId: string, cwd?: string): void {
     this.messages.set([]);
-    this.plan.set(null);
+    this.plans.set(new Map());
+    this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
     this.showSessionHistory.set(false);
     this.wsService.resumeSession(sessionId, cwd);
@@ -327,6 +348,10 @@ export class AcpService {
 
   setModel(modelId: string): void {
     this.wsService.setModel(modelId);
+  }
+
+  setConfigOption(configId: string, type: 'id' | 'boolean', value: string | boolean): void {
+    this.wsService.setConfigOption(configId, type, value);
   }
 
   // ============================================================================
@@ -367,21 +392,21 @@ export class AcpService {
         break;
 
       case 'tool_call':
+      case 'tool_call_update':
         this.handleToolCall(update);
         break;
 
-      case 'tool_call_update':
-        this.handleToolCallUpdate(update);
-        break;
-
-      case 'plan':
+      case 'plan_update':
         this.handlePlanUpdate(update);
         break;
 
       case 'current_mode_update':
+        // Deprecated: convert to configOptions update for backward compatibility
         this.sessionState.update(s => ({
           ...s,
-          currentMode: update.currentModeId
+          configOptions: s.configOptions?.map(o =>
+            o.category === 'mode' ? { ...o, currentValue: update.currentModeId } : o
+          ),
         }));
         break;
 
@@ -405,11 +430,86 @@ export class AcpService {
 
       case 'config_option_update':
         console.log('[ACP] Config options updated:', update.configOptions.length);
+        this.sessionState.update(s => ({
+          ...s,
+          configOptions: update.configOptions,
+        }));
         break;
     }
   }
 
+  private static hasTodosPayload(update: any): boolean {
+    const rawInput = update.rawInput;
+    if (rawInput && Array.isArray(rawInput.todos) && rawInput.todos.length > 0) return true;
+    const rawOutput = update.rawOutput;
+    if (rawOutput?.metadata && Array.isArray(rawOutput.metadata.todos) && rawOutput.metadata.todos.length > 0) return true;
+    return false;
+  }
+
+  private static extractTodosFromMessage(msg: AcpMessage): Array<{ content: string; status: string; priority: string }> | null {
+    const rawOutput = msg.toolRawOutput as any;
+    const fromOutput = rawOutput?.metadata?.todos;
+    if (Array.isArray(fromOutput) && fromOutput.length > 0) return fromOutput;
+    const rawInput = msg.toolRawInput as any;
+    const fromInput = rawInput?.todos;
+    if (Array.isArray(fromInput) && fromInput.length > 0) return fromInput;
+    return null;
+  }
+
   private handleToolCall(update: any): void {
+    const isTodo = AcpService.hasTodosPayload(update);
+
+    if (isTodo) {
+      const existingId = this.activeTodosId();
+      if (existingId) {
+        const existingMsg = this.messages().find(m => m.id === existingId);
+        if (existingMsg) {
+          const todos = AcpService.extractTodosFromMessage(existingMsg);
+          // If all todos are completed, clear the activeTodosId
+          if (todos && todos.every(t => t.status === 'completed')) {
+            this.activeTodosId.set(null);
+          }
+        }
+      }
+    }
+
+    if (isTodo) {
+      const existingId = this.activeTodosId();
+      if (existingId) {
+        // Update the existing todo message with the new tool call update
+        this.messages.update(msgs =>
+          msgs.map(m => {
+            if (m.id === existingId) {
+              return {
+                ...m,
+                id: update.toolCallId || existingId,
+                toolCallId: update.toolCallId,
+                toolTitle: update.title ?? m.toolTitle,
+                toolKind: update.kind ?? m.toolKind,
+                toolStatus: update.status || 'pending',
+                toolLocations: update.locations ?? m.toolLocations,
+                toolRawInput: update.rawInput ?? m.toolRawInput,
+                toolRawOutput: update.rawOutput ?? m.toolRawOutput
+              };
+            }
+            return m;
+          })
+        );
+        // 同步更新 activeTodosId，因为消息的 id 已被更新为新的 toolCallId
+        this.activeTodosId.set(update.toolCallId || existingId);
+
+        // 处理最后一轮 todos：如果所有任务都完成，清除 activeTodosId
+        const updatedMsg = this.messages().find(m => m.id === update.toolCallId);
+        if (updatedMsg) {
+          const todos = AcpService.extractTodosFromMessage(updatedMsg);
+          if (todos && todos.every(t => t.status === 'completed')) {
+            this.activeTodosId.set(null);
+          }
+        }
+        return;
+      }
+    }
+
     const toolCallMsg: AcpMessage = {
       id: update.toolCallId || crypto.randomUUID(),
       role: 'tool_call',
@@ -424,31 +524,28 @@ export class AcpService {
       toolRawOutput: update.rawOutput
     };
 
+    if (isTodo) {
+      // 为新创建的 todo 消息设置 activeTodosId（与 line 499 互斥，不会重复执行）
+      this.activeTodosId.set(toolCallMsg.id);
+    }
+
+    // Append the new tool call message to the messages list
     this.messages.update(msgs => [...msgs, toolCallMsg]);
   }
 
-  private handleToolCallUpdate(update: any): void {
-    this.messages.update(msgs =>
-      msgs.map(m => {
-        if (m.role === 'tool_call' && m.toolCallId === update.toolCallId) {
-          return {
-            ...m,
-            toolTitle: update.title ?? m.toolTitle,
-            toolStatus: update.status ?? m.toolStatus,
-            toolKind: update.kind ?? m.toolKind,
-            toolLocations: update.locations ?? m.toolLocations,
-            toolRawInput: update.rawInput ?? m.toolRawInput,
-            toolRawOutput: update.rawOutput ?? m.toolRawOutput
-          };
-        }
-        return m;
-      })
-    );
-  }
-
   private handlePlanUpdate(update: any): void {
-    this.plan.set({
-      entries: update.entries || []
+    const planData = update.plan;
+    if (!planData?.planId) return;
+
+    this.plans.update(current => {
+      const next = new Map(current);
+      const existing = next.get(planData.planId);
+      next.set(planData.planId, {
+        planId: planData.planId,
+        type: planData.type || existing?.type || 'items',
+        entries: planData.entries || []
+      });
+      return next;
     });
   }
 
@@ -507,12 +604,17 @@ export class AcpService {
 
   clearMessages(): void {
     this.messages.set([]);
-    this.plan.set(null);
+    this.plans.set(new Map());
     this.usage.set(null);
+    this.activeTodosId.set(null);
   }
 
   clearFileContent(): void {
     this.fileContent.set(null);
     this.currentFilePath.set(null);
+  }
+
+  printRecordProxyRes() {
+    console.log('Recorded Proxy Responses:\n', JSON.stringify(this.wsService.recordProxyRes));
   }
 }

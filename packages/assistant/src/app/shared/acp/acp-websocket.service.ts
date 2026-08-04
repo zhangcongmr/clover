@@ -14,6 +14,17 @@ export type SessionConfigValueId = string;
 export type ToolCallId = string;
 export type PermissionOptionId = string;
 
+// Config option type (matches ACP SessionConfigOption)
+export interface ConfigOption {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  type: 'select' | 'boolean';
+  currentValue?: string | boolean;
+  options?: Array<{ value: string; name: string; description?: string }>;
+}
+
 // Content types
 export interface TextContent {
   type: 'text';
@@ -102,8 +113,10 @@ export interface ToolCallUpdate {
 }
 
 // Plan types
-export type PlanEntryStatus = 'pending' | 'in_progress' | 'completed';
+export type PlanEntryStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type PlanEntryPriority = 'high' | 'medium' | 'low';
+
+export type PlanId = string;
 
 export interface PlanEntry {
   content: string;
@@ -113,6 +126,8 @@ export interface PlanEntry {
 }
 
 export interface Plan {
+  type: string;
+  planId: PlanId;
   entries: PlanEntry[];
   _meta?: Record<string, unknown>;
 }
@@ -186,8 +201,8 @@ export interface ToolCallUpdateSessionUpdate {
 }
 
 export interface PlanSessionUpdate {
-  sessionUpdate: 'plan';
-  entries: PlanEntry[];
+  sessionUpdate: 'plan_update';
+  plan: Plan;
   _meta?: Record<string, unknown>;
 }
 
@@ -205,7 +220,7 @@ export interface CurrentModeUpdate {
 
 export interface ConfigOptionUpdate {
   sessionUpdate: 'config_option_update';
-  configOptions: Array<{ configId: string; groupId?: string; name?: string; category?: string; currentValue?: unknown; options?: unknown[] }>;
+  configOptions: ConfigOption[];
   _meta?: Record<string, unknown>;
 }
 
@@ -248,6 +263,7 @@ export type ProxyMessage =
   | { type: 'prompt'; payload: { content: ContentBlock[] } }
   | { type: 'cancel' }
   | { type: 'set_session_model'; payload: { modelId: string } }
+  | { type: 'set_config_option'; payload: { sessionId: string; configId: string; type: 'id' | 'boolean'; value: string | boolean } }
   // Session history
   | { type: 'list_sessions'; payload?: { cwd?: string; cursor?: string } }
   | { type: 'load_session'; payload: { sessionId: string; cwd?: string } }
@@ -281,7 +297,18 @@ export interface ProxyErrorMessage {
 
 export interface ProxySessionCreatedMessage {
   type: 'session_created';
-  payload: { sessionId: string };
+  payload: {
+    sessionId: string;
+    configOptions?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      category?: string;
+      type: 'select' | 'boolean';
+      currentValue?: string | boolean;
+      options?: Array<{ value: string; name: string; description?: string }>;
+    }>;
+  };
 }
 
 export interface ProxySessionUpdateMessage {
@@ -323,6 +350,15 @@ export interface ProxySessionLoadedMessage {
     sessionId: string;
     promptCapabilities?: PromptCapabilities;
     models?: ModelState;
+    configOptions?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      category?: string;
+      type: 'select' | 'boolean';
+      currentValue?: string | boolean;
+      options?: Array<{ value: string; name: string; description?: string }>;
+    }>;
   };
 }
 
@@ -332,6 +368,15 @@ export interface ProxySessionResumedMessage {
     sessionId: string;
     promptCapabilities?: PromptCapabilities;
     models?: ModelState;
+    configOptions?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      category?: string;
+      type: 'select' | 'boolean';
+      currentValue?: string | boolean;
+      options?: Array<{ value: string; name: string; description?: string }>;
+    }>;
   };
 }
 
@@ -366,6 +411,11 @@ export interface ProxyPongMessage {
   type: 'pong';
 }
 
+export interface ProxyConfigOptionUpdateMessage {
+  type: 'config_option_update';
+  payload: { configOptions: ConfigOption[] };
+}
+
 export type ProxyResponse =
   | ProxyStatusMessage
   | ProxyErrorMessage
@@ -377,6 +427,7 @@ export type ProxyResponse =
   | ProxySessionLoadedMessage
   | ProxySessionResumedMessage
   | ProxyModelChangedMessage
+  | ProxyConfigOptionUpdateMessage
   | ProxyDirListingMessage
   | ProxyFileContentMessage
   | ProxyFileChangesMessage
@@ -457,14 +508,15 @@ export class AcpWebSocketService {
   private onSessionUpdateCallback: ((update: SessionUpdate) => void) | null = null;
   private onPermissionRequestCallback: ((request: PermissionRequest) => void) | null = null;
   private onPromptCompleteCallback: ((stopReason: string) => void) | null = null;
-  private onSessionCreatedCallback: ((sessionId: string) => void) | null = null;
+  private onSessionCreatedCallback: ((sessionId: string, configOptions?: ConfigOption[]) => void) | null = null;
   private onSessionListCallback: ((sessions: SessionInfo[], nextCursor?: string) => void) | null = null;
-  private onSessionLoadedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState) => void) | null = null;
-  private onSessionResumedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState) => void) | null = null;
+  private onSessionLoadedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void) | null = null;
+  private onSessionResumedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void) | null = null;
   private onModelChangedCallback: ((modelId: string) => void) | null = null;
   private onDirListingCallback: ((path: string, items: DirItem[]) => void) | null = null;
   private onFileContentCallback: ((content: string) => void) | null = null;
   private onFileChangesCallback: ((changes: FileChange[]) => void) | null = null;
+  private onConfigOptionUpdateCallback: ((configOptions: ConfigOption[]) => void) | null = null;
 
   constructor() {}
 
@@ -484,7 +536,7 @@ export class AcpWebSocketService {
     this.onPromptCompleteCallback = callback;
   }
 
-  onSessionCreated(callback: (sessionId: string) => void): void {
+  onSessionCreated(callback: (sessionId: string, configOptions?: ConfigOption[]) => void): void {
     this.onSessionCreatedCallback = callback;
   }
 
@@ -492,11 +544,11 @@ export class AcpWebSocketService {
     this.onSessionListCallback = callback;
   }
 
-  onSessionLoaded(callback: (sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState) => void): void {
+  onSessionLoaded(callback: (sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void): void {
     this.onSessionLoadedCallback = callback;
   }
 
-  onSessionResumed(callback: (sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState) => void): void {
+  onSessionResumed(callback: (sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void): void {
     this.onSessionResumedCallback = callback;
   }
 
@@ -514,6 +566,10 @@ export class AcpWebSocketService {
 
   onFileChanges(callback: (changes: FileChange[]) => void): void {
     this.onFileChangesCallback = callback;
+  }
+
+  onConfigOptionUpdate(callback: (configOptions: ConfigOption[]) => void): void {
+    this.onConfigOptionUpdateCallback = callback;
   }
 
   // ============================================================================
@@ -575,7 +631,9 @@ export class AcpWebSocketService {
     });
   }
 
+  recordProxyRes: ProxyResponse[] = [];
   private handleResponse(response: ProxyResponse): void {
+    this.recordProxyRes.push(response);
     console.log('[ACP WebSocket] Received:', response.type);
 
     switch (response.type) {
@@ -600,7 +658,7 @@ export class AcpWebSocketService {
 
       case 'session_created':
         this.sessionId.set(response.payload.sessionId);
-        this.onSessionCreatedCallback?.(response.payload.sessionId);
+        this.onSessionCreatedCallback?.(response.payload.sessionId, response.payload.configOptions);
         break;
 
       case 'session_update':
@@ -625,7 +683,8 @@ export class AcpWebSocketService {
         this.onSessionLoadedCallback?.(
           response.payload.sessionId,
           response.payload.promptCapabilities,
-          response.payload.models
+          response.payload.models,
+          response.payload.configOptions
         );
         break;
 
@@ -634,12 +693,17 @@ export class AcpWebSocketService {
         this.onSessionResumedCallback?.(
           response.payload.sessionId,
           response.payload.promptCapabilities,
-          response.payload.models
+          response.payload.models,
+          response.payload.configOptions
         );
         break;
 
       case 'model_changed':
         this.onModelChangedCallback?.(response.payload.modelId);
+        break;
+
+      case 'config_option_update':
+        this.onConfigOptionUpdateCallback?.(response.payload.configOptions);
         break;
 
       case 'dir_listing':
@@ -705,10 +769,10 @@ export class AcpWebSocketService {
       }, 10000);
 
       const originalCallback = this.onSessionCreatedCallback;
-      this.onSessionCreatedCallback = (sessionId) => {
+      this.onSessionCreatedCallback = (sessionId, configOptions) => {
         clearTimeout(timeout);
         if (originalCallback) {
-          originalCallback(sessionId);
+          originalCallback(sessionId, configOptions);
         }
         resolve(sessionId);
       };
@@ -732,6 +796,15 @@ export class AcpWebSocketService {
 
   setModel(modelId: string): void {
     this.send({ type: 'set_session_model', payload: { modelId } });
+  }
+
+  setConfigOption(configId: string, type: 'id' | 'boolean', value: string | boolean): void {
+    const sessionId = this.sessionId();
+    if (!sessionId) {
+      console.error('[AcpWebSocketService] No session ID, cannot set config option');
+      return;
+    }
+    this.send({ type: 'set_config_option', payload: { sessionId, configId, type, value } });
   }
 
   // ============================================================================

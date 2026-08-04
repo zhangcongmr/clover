@@ -80,6 +80,9 @@ export class AcpClient {
       case 'set_session_model':
         await this.setSessionModel(msg.payload);
         break;
+      case 'set_config_option':
+        await this.setSessionConfigOption(msg.payload);
+        break;
       case 'ping':
         send(this.ws, 'pong');
         break;
@@ -451,6 +454,30 @@ export class AcpClient {
     send(this.ws, 'error', {
       message: 'Model selection is not supported in this ACP version',
     });
+  }
+
+  private async setSessionConfigOption(params: { sessionId: string; configId: string; type: 'id' | 'boolean'; value: string | boolean }): Promise<void> {
+    if (!this.clientConnection) {
+      send(this.ws, 'error', { message: 'No active connection' });
+      return;
+    }
+
+    try {
+      const result = await this.clientConnection.agent.request('session/set_config_option', {
+        sessionId: params.sessionId,
+        configId: params.configId,
+        ...(params.type === 'boolean'
+          ? { type: 'boolean' as const, value: params.value as boolean }
+          : { value: params.value as string }),
+      });
+
+      send(this.ws, 'config_option_update', { configOptions: result.configOptions });
+    } catch (error) {
+      console.error('[ACP Client] Failed to set config option:', error);
+      send(this.ws, 'error', {
+        message: `Failed to set config option: ${(error as Error).message}`,
+      });
+    }
   }
 
   // ==========================================================================
