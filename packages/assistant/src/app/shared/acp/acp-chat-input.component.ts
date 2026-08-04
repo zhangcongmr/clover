@@ -27,7 +27,7 @@ import type { AgentConfig } from './acp-agent.types';
         }
         <textarea #messageInput [ngModel]="inputValue()" (ngModelChange)="inputValue.set($event)"
           (input)="onInput()" (keydown)="onKeydown($event)" placeholder="Describe what to build"
-          [disabled]="!acpService.sessionState().isConnected || acpService.isProcessing()" rows="1"
+          [disabled]="!acpService.sessionState().isConnected" rows="1"
           class="message-textarea custom-scroll"></textarea>
         <div class="acp-chat-toolbar">
           <div class="acp-chat-toolbar-left">
@@ -81,12 +81,18 @@ import type { AgentConfig } from './acp-agent.types';
                 <line x1="17" y1="16" x2="23" y2="16"></line>
               </svg>
             </button>
-            <button class="send-button" (click)="sendMessage()"
-              [disabled]="!inputValue().trim() || !acpService.sessionState().isConnected || acpService.isProcessing()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
+            <button class="send-button" (click)="acpService.isProcessing() ? stopGeneration() : sendMessage()"
+              [disabled]="!acpService.sessionState().isConnected || (!inputValue().trim() && !acpService.isProcessing())">
+              @if (acpService.isProcessing()) {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2"/>
+                </svg>
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="19" x2="12" y2="5"></line>
+                  <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+              }
             </button>
           </div>
         </div>
@@ -389,6 +395,10 @@ export class AcpChatInputComponent {
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);
     }
+  }
+
+  stopGeneration(): void {
+    this.acpService.cancel();
   }
 
   onInput(): void {
