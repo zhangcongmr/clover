@@ -48,6 +48,7 @@ export type AcpWsMessage =
   | { type: 'list_sessions'; payload?: { cwd?: string; cursor?: string } }
   | { type: 'load_session'; payload: { sessionId: string; cwd?: string } }
   | { type: 'resume_session'; payload: { sessionId: string; cwd?: string } }
+  | { type: 'delete_session'; payload: { sessionId: string } }
   | { type: 'permission_response'; payload: { requestId: string; outcome: acp.RequestPermissionOutcome } }
   | { type: 'ping' };
 
@@ -60,6 +61,7 @@ export type AcpWsResponse =
   | { type: 'session_loaded'; payload: { sessionId: string } & Partial<acp.LoadSessionResponse> }
   | { type: 'session_resumed'; payload: { sessionId: string } & Partial<acp.LoadSessionResponse> }
   | { type: 'session_list'; payload: acp.ListSessionsResponse }
+  | { type: 'session_deleted'; payload: { sessionId: string } }
   | { type: 'prompt_complete'; payload: acp.PromptResponse }
   | { type: 'session_update'; payload: acp.SessionNotification }
   | { type: 'permission_request'; payload: { requestId: string; sessionId: string; options: acp.RequestPermissionRequest['options']; toolCall: acp.RequestPermissionRequest['toolCall'] } }
