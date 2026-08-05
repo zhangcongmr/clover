@@ -106,6 +106,13 @@ export class AcpService {
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
   readonly isConnected = computed(() => this.sessionState().isConnected);
+  readonly canDeleteSession = computed(() => {
+    const caps = this.wsService.agentCapabilities();
+    if (!caps) return false;
+    // SDK v1 normalizes capabilities to sessionCapabilities.delete; protocol
+    // v2 uses session.delete. Support both shapes.
+    return !!caps.sessionCapabilities?.delete || !!caps.session?.delete;
+  });
 
   constructor() {
     this.setupWebSocketCallbacks();
@@ -143,6 +150,23 @@ export class AcpService {
       console.log('[ACP] Sessions listed:', sessions.length);
       this.sessions.set(sessions);
       this.sessionsLoading.set(false);
+    });
+
+    this.wsService.onSessionDeleted((sessionId) => {
+      console.log('[ACP] Session deleted:', sessionId);
+      // If the deleted session was the active one, reset local state.
+      if (this.sessionState().sessionId === sessionId) {
+        this.messages.set([]);
+        this.plans.set(new Map());
+        this.usage.set(null);
+        this.activeTodosId.set(null);
+        this.sessionState.update(s => ({ ...s, sessionId: null, title: undefined }));
+      }
+      // Refresh the session history list.
+      this.sessions.update(sessions => sessions.filter(s => s.sessionId !== sessionId));
+      if (this.showSessionHistory()) {
+        this.listSessions(this.workingDirHint());
+      }
     });
 
     this.wsService.onSessionLoaded((sessionId, promptCapabilities, models, configOptions) => {
@@ -339,6 +363,8 @@ export class AcpService {
 
   deleteSession(sessionId: string): void {
     this.wsService.deleteSession(sessionId);
+    // Optimistically remove from the list; the server confirmation in
+    // onSessionDeleted performs the authoritative cleanup.
     this.sessions.update(sessions => sessions.filter(s => s.sessionId !== sessionId));
   }
 

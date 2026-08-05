@@ -61,6 +61,10 @@ export type {
   DirItem,
   FileChange,
   ConfigOption,
+  // Capability types
+  AgentCapabilitiesLike,
+  SessionCapabilities,
+  SessionDeleteCapabilities,
 } from './acp-websocket.service';
 
 export { AcpPanelComponent } from './acp-panel.component';

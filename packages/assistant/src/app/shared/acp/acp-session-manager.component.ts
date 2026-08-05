@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, effect } from '@angular/core';
+import { Component, inject, signal, input, output, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
@@ -30,7 +30,7 @@ export class AcpSessionManagerComponent {
   workingDir = signal<string>('');
   showSettings = signal<boolean>(false);
   showFileExplorer = signal<boolean>(false);
-  protected canDeleteSession = signal<boolean>(false);
+  protected canDeleteSession = computed(() => this.acpService.canDeleteSession());
   private autoConnectAttempted = false;
 
   constructor() {

@@ -38,6 +38,7 @@ export class AcpClient {
   private activeSession: ActiveSession | null = null;
   private loadedSessionId: string | null = null;
   private pendingPermissions: Map<string, PendingPermission> = new Map();
+  private agentCapabilities: acp.AgentCapabilities | null = null;
 
   constructor(
     private ws: WebSocket,
@@ -77,6 +78,9 @@ export class AcpClient {
       case 'resume_session':
         await this.resumeSession(msg.payload);
         break;
+      case 'delete_session':
+        await this.deleteSession(msg.payload);
+        break;
       case 'set_session_model':
         await this.setSessionModel(msg.payload);
         break;
@@ -115,6 +119,7 @@ export class AcpClient {
       this.agentProcess = null;
       this.clientConnection = null;
       this.activeSession = null;
+      this.agentCapabilities = null;
     }
 
     try {
@@ -140,6 +145,7 @@ export class AcpClient {
         console.log('[ACP Client] Connection closed');
         this.clientConnection = null;
         this.activeSession = null;
+        this.agentCapabilities = null;
         send(this.ws, 'status', { connected: false });
       });
 
@@ -163,7 +169,10 @@ export class AcpClient {
         agentInfo: initResult.agentInfo,
       });
 
-      // 7. Notify frontend
+      // 7. Store capabilities for capability-gated methods
+      this.agentCapabilities = initResult.agentCapabilities ?? null;
+
+      // 8. Notify frontend
       send(this.ws, 'status', {
         connected: true,
         agentInfo: initResult.agentInfo,
@@ -439,6 +448,50 @@ export class AcpClient {
     } catch (error) {
       send(this.ws, 'error', {
         message: `Failed to resume session: ${(error as Error).message}`,
+      });
+    }
+  }
+
+  private async deleteSession(params: { sessionId: string }): Promise<void> {
+    if (!this.clientConnection) {
+      send(this.ws, 'error', { message: 'Not connected to agent' });
+      return;
+    }
+
+    // Per the ACP spec, clients MUST verify the session.delete capability
+    // before attempting to delete a session. Supplying {} means the agent
+    // supports deletion; omitting the field or setting it to null means it
+    // does not, and clients MUST NOT attempt to call session/delete.
+    const deleteCapability = this.agentCapabilities?.sessionCapabilities?.delete;
+    if (deleteCapability === undefined || deleteCapability === null) {
+      send(this.ws, 'error', {
+        message: 'Agent does not support session deletion',
+      });
+      return;
+    }
+
+    try {
+      const sessionId = params.sessionId;
+
+      await this.clientConnection.agent.request('session/delete', { sessionId });
+
+      console.log('[ACP Client] Session deleted:', sessionId);
+
+      // If the deleted session is the currently loaded/active one, clean up local state.
+      if (
+        this.loadedSessionId === sessionId ||
+        this.activeSession?.sessionId === sessionId
+      ) {
+        this.activeSession?.dispose();
+        this.activeSession = null;
+        this.loadedSessionId = null;
+      }
+
+      send(this.ws, 'session_deleted', { sessionId });
+    } catch (error) {
+      console.error('[ACP Client] Failed to delete session:', error);
+      send(this.ws, 'error', {
+        message: `Failed to delete session: ${(error as Error).message}`,
       });
     }
   }

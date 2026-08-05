@@ -286,7 +286,7 @@ export interface ProxyStatusMessage {
   payload: {
     connected: boolean;
     agentInfo?: { name?: string; version?: string };
-    capabilities?: unknown;
+    capabilities?: AgentCapabilitiesLike | null;
   };
 }
 
@@ -380,6 +380,13 @@ export interface ProxySessionResumedMessage {
   };
 }
 
+export interface ProxySessionDeletedMessage {
+  type: 'session_deleted';
+  payload: {
+    sessionId: string;
+  };
+}
+
 // Model responses
 export interface ProxyModelChangedMessage {
   type: 'model_changed';
@@ -426,6 +433,7 @@ export type ProxyResponse =
   | ProxySessionListMessage
   | ProxySessionLoadedMessage
   | ProxySessionResumedMessage
+  | ProxySessionDeletedMessage
   | ProxyModelChangedMessage
   | ProxyConfigOptionUpdateMessage
   | ProxyDirListingMessage
@@ -436,6 +444,28 @@ export type ProxyResponse =
 // ============================================================================
 // Additional types
 // ============================================================================
+
+export interface SessionDeleteCapabilities {
+  _meta?: unknown;
+}
+
+export interface SessionCapabilities {
+  list?: unknown;
+  delete?: SessionDeleteCapabilities | null;
+  additionalDirectories?: unknown;
+  fork?: unknown;
+  resume?: unknown;
+  close?: unknown;
+  _meta?: unknown;
+}
+
+export interface AgentCapabilitiesLike {
+  loadSession?: boolean;
+  promptCapabilities?: PromptCapabilities;
+  sessionCapabilities?: SessionCapabilities;
+  session?: SessionCapabilities | null;
+  _meta?: unknown;
+}
 
 export interface SessionInfo {
   _meta?: unknown;
@@ -503,6 +533,7 @@ export class AcpWebSocketService {
   readonly connectionState = signal<ConnectionState>('disconnected');
   readonly error = signal<string | null>(null);
   readonly sessionId = signal<string | null>(null);
+  readonly agentCapabilities = signal<AgentCapabilitiesLike | null>(null);
 
   // Event callbacks
   private onSessionUpdateCallback: ((update: SessionUpdate) => void) | null = null;
@@ -512,6 +543,7 @@ export class AcpWebSocketService {
   private onSessionListCallback: ((sessions: SessionInfo[], nextCursor?: string) => void) | null = null;
   private onSessionLoadedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void) | null = null;
   private onSessionResumedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void) | null = null;
+  private onSessionDeletedCallback: ((sessionId: string) => void) | null = null;
   private onModelChangedCallback: ((modelId: string) => void) | null = null;
   private onDirListingCallback: ((path: string, items: DirItem[]) => void) | null = null;
   private onFileContentCallback: ((content: string) => void) | null = null;
@@ -550,6 +582,10 @@ export class AcpWebSocketService {
 
   onSessionResumed(callback: (sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void): void {
     this.onSessionResumedCallback = callback;
+  }
+
+  onSessionDeleted(callback: (sessionId: string) => void): void {
+    this.onSessionDeletedCallback = callback;
   }
 
   onModelChanged(callback: (modelId: string) => void): void {
@@ -622,6 +658,7 @@ export class AcpWebSocketService {
           this.connectionState.set('disconnected');
           this.ws = null;
           this.sessionId.set(null);
+          this.agentCapabilities.set(null);
         };
       } catch (error) {
         this.connectionState.set('error');
@@ -640,9 +677,11 @@ export class AcpWebSocketService {
       case 'status':
         if (response.payload.connected) {
           this.connectionState.set('connected');
+          this.agentCapabilities.set(response.payload.capabilities ?? null);
           this.connectResolve?.();
         } else {
           this.connectionState.set('disconnected');
+          this.agentCapabilities.set(null);
         }
         this.connectResolve = null;
         this.connectReject = null;
@@ -698,6 +737,10 @@ export class AcpWebSocketService {
         );
         break;
 
+      case 'session_deleted':
+        this.onSessionDeletedCallback?.(response.payload.sessionId);
+        break;
+
       case 'model_changed':
         this.onModelChangedCallback?.(response.payload.modelId);
         break;
@@ -750,6 +793,7 @@ export class AcpWebSocketService {
     }
     this.connectionState.set('disconnected');
     this.sessionId.set(null);
+    this.agentCapabilities.set(null);
     this.cancelAllPendingPermissions();
   }
 
