@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, AfterViewInit, OnDestroy, computed } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
@@ -13,14 +13,14 @@ const LOAD_MORE = 20;
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
-export class AcpChatComponent implements AfterViewInit, OnDestroy {
+export class AcpChatComponent implements OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   protected acpService = inject(AcpService);
 
-  private lastMessageCount = 0;
-  private scrollTimeout: ReturnType<typeof setTimeout> | null = null;
   private isLoadingMore = false;
+  private isNearBottom = true;
+  private rafId: number | null = null;
 
   visibleCount = INITIAL_LOAD;
 
@@ -31,6 +31,25 @@ export class AcpChatComponent implements AfterViewInit, OnDestroy {
   });
 
   todosCollapsed = false;
+
+  constructor() {
+    afterNextRender(() => {
+      this.scrollToBottom();
+    });
+
+    effect(() => {
+      const msgs = this.acpService.messages();
+      if (msgs.length > 0 && this.isNearBottom) {
+        this.scheduleScrollToBottom();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+    }
+  }
 
   toggleTodosCollapse(): void {
     this.todosCollapsed = !this.todosCollapsed;
@@ -51,29 +70,15 @@ export class AcpChatComponent implements AfterViewInit, OnDestroy {
     return this.acpService.plans().size > 0;
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => this.scrollToBottom(), 100);
-  }
-
-  ngAfterViewChecked(): void {
-    const count = this.acpService.messages().length;
-    if (count > this.lastMessageCount) {
-      this.scheduleScrollToBottom();
-    }
-    this.lastMessageCount = count;
-  }
-
-  ngOnDestroy(): void {
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
-    }
-  }
-
   onScroll(): void {
-    if (this.isLoadingMore || !this.hasMoreMessages) return;
-
     const element = this.messagesContainer?.nativeElement;
     if (!element) return;
+
+    const threshold = 100;
+    this.isNearBottom =
+      element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+
+    if (this.isLoadingMore || !this.hasMoreMessages) return;
 
     if (element.scrollTop < 50) {
       this.isLoadingMore = true;
@@ -87,20 +92,21 @@ export class AcpChatComponent implements AfterViewInit, OnDestroy {
   }
 
   private scheduleScrollToBottom(): void {
-    if (this.scrollTimeout) {
-      clearTimeout(this.scrollTimeout);
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
     }
-    this.scrollTimeout = setTimeout(() => {
-      this.scrollToBottom();
-      this.scrollTimeout = null;
-    }, 50);
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = requestAnimationFrame(() => {
+        this.scrollToBottom();
+        this.rafId = null;
+      });
+    });
   }
 
   scrollToBottom(): void {
-    if (this.messagesContainer) {
-      const element = this.messagesContainer.nativeElement;
-      element.scrollTop = element.scrollHeight;
-    }
+    const element = this.messagesContainer?.nativeElement;
+    if (!element) return;
+    element.scrollTop = element.scrollHeight - element.clientHeight;
   }
 
   trackByMessageId(index: number, message: AcpMessage): string {
