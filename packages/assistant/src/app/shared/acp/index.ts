@@ -31,6 +31,7 @@ export type {
   PermissionOption,
   Plan,
   PlanEntry,
+  PlanId,
   PlanEntryStatus,
   PlanEntryPriority,
   RequestPermissionRequest,
@@ -58,10 +59,12 @@ export type {
   PromptCapabilities,
   ModelState,
   DirItem,
-  FileChange
+  FileChange,
+  ConfigOption,
 } from './acp-websocket.service';
 
 export { AcpPanelComponent } from './acp-panel.component';
 export { AcpChatComponent } from './acp-chat.component';
+export { AcpPlanComponent } from './acp-plan.component';
 export { AcpSessionManagerComponent } from './acp-session-manager.component';
 export { AcpPermissionDialogComponent } from './acp-permission-dialog.component';

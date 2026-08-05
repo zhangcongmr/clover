@@ -6,6 +6,9 @@
       </svg>
     </button>
     <span class="acp-chat-title">{{ acpService.sessionState().title || 'Chat' }}</span>
+    <button class="acp-print-button" (click)="acpService.printRecordProxyRes()" title="Print Recorded Proxy Responses">
+      print
+    </button>
   </div>
   <div class="acp-chat-messages custom-scroll" #messagesContainer (scroll)="onScroll()">
   @if (acpService.messages().length === 0) {
@@ -50,18 +53,6 @@
               <span>{{ message.toolLocations[0].path }}</span>
             </div>
             }
-            @if (message.toolRawInput) {
-            <div class="tool-call-details">
-              <div class="detail-label">Input:</div>
-              <pre class="detail-content">{{ formatJson(message.toolRawInput) }}</pre>
-            </div>
-            }
-            @if (message.toolRawOutput) {
-            <div class="tool-call-details">
-              <div class="detail-label">Output:</div>
-              <pre class="detail-content">{{ formatJson(message.toolRawOutput) }}</pre>
-            </div>
-            }
           </div>
         </div>
       </div>
@@ -89,13 +80,7 @@
         <div class="message-content">
           <div class="message-header">
             <span class="message-role">
-              @if (message.role === 'user') {
-              You
-              } @else if (message.role === 'thought') {
-              Thought
-              } @else {
-              Agent
-              }
+              {{message.role === 'user' ? 'You' : message.role === 'thought' ? 'Thought' : 'Agent'}}
             </span>
             <span class="message-time">{{ formatTime(message.timestamp) }}</span>
           </div>
@@ -104,6 +89,51 @@
       </div>
     }
   }
+  }
+  </div>
+
+  @if (activeTodosMessage(); as todoMsg) {
+  <div class="acp-todos-pinned">
+    <div class="todos-card">
+      <div class="todos-header" (click)="toggleTodosCollapse()">
+        <span class="todos-progress">已完成 {{ completedCount(todoMsg) }} 个任务 (共 {{ totalCount(todoMsg) }} 个)</span>
+        <span class="todos-toggle-icon" [class.collapsed]="todosCollapsed">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
+        </span>
+      </div>
+      @if (!todosCollapsed) {
+      <div class="todos-list">
+        @for (todo of getTodos(todoMsg); track todo.content) {
+        <div class="todo-item" [class]="'todo-status-' + todo.status">
+          <span class="todo-checkbox">
+            @if (todo.status === 'completed') {
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
+            </svg>
+            } @else if (todo.status === 'in_progress') {
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              <circle cx="8" cy="8" r="3" />
+            </svg>
+            } @else {
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+            }
+          </span>
+          <span class="todo-text">{{ todo.content }}</span>
+        </div>
+        }
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  @if (hasPlans) {
+  <div class="acp-plan-section">
+    <app-acp-plan />
+  </div>
   }
 
   @if (acpService.isProcessing()) {
@@ -123,5 +153,4 @@
     </div>
   </div>
   }
-  </div>
 </div>

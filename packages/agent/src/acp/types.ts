@@ -18,6 +18,7 @@ export type {
   AgentCapabilities,
   PromptCapabilities,
   SessionModeState,
+  SessionConfigOption,
   McpServer,
 } from '@agentclientprotocol/sdk';
 
@@ -43,6 +44,7 @@ export type AcpWsMessage =
   | { type: 'prompt'; payload: { content: acp.ContentBlock[] } }
   | { type: 'cancel' }
   | { type: 'set_session_model'; payload: { modelId: string } }
+  | { type: 'set_config_option'; payload: { sessionId: string; configId: string; type: 'id' | 'boolean'; value: string | boolean } }
   | { type: 'list_sessions'; payload?: { cwd?: string; cursor?: string } }
   | { type: 'load_session'; payload: { sessionId: string; cwd?: string } }
   | { type: 'resume_session'; payload: { sessionId: string; cwd?: string } }
@@ -61,6 +63,7 @@ export type AcpWsResponse =
   | { type: 'prompt_complete'; payload: acp.PromptResponse }
   | { type: 'session_update'; payload: acp.SessionNotification }
   | { type: 'permission_request'; payload: { requestId: string; sessionId: string; options: acp.RequestPermissionRequest['options']; toolCall: acp.RequestPermissionRequest['toolCall'] } }
+  | { type: 'config_option_update'; payload: { configOptions: acp.SessionConfigOption[] } }
   | { type: 'model_changed'; payload: { modelId: string } }
   | { type: 'error'; payload: { message: string } }
   | { type: 'pong' };

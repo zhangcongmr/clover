@@ -63,9 +63,32 @@ import type { AgentConfig } from './acp-agent.types';
                 </div>
               }
             </div>
-            <button class="toolbar-tag-btn" title="Auto">
-              <span>Auto</span>
-            </button>
+            @if (modeConfig()) {
+            <div class="mode-selector">
+              <button class="toolbar-tag-btn" (click)="toggleModeDropdown($event)" [title]="modeConfig()!.name">
+                <span>{{ currentModeLabel() }}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              @if (showModeDropdown()) {
+                <div class="mode-dropdown">
+                  @for (option of modeConfig()!.options ?? []; track option.value; let i = $index) {
+                    <button class="mode-option" (click)="selectMode($event, option.value)"
+                      (mouseenter)="modeSelectedIndex.set(i)"
+                      [class.active]="option.value === modeConfig()!.currentValue">
+                      <div class="mode-info">
+                        <span class="mode-name">{{ option.name }}</span>
+                        @if (option.description) {
+                          <span class="mode-desc">{{ option.description }}</span>
+                        }
+                      </div>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            }
           </div>
           <div class="acp-chat-toolbar-right">
             <button class="toolbar-icon-btn" title="Settings">
@@ -256,6 +279,57 @@ import type { AgentConfig } from './acp-agent.types';
       margin-top: 2px;
       color: var(--vscode-descriptionForeground, #666666);
     }
+    .mode-selector {
+      position: relative;
+    }
+    .mode-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 4px;
+      min-width: 200px;
+      background-color: var(--vscode-dropdown-background, #ffffff);
+      border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      overflow: hidden;
+    }
+    .mode-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.15s;
+    }
+    .mode-option:hover {
+      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+    }
+    .mode-option.active {
+      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground, #333333));
+    }
+    .mode-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .mode-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .mode-desc {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 1px;
+      color: var(--vscode-descriptionForeground, #666666);
+    }
     .slash-command-menu {
       position: absolute;
       bottom: 100%;
@@ -321,9 +395,23 @@ export class AcpChatInputComponent {
 
   inputValue = signal<string>('');
   showAgentDropdown = signal<boolean>(false);
+  showModeDropdown = signal<boolean>(false);
   selectedIndex = signal<number>(0);
   agentSelectedIndex = signal<number>(0);
+  modeSelectedIndex = signal<number>(0);
   protected agents = AVAILABLE_AGENTS;
+
+  readonly modeConfig = computed(() => {
+    const options = this.acpService.sessionState().configOptions;
+    return options?.find(o => o.category === 'mode' && o.type === 'select') ?? null;
+  });
+
+  readonly currentModeLabel = computed(() => {
+    const config = this.modeConfig();
+    if (!config) return '';
+    const option = config.options?.find(o => o.value === config.currentValue);
+    return option?.name ?? String(config.currentValue ?? '');
+  });
 
   readonly filteredCommands = computed(() => {
     const text = this.inputValue();
@@ -352,6 +440,9 @@ export class AcpChatInputComponent {
     if (!target.closest('.agent-selector')) {
       this.showAgentDropdown.set(false);
     }
+    if (!target.closest('.mode-selector')) {
+      this.showModeDropdown.set(false);
+    }
   }
 
   toggleAgentDropdown(event: MouseEvent): void {
@@ -368,6 +459,29 @@ export class AcpChatInputComponent {
     this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
     this.acpService.setAcpConfig({ command: agent.command, args: agent.args }).catch(() => {});
+    this.messageInput?.nativeElement?.focus();
+  }
+
+  toggleModeDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    const opening = !this.showModeDropdown();
+    this.showModeDropdown.set(opening);
+    if (opening) {
+      const config = this.modeConfig();
+      if (config?.options) {
+        const idx = config.options.findIndex(o => o.value === config.currentValue);
+        this.modeSelectedIndex.set(idx >= 0 ? idx : 0);
+      }
+    }
+  }
+
+  selectMode(event: Event, value: string): void {
+    event.stopPropagation();
+    const config = this.modeConfig();
+    if (config && config.currentValue !== value) {
+      this.acpService.setConfigOption(config.id, 'id', value);
+    }
+    this.showModeDropdown.set(false);
     this.messageInput?.nativeElement?.focus();
   }
 
@@ -420,6 +534,7 @@ export class AcpChatInputComponent {
     const commands = this.filteredCommands();
     const slashMenuVisible = this.inputValue().startsWith('/') && commands.length > 0;
     const agentMenuVisible = this.showAgentDropdown();
+    const modeMenuVisible = this.showModeDropdown();
 
     if (slashMenuVisible) {
       if (event.key === 'ArrowDown') {
@@ -472,6 +587,38 @@ export class AcpChatInputComponent {
       if (event.key === 'Escape') {
         event.preventDefault();
         this.showAgentDropdown.set(false);
+        return;
+      }
+    }
+
+    if (modeMenuVisible) {
+      const modeOptions = this.modeConfig()?.options ?? [];
+      const modeCount = modeOptions.length;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const next = (this.modeSelectedIndex() + 1) % modeCount;
+        this.modeSelectedIndex.set(next);
+        this.scrollToActive(next, '.mode-dropdown', '.mode-option');
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const prev = (this.modeSelectedIndex() - 1 + modeCount) % modeCount;
+        this.modeSelectedIndex.set(prev);
+        this.scrollToActive(prev, '.mode-dropdown', '.mode-option');
+        return;
+      }
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        const option = modeOptions[this.modeSelectedIndex()];
+        if (option) {
+          this.selectMode(event, option.value);
+        }
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.showModeDropdown.set(false);
         return;
       }
     }
