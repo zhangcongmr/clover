@@ -5,7 +5,7 @@
 } @else {
   <div data-layer="app-body" class="AppBody ast-app-body">
     <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area" (click)="restoreRightPanel($event)">
-      <div data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
+      <div #upBtnlist data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
         <div #menuBtn data-svg-wrapper="" data-layer="project-folder-btn"  class="btn-svg" (click)="toggleMenu($event)">
           <svg width="24" height="24">
             <use href="#icon-menu"></use>

@@ -40,6 +40,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected notificationService = inject(NotificationService);
   protected acpService = inject(AcpService);
   contentComp = viewChild(ContentComponent);
+  upBtnlist = viewChild<ElementRef<HTMLElement>>('upBtnlist');
   http = inject(HttpClient);
   injector = inject(Injector);
 
@@ -1434,7 +1435,10 @@ For each fileIcons entry:
   }
 
   restoreRightPanel(event?: MouseEvent) {
-    if (event && event.target === event.currentTarget) return;
+    if (event) {
+      if (event.target === event.currentTarget) return;
+      if (event.target === this.upBtnlist()?.nativeElement) return;
+    }
     this.leftPct = this.previousLeftPct;
     this.refreshAcpPanelWidth();
   }
