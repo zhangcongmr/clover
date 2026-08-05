@@ -58,8 +58,6 @@ export type {
   SessionInfo,
   PromptCapabilities,
   ModelState,
-  DirItem,
-  FileChange,
   ConfigOption,
   // Capability types
   AgentCapabilitiesLike,

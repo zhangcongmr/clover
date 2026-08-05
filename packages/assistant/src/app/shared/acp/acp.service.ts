@@ -6,8 +6,6 @@ import {
   SessionInfo,
   PromptCapabilities,
   ModelState,
-  DirItem,
-  FileChange,
   ContentBlock,
   ToolCall,
   ToolCallUpdate,
@@ -77,13 +75,6 @@ export class AcpService {
   readonly sessions = signal<SessionInfo[]>([]);
   readonly sessionsLoading = signal<boolean>(false);
 
-  // File explorer
-  readonly currentDirPath = signal<string>('');
-  readonly dirItems = signal<DirItem[]>([]);
-  readonly fileContent = signal<string | null>(null);
-  readonly currentFilePath = signal<string | null>(null);
-  readonly fileChanges = signal<FileChange[]>([]);
-
   // Working directory hint from file picker
   readonly workingDirHint = signal<string>('');
 
@@ -142,8 +133,6 @@ export class AcpService {
         sessionId,
         configOptions,
       }));
-      // Load root directory
-      this.wsService.listDir('');
     });
 
     this.wsService.onSessionList((sessions, nextCursor) => {
@@ -179,8 +168,6 @@ export class AcpService {
         configOptions,
       }));
       this.currentModelId.set(models?.currentModelId ?? null);
-      // Load root directory
-      this.wsService.listDir('');
     });
 
     this.wsService.onSessionResumed((sessionId, promptCapabilities, models, configOptions) => {
@@ -193,8 +180,6 @@ export class AcpService {
         configOptions,
       }));
       this.currentModelId.set(models?.currentModelId ?? null);
-      // Load root directory
-      this.wsService.listDir('');
     });
 
     this.wsService.onModelChanged((modelId) => {
@@ -208,22 +193,6 @@ export class AcpService {
         ...s,
         configOptions,
       }));
-    });
-
-    this.wsService.onDirListing((path, items) => {
-      console.log('[ACP] Dir listing:', path, items.length);
-      this.currentDirPath.set(path);
-      this.dirItems.set(items);
-    });
-
-    this.wsService.onFileContent((content) => {
-      console.log('[ACP] File content received');
-      this.fileContent.set(content);
-    });
-
-    this.wsService.onFileChanges((changes) => {
-      console.log('[ACP] File changes:', changes.length);
-      this.fileChanges.set(changes);
     });
 
     // Sync connection state from WebSocket service
@@ -325,10 +294,6 @@ export class AcpService {
     this.messages.set([]);
     this.plans.set(new Map());
     this.sessions.set([]);
-    this.dirItems.set([]);
-    this.fileContent.set(null);
-    this.currentFilePath.set(null);
-    this.fileChanges.set([]);
     this.usage.set(null);
     this.availableCommands.set([]);
     this.activeTodosId.set(null);
@@ -378,19 +343,6 @@ export class AcpService {
 
   setConfigOption(configId: string, type: 'id' | 'boolean', value: string | boolean): void {
     this.wsService.setConfigOption(configId, type, value);
-  }
-
-  // ============================================================================
-  // File explorer
-  // ============================================================================
-
-  listDir(path: string): void {
-    this.wsService.listDir(path);
-  }
-
-  readFile(path: string): void {
-    this.currentFilePath.set(path);
-    this.wsService.readFile(path);
   }
 
   // ============================================================================
@@ -633,11 +585,6 @@ export class AcpService {
     this.plans.set(new Map());
     this.usage.set(null);
     this.activeTodosId.set(null);
-  }
-
-  clearFileContent(): void {
-    this.fileContent.set(null);
-    this.currentFilePath.set(null);
   }
 
   printRecordProxyRes() {
