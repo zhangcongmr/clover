@@ -269,9 +269,6 @@ export type ProxyMessage =
   | { type: 'load_session'; payload: { sessionId: string; cwd?: string } }
   | { type: 'resume_session'; payload: { sessionId: string; cwd?: string } }
   | { type: 'delete_session'; payload: { sessionId: string } }
-  // File explorer
-  | { type: 'list_dir'; payload: { path: string } }
-  | { type: 'read_file'; payload: { path: string } }
   // Permission response
   | { type: 'permission_response'; payload: { requestId: string; outcome: { outcome: 'cancelled' } | { outcome: 'selected'; optionId: string } } }
   // Browser tool response (from extension)
@@ -393,27 +390,6 @@ export interface ProxyModelChangedMessage {
   payload: { modelId: string };
 }
 
-// File explorer responses
-export interface ProxyDirListingMessage {
-  type: 'dir_listing';
-  payload: {
-    path: string;
-    items: DirItem[];
-  };
-}
-
-export interface ProxyFileContentMessage {
-  type: 'file_content';
-  payload: string;
-}
-
-export interface ProxyFileChangesMessage {
-  type: 'file_changes';
-  payload: {
-    changes: FileChange[];
-  };
-}
-
 export interface ProxyPongMessage {
   type: 'pong';
 }
@@ -436,9 +412,6 @@ export type ProxyResponse =
   | ProxySessionDeletedMessage
   | ProxyModelChangedMessage
   | ProxyConfigOptionUpdateMessage
-  | ProxyDirListingMessage
-  | ProxyFileContentMessage
-  | ProxyFileChangesMessage
   | ProxyPongMessage;
 
 // ============================================================================
@@ -487,18 +460,6 @@ export interface ModelState {
   models?: Array<{ modelId: string; name: string; description?: string }>;
 }
 
-export interface DirItem {
-  name: string;
-  type: 'file' | 'directory' | 'symlink';
-  size?: number;
-  modifiedAt?: string;
-}
-
-export interface FileChange {
-  path: string;
-  type: 'create' | 'modify' | 'delete';
-}
-
 // Connection state
 export type ConnectionState =
   | 'disconnected'
@@ -545,9 +506,6 @@ export class AcpWebSocketService {
   private onSessionResumedCallback: ((sessionId: string, promptCapabilities?: PromptCapabilities, models?: ModelState, configOptions?: ConfigOption[]) => void) | null = null;
   private onSessionDeletedCallback: ((sessionId: string) => void) | null = null;
   private onModelChangedCallback: ((modelId: string) => void) | null = null;
-  private onDirListingCallback: ((path: string, items: DirItem[]) => void) | null = null;
-  private onFileContentCallback: ((content: string) => void) | null = null;
-  private onFileChangesCallback: ((changes: FileChange[]) => void) | null = null;
   private onConfigOptionUpdateCallback: ((configOptions: ConfigOption[]) => void) | null = null;
 
   constructor() {}
@@ -590,18 +548,6 @@ export class AcpWebSocketService {
 
   onModelChanged(callback: (modelId: string) => void): void {
     this.onModelChangedCallback = callback;
-  }
-
-  onDirListing(callback: (path: string, items: DirItem[]) => void): void {
-    this.onDirListingCallback = callback;
-  }
-
-  onFileContent(callback: (content: string) => void): void {
-    this.onFileContentCallback = callback;
-  }
-
-  onFileChanges(callback: (changes: FileChange[]) => void): void {
-    this.onFileChangesCallback = callback;
   }
 
   onConfigOptionUpdate(callback: (configOptions: ConfigOption[]) => void): void {
@@ -749,18 +695,6 @@ export class AcpWebSocketService {
         this.onConfigOptionUpdateCallback?.(response.payload.configOptions);
         break;
 
-      case 'dir_listing':
-        this.onDirListingCallback?.(response.payload.path, response.payload.items);
-        break;
-
-      case 'file_content':
-        this.onFileContentCallback?.(response.payload);
-        break;
-
-      case 'file_changes':
-        this.onFileChangesCallback?.(response.payload.changes);
-        break;
-
       case 'pong':
         console.log('[ACP WebSocket] Pong received');
         break;
@@ -869,18 +803,6 @@ export class AcpWebSocketService {
 
   deleteSession(sessionId: string): void {
     this.send({ type: 'delete_session', payload: { sessionId } });
-  }
-
-  // ============================================================================
-  // File explorer
-  // ============================================================================
-
-  listDir(path: string): void {
-    this.send({ type: 'list_dir', payload: { path } });
-  }
-
-  readFile(path: string): void {
-    this.send({ type: 'read_file', payload: { path } });
   }
 
   // ============================================================================

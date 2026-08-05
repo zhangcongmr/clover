@@ -2,7 +2,7 @@ import { Component, inject, signal, input, output, effect, computed } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
-import { SessionInfo, DirItem } from './acp-websocket.service';
+import { SessionInfo } from './acp-websocket.service';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 
 @Component({
@@ -29,7 +29,6 @@ export class AcpSessionManagerComponent {
   authToken = signal<string>('');
   workingDir = signal<string>('');
   showSettings = signal<boolean>(false);
-  showFileExplorer = signal<boolean>(false);
   protected canDeleteSession = computed(() => this.acpService.canDeleteSession());
   private autoConnectAttempted = false;
 
@@ -91,13 +90,6 @@ export class AcpSessionManagerComponent {
     }
   }
 
-  toggleFileExplorer(): void {
-    this.showFileExplorer.update(v => !v);
-    if (this.showFileExplorer()) {
-      this.acpService.listDir('');
-    }
-  }
-
   clearChat(): void {
     this.acpService.clearMessages();
   }
@@ -114,20 +106,6 @@ export class AcpSessionManagerComponent {
     if (confirm('Are you sure you want to delete this session?')) {
       this.acpService.deleteSession(sessionId);
     }
-  }
-
-  navigateDir(path: string): void {
-    this.acpService.listDir(path);
-  }
-
-  openFile(path: string): void {
-    this.acpService.readFile(path);
-  }
-
-  goBackDir(): void {
-    const currentPath = this.acpService.currentDirPath();
-    const parentPath = currentPath.split('/').slice(0, -1).join('/');
-    this.acpService.listDir(parentPath);
   }
 
   toggleDockMenu(): void {
