@@ -33,6 +33,28 @@ export class AgentProcess {
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
       shell: true,
+      // env: {
+      //   ...process.env,
+      //   OPENCODE_ENABLE_QUESTION_TOOL: 'true',
+      // },
+      //
+      // [Commented out] Enabling the question tool in ACP mode causes the agent to
+      // block indefinitely after the user answers a question. The root cause:
+      //
+      // 1. The question tool's execute() calls question.ask(), which creates a
+      //    Deferred and blocks until question.reply() is called.
+      // 2. question.reply() can only be called via HTTP API
+      //    (POST /question/{requestID}/reply), not through the ACP prompt message.
+      // 3. When the assistant sends the answer via session/prompt, the ACP prompt
+      //    handler treats it as a new user message and calls sdk.session.prompt(),
+      //    starting a new LLM turn. The pending question's Deferred is never resolved.
+      //
+      // Prerequisites to re-enable:
+      // - opencode must handle question answers through ACP (e.g., via a custom ACP
+      //   method like _opencode/question.reply, or by detecting pending questions in
+      //   the prompt handler and routing answers to question.reply() internally).
+      // - See: https://agentclientprotocol.com/protocol/v2/extensibility for ACP
+      //   custom method extension mechanism.
     });
 
     // Log stderr for debugging
