@@ -14,19 +14,6 @@
     }
   </div>
   <div class="acp-session-actions">
-    <!-- @if (acpService.sessionState().isConnected) {
-      <button class="acp-icon-button" (click)="toggleSessionHistory()" title="Session History">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-      </button>
-      <button class="acp-icon-button" (click)="toggleFileExplorer()" title="File Explorer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-      </button>
-    } -->
     <div class="acp-dock-wrapper">
       <button class="acp-icon-button" (click)="toggleDockMenu()" title="Dock Position">
         <svg width="16" height="16"><use href="#icon-hori-more"></use></svg>
@@ -164,12 +151,6 @@
   <div class="acp-session-history">
     <div class="session-history-header">
       <span>Session History</span>
-      <!-- <button class="acp-icon-button" (click)="toggleSessionHistory()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button> -->
     </div>
     @if (acpService.sessionsLoading()) {
       <div class="session-loading">Loading sessions...</div>

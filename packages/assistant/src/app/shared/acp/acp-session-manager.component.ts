@@ -83,13 +83,6 @@ export class AcpSessionManagerComponent {
     this.showSettings.update(v => !v);
   }
 
-  toggleSessionHistory(): void {
-    this.acpService.showSessionHistory.update(v => !v);
-    if (this.acpService.showSessionHistory()) {
-      this.acpService.listSessions(this.acpService.workingDirHint());
-    }
-  }
-
   clearChat(): void {
     this.acpService.clearMessages();
   }
