@@ -24,38 +24,67 @@
   }
   @for (message of visibleMessages; track trackByMessageId($index, message)) {
     @if (message.role === 'tool_call') {
-      <div class="acp-message tool-call">
-        <div class="message-avatar tool-call-avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-          </svg>
-        </div>
-        <div class="message-content">
-          <div class="message-header">
-            <span class="message-role">Tool Call</span>
-            <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+      @if (acpService.isQuestionToolCall(message)) {
+        <!-- Question in messages: show as small indicator when active, or as completed badge -->
+        @if (acpService.submittedQuestions().has(message.toolCallId!)) {
+          <div class="acp-message tool-call">
+            <div class="message-avatar tool-call-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="message-role">Question</span>
+                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+              </div>
+              <div class="tool-call-card status-completed">
+                <div class="tool-call-title-row">
+                  <span class="tool-call-status-icon">✅</span>
+                  <span class="tool-call-title-text">{{ message.toolTitle || 'Questions answered' }}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
-            <div class="tool-call-title-row">
-              <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
-              <span class="tool-call-title-text">{{ message.toolTitle }}</span>
-              @if (message.toolKind) {
-              <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
+        }
+        <!-- Active questions are rendered in the pinned section below -->
+      } @else {
+        <!-- Regular tool call card -->
+        <div class="acp-message tool-call">
+          <div class="message-avatar tool-call-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
+          </div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-role">Tool Call</span>
+              <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+            </div>
+            <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
+              <div class="tool-call-title-row">
+                <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
+                <span class="tool-call-title-text">{{ message.toolTitle }}</span>
+                @if (message.toolKind) {
+                <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
+                }
+              </div>
+              @if (message.toolLocations && message.toolLocations.length > 0) {
+              <div class="tool-call-location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                  <polyline points="13 2 13 9 20 9" />
+                </svg>
+                <span>{{ message.toolLocations[0].path }}</span>
+              </div>
               }
             </div>
-            @if (message.toolLocations && message.toolLocations.length > 0) {
-            <div class="tool-call-location">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-                <polyline points="13 2 13 9 20 9" />
-              </svg>
-              <span>{{ message.toolLocations[0].path }}</span>
-            </div>
-            }
           </div>
         </div>
-      </div>
+      }
     } @else {
       <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'"
         [class.thought]="message.role === 'thought'">
@@ -91,6 +120,18 @@
   }
   }
   </div>
+
+  @if (activeQuestionMessage(); as questionMsg) {
+  <div class="acp-question-pinned">
+    <app-acp-question
+      [questions]="getQuestions(questionMsg)"
+      [toolCallId]="questionMsg.toolCallId!"
+      [submitted]="false"
+      (onSubmit)="onQuestionSubmit(questionMsg.toolCallId!, $event)"
+      (onIgnore)="onQuestionIgnore(questionMsg.toolCallId!)"
+    />
+  </div>
+  }
 
   @if (activeTodosMessage(); as todoMsg) {
   <div class="acp-todos-pinned">
