@@ -12,6 +12,24 @@ import type { AgentConfig } from './acp-agent.types';
   template: `
     <div class="acp-chat-input-container">
       <div class="acp-chat-input-box">
+        @if (errorMessage(); as error) {
+          <div class="chat-common-error-box">
+            <div class="chat-error-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span class="chat-error-text">{{ error }}</span>
+              <button class="chat-error-close" title="Dismiss" (click)="errorMessage.set('')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
         @if (showSlashMenu()) {
           <div class="slash-command-menu custom-scroll">
             @for (cmd of filteredCommands(); track cmd.name; let i = $index) {
@@ -140,6 +158,51 @@ import type { AgentConfig } from './acp-agent.types';
     }
     .acp-chat-input-box:focus-within {
       border-color: var(--vscode-focusBorder, #007acc);
+    }
+    .chat-common-error-box {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      right: 0;
+      z-index: 1001;
+      padding: 0 12px;
+    }
+    .chat-error-banner {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border: 1px solid var(--vscode-inputValidation-errorBorder, #f14c4c);
+      border-radius: 8px;
+      background-color: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.15));
+      color: var(--vscode-errorForeground, #f48771);
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .chat-error-text {
+      flex: 1;
+      word-break: break-word;
+    }
+    .chat-error-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.15s, background-color 0.15s;
+    }
+    .chat-error-close:hover {
+      opacity: 1;
+      background-color: rgba(255, 255, 255, 0.1);
     }
     .message-textarea {
       display: block;
@@ -394,6 +457,7 @@ export class AcpChatInputComponent {
   @ViewChild('messageInput') private messageInput!: ElementRef;
 
   inputValue = signal<string>('');
+  errorMessage = signal<string | null>(null);
   showAgentDropdown = signal<boolean>(false);
   showModeDropdown = signal<boolean>(false);
   selectedIndex = signal<number>(0);
@@ -491,6 +555,7 @@ export class AcpChatInputComponent {
       return;
     }
 
+    this.errorMessage.set(null);
     this.inputValue.set('');
 
     const textarea = this.messageInput?.nativeElement;
@@ -508,6 +573,7 @@ export class AcpChatInputComponent {
       await this.acpService.sendPrompt(text);
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);
+      this.errorMessage.set(error instanceof Error ? error.message : String(error));
     }
   }
 
