@@ -70,3 +70,5 @@ export { AcpChatComponent } from './acp-chat.component';
 export { AcpPlanComponent } from './acp-plan.component';
 export { AcpSessionManagerComponent } from './acp-session-manager.component';
 export { AcpPermissionDialogComponent } from './acp-permission-dialog.component';
+export { AcpQuestionComponent } from './acp-question.component';
+export type { QuestionItem, QuestionOption } from './acp-question.component';

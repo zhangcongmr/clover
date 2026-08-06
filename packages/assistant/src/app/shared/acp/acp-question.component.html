@@ -1,0 +1,68 @@
+<div class="question-card" [class.submitted]="submitted()" [class.collapsed]="collapsed()">
+  <!-- Header -->
+  <div class="question-header" (click)="toggleCollapse()">
+    <span class="question-counter">{{ currentIndex() + 1 }}/{{ total() }} 个问题</span>
+    <div class="question-nav-dots">
+      @for (q of questions(); track $index) {
+        <span class="nav-dot" [class.active]="$index === currentIndex()" [class.answered]="answers().has($index)"
+          (click)="goToQuestion($index); $event.stopPropagation()"></span>
+      }
+    </div>
+    <span class="question-toggle" [class.collapsed]="collapsed()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
+    </span>
+  </div>
+
+  @if (!collapsed()) {
+  <!-- Question text -->
+  <div class="question-body">
+    <div class="question-title">{{ currentQuestion().question }}</div>
+    <div class="question-hint">选择一个答案</div>
+
+    <!-- Options -->
+    <div class="question-options">
+      @for (option of currentQuestion().options; track option.label) {
+        <label class="option-item" [class.selected]="isSelected(currentIndex(), option.label)"
+          (click)="selectAnswer(currentIndex(), option.label)">
+          <span class="radio-outer" [class.checked]="isSelected(currentIndex(), option.label)">
+            <span class="radio-inner"></span>
+          </span>
+          <div class="option-content">
+            <div class="option-label">{{ option.label }}</div>
+            @if (option.description) {
+              <div class="option-description">{{ option.description }}</div>
+            }
+          </div>
+        </label>
+      }
+
+      <!-- Custom input option -->
+      <label class="option-item custom-option" [class.selected]="isCustomSelected(currentIndex())"
+        (click)="selectAnswer(currentIndex(), '__custom__')">
+        <span class="radio-outer" [class.checked]="isCustomSelected(currentIndex())">
+          <span class="radio-inner"></span>
+        </span>
+        <div class="option-content">
+          <div class="option-label">输入自己的答案</div>
+          @if (isCustomSelected(currentIndex())) {
+            <input type="text" class="custom-input" placeholder="输入你的答案..."
+              [ngModel]="customInputs().get(currentIndex()) || ''"
+              (ngModelChange)="customInputs().set(currentIndex(), $event); selectAnswer(currentIndex(), '__custom__')"
+              (click)="$event.stopPropagation()" />
+          }
+        </div>
+      </label>
+    </div>
+
+    <!-- Footer -->
+    <div class="question-footer">
+      <button class="btn-ignore" (click)="ignore()">忽略</button>
+      @if (!isLast()) {
+        <button class="btn-next" (click)="nextQuestion()" [disabled]="!answers().has(currentIndex())">下一步</button>
+      } @else {
+        <button class="btn-submit" (click)="submitAll()" [disabled]="!allAnswered()">提交</button>
+      }
+    </div>
+  </div>
+  }
+</div>

@@ -2,6 +2,7 @@ import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, ef
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
+import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
 
 const INITIAL_LOAD = 30;
 const LOAD_MORE = 20;
@@ -9,7 +10,7 @@ const LOAD_MORE = 20;
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent],
+  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -29,6 +30,8 @@ export class AcpChatComponent implements OnDestroy {
     if (!id) return null;
     return this.acpService.messages().find(m => m.id === id) ?? null;
   });
+
+  readonly activeQuestionMessage = computed(() => this.acpService.activeQuestionMessage());
 
   todosCollapsed = false;
 
@@ -167,6 +170,26 @@ export class AcpChatComponent implements OnDestroy {
 
   totalCount(message: AcpMessage): number {
     return this.getTodos(message)?.length ?? 0;
+  }
+
+  // ============================================================================
+  // Question methods
+  // ============================================================================
+
+  getQuestions(message: AcpMessage): QuestionItem[] {
+    const rawInput = message.toolRawInput as any;
+    if (rawInput && Array.isArray(rawInput.questions)) {
+      return rawInput.questions;
+    }
+    return [];
+  }
+
+  onQuestionSubmit(toolCallId: string, answers: string[]): void {
+    this.acpService.submitQuestionAnswers(toolCallId, answers);
+  }
+
+  onQuestionIgnore(toolCallId: string): void {
+    this.acpService.ignoreQuestions(toolCallId);
   }
 
   goBackToSessionList(): void {

@@ -45,7 +45,7 @@ import type { AgentConfig } from './acp-agent.types';
         }
         <textarea #messageInput [ngModel]="inputValue()" (ngModelChange)="inputValue.set($event)"
           (input)="onInput()" (keydown)="onKeydown($event)" placeholder="Describe what to build"
-          [disabled]="!acpService.sessionState().isConnected" rows="1"
+          [disabled]="!acpService.sessionState().isConnected || acpService.hasActiveQuestions()" rows="1"
           class="message-textarea custom-scroll"></textarea>
         <div class="acp-chat-toolbar">
           <div class="acp-chat-toolbar-left">
@@ -123,7 +123,7 @@ import type { AgentConfig } from './acp-agent.types';
               </svg>
             </button>
             <button class="send-button" (click)="acpService.isProcessing() ? stopGeneration() : sendMessage()"
-              [disabled]="!acpService.sessionState().isConnected || (!inputValue().trim() && !acpService.isProcessing())">
+              [disabled]="!acpService.sessionState().isConnected || acpService.hasActiveQuestions() || (!inputValue().trim() && !acpService.isProcessing())">
               @if (acpService.isProcessing()) {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <rect x="6" y="6" width="12" height="12" rx="2"/>
@@ -551,7 +551,7 @@ export class AcpChatInputComponent {
 
   async sendMessage(): Promise<void> {
     const text = this.inputValue().trim();
-    if (!text || this.acpService.isProcessing()) {
+    if (!text || this.acpService.isProcessing() || this.acpService.hasActiveQuestions()) {
       return;
     }
 

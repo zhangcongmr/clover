@@ -94,6 +94,9 @@ export class AcpService {
   // Agent selection
   readonly selectedAgent = signal<AgentConfig | null>(AVAILABLE_AGENTS[0]);
 
+  // Question answers tracking: toolCallId -> Set of submitted toolCallIds
+  readonly submittedQuestions = signal<Set<string>>(new Set());
+
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
   readonly isConnected = computed(() => this.sessionState().isConnected);
@@ -104,6 +107,27 @@ export class AcpService {
     // v2 uses session.delete. Support both shapes.
     return !!caps.sessionCapabilities?.delete || !!caps.session?.delete;
   });
+
+  // Active question: the latest unanswered question tool call
+  readonly activeQuestionMessage = computed(() => {
+    const msgs = this.messages();
+    const submitted = this.submittedQuestions();
+    // Find the latest tool_call with questions that hasn't been answered
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const m = msgs[i];
+      if (m.role === 'tool_call' && m.toolCallId) {
+        const rawInput = m.toolRawInput as any;
+        if (rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0) {
+          if (!submitted.has(m.toolCallId)) {
+            return m;
+          }
+        }
+      }
+    }
+    return null;
+  });
+
+  readonly hasActiveQuestions = computed(() => this.activeQuestionMessage() !== null);
 
   constructor() {
     this.setupWebSocketCallbacks();
@@ -488,12 +512,57 @@ export class AcpService {
       }
     }
 
+    const toolCallId = update.toolCallId;
+
+    // Upsert: if a message for this toolCallId already exists, update it in
+    // place instead of appending a duplicate (ACP sends both a `tool_call` and
+    // one or more `tool_call_update` events for the same tool call).
+    const existingIndex = toolCallId
+      ? this.messages().findIndex(m => m.toolCallId === toolCallId || m.id === toolCallId)
+      : -1;
+
+    if (existingIndex !== -1) {
+      this.messages.update(msgs =>
+        msgs.map((m, i) =>
+          i === existingIndex
+            ? {
+                ...m,
+                id: toolCallId || m.id,
+                toolCallId,
+                toolTitle: update.title ?? m.toolTitle,
+                toolKind: update.kind ?? m.toolKind,
+                toolStatus: update.status ?? m.toolStatus,
+                toolLocations: update.locations ?? m.toolLocations,
+                toolRawInput: update.rawInput ?? m.toolRawInput,
+                toolRawOutput: update.rawOutput ?? m.toolRawOutput,
+              }
+            : m
+        )
+      );
+      // Track already-answered questions when loading session history
+      if (update.status === 'completed' && toolCallId) {
+        const existingMsg = this.messages().find(m => m.toolCallId === toolCallId || m.id === toolCallId);
+        const rawInput = existingMsg?.toolRawInput as any;
+        if (rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0) {
+          this.submittedQuestions.update(s => {
+            const next = new Set(s);
+            next.add(toolCallId);
+            return next;
+          });
+        }
+      }
+      if (isTodo && toolCallId) {
+        this.activeTodosId.set(toolCallId);
+      }
+      return;
+    }
+
     const toolCallMsg: AcpMessage = {
-      id: update.toolCallId || crypto.randomUUID(),
+      id: toolCallId || crypto.randomUUID(),
       role: 'tool_call',
       content: '',
       timestamp: new Date(),
-      toolCallId: update.toolCallId,
+      toolCallId,
       toolTitle: update.title,
       toolKind: update.kind,
       toolStatus: update.status || 'pending',
@@ -505,6 +574,19 @@ export class AcpService {
     if (isTodo) {
       // 为新创建的 todo 消息设置 activeTodosId（与 line 499 互斥，不会重复执行）
       this.activeTodosId.set(toolCallMsg.id);
+    }
+
+    // Track already-answered questions when loading session history
+    if (update.status === 'completed' && toolCallId) {
+      const existingMsg = this.messages().find(m => m.toolCallId === toolCallId || m.id === toolCallId);
+      const rawInput = existingMsg?.toolRawInput as any;
+      if (rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0) {
+        this.submittedQuestions.update(s => {
+          const next = new Set(s);
+          next.add(toolCallId);
+          return next;
+        });
+      }
     }
 
     // Append the new tool call message to the messages list
@@ -573,6 +655,47 @@ export class AcpService {
   }
 
   // ============================================================================
+  // Question answers
+  // ============================================================================
+
+  isQuestionToolCall(message: AcpMessage): boolean {
+    if (message.role !== 'tool_call') return false;
+    const rawInput = message.toolRawInput as any;
+    return rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0;
+  }
+
+  submitQuestionAnswers(toolCallId: string, answers: string[]): void {
+    if (this.submittedQuestions().has(toolCallId)) return;
+
+    // Format answers as simple text (one per line)
+    const answerText = answers.map((a, i) => `Question ${i + 1}: ${a}`).join('\n');
+
+    // Mark as submitted
+    this.submittedQuestions.update(s => {
+      const next = new Set(s);
+      next.add(toolCallId);
+      return next;
+    });
+
+    // Send answers via session/prompt
+    this.wsService.sendPrompt(answerText);
+  }
+
+  ignoreQuestions(toolCallId: string): void {
+    if (this.submittedQuestions().has(toolCallId)) return;
+
+    // Mark as submitted (ignored)
+    this.submittedQuestions.update(s => {
+      const next = new Set(s);
+      next.add(toolCallId);
+      return next;
+    });
+
+    // Send skip signal
+    this.wsService.sendPrompt('[Questions ignored by user]');
+  }
+
+  // ============================================================================
   // Utility methods
   // ============================================================================
 
@@ -585,6 +708,7 @@ export class AcpService {
     this.plans.set(new Map());
     this.usage.set(null);
     this.activeTodosId.set(null);
+    this.submittedQuestions.set(new Set());
   }
 
   printRecordProxyRes() {
