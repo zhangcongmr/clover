@@ -161,7 +161,7 @@ import type { AgentConfig } from './acp-agent.types';
     }
     .chat-common-error-box {
       position: absolute;
-      top: -24px;
+      top: -42px;
       left: 0;
       right: 0;
       z-index: 1001;
