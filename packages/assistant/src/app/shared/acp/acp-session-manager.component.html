@@ -34,7 +34,7 @@
         </svg>
       </button>
     }
-    <div class="acp-dock-wrapper">
+    <div class="acp-dock-wrapper" (click)="$event.stopPropagation()">
       <button class="acp-icon-button" (click)="toggleDockMenu()" title="Dock Position">
         <svg width="16" height="16"><use href="#icon-hori-more"></use></svg>
       </button>
