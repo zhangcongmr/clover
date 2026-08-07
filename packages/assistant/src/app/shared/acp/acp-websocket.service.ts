@@ -267,7 +267,7 @@ export type ProxyMessage =
   // Session history
   | { type: 'list_sessions'; payload?: { cwd?: string; cursor?: string } }
   | { type: 'load_session'; payload: { sessionId: string; cwd?: string } }
-  | { type: 'resume_session'; payload: { sessionId: string; cwd?: string } }
+  | { type: 'resume_session'; payload: { sessionId: string; cwd?: string; replayFrom?: { type: string } } }
   | { type: 'delete_session'; payload: { sessionId: string } }
   // Permission response
   | { type: 'permission_response'; payload: { requestId: string; outcome: { outcome: 'cancelled' } | { outcome: 'selected'; optionId: string } } }
@@ -792,8 +792,8 @@ export class AcpWebSocketService {
     this.send({ type: 'load_session', payload: { sessionId, cwd } });
   }
 
-  resumeSession(sessionId: string, cwd?: string): void {
-    this.send({ type: 'resume_session', payload: { sessionId, cwd } });
+  resumeSession(sessionId: string, cwd?: string, replayFrom?: { type: string }): void {
+    this.send({ type: 'resume_session', payload: { sessionId, cwd, replayFrom } });
   }
 
   deleteSession(sessionId: string): void {

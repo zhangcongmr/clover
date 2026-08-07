@@ -333,13 +333,13 @@ export class AcpService {
     this.wsService.loadSession(sessionId, cwd);
   }
 
-  resumeSession(sessionId: string, cwd?: string): void {
+  resumeSession(sessionId: string, cwd?: string, replayFrom?: { type: string }): void {
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
     this.showSessionHistory.set(false);
-    this.wsService.resumeSession(sessionId, cwd);
+    this.wsService.resumeSession(sessionId, cwd, replayFrom);
   }
 
   deleteSession(sessionId: string): void {
