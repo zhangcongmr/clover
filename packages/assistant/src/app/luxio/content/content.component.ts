@@ -56,10 +56,8 @@ interface WebSocketResponse {
   ]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
-  readonly sideOpen = model<boolean>(true);
   readonly addProjectComponent = viewChild(AddProjectComponent);
   readonly filePicker = viewChild(FilePickerDialogComponent);
-  readonly currentDisplayViewId = model<number>(1);
   public myConfigService = inject(MyConfigService)
   public coreService = inject(CoreService);
   private notificationService = inject(NotificationService);
@@ -92,6 +90,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   @Output() fileTypeChange = new EventEmitter<string>();
   dataListChangeOutput = output<Array<AstTreeNode>>();
   disconnectTerminal = output<void>();
+
+  sideOpen = true
+  lastSelectedDisplayViewId: number = 1;
+  currentDisplayViewId: number = 1;
 
   // 添加自动刷新控制变量
   get autoRefreshEnabled() { return this.settingsService.autoRefreshEnabled; }
@@ -236,6 +238,23 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
     // 断开本地Agent连接
     this.localAgentService.disconnect();
+  }
+
+  toggleDisplayViewId(currentDisplayViewId: number) {
+    if (currentDisplayViewId == this.lastSelectedDisplayViewId) {
+      if (!this.sideOpen) {
+        this.sideOpen = true;
+      } else {
+        this.sideOpen = false;
+      }
+    } else {
+      if (currentDisplayViewId != 4) {
+
+        this.currentDisplayViewId = currentDisplayViewId;
+        this.sideOpen = true;
+        this.lastSelectedDisplayViewId = currentDisplayViewId;
+      }
+    }
   }
 
   // 检测是否为本地项目（根节点 isLocal = true）
@@ -1099,8 +1118,8 @@ Always use the welcome_greeting tool.`;
     selectedParentNode.isExpanded = true; // 展开父节点
 
     this.storeApi();
-    this.currentDisplayViewId.set(1);
-    this.sideOpen.set(true);
+    this.currentDisplayViewId = 1;
+    this.sideOpen = true;
 
     // 重置状态
     this.showLocationSelector.set(false);
@@ -1309,7 +1328,7 @@ Always use the welcome_greeting tool.`;
   onViewOut(evt: any) {
     this.dataList().push(...evt);
     this.storeApi()
-    this.currentDisplayViewId.set(1);
+    this.currentDisplayViewId = 1;
   }
 
   openAddDlg() {

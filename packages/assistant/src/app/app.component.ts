@@ -66,7 +66,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
-  rightPanelOpen = false;
+  astContentPanelOpen = true;
+  acpPanelOpen = false;
   dockPosition: 'left' | 'right' = 'right';
   terminalBtnShow = true;
   terminalPanelShow = false;
@@ -78,8 +79,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
-  private readonly DOCK_POSITION_KEY = 'luxio_acp_dock_position';
-  private readonly PANEL_OPEN_KEY = 'luxio_acp_panel_open';
+  private readonly AST_CONTENT_PANEL_OPEN_KEY = 'luxio_ast_content_panel_open';
+  private readonly ACP_DOCK_POSITION_KEY = 'luxio_acp_dock_position';
+  private readonly ACP_PANEL_OPEN_KEY = 'luxio_acp_panel_open';
 
   keepTerminalInstance = {
     value: false,
@@ -95,8 +97,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected client = inject(Client);
   protected renderer = inject(A2uiRendererService);
 
-
-  sideOpen = true
 
   blurSwitch = true;
   isOpen = false;
@@ -225,15 +225,19 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       }
       // 从 localStorage 恢复文件图标
       this.loadSavedFileIcons();
+      const savedAstContentPanelOpen = localStorage.getItem(this.AST_CONTENT_PANEL_OPEN_KEY);
+      if (savedAstContentPanelOpen !== null) {
+        this.astContentPanelOpen = savedAstContentPanelOpen === 'true';
+      }
       // 从 localStorage 恢复停靠位置
-      const savedDock = localStorage.getItem(this.DOCK_POSITION_KEY);
+      const savedDock = localStorage.getItem(this.ACP_DOCK_POSITION_KEY);
       if (savedDock === 'left' || savedDock === 'right') {
         this.dockPosition = savedDock;
       }
       // 从 localStorage 恢复面板打开状态
-      const savedOpen = localStorage.getItem(this.PANEL_OPEN_KEY);
+      const savedOpen = localStorage.getItem(this.ACP_PANEL_OPEN_KEY);
       if (savedOpen !== null) {
-        this.rightPanelOpen = savedOpen === 'true';
+        this.acpPanelOpen = savedOpen === 'true';
       }
     }
   }
@@ -1047,18 +1051,12 @@ For each fileIcons entry:
 
   toggleDisplayViewId(currentDisplayViewId: number) {
     if (currentDisplayViewId == this.lastSelectedDisplayViewId) {
-      if (!this.sideOpen) {
-        this.sideOpen = true;
-      } else {
-        this.sideOpen = false;
-      }
     } else {
       if(currentDisplayViewId != 4) {
         if (currentDisplayViewId === 5 || currentDisplayViewId === 6) {
           this.previousViewId = this.currentDisplayViewId;
         }
         this.currentDisplayViewId = currentDisplayViewId;
-        this.sideOpen = true;
         this.lastSelectedDisplayViewId = currentDisplayViewId;
       }
 
@@ -1106,19 +1104,24 @@ For each fileIcons entry:
     this.lastSelectedDisplayViewId = viewId;
   }
 
-  toggleRightPanel() {
-    this.rightPanelOpen = !this.rightPanelOpen;
-    localStorage.setItem(this.PANEL_OPEN_KEY, String(this.rightPanelOpen));
+  toggleAstContentPanel() {
+    this.astContentPanelOpen = !this.astContentPanelOpen;
+    localStorage.setItem(this.AST_CONTENT_PANEL_OPEN_KEY, String(this.astContentPanelOpen));
   }
 
-  closeRightPanel() {
-    this.rightPanelOpen = false;
-    localStorage.setItem(this.PANEL_OPEN_KEY, 'false');
+  toggleAcpPanel() {
+    this.acpPanelOpen = !this.acpPanelOpen;
+    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, String(this.acpPanelOpen));
+  }
+
+  closeAcpPanel() {
+    this.acpPanelOpen = false;
+    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
   }
 
   onDockPositionChange(position: 'left' | 'right') {
     this.dockPosition = position;
-    localStorage.setItem(this.DOCK_POSITION_KEY, position);
+    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
   }
 
   // Method to open a new terminal tab
