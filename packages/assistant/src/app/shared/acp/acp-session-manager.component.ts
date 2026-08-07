@@ -10,7 +10,10 @@ import { LocalAgentService } from '../local-agent/local-agent.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './acp-session-manager.component.html',
-  styleUrls: ['./acp-session-manager.component.css']
+  styleUrls: ['./acp-session-manager.component.css'],
+  host: {
+    '(document:click)': 'onDocumentClick($event)'
+  }
 })
 export class AcpSessionManagerComponent {
   closePanel = output<void>();
@@ -108,6 +111,12 @@ export class AcpSessionManagerComponent {
   setDockPosition(position: 'left' | 'right'): void {
     this.dockPositionChange.emit(position);
     this.showDockMenu.set(false);
+  }
+
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showDockMenu()) {
+      this.showDockMenu.set(false);
+    }
   }
 
 }
