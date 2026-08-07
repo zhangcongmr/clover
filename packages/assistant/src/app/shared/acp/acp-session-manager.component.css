@@ -66,6 +66,16 @@
 .acp-dock-menu-items {
   display: flex;
   gap: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+}
+
+.acp-dock-menu .acp-panel-close {
+  width: 100%;
+  height: 28px;
+  justify-content: center;
+  color: var(--vscode-errorForeground, #d32f2f);
 }
 
 .acp-dock-item {
