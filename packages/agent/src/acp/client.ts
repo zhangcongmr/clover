@@ -386,24 +386,15 @@ export class AcpClient {
 
       this.activeSession?.dispose();
 
-      // Load session metadata
       const loadResult = await this.clientConnection.agent.request('session/load', {
         sessionId: params.sessionId,
         cwd,
         mcpServers: [],
       });
 
-      // Resume session to make it active (without replay)
-      await this.clientConnection.agent.request('session/resume', {
-        sessionId: params.sessionId,
-        cwd,
-        mcpServers: [],
-      });
-
-      // Store session ID so prompt() can send directly
       this.loadedSessionId = params.sessionId;
 
-      console.log('[ACP Client] Session loaded and resumed:', params.sessionId);
+      console.log('[ACP Client] Session loaded:', params.sessionId);
 
       send(this.ws, 'session_loaded', {
         sessionId: params.sessionId,

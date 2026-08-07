@@ -2444,7 +2444,7 @@
           ],
           "properties": [
             "topLevelTabs",
-            "tabHeaderListRef",
+            "tabUlRef",
             "addTabEnable",
             "closable",
             "tabType",
