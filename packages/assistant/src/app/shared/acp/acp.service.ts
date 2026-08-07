@@ -143,7 +143,6 @@ export class AcpService {
     });
 
     this.wsService.onPromptComplete((stopReason) => {
-      console.log('[ACP] Prompt completed:', stopReason);
       this.isProcessing.set(false);
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
@@ -151,7 +150,6 @@ export class AcpService {
     });
 
     this.wsService.onSessionCreated((sessionId, configOptions) => {
-      console.log('[ACP] Session created:', sessionId);
       this.sessionState.update(s => ({
         ...s,
         sessionId,
@@ -160,13 +158,11 @@ export class AcpService {
     });
 
     this.wsService.onSessionList((sessions, nextCursor) => {
-      console.log('[ACP] Sessions listed:', sessions.length);
       this.sessions.set(sessions);
       this.sessionsLoading.set(false);
     });
 
     this.wsService.onSessionDeleted((sessionId) => {
-      console.log('[ACP] Session deleted:', sessionId);
       // If the deleted session was the active one, reset local state.
       if (this.sessionState().sessionId === sessionId) {
         this.messages.set([]);
@@ -183,7 +179,6 @@ export class AcpService {
     });
 
     this.wsService.onSessionLoaded((sessionId, promptCapabilities, models, configOptions) => {
-      console.log('[ACP] Session loaded:', sessionId);
       this.sessionState.update(s => ({
         ...s,
         sessionId,
@@ -195,7 +190,6 @@ export class AcpService {
     });
 
     this.wsService.onSessionResumed((sessionId, promptCapabilities, models, configOptions) => {
-      console.log('[ACP] Session resumed:', sessionId);
       this.sessionState.update(s => ({
         ...s,
         sessionId,
@@ -207,12 +201,10 @@ export class AcpService {
     });
 
     this.wsService.onModelChanged((modelId) => {
-      console.log('[ACP] Model changed:', modelId);
       this.currentModelId.set(modelId);
     });
 
     this.wsService.onConfigOptionUpdate((configOptions) => {
-      console.log('[ACP] Config options updated:', configOptions.length);
       this.sessionState.update(s => ({
         ...s,
         configOptions,
@@ -374,8 +366,6 @@ export class AcpService {
   // ============================================================================
 
   private handleSessionUpdate(update: SessionUpdate): void {
-    console.log('[ACP] Session update:', update.sessionUpdate);
-
     switch (update.sessionUpdate) {
       case 'agent_message_chunk':
         if (update.content?.type === 'text' && update.content.text) {
@@ -426,12 +416,10 @@ export class AcpService {
         break;
 
       case 'available_commands_update':
-        console.log('[ACP] Available commands:', update.availableCommands.length);
         this.availableCommands.set(update.availableCommands);
         break;
 
       case 'config_option_update':
-        console.log('[ACP] Config options updated:', update.configOptions.length);
         this.sessionState.update(s => ({
           ...s,
           configOptions: update.configOptions,

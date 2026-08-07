@@ -574,7 +574,6 @@ export class AcpWebSocketService {
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-          console.log('[ACP WebSocket] Connected, sending connect command');
           this.send({
             type: 'connect',
             payload: agent ? { command: agent.command, args: agent.args } : undefined,
@@ -600,7 +599,6 @@ export class AcpWebSocketService {
         };
 
         this.ws.onclose = () => {
-          console.log('[ACP WebSocket] Closed');
           this.connectionState.set('disconnected');
           this.ws = null;
           this.sessionId.set(null);
@@ -617,7 +615,6 @@ export class AcpWebSocketService {
   recordProxyRes: ProxyResponse[] = [];
   private handleResponse(response: ProxyResponse): void {
     this.recordProxyRes.push(response);
-    console.log('[ACP WebSocket] Received:', response.type);
 
     switch (response.type) {
       case 'status':
@@ -655,7 +652,6 @@ export class AcpWebSocketService {
         break;
 
       case 'permission_request':
-        console.log('[ACP WebSocket] Permission request:', response.payload);
         this.handlePermissionRequest(response.payload);
         break;
 
@@ -696,7 +692,6 @@ export class AcpWebSocketService {
         break;
 
       case 'pong':
-        console.log('[ACP WebSocket] Pong received');
         break;
     }
   }
