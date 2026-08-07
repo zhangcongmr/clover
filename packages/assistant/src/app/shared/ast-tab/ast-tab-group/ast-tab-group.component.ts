@@ -12,7 +12,7 @@ import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
 })
 export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, AfterContentInit, OnDestroy {
   topLevelTabs = contentChildren(AstTabComponent)
-  tabHeaderListRef = viewChild<ElementRef<HTMLButtonElement>>('tabHeaderListRef');
+  tabUlRef = viewChild<ElementRef<HTMLUListElement>>('tabUlRef');
 
   readonly addTabEnable = input<boolean>(false);
   readonly closable = input(true);
@@ -53,7 +53,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   private recalculateScrollbarNow() {
-    const tabList = this.tabHeaderListRef();
+    const tabList = this.tabUlRef();
     if (!tabList?.nativeElement) return;
     this.handleUlResize(tabList.nativeElement as HTMLElement);
   }
@@ -122,7 +122,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       }
     });
 
-    const tabList = this.tabHeaderListRef();
+    const tabList = this.tabUlRef();
     if (tabList) {
       this.resizeObserver.observe(tabList.nativeElement);
       // 保存 observer 以便 ngOnDestroy 中 disconnect（可选）
@@ -267,7 +267,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   public ensureTabVisible(targetTab: AstTabComponent): void {
-    const tabList = this.tabHeaderListRef();
+    const tabList = this.tabUlRef();
     if (!tabList || !tabList.nativeElement) return;
 
     const ulElement = tabList.nativeElement as HTMLElement;
@@ -570,7 +570,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   private calculateHiddenTabs(): void {
-    const tabList = this.tabHeaderListRef();
+    const tabList = this.tabUlRef();
     if (!tabList?.nativeElement) {
       this.hiddenTabs.set([]);
       return;
