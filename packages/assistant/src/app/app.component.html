@@ -131,9 +131,9 @@
             </div>
           }
         </div>
-        <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleDisplayViewId(1)">
+        <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleAstContentPanel()">
           <svg class="icon" width="26" height="24">
-            <use href="#icon-folder"></use>
+            <use href="#icon-editor"></use>
           </svg>
         </div>
         <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
@@ -162,7 +162,7 @@
               <use href="#icon-preview"></use>
           </svg>
         </div>
-        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleRightPanel()">
+        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleAcpPanel()">
           <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
@@ -183,7 +183,7 @@
     </div>
     <div class="ast-panel-container" [class.dock-left]="dockPosition === 'left'">
       <!-- 水平拖动条 -->
-      @if(rightPanelOpen) {
+      @if(acpPanelOpen) {
         <div style="position: absolute;width: 100%;height: 100%;">
           <div class="split-line-ew ast-split-handle-ew"
             [style.left]="dockPosition === 'right' ? 'calc(5px + ' + leftPct + ' * (100% - 15px))' : 'calc((1 - ' + leftPct + ') * (100% - 15px) + 5px)'"
@@ -192,16 +192,16 @@
       }
 
       <!-- Middle panel -->
-      @if (currentDisplayViewId==1) {
+      @if (astContentPanelOpen) {
         <div class="card-base ast-middle-panel"
-          [style.width]="rightPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
+          [style.width]="acpPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
           <!-- 垂直拖动条 -->
           <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
             <div class="split-line-ns ast-split-handle-ns"
               [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
           </div>
 
-          <div [(sideOpen)]="sideOpen" [(currentDisplayViewId)]="currentDisplayViewId" [leftOffset]="dockPosition === 'right' ? 0 : acpPanelWidthPx()" ast-content
+          <div ast-content [leftOffset]="dockPosition === 'right' ? 0 : acpPanelWidthPx()"
             (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
             (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
           </div>
@@ -226,19 +226,10 @@
       }
 
       <!-- Docked ACP panel -->
-      @if(rightPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
-        <app-acp-panel #acpPanel (closePanel)="closeRightPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" (dockPositionChange)="onDockPositionChange($event)" [isMaximized]="leftPct === 0" [dockPosition]="dockPosition" [style.width]="acpPanelWidthPx() + 'px'" />
+      @if(acpPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
+        <app-acp-panel #acpPanel (closePanel)="closeAcpPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" (dockPositionChange)="onDockPositionChange($event)" [isMaximized]="leftPct === 0" [dockPosition]="dockPosition" [style.width]="acpPanelWidthPx() + 'px'" />
       }
     </div>
-
-
-    <!-- @if(currentDisplayViewId==1) {
-      <div [sideOpen]="sideOpen" [currentDisplayViewId]="currentDisplayViewId" ast-content></div>
-    } @else if(currentDisplayViewId==2) {
-    } @else if(currentDisplayViewId==3) {
-    } @else if(currentDisplayViewId==4) {
-    } @else if(currentDisplayViewId==5) {
-    } -->
   </div>
   <div data-layer="overview-longstrip" class="OverviewLongstrip ast-overview-longstrip">
     @if(currentDisplayViewId!=4) {

@@ -1,7 +1,7 @@
 
 <div class="ast-content-drag-overlay">
-  <div class="split-line ast-content-split-handle" [style.left]="sideOpen() ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
-    (mousedown)="sideOpen() && dragStart($event, 'ew')"></div>
+  <div class="split-line ast-content-split-handle" [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
+    (mousedown)="sideOpen && dragStart($event, 'ew')"></div>
 </div>
 
 <div class="ast-content-drag-overlay">
@@ -12,9 +12,9 @@
   <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
 </div>
 <div class="ast-content-main">
-  @if (sideOpen()) {
+  @if (sideOpen) {
     <div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
-      @if(currentDisplayViewId()==1) {
+      @if(currentDisplayViewId==1) {
         @if(showButtonPlaceholder()) {
           <div class="ast-content-empty-state">
             <div class="ast-content-empty-card">
@@ -31,7 +31,11 @@
           <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
             <div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
               <!-- <div data-layer="ProjectName" class="Projectname ast-projectname">ProjectName</div> -->
-              <div data-layer="ProjectName" class="Projectname ast-projectname"></div>
+            <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleDisplayViewId(1)">
+              <svg class="icon" width="16" height="16">
+                <use href="#icon-shrink"></use>
+              </svg>
+            </div>
             </div>
             <div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
               <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
@@ -135,13 +139,13 @@
           </ast-modal>
         }
         <app-add-project (apiInfoSelected)="apiSelected($event)" />
-      } @else if(currentDisplayViewId()==2) {
+      } @else if(currentDisplayViewId==2) {
         <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
           <div>Search:</div>
         </div>
         <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
         <div>{{searchResults}}</div>
-      } @else if(currentDisplayViewId()==3) {
+      } @else if(currentDisplayViewId==3) {
         <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
           <div>Plugins:</div>
         </div>
@@ -151,8 +155,14 @@
   }
 
   <div class="ast-content-tabs-wrapper">
+    @if(!sideOpen) {
+      <svg class="icon btn-svg ast-content-tabs-shrink-btn" width="16" height="64" (click)="sideOpen=true">
+        <use href="#icon-shrink-sidebar-b"></use>
+      </svg>
+
+    }
     @if (openedList().length>0) {
-      <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
+      <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
       [tabType]="{'type':'filled'}"
       [(moreButtons)]="moreButtons">
         @for (openedTab of openedList(); track openedTab.id) {
