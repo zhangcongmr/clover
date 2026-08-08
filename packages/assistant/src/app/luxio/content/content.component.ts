@@ -109,8 +109,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchKeyword = ''
   searchResults = ''
 
-  moreButtons = [
-    { label: 'more', action: 'hori-more' },
+  leftMoreButtons: Array<{ label: string; id: string; action: () => void }> = []
+
+  rightMoreButtons = [
+    { label: 'more', id: 'hori-more' },
   ];
 
   private savers: AutoSaver[] = [];
@@ -203,6 +205,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
       this.dataList.set([]);
     }
 
+    this.refreshLeftMoreBtns();
+
     // 检测是否为本地项目
     this.checkIsLocalProject();
 
@@ -240,20 +244,18 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     this.localAgentService.disconnect();
   }
 
-  toggleDisplayViewId(currentDisplayViewId: number) {
-    if (currentDisplayViewId == this.lastSelectedDisplayViewId) {
-      if (!this.sideOpen) {
-        this.sideOpen = true;
-      } else {
-        this.sideOpen = false;
-      }
-    } else {
-      if (currentDisplayViewId != 4) {
+  shrinkExplorer() {
+    this.sideOpen = !this.sideOpen;
+    this.refreshLeftMoreBtns();
+  }
 
-        this.currentDisplayViewId = currentDisplayViewId;
-        this.sideOpen = true;
-        this.lastSelectedDisplayViewId = currentDisplayViewId;
-      }
+  private refreshLeftMoreBtns() {
+    if (this.sideOpen) {
+      this.leftMoreButtons = [];
+    } else {
+      this.leftMoreButtons = [
+        { label: 'Shrink the project explorer', id: 'shrink-close', action: () => this.shrinkExplorer() },
+      ];
     }
   }
 

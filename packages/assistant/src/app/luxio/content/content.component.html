@@ -31,11 +31,11 @@
           <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
             <div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
               <!-- <div data-layer="ProjectName" class="Projectname ast-projectname">ProjectName</div> -->
-            <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleDisplayViewId(1)">
-              <svg class="icon" width="16" height="16">
-                <use href="#icon-shrink"></use>
-              </svg>
-            </div>
+              <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="shrinkExplorer()">
+                <svg class="icon" width="16" height="24">
+                  <use href="#icon-shrink-open"></use>
+                </svg>
+              </div>
             </div>
             <div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
               <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
@@ -155,16 +155,11 @@
   }
 
   <div class="ast-content-tabs-wrapper">
-    @if(!sideOpen) {
-      <svg class="icon btn-svg ast-content-tabs-shrink-btn" width="16" height="64" (click)="sideOpen=true">
-        <use href="#icon-shrink-sidebar-b"></use>
-      </svg>
-
-    }
     @if (openedList().length>0) {
-      <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
-      [tabType]="{'type':'filled'}"
-      [(moreButtons)]="moreButtons">
+      <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
+       (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
+       [(leftMoreButtons)]="leftMoreButtons"
+       [(rightMoreButtons)]="rightMoreButtons">
         @for (openedTab of openedList(); track openedTab.id) {
         <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
           [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"

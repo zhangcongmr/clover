@@ -267,6 +267,12 @@ li[data-layer="tab"].active-tab .tab-close {
     /* border-bottom: 1px var(--Labels---Vibrant---Controls-Tertiary-√, #D9D9D9) solid; */
     flex: 1 1 0;
 }
+.ast-left-app-header {
+    align-items: center;
+    display: flex;
+    justify-content: flex-start;
+    padding: 0 5px;
+}
 .ast-right-app-header {
   align-items: center;
   display: flex;

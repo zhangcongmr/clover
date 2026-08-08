@@ -1,5 +1,16 @@
 <div data-layer="tab-header"  (mouseenter)="whenMouseEnterTabContainer($event)"
     (mouseleave)="whenMouseLeaveTabContainer($event)">
+  @if(leftMoreButtons().length>0) {
+    <div class="LeftAppHeader ast-left-app-header">
+      @for (item of leftMoreButtons(); track item.id) {
+        <div class="btn-svg MoreBtn" (click)="onLeftMoreButtonClick(item)" title="{{item.label}}">
+          <svg class="icon" width="16" height="24">
+            <use [attr.href]="'#icon-' + item.id"></use>
+          </svg>
+        </div>
+      }
+    </div>
+  }
   @if (topLevelTabs()) {
     <ul #tabUlRef data-layer="tablist" (wheel)="onTabWheel($event)" (cdkDropListDropped)="drop($event)" [style]="ulStyle"
      cdkDropListOrientation="horizontal" [cdkDropListDisabled]="isDropListDisable()" cdkDropList>
@@ -37,19 +48,19 @@
     </ul>
   }
 
-  @if (moreButtons().length>0) {
+  @if (rightMoreButtons().length>0) {
     <div class="RightAppHeader ast-right-app-header">
-      @for (item of moreButtons(); track item.action) {
-        @if(item.action == 'down' && showButtonAdded) {
-          <div class="btn-svg MoreBtn"  tabindex="1" (click)="onDownButtonClick($event, item.action)" (blur)="blurDownBtn($event)" title="{{item.label}}">
+      @for (item of rightMoreButtons(); track item.id) {
+        @if(item.id == 'down' && showButtonAdded) {
+          <div class="btn-svg MoreBtn"  tabindex="1" (click)="onDownButtonClick($event, item.id)" (blur)="blurDownBtn($event)" title="{{item.label}}">
             <svg class="icon" width="20" height="20">
-              <use [attr.href]="'#icon-' + item.action"></use>
+              <use [attr.href]="'#icon-' + item.id"></use>
             </svg>
           </div>
         } @else {
-          <div class="btn-svg MoreBtn" (click)="onMoreButtonClick(item.action)" title="{{item.label}}">
+          <div class="btn-svg MoreBtn" (click)="onMoreButtonClick(item.id)" title="{{item.label}}">
             <svg class="icon" width="20" height="20">
-              <use [attr.href]="'#icon-' + item.action"></use>
+              <use [attr.href]="'#icon-' + item.id"></use>
             </svg>
           </div>
         }
