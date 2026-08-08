@@ -4,7 +4,7 @@
     <div class="LeftAppHeader ast-left-app-header">
       @for (item of leftMoreButtons(); track item.id) {
         <div class="btn-svg MoreBtn" (click)="onLeftMoreButtonClick(item)" title="{{item.label}}">
-          <svg class="icon" width="16" height="24">
+          <svg class="icon" width="20" height="20">
             <use [attr.href]="'#icon-' + item.id"></use>
           </svg>
         </div>
