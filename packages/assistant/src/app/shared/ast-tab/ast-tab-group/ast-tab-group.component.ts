@@ -24,7 +24,8 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly tabGroupResizeObservable = input(false)
   readonly headerOnly = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
   readonly fobiddenContextMenu = input(false)
-  readonly moreButtons = model<Array<{ label: string; action: string }>>([]); //右上角更多操作按钮
+  readonly leftMoreButtons = model<Array<{ label: string; id: string; action?: Function }>>([]); //左上角更多操作按钮
+  readonly rightMoreButtons = model<Array<{ label: string; id: string; action?: Function }>>([]); //右上角更多操作按钮
 
   private resizeObserver?: ResizeObserver;
   ulStyle: string = "height: 2rem;"
@@ -110,7 +111,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ngOnInit() {
   }
 
-  showButtonAdded = false;
+  showButtonAdded = false; // 标记是否已经添加了“show all opened”按钮，避免重复添加
   ngAfterViewInit(): void {
     if (!this.tabGroupResizeObservable()) {
       return;
@@ -144,7 +145,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       ulElement.scrollTo({ left: 0, behavior: 'instant' });
 
       if (this.showButtonAdded) {
-        this.moreButtons.update(v => v.filter((_, i) => i !== 0));
+        this.rightMoreButtons.update(v => v.filter((_, i) => i !== 0));
         this.showButtonAdded = false;
       }
       return;
@@ -174,7 +175,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
 
     if (!this.showButtonAdded) {
-      this.moreButtons.update(v => [{ label: 'show all opened', action: 'down' }, ...v]);
+      this.rightMoreButtons.update(v => [{ label: 'show all opened', id: 'down' }, ...v]);
       this.showButtonAdded = true;
     }
   }
@@ -204,6 +205,12 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
           tab.isActivated.set(false)
         }
       })
+    }
+  }
+
+  onLeftMoreButtonClick(item: { label: string; id: string; action?: Function }) {
+    if (item.action) {
+      item.action();
     }
   }
 

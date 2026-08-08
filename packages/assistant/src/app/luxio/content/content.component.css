@@ -125,7 +125,6 @@
     align-items: center;
     justify-content: center;
     color: var(--vscode-textSeparator-foreground, #0000002e);
-    background-color: var(--vscode-list-activeSelectionForeground, #d7dae0);
 }
 .left-side-section {
     width: 25%;
@@ -154,7 +153,7 @@
     gap: 10px;
     justify-content: flex-start;
     overflow: hidden;
-    padding-left: 5px
+    padding: 0 5px
 }
 
 .ast-projectname {
