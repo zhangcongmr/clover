@@ -50,6 +50,7 @@ export class SettingsService {
 
   selectedModel = signal<string>('deepseek-v4-flash');
   pluginsEnabled = signal<boolean>(false);
+  useMemoryMode = signal<boolean>(true);
 
   constructor() {
     this.currentTheme.set(this.themeService.getCurrentTheme());
@@ -86,6 +87,10 @@ export class SettingsService {
       const plugins = localStorage.getItem('luxio_plugins_enabled');
       if (plugins === 'true') {
         this.pluginsEnabled.set(true);
+      }
+      const useMemory = localStorage.getItem('luxio_use_memory_mode');
+      if (useMemory === 'false') {
+        this.useMemoryMode.set(false);
       }
       const dur = localStorage.getItem('luxio_notification_duration');
       if (dur) {
@@ -164,6 +169,13 @@ export class SettingsService {
     this.pluginsEnabled.set(enabled);
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('luxio_plugins_enabled', String(enabled));
+    }
+  }
+
+  setUseMemoryMode(enabled: boolean) {
+    this.useMemoryMode.set(enabled);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('luxio_use_memory_mode', String(enabled));
     }
   }
 

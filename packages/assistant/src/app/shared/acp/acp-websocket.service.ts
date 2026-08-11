@@ -159,6 +159,7 @@ export interface RequestPermissionResponse {
 export interface UserMessageChunkUpdate {
   sessionUpdate: 'user_message_chunk';
   content: ContentBlock;
+  messageId?: string;
   _meta?: Record<string, unknown>;
 }
 

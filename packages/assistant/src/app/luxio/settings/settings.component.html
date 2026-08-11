@@ -369,6 +369,24 @@
             </label>
           </div>
         </div>
+
+        <!-- Memory Mode -->
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">Memory Mode (ACP)</label>
+            <p class="setting-desc">Use in-memory mode instead of Redis for ACP communication. Requires server restart.</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="useMemoryMode()"
+                (change)="onUseMemoryModeChange($event)"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
       </div>
     }
   </div>
