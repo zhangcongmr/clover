@@ -1,6 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import {
-  AcpWebSocketService,
+  AcpSseService,
+  ConnectionState as SseConnectionState,
+} from './acp-sse.service';
+import {
   SessionUpdate,
   PermissionRequest,
   SessionInfo,
@@ -57,7 +60,7 @@ export interface AcpSessionState {
   providedIn: 'root'
 })
 export class AcpService {
-  private wsService = inject(AcpWebSocketService);
+  private sseService = inject(AcpSseService);
 
   readonly sessionState = signal<AcpSessionState>({
     sessionId: null,
@@ -97,15 +100,17 @@ export class AcpService {
   // Question answers tracking: toolCallId -> Set of submitted toolCallIds
   readonly submittedQuestions = signal<Set<string>>(new Set());
 
+  // Whether we are replaying session history (session/load or session/resume).
+  // During replay, user_message_chunk notifications are the only source of user
+  // messages (unlike live prompts where the user message is added locally first).
+  private isReplayingHistory = false;
+
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
   readonly isConnected = computed(() => this.sessionState().isConnected);
   readonly canDeleteSession = computed(() => {
-    const caps = this.wsService.agentCapabilities();
-    if (!caps) return false;
-    // SDK v1 normalizes capabilities to sessionCapabilities.delete; protocol
-    // v2 uses session.delete. Support both shapes.
-    return !!caps.sessionCapabilities?.delete || !!caps.session?.delete;
+    // SSE mode always allows session deletion
+    return true;
   });
 
   // Active question: the latest unanswered question tool call
@@ -130,100 +135,71 @@ export class AcpService {
   readonly hasActiveQuestions = computed(() => this.activeQuestionMessage() !== null);
 
   constructor() {
-    this.setupWebSocketCallbacks();
+    this.setupSseCallbacks();
   }
 
-  private setupWebSocketCallbacks(): void {
-    this.wsService.onSessionUpdate((update) => {
+  private setupSseCallbacks(): void {
+    this.sseService.onSessionUpdate((update) => {
       this.handleSessionUpdate(update);
     });
 
-    this.wsService.onPermissionRequest((request) => {
+    this.sseService.onPermissionRequest((request) => {
       this.handlePermissionRequest(request);
     });
 
-    this.wsService.onPromptComplete((stopReason) => {
+    this.sseService.onPromptComplete((stopReason) => {
       this.isProcessing.set(false);
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
       }
     });
 
-    this.wsService.onSessionCreated((sessionId, configOptions) => {
+    this.sseService.onSessionCreated((sessionId, payload) => {
       this.sessionState.update(s => ({
         ...s,
-        sessionId,
-        configOptions,
+        // 保持 wrapper session id，不覆盖为 agent 返回的 ACP session id
+        configOptions: payload?.configOptions,
       }));
     });
 
-    this.wsService.onSessionList((sessions, nextCursor) => {
-      this.sessions.set(sessions);
-      this.sessionsLoading.set(false);
-    });
-
-    this.wsService.onSessionDeleted((sessionId) => {
-      // If the deleted session was the active one, reset local state.
-      if (this.sessionState().sessionId === sessionId) {
-        this.messages.set([]);
-        this.plans.set(new Map());
-        this.usage.set(null);
-        this.activeTodosId.set(null);
-        this.sessionState.update(s => ({ ...s, sessionId: null, title: undefined }));
-      }
-      // Refresh the session history list.
-      this.sessions.update(sessions => sessions.filter(s => s.sessionId !== sessionId));
-      if (this.showSessionHistory()) {
-        this.listSessions(this.workingDirHint());
-      }
-    });
-
-    this.wsService.onSessionLoaded((sessionId, promptCapabilities, models, configOptions) => {
+    this.sseService.onConnected(() => {
       this.sessionState.update(s => ({
         ...s,
-        sessionId,
-        promptCapabilities,
-        models,
-        configOptions,
-      }));
-      this.currentModelId.set(models?.currentModelId ?? null);
-    });
-
-    this.wsService.onSessionResumed((sessionId, promptCapabilities, models, configOptions) => {
-      this.sessionState.update(s => ({
-        ...s,
-        sessionId,
-        promptCapabilities,
-        models,
-        configOptions,
-      }));
-      this.currentModelId.set(models?.currentModelId ?? null);
-    });
-
-    this.wsService.onModelChanged((modelId) => {
-      this.currentModelId.set(modelId);
-    });
-
-    this.wsService.onConfigOptionUpdate((configOptions) => {
-      this.sessionState.update(s => ({
-        ...s,
-        configOptions,
+        isConnected: true,
+        isConnecting: false,
       }));
     });
 
-    // Sync connection state from WebSocket service
+    this.sseService.onError((message) => {
+      this.sessionState.update(s => ({
+        ...s,
+        isConnected: false,
+        isConnecting: false,
+        error: message,
+      }));
+    });
+
+    this.sseService.onDisconnected(() => {
+      this.sessionState.update(s => ({
+        ...s,
+        isConnected: false,
+        isConnecting: false,
+      }));
+    });
+
+    // Sync connection state from SSE service
     const syncState = () => {
-      const wsState = this.wsService.connectionState();
+      const sseState = this.sseService.connectionState();
       this.sessionState.update(s => ({
         ...s,
-        isConnected: wsState === 'connected',
-        isConnecting: wsState === 'connecting',
-        error: this.wsService.error()
+        isConnected: sseState === 'connected',
+        isConnecting: sseState === 'connecting',
+        error: this.sseService.error()
       }));
     };
 
     // Watch for state changes
-    const interval = setInterval(syncState, 100);
+    setInterval(syncState, 100);
   }
 
   // ============================================================================
@@ -255,13 +231,30 @@ export class AcpService {
     this.sessionState.update(s => ({ ...s, isConnecting: true, error: null }));
 
     try {
+      // Create a new session first
       const agent = this.selectedAgent();
-      await this.wsService.connect(url, agent ? { command: agent.command, args: agent.args } : undefined);
+      const sessionId = await this.sseService.createSession({
+        cwd: this.workingDirHint() || undefined,
+        agentCommand: agent?.command,
+        agentArgs: agent?.args,
+      });
+
+      this.sessionState.update(s => ({
+        ...s,
+        sessionId,
+      }));
+
+      // Connect to SSE with the session ID
+      await this.sseService.connect(sessionId);
+
       this.sessionState.update(s => ({
         ...s,
         isConnected: true,
         isConnecting: false
       }));
+
+      // List sessions after connecting
+      await this.listSessions(this.workingDirHint() || undefined);
     } catch (error: any) {
       this.sessionState.update(s => ({
         ...s,
@@ -273,12 +266,28 @@ export class AcpService {
   }
 
   async createSession(cwd?: string): Promise<string> {
-    return this.wsService.createSessionAsync(cwd);
+    const agent = this.selectedAgent();
+    const sessionId = await this.sseService.createSession({
+      cwd,
+      agentCommand: agent?.command,
+      agentArgs: agent?.args,
+    });
+
+    this.sessionState.update(s => ({
+      ...s,
+      sessionId,
+    }));
+
+    // Connect to SSE with the new session ID
+    await this.sseService.connect(sessionId);
+
+    return sessionId;
   }
 
   async sendPrompt(text: string): Promise<void> {
-    if (!this.sessionState().isConnected) {
-      throw new Error('Not connected');
+    const sessionId = this.sessionState().sessionId;
+    if (!sessionId) {
+      throw new Error('No active session');
     }
 
     this.isProcessing.set(true);
@@ -291,16 +300,21 @@ export class AcpService {
       timestamp: new Date()
     }]);
 
-    this.wsService.sendPrompt(text);
+    // Convert text to content array format
+    const content = [{ type: 'text', text }];
+    await this.sseService.sendPrompt(sessionId, content);
   }
 
   async cancel(): Promise<void> {
-    this.wsService.cancel();
+    const sessionId = this.sessionState().sessionId;
+    if (sessionId) {
+      await this.sseService.cancel(sessionId);
+    }
     this.isProcessing.set(false);
   }
 
   async disconnect(): Promise<void> {
-    this.wsService.disconnect();
+    this.sseService.disconnect();
     this.sessionState.set({
       sessionId: null,
       isConnected: false,
@@ -319,33 +333,120 @@ export class AcpService {
   // Session history
   // ============================================================================
 
-  listSessions(cwd?: string, cursor?: string): void {
+  async listSessions(cwd?: string, cursor?: string): Promise<void> {
     this.sessionsLoading.set(true);
-    this.wsService.listSessions(cwd, cursor);
+    try {
+      const sessionId = this.sessionState().sessionId;
+      if (!sessionId) {
+        this.sessions.set([]);
+        this.sessionsLoading.set(false);
+        return;
+      }
+
+      // 同步等待 agent 返回会话列表
+      const result = await this.sseService.listSessions(sessionId, cursor);
+      const sessions = result?.sessions ?? [];
+      this.sessions.set(sessions);
+      this.sessionsLoading.set(false);
+    } catch (error) {
+      console.error('[ACP] Failed to list sessions:', error);
+      this.sessionsLoading.set(false);
+    }
   }
 
-  loadSession(sessionId: string, cwd?: string): void {
+  async loadSession(sessionId: string, cwd?: string): Promise<void> {
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
     this.showSessionHistory.set(false);
-    this.wsService.loadSession(sessionId, cwd);
+
+    let currentSessionId = this.sessionState().sessionId;
+
+    // 如果没有活跃的 wrapper session，先创建并连接
+    if (!currentSessionId) {
+      const agent = this.selectedAgent();
+      currentSessionId = await this.sseService.createSession({
+        cwd: this.workingDirHint() || undefined,
+        agentCommand: agent?.command,
+        agentArgs: agent?.args,
+      });
+      this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
+      await this.sseService.connect(currentSessionId);
+    }
+
+    // 通过 wrapper session 同步加载目标 ACP 会话
+    this.isReplayingHistory = true;
+    try {
+      const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd);
+
+      this.sessionState.update(s => ({
+        ...s,
+        isConnected: true,
+        isConnecting: false,
+        configOptions: result?.configOptions ?? s.configOptions,
+      }));
+    } finally {
+      this.isReplayingHistory = false;
+    }
   }
 
-  resumeSession(sessionId: string, cwd?: string, replayFrom?: { type: string }): void {
+  async resumeSession(sessionId: string, cwd?: string, replayFrom?: { type: string }): Promise<void> {
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
     this.showSessionHistory.set(false);
-    this.wsService.resumeSession(sessionId, cwd, replayFrom);
+
+    let currentSessionId = this.sessionState().sessionId;
+
+    // 如果没有活跃的 wrapper session，先创建并连接
+    if (!currentSessionId) {
+      const agent = this.selectedAgent();
+      currentSessionId = await this.sseService.createSession({
+        cwd: this.workingDirHint() || undefined,
+        agentCommand: agent?.command,
+        agentArgs: agent?.args,
+      });
+      this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
+      await this.sseService.connect(currentSessionId);
+    }
+
+    // 通过 wrapper session 同步恢复目标 ACP 会话
+    this.isReplayingHistory = true;
+    try {
+      await this.sseService.resumeSession(currentSessionId, sessionId, cwd);
+
+      this.sessionState.update(s => ({
+        ...s,
+        isConnected: true,
+        isConnecting: false,
+      }));
+    } finally {
+      this.isReplayingHistory = false;
+    }
   }
 
-  deleteSession(sessionId: string): void {
-    this.wsService.deleteSession(sessionId);
-    // Optimistically remove from the list; the server confirmation in
-    // onSessionDeleted performs the authoritative cleanup.
+  async deleteSession(sessionId: string): Promise<void> {
+    const currentSessionId = this.sessionState().sessionId;
+
+    if (currentSessionId) {
+      // 通过当前活跃的连接同步删除目标 ACP 会话
+      await this.sseService.deleteAcpSession(currentSessionId, sessionId);
+    } else {
+      // 无活跃 wrapper：先创建并连接 wrapper，再通过它删除目标 ACP 会话
+      const agent = this.selectedAgent();
+      const wrapperSessionId = await this.sseService.createSession({
+        cwd: this.workingDirHint() || undefined,
+        agentCommand: agent?.command,
+        agentArgs: agent?.args,
+      });
+      await this.sseService.connect(wrapperSessionId);
+      await this.sseService.deleteAcpSession(wrapperSessionId, sessionId);
+      this.sseService.disconnect();
+    }
+
+    // 从列表中移除
     this.sessions.update(sessions => sessions.filter(s => s.sessionId !== sessionId));
   }
 
@@ -353,12 +454,33 @@ export class AcpService {
   // Model management
   // ============================================================================
 
-  setModel(modelId: string): void {
-    this.wsService.setModel(modelId);
+  async setModel(modelId: string): Promise<void> {
+    const sessionId = this.sessionState().sessionId;
+    if (!sessionId) {
+      throw new Error('No active session');
+    }
+    // TODO: Implement setModel via SSE/HTTP when backend supports it
+    console.warn('[ACP] setModel not yet implemented for SSE mode');
   }
 
-  setConfigOption(configId: string, type: 'id' | 'boolean', value: string | boolean): void {
-    this.wsService.setConfigOption(configId, type, value);
+  async setConfigOption(configId: string, type: 'id' | 'boolean', value: string | boolean): Promise<void> {
+    const sessionId = this.sessionState().sessionId;
+    if (!sessionId) {
+      throw new Error('No active session');
+    }
+    await this.sseService.setConfigOption(sessionId, configId, type, value);
+  }
+
+  // ============================================================================
+  // Ping/Pong
+  // ============================================================================
+
+  async ping(): Promise<void> {
+    const sessionId = this.sessionState().sessionId;
+    if (!sessionId) {
+      throw new Error('No active session');
+    }
+    await this.sseService.ping(sessionId);
   }
 
   // ============================================================================
@@ -380,7 +502,12 @@ export class AcpService {
         break;
 
       case 'user_message_chunk':
-        // User message chunks are echoed back, we already added the user message
+        if (update.content?.type === 'text' && update.content.text) {
+          if (this.isReplayingHistory) {
+            this.appendReplayedUserMessage(update.content.text, update.messageId);
+          }
+          // Live prompt: user message chunks are echoed back, we already added the user message
+        }
         break;
 
       case 'tool_call':
@@ -598,12 +725,15 @@ export class AcpService {
   }
 
   private handlePermissionRequest(request: PermissionRequest): void {
+    const sessionId = this.sessionState().sessionId;
     const event = new CustomEvent('acp-permission-request', {
       detail: {
         requestId: request.requestId,
         params: request,
-        resolve: (outcome: any) => {
-          this.wsService.sendPermissionResponse(request.requestId, outcome);
+        resolve: async (outcome: any) => {
+          if (sessionId) {
+            await this.sseService.sendPermissionResponse(sessionId, request.requestId, outcome);
+          }
         }
       }
     });
@@ -642,6 +772,22 @@ export class AcpService {
     });
   }
 
+  private appendReplayedUserMessage(text: string, messageId?: string): void {
+    this.messages.update(msgs => {
+      const lastMsg = msgs[msgs.length - 1];
+      if (lastMsg && lastMsg.role === 'user' && messageId && lastMsg.id === messageId) {
+        lastMsg.content += text;
+        return [...msgs];
+      }
+      return [...msgs, {
+        id: messageId || crypto.randomUUID(),
+        role: 'user',
+        content: text,
+        timestamp: new Date()
+      }];
+    });
+  }
+
   // ============================================================================
   // Question answers
   // ============================================================================
@@ -652,7 +798,7 @@ export class AcpService {
     return rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0;
   }
 
-  submitQuestionAnswers(toolCallId: string, answers: string[]): void {
+  async submitQuestionAnswers(toolCallId: string, answers: string[]): Promise<void> {
     if (this.submittedQuestions().has(toolCallId)) return;
 
     // Format answers as simple text (one per line)
@@ -666,10 +812,14 @@ export class AcpService {
     });
 
     // Send answers via session/prompt
-    this.wsService.sendPrompt(answerText);
+    const sessionId = this.sessionState().sessionId;
+    if (sessionId) {
+      const content = [{ type: 'text', text: answerText }];
+      await this.sseService.sendPrompt(sessionId, content);
+    }
   }
 
-  ignoreQuestions(toolCallId: string): void {
+  async ignoreQuestions(toolCallId: string): Promise<void> {
     if (this.submittedQuestions().has(toolCallId)) return;
 
     // Mark as submitted (ignored)
@@ -680,7 +830,11 @@ export class AcpService {
     });
 
     // Send skip signal
-    this.wsService.sendPrompt('[Questions ignored by user]');
+    const sessionId = this.sessionState().sessionId;
+    if (sessionId) {
+      const content = [{ type: 'text', text: '[Questions ignored by user]' }];
+      await this.sseService.sendPrompt(sessionId, content);
+    }
   }
 
   // ============================================================================
@@ -700,6 +854,7 @@ export class AcpService {
   }
 
   printRecordProxyRes() {
-    console.log('Recorded Proxy Responses:\n', JSON.stringify(this.wsService.recordProxyRes));
+    // SSE mode doesn't record proxy responses
+    console.log('Proxy response recording not available in SSE mode');
   }
 }

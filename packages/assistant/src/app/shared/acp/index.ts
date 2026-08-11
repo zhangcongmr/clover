@@ -5,6 +5,8 @@ export { AVAILABLE_AGENTS } from './acp-agent.types';
 export type { AgentConfig } from './acp-agent.types';
 
 export { AcpWebSocketService } from './acp-websocket.service';
+export { AcpSseService } from './acp-sse.service';
+export type { ConnectionState as SseConnectionState, ServerEvent } from './acp-sse.service';
 export type {
   // ACP SDK types
   ProtocolVersion,

@@ -39,6 +39,7 @@ export class SettingsComponent {
 
   selectedModel = this.settingsService.selectedModel;
   pluginsEnabled = this.settingsService.pluginsEnabled;
+  useMemoryMode = this.settingsService.useMemoryMode;
 
   readonly modelOptions = [
     { value: 'deepseek-v4-flash', label: 'DeepSeek v4 Flash' },
@@ -137,6 +138,11 @@ export class SettingsComponent {
   onPluginsEnabledChange(event: Event) {
     const enabled = (event.target as HTMLInputElement).checked;
     this.settingsService.setPluginsEnabled(enabled);
+  }
+
+  onUseMemoryModeChange(event: Event) {
+    const enabled = (event.target as HTMLInputElement).checked;
+    this.settingsService.setUseMemoryMode(enabled);
   }
 
   async clearAllOpfsData() {

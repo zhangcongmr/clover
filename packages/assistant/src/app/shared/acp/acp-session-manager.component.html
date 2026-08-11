@@ -69,13 +69,13 @@
 @if (showSettings()) {
   <div class="acp-session-settings">
     <div class="settings-field">
-      <label class="settings-label">WebSocket URL</label>
+      <label class="settings-label">Server URL</label>
       <input
         type="text"
         class="settings-input"
         [ngModel]="serverUrl()"
         (ngModelChange)="serverUrl.set($event)"
-        placeholder="{{ wsProtocol }}://{{ ipAndPort }}/ws/acp"
+        placeholder="{{ httpProtocol }}://{{ ipAndPort }}"
         [disabled]="acpService.sessionState().isConnected"
       />
     </div>

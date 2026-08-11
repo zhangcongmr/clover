@@ -42,8 +42,15 @@ export function createCORSMiddleware(ports: number[], extraHosts?: string[]): ex
 
 export function createRequireAuth(tokenManager: TokenManager): express.RequestHandler {
   return (req, res, next) => {
+    // Check Authorization header first
     const auth = req.headers.authorization || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    let token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    
+    // Fall back to query string token (for EventSource which doesn't support headers)
+    if (!token && req.query.token) {
+      token = String(req.query.token);
+    }
+    
     if (!token || !tokenManager.verify(token)) {
       res.status(401).json({ success: false, message: 'Unauthorized' });
       return;

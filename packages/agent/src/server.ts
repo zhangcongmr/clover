@@ -12,6 +12,10 @@ import { PtyManager } from './agent/pty-manager.js';
 import { setupAgentRoutes } from './api/routes.js';
 import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
+import { setupAcpRoutes } from './api/acp-routes.js';
+import { RedisClient } from './redis/client.js';
+import { SseManager } from './acp/sse-manager.js';
+import { AcpSessionManager } from './acp/session-manager.js';
 
 export interface StaticOptions {
   maxAge?: string | number;
@@ -78,6 +82,12 @@ export function setupAgentMiddleware(
 
   setupAgentRoutes(app, { fileService, tokenManager });
   setupA2ARoute(app);
+
+  // Setup ACP SSE routes
+  const redis = RedisClient.getInstance();
+  const sseManager = new SseManager(redis);
+  const sessionManager = new AcpSessionManager(redis);
+  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis });
 
   return { tokenManager, fileService, ptyManager };
 }

@@ -26,9 +26,10 @@ export class AcpSessionManagerComponent {
   protected acpService = inject(AcpService);
   showDockMenu = signal<boolean>(false);
 
-  protected wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  // HTTP URL for SSE connection (not WebSocket)
+  protected httpProtocol = window.location.protocol === 'https:' ? 'https' : 'http';
   protected ipAndPort = this.localAgentService.getBaseUrl().replace(/^((https|http)?:\/\/)?/, '').replace(/\/$/, '');
-  serverUrl = signal<string>(`${this.wsProtocol}://${this.ipAndPort}/ws/acp`);
+  serverUrl = signal<string>(`${this.httpProtocol}://${this.ipAndPort}`);
   authToken = signal<string>('');
   workingDir = signal<string>('');
   showSettings = signal<boolean>(false);
@@ -44,34 +45,20 @@ export class AcpSessionManagerComponent {
         this.connect();
       }
     });
-
-    effect(() => {
-      const show = this.acpService.showSessionHistory();
-      const connected = this.acpService.isConnected();
-      if (show && connected) {
-        this.acpService.listSessions(this.acpService.workingDirHint());
-      }
-    });
   }
 
   async connect(): Promise<void> {
-    const url = this.serverUrl().trim();
-    if (!url) {
-      return;
-    }
-
     try {
-      const token = this.authToken().trim();
       const cwd = this.workingDir().trim();
-      let connectUrl = url;
       
-      if (token) {
-        const urlObj = new URL(connectUrl);
-        urlObj.searchParams.set('token', token);
-        connectUrl = urlObj.toString();
+      // Set ACP config with the selected agent
+      const agent = this.acpService.selectedAgent();
+      if (agent) {
+        await this.acpService.setAcpConfig({ command: agent.command, args: agent.args });
       }
 
-      await this.acpService.connect(connectUrl);
+      // Connect via SSE (creates session and connects to SSE)
+      await this.acpService.connect(this.serverUrl());
       this.showSettings.set(false);
     } catch (error: any) {
       console.error('[ACP Session] Connection failed:', error);
@@ -90,17 +77,17 @@ export class AcpSessionManagerComponent {
     this.acpService.clearMessages();
   }
 
-  loadSession(sessionId: string): void {
-    this.acpService.loadSession(sessionId);
+  async loadSession(sessionId: string): Promise<void> {
+    await this.acpService.loadSession(sessionId);
   }
 
-  resumeSession(sessionId: string): void {
-    this.acpService.resumeSession(sessionId);
+  async resumeSession(sessionId: string): Promise<void> {
+    await this.acpService.resumeSession(sessionId);
   }
 
-  deleteSession(sessionId: string): void {
+  async deleteSession(sessionId: string): Promise<void> {
     if (confirm('Are you sure you want to delete this session?')) {
-      this.acpService.deleteSession(sessionId);
+      await this.acpService.deleteSession(sessionId);
     }
   }
 
