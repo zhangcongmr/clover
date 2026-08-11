@@ -281,6 +281,9 @@ export class AcpService {
     // Connect to SSE with the new session ID
     await this.sseService.connect(sessionId);
 
+    // Create the underlying ACP session so prompt requests have an active session
+    await this.sseService.createAcpSession(sessionId, cwd);
+
     return sessionId;
   }
 
