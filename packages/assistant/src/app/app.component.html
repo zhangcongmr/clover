@@ -4,7 +4,7 @@
   <div user-center [previousViewId]="previousViewId" (goBack)="onGoBack($event)"></div>
 } @else {
   <div data-layer="app-body" class="AppBody ast-app-body">
-    <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area" (click)="restoreRightPanel($event)">
+    <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area">
       <div #upBtnlist data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
         <div #menuBtn data-svg-wrapper="" data-layer="project-folder-btn"  class="btn-svg" (click)="toggleMenu($event)">
           <svg width="24" height="24">
@@ -183,7 +183,7 @@
     </div>
     <div class="ast-panel-container" [class.dock-left]="dockPosition === 'left'">
       <!-- 水平拖动条 -->
-      @if(acpPanelOpen) {
+      @if(astContentPanelOpen && acpPanelOpen) {
         <div style="position: absolute;width: 100%;height: 100%;">
           <div class="split-line-ew ast-split-handle-ew"
             [style.left]="dockPosition === 'right' ? 'calc(5px + ' + leftPct + ' * (100% - 15px))' : 'calc((1 - ' + leftPct + ') * (100% - 15px) + 5px)'"
@@ -193,8 +193,7 @@
 
       <!-- Middle panel -->
       @if (astContentPanelOpen) {
-        <div class="card-base ast-middle-panel"
-          [style.width]="acpPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
+        <div class="card-base ast-middle-panel" [style.width]="acpPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
           <!-- 垂直拖动条 -->
           <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
             <div class="split-line-ns ast-split-handle-ns"
@@ -227,7 +226,14 @@
 
       <!-- Docked ACP panel -->
       @if(acpPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
-        <app-acp-panel #acpPanel (closePanel)="closeAcpPanel()" (maximizePanel)="maximizeRightPanel()" (restorePanel)="restoreRightPanel()" (dockPositionChange)="onDockPositionChange($event)" [isMaximized]="leftPct === 0" [dockPosition]="dockPosition" [style.width]="acpPanelWidthPx() + 'px'" />
+        <app-acp-panel #acpPanel 
+        (closePanel)="closeAcpPanel()" 
+        (maximizePanel)="maximizeAcpPanel()" 
+        (restorePanel)="restoreAcpPanel()" 
+        (dockPositionChange)="onDockPositionChange($event)" 
+        [isMaximized]="leftPct === 0" 
+        [dockPosition]="dockPosition" 
+        [style.width]="acpPanelWidthPx() + 'px'" />
       }
     </div>
   </div>

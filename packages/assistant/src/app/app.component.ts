@@ -82,6 +82,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private readonly AST_CONTENT_PANEL_OPEN_KEY = 'luxio_ast_content_panel_open';
   private readonly ACP_DOCK_POSITION_KEY = 'luxio_acp_dock_position';
   private readonly ACP_PANEL_OPEN_KEY = 'luxio_acp_panel_open';
+  private readonly ACP_LEFT_PCT_KEY = 'luxio_acp_left_pct';
+  private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'luxio_acp_previous_left_pct';
 
   keepTerminalInstance = {
     value: false,
@@ -238,6 +240,16 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       const savedOpen = localStorage.getItem(this.ACP_PANEL_OPEN_KEY);
       if (savedOpen !== null) {
         this.acpPanelOpen = savedOpen === 'true';
+      }
+      // 从 localStorage 恢复 ACP 面板宽度比例
+      const savedLeftPct = parseFloat(localStorage.getItem(this.ACP_LEFT_PCT_KEY) ?? '');
+      if (Number.isFinite(savedLeftPct) && savedLeftPct >= 0 && savedLeftPct <= 1) {
+        this.leftPct = savedLeftPct;
+      }
+      // 从 localStorage 恢复 ACP 面板最大化前的宽度比例
+      const savedPreviousLeftPct = parseFloat(localStorage.getItem(this.ACP_PREVIOUS_LEFT_PCT_KEY) ?? '');
+      if (Number.isFinite(savedPreviousLeftPct) && savedPreviousLeftPct >= 0 && savedPreviousLeftPct <= 1) {
+        this.previousLeftPct = savedPreviousLeftPct;
       }
     }
   }
@@ -1107,6 +1119,14 @@ For each fileIcons entry:
   toggleAstContentPanel() {
     this.astContentPanelOpen = !this.astContentPanelOpen;
     localStorage.setItem(this.AST_CONTENT_PANEL_OPEN_KEY, String(this.astContentPanelOpen));
+    if(!this.astContentPanelOpen) {
+      this.previousLeftPct = this.leftPct;
+      this.leftPct = 0;
+    } else {
+      this.leftPct = this.previousLeftPct;
+    }
+    this.saveLeftPct();
+    this.refreshAcpPanelWidth();
   }
 
   toggleAcpPanel() {
@@ -1431,19 +1451,29 @@ For each fileIcons entry:
 
   private previousLeftPct: number = this.getDefaultLeftPct();
 
-  maximizeRightPanel() {
+  maximizeAcpPanel() {
     this.previousLeftPct = this.leftPct;
     this.leftPct = 0;
+    this.saveLeftPct();
     this.refreshAcpPanelWidth();
   }
 
-  restoreRightPanel(event?: MouseEvent) {
-    if (event) {
-      if (event.target === event.currentTarget) return;
-      if (event.target === this.upBtnlist()?.nativeElement) return;
-    }
+  restoreAcpPanel() {
     this.leftPct = this.previousLeftPct;
+    this.saveLeftPct();
     this.refreshAcpPanelWidth();
+  }
+
+  override dragEnd(evt: any) {
+    super.dragEnd(evt);
+    this.saveLeftPct();
+  }
+
+  private saveLeftPct(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this.ACP_LEFT_PCT_KEY, String(this.leftPct));
+      localStorage.setItem(this.ACP_PREVIOUS_LEFT_PCT_KEY, String(this.previousLeftPct));
+    }
   }
 
   override whenMouseMove(evt: any) {
