@@ -51,6 +51,9 @@ interface WebSocketResponse {
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css'],
   standalone: true,
+  host: {
+    '(mouseleave)': 'onHostMouseLeave($event)'
+  },
   imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent, AstMenuComponent,
     NoteBookComponent, FilePickerDialogComponent
   ]
@@ -95,6 +98,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   disconnectTerminal = output<void>();
 
   sideOpen = true
+  // 标记侧边栏是否由左边缘hover打开;仅该方式打开时,离开区域才自动关闭
+  private sidePanelOpenedByHover = false;
+  // 标记是否曾经打开过tab页;一旦打开过,sidePanelOpenedByHover永久保持false(即使之后清空openedList)
+  private hasOpenedTabEver = false;
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
 
@@ -249,6 +256,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   shrinkExplorer() {
     this.sideOpen = !this.sideOpen;
+    this.sidePanelOpenedByHover = false;
     this.refreshLeftMoreBtns();
   }
 
@@ -1027,6 +1035,7 @@ Always use the welcome_greeting tool.`;
       await this.refreshNodeContent(targetTab);
       openeds.push(targetTab);
       this.openedList.update(value => [...openeds]);
+      this.markFirstTabOpened();
 
       if (this.isLocalProject() && targetTab.nodeType === 'file') {
         const filePath = getNodeAbsolutePath(this.dataList(), targetTab);
@@ -1125,6 +1134,7 @@ Always use the welcome_greeting tool.`;
     this.storeApi();
     this.currentDisplayViewId = 1;
     this.sideOpen = true;
+    this.sidePanelOpenedByHover = false;
 
     // 重置状态
     this.showLocationSelector.set(false);
@@ -1547,7 +1557,17 @@ Always use the welcome_greeting tool.`;
     newNode['saved'] = false
     newNode.isActive = true;
     openedList.push(newNode)
+    this.openedList.update(value => [...openedList]);
+    this.markFirstTabOpened();
     this.storeOpenedList()
+  }
+
+  // 第一次真正打开tab页时记录latch,并让sidePanelOpenedByHover永久保持false
+  private markFirstTabOpened() {
+    if (!this.hasOpenedTabEver) {
+      this.hasOpenedTabEver = true;
+      this.sidePanelOpenedByHover = false;
+    }
   }
 
   private createNewFolder(): AstTreeNode {
@@ -1830,20 +1850,40 @@ Always use the welcome_greeting tool.`;
 
     const hostLeft = (evt.currentTarget as HTMLElement).getBoundingClientRect().left;
     const x = evt.clientX - hostLeft;
-    const nearLeftEdge = x <= ContentComponent.SIDE_PANEL_HOVER_THRESHOLD;
+    const nearLeftEdge = x <= ContentComponent.SIDE_PANEL_HOVER_THRESHOLD && x > 0;
 
     if (!this.sideOpen) {
       if (nearLeftEdge) {
         this.sideOpen = true;
+        // 一旦曾经打开过tab页,即使之后清空openedList,也不再标记为hover打开(不参与自动关闭)
+        if (!this.hasOpenedTabEver) {
+          this.sidePanelOpenedByHover = true;
+        }
         this.refreshLeftMoreBtns();
       }
     } else {
-      // 鼠标离开侧边栏区域(进入主内容区)时关闭
+      // 仅当侧边栏是由hover打开时,鼠标离开侧边栏区域(进入主内容区)才关闭
+      if (!this.sidePanelOpenedByHover) {
+        return;
+      }
       const sidebarEl = this.elementRef.nativeElement.querySelector('.left-side-section') as HTMLElement | null;
       if (sidebarEl && evt.clientX > sidebarEl.getBoundingClientRect().right) {
         this.sideOpen = false;
+        this.sidePanelOpenedByHover = false;
         this.refreshLeftMoreBtns();
       }
+    }
+  }
+
+  // 鼠标离开content组件区域(进入其他面板或移出窗口)时,仅当侧边栏由hover打开才关闭
+  onHostMouseLeave(evt: any) {
+    if (this.openedList().length > 0) {
+      return;
+    }
+    if (this.sideOpen && this.sidePanelOpenedByHover) {
+      this.sideOpen = false;
+      this.sidePanelOpenedByHover = false;
+      this.refreshLeftMoreBtns();
     }
   }
 }

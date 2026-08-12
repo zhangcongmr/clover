@@ -1,8 +1,11 @@
 
-<div class="ast-content-drag-overlay">
-  <div class="split-line ast-content-split-handle" [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
-    (mousedown)="sideOpen && dragStart($event, 'ew')"></div>
-</div>
+@if(sideOpen) {
+  <div class="ast-content-drag-overlay">
+    <div class="split-line ast-content-split-handle"
+      [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
+      (mousedown)="dragStart($event, 'ew')"></div>
+  </div>
+}
 
 <div class="ast-content-drag-overlay">
   <div [style.display]="addMarkFile?'block': 'none'" class="new_file ast-content-new-file-popup">
