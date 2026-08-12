@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, input, model, output, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, input, model, output, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -64,6 +64,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private localAgentService = inject(LocalAgentService);
   private settingsService = inject(SettingsService);
   private acpService = inject(AcpService);
+  private elementRef = inject(ElementRef);
+
+  private static readonly SIDE_PANEL_HOVER_THRESHOLD = 50;
 
   // 本地项目检测
   isLocalProject = signal(false);
@@ -1816,6 +1819,30 @@ Always use the welcome_greeting tool.`;
         super.whenMouseMove(evt);
       } else {
         this.leftPct = (evt.clientX - this.leftSideAreaWidth - this.leftOffset()) / (window.innerWidth - this.leftSideAreaWidth);
+      }
+      return;
+    }
+
+    // 仅在没有任何打开的标签页时启用左边缘hover打开侧边栏(此时tab-group不渲染,没有shrink按钮可恢复侧边栏)
+    if (this.openedList().length > 0) {
+      return;
+    }
+
+    const hostLeft = (evt.currentTarget as HTMLElement).getBoundingClientRect().left;
+    const x = evt.clientX - hostLeft;
+    const nearLeftEdge = x <= ContentComponent.SIDE_PANEL_HOVER_THRESHOLD;
+
+    if (!this.sideOpen) {
+      if (nearLeftEdge) {
+        this.sideOpen = true;
+        this.refreshLeftMoreBtns();
+      }
+    } else {
+      // 鼠标离开侧边栏区域(进入主内容区)时关闭
+      const sidebarEl = this.elementRef.nativeElement.querySelector('.left-side-section') as HTMLElement | null;
+      if (sidebarEl && evt.clientX > sidebarEl.getBoundingClientRect().right) {
+        this.sideOpen = false;
+        this.refreshLeftMoreBtns();
       }
     }
   }
