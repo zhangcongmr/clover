@@ -18,8 +18,10 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   const { tokenManager, sessionManager, sseManager, redis } = options;
   const requireAuth = createRequireAuth(tokenManager);
 
-  // Parse JSON bodies for ACP routes
-  app.use('/api/acp', express.json());
+  // Parse JSON bodies for ACP routes. Generous enough for base64 media
+  // attachments (frontend caps each file at 10MB, ~13MB base64), while still
+  // rejecting oversized payloads.
+  app.use('/api/acp', express.json({ limit: '20mb' }));
   app.use('/api/acp', requireAuth);
 
   // ============================================================================

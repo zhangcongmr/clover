@@ -25,10 +25,18 @@ export interface ConfigOption {
   options?: Array<{ value: string; name: string; description?: string }>;
 }
 
-// Content types
+// Optional annotations about how the content should be used or displayed
+export interface Annotations {
+  audience?: Array<'user' | 'assistant'>;
+  priority?: number;
+  lastModified?: string;
+}
+
+// Content types (matches ACP SDK ContentBlock / MCP)
 export interface TextContent {
   type: 'text';
   text: string;
+  annotations?: Annotations;
   _meta?: Record<string, unknown>;
 }
 
@@ -37,6 +45,7 @@ export interface ImageContent {
   data: string;
   mimeType: string;
   uri?: string;
+  annotations?: Annotations;
   _meta?: Record<string, unknown>;
 }
 
@@ -44,19 +53,26 @@ export interface AudioContent {
   type: 'audio';
   data: string;
   mimeType: string;
+  annotations?: Annotations;
   _meta?: Record<string, unknown>;
 }
 
 export interface ResourceLink {
   type: 'resource_link';
   uri: string;
-  name?: string;
+  name: string;
+  mimeType?: string;
+  title?: string;
+  description?: string;
+  size?: number;
+  annotations?: Annotations;
   _meta?: Record<string, unknown>;
 }
 
 export interface EmbeddedResource {
   type: 'resource';
   resource: { uri: string; text?: string; blob?: string; mimeType?: string };
+  annotations?: Annotations;
   _meta?: Record<string, unknown>;
 }
 
@@ -755,11 +771,11 @@ export class AcpWebSocketService {
     });
   }
 
-  sendPrompt(text: string): void {
+  sendPrompt(content: ContentBlock[]): void {
     this.send({
       type: 'prompt',
       payload: {
-        content: [{ type: 'text', text }]
+        content
       }
     });
   }
