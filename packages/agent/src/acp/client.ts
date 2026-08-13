@@ -39,6 +39,7 @@ export class AcpClient {
   private loadedSessionId: string | null = null;
   private pendingPermissions: Map<string, PendingPermission> = new Map();
   private agentCapabilities: acp.AgentCapabilities | null = null;
+  private configOptionsCache: acp.SessionConfigOption[] | null = null;
 
   constructor(
     private ws: WebSocket,
@@ -202,6 +203,11 @@ export class AcpClient {
 
     return client({ name: 'luxio-agent' })
       .onNotification('session/update', (ctx) => {
+        // Keep the config cache current when the agent pushes config changes
+        const update = ctx.params as { sessionUpdate?: string; configOptions?: acp.SessionConfigOption[] };
+        if (update?.sessionUpdate === 'config_option_update' && update.configOptions) {
+          this.configOptionsCache = update.configOptions;
+        }
         // Forward session updates to the frontend
         send(ws, 'session_update', ctx.params);
       })
@@ -396,10 +402,10 @@ export class AcpClient {
 
       console.log('[ACP Client] Session loaded:', params.sessionId);
 
-      send(this.ws, 'session_loaded', {
+      send(this.ws, 'session_loaded', this.mergeConfigOptions({
         sessionId: params.sessionId,
         ...loadResult,
-      });
+      }));
 
     } catch (error) {
       console.error('[ACP Client] Failed to load session:', error);
@@ -431,16 +437,36 @@ export class AcpClient {
 
       console.log('[ACP Client] Session resumed:', params.sessionId);
 
-      send(this.ws, 'session_resumed', {
+      send(this.ws, 'session_resumed', this.mergeConfigOptions({
         sessionId: params.sessionId,
         ...result,
-      });
+      }));
 
     } catch (error) {
       send(this.ws, 'error', {
         message: `Failed to resume session: ${(error as Error).message}`,
       });
     }
+  }
+
+  /**
+   * Merge the cached (latest) config state into a session response.
+   *
+   * The agent may not persist config option changes to disk, so a fresh
+   * `session/load` or `session/resume` can return stale `currentValue`s.
+   * Overlay the cached values (from the last `set_config_option` response)
+   * on top of whatever the agent returned.
+   */
+  private mergeConfigOptions<T extends { configOptions?: acp.SessionConfigOption[] | null }>(response: T): T {
+    if (!this.configOptionsCache?.length) {
+      return response;
+    }
+    if (!response.configOptions?.length) {
+      return { ...response, configOptions: this.configOptionsCache };
+    }
+    const cacheById = new Map(this.configOptionsCache.map(o => [o.id, o]));
+    const configOptions = response.configOptions.map(o => cacheById.get(o.id) ?? o);
+    return { ...response, configOptions };
   }
 
   private async deleteSession(params: { sessionId: string }): Promise<void> {
@@ -512,10 +538,15 @@ export class AcpClient {
         configId: params.configId,
         ...(params.type === 'boolean'
           ? { type: 'boolean' as const, value: params.value as boolean }
-          : { value: params.value as string }),
+          : { type: 'id' as const, value: params.value as string }),
       });
 
       send(this.ws, 'config_option_update', { configOptions: result.configOptions });
+
+      // Cache the complete config state so it survives session load/resume
+      if (result?.configOptions) {
+        this.configOptionsCache = result.configOptions;
+      }
     } catch (error) {
       console.error('[ACP Client] Failed to set config option:', error);
       send(this.ws, 'error', {

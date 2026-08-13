@@ -471,7 +471,13 @@ export class AcpService {
     if (!sessionId) {
       throw new Error('No active session');
     }
-    await this.sseService.setConfigOption(sessionId, configId, type, value);
+    const result = await this.sseService.setConfigOption(sessionId, configId, type, value);
+    if (result?.configOptions) {
+      this.sessionState.update(s => ({
+        ...s,
+        configOptions: result.configOptions,
+      }));
+    }
   }
 
   // ============================================================================

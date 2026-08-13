@@ -26,6 +26,7 @@ export class SseAcpClient {
   private loadedSessionId: string | null = null;
   private pendingPermissions: Map<string, { resolve: (outcome: any) => void; timeout: ReturnType<typeof setTimeout> }> = new Map();
   private agentCapabilities: acp.AgentCapabilities | null = null;
+  private configOptionsCache: acp.SessionConfigOption[] | null = null;
   private sessionId: string;
   private redis: RedisClient;
   private unsubscribers: (() => void)[] = [];
@@ -133,6 +134,11 @@ export class SseAcpClient {
 
     return client({ name: 'luxio-agent-sse' })
       .onNotification('session/update', (ctx) => {
+        // Keep the config cache current when the agent pushes config changes
+        const update = ctx.params as { sessionUpdate?: string; configOptions?: acp.SessionConfigOption[] };
+        if (update?.sessionUpdate === 'config_option_update' && update.configOptions) {
+          this.configOptionsCache = update.configOptions;
+        }
         // Forward session updates to Redis
         this.publishEvent({
           type: 'session_update',
@@ -272,7 +278,7 @@ export class SseAcpClient {
     // Start reading session updates in the background
     this.readSessionUpdates();
 
-    return sessionResponse;
+    return this.mergeConfigOptions(sessionResponse);
   }
 
   /**
@@ -325,7 +331,7 @@ export class SseAcpClient {
 
       console.log(`[SSE ACP Client] Session loaded: ${params.sessionId}`);
 
-      return { sessionId: params.sessionId, ...result };
+      return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to load session:`, error);
       throw error;
@@ -358,7 +364,7 @@ export class SseAcpClient {
 
       console.log(`[SSE ACP Client] Session resumed: ${params.sessionId}`);
 
-      return { sessionId: params.sessionId, ...result };
+      return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to resume session:`, error);
       throw error;
@@ -416,23 +422,54 @@ export class SseAcpClient {
       throw new Error('Not connected to agent');
     }
 
+    const sessionId = this.activeSession?.sessionId ?? this.loadedSessionId;
+    if (!sessionId) {
+      throw new Error('No active session');
+    }
+
     console.log(`[SSE ACP Client] Setting config option: ${params.configId}`);
 
     try {
       const result = await this.clientConnection.agent.request('session/set_config_option', {
-        sessionId: params.sessionId,
+        sessionId,
         configId: params.configId,
         ...(params.type === 'boolean'
           ? { type: 'boolean' as const, value: params.value as boolean }
-          : { value: params.value as string }),
+          : { type: 'id' as const, value: params.value as string }),
       });
 
       console.log(`[SSE ACP Client] Config option set: ${params.configId}`);
+
+      // Cache the complete config state so it survives session load/resume
+      if (result?.configOptions) {
+        this.configOptionsCache = result.configOptions;
+      }
+
       return result;
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to set config option:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Merge the cached (latest) config state into a session response.
+   *
+   * The agent may not persist config option changes to disk, so a fresh
+   * `session/load` or `session/resume` can return stale `currentValue`s.
+   * Overlay the cached values (from the last `set_config_option` response)
+   * on top of whatever the agent returned.
+   */
+  private mergeConfigOptions<T extends { configOptions?: acp.SessionConfigOption[] | null }>(response: T): T {
+    if (!this.configOptionsCache?.length) {
+      return response;
+    }
+    if (!response.configOptions?.length) {
+      return { ...response, configOptions: this.configOptionsCache };
+    }
+    const cacheById = new Map(this.configOptionsCache.map(o => [o.id, o]));
+    const configOptions = response.configOptions.map(o => cacheById.get(o.id) ?? o);
+    return { ...response, configOptions };
   }
 
   /**

@@ -107,6 +107,32 @@ import type { AgentConfig } from './acp-agent.types';
               }
             </div>
             }
+            @if (modelConfig()) {
+            <div class="model-selector">
+              <button class="toolbar-tag-btn" (click)="toggleModelDropdown($event)" [title]="modelConfig()!.name">
+                <span>{{ currentModelLabel() }}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              @if (showModelDropdown()) {
+                <div class="model-dropdown custom-scroll">
+                  @for (option of modelConfig()!.options ?? []; track option.value; let i = $index) {
+                    <button class="model-option" (click)="selectModel($event, option.value)"
+                      (mouseenter)="modelSelectedIndex.set(i)"
+                      [class.active]="option.value === modelConfig()!.currentValue">
+                      <div class="model-info">
+                        <span class="model-name">{{ option.name }}</span>
+                        @if (option.description) {
+                          <span class="model-desc">{{ option.description }}</span>
+                        }
+                      </div>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            }
           </div>
           <div class="acp-chat-toolbar-right">
             <button class="toolbar-icon-btn" title="Settings">
@@ -393,6 +419,57 @@ import type { AgentConfig } from './acp-agent.types';
       margin-top: 1px;
       color: var(--vscode-descriptionForeground, #666666);
     }
+    .model-selector {
+      position: relative;
+    }
+    .model-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 4px;
+      max-height: 400px;
+      min-width: 200px;
+      background-color: var(--vscode-dropdown-background, #ffffff);
+      border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+    }
+    .model-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.15s;
+    }
+    .model-option:hover {
+      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+    }
+    .model-option.active {
+      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground, #333333));
+    }
+    .model-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .model-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .model-desc {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 1px;
+      color: var(--vscode-descriptionForeground, #666666);
+    }
     .slash-command-menu {
       position: absolute;
       bottom: 100%;
@@ -460,9 +537,11 @@ export class AcpChatInputComponent {
   errorMessage = signal<string | null>(null);
   showAgentDropdown = signal<boolean>(false);
   showModeDropdown = signal<boolean>(false);
+  showModelDropdown = signal<boolean>(false);
   selectedIndex = signal<number>(0);
   agentSelectedIndex = signal<number>(0);
   modeSelectedIndex = signal<number>(0);
+  modelSelectedIndex = signal<number>(0);
   protected agents = AVAILABLE_AGENTS;
 
   readonly modeConfig = computed(() => {
@@ -472,6 +551,18 @@ export class AcpChatInputComponent {
 
   readonly currentModeLabel = computed(() => {
     const config = this.modeConfig();
+    if (!config) return '';
+    const option = config.options?.find(o => o.value === config.currentValue);
+    return option?.name ?? String(config.currentValue ?? '');
+  });
+
+  readonly modelConfig = computed(() => {
+    const options = this.acpService.sessionState().configOptions;
+    return options?.find(o => o.category === 'model' && o.type === 'select') ?? null;
+  });
+
+  readonly currentModelLabel = computed(() => {
+    const config = this.modelConfig();
     if (!config) return '';
     const option = config.options?.find(o => o.value === config.currentValue);
     return option?.name ?? String(config.currentValue ?? '');
@@ -506,6 +597,9 @@ export class AcpChatInputComponent {
     }
     if (!target.closest('.mode-selector')) {
       this.showModeDropdown.set(false);
+    }
+    if (!target.closest('.model-selector')) {
+      this.showModelDropdown.set(false);
     }
   }
 
@@ -546,6 +640,29 @@ export class AcpChatInputComponent {
       this.acpService.setConfigOption(config.id, 'id', value);
     }
     this.showModeDropdown.set(false);
+    this.messageInput?.nativeElement?.focus();
+  }
+
+  toggleModelDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    const opening = !this.showModelDropdown();
+    this.showModelDropdown.set(opening);
+    if (opening) {
+      const config = this.modelConfig();
+      if (config?.options) {
+        const idx = config.options.findIndex(o => o.value === config.currentValue);
+        this.modelSelectedIndex.set(idx >= 0 ? idx : 0);
+      }
+    }
+  }
+
+  selectModel(event: Event, value: string): void {
+    event.stopPropagation();
+    const config = this.modelConfig();
+    if (config && config.currentValue !== value) {
+      this.acpService.setConfigOption(config.id, 'id', value);
+    }
+    this.showModelDropdown.set(false);
     this.messageInput?.nativeElement?.focus();
   }
 
@@ -601,6 +718,7 @@ export class AcpChatInputComponent {
     const slashMenuVisible = this.inputValue().startsWith('/') && commands.length > 0;
     const agentMenuVisible = this.showAgentDropdown();
     const modeMenuVisible = this.showModeDropdown();
+    const modelMenuVisible = this.showModelDropdown();
 
     if (slashMenuVisible) {
       if (event.key === 'ArrowDown') {
@@ -685,6 +803,38 @@ export class AcpChatInputComponent {
       if (event.key === 'Escape') {
         event.preventDefault();
         this.showModeDropdown.set(false);
+        return;
+      }
+    }
+
+    if (modelMenuVisible) {
+      const modelOptions = this.modelConfig()?.options ?? [];
+      const modelCount = modelOptions.length;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const next = (this.modelSelectedIndex() + 1) % modelCount;
+        this.modelSelectedIndex.set(next);
+        this.scrollToActive(next, '.model-dropdown', '.model-option');
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const prev = (this.modelSelectedIndex() - 1 + modelCount) % modelCount;
+        this.modelSelectedIndex.set(prev);
+        this.scrollToActive(prev, '.model-dropdown', '.model-option');
+        return;
+      }
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        const option = modelOptions[this.modelSelectedIndex()];
+        if (option) {
+          this.selectModel(event, option.value);
+        }
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.showModelDropdown.set(false);
         return;
       }
     }
