@@ -4,6 +4,32 @@ import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
+import type { ContentBlock } from './acp-websocket.service';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const TEXT_MIME_TYPES = new Set([
+  'application/json',
+  'application/xml',
+  'application/javascript',
+  'application/x-javascript',
+  'application/typescript',
+  'application/x-typescript',
+  'application/yaml',
+  'application/x-yaml',
+  'application/toml',
+  'application/x-sh',
+  'application/sql',
+]);
+
+export interface AttachmentEntry {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  kind: 'image' | 'audio' | 'text' | 'blob' | 'link';
+  preview?: string;
+  block: ContentBlock;
+}
 
 @Component({
   selector: 'app-acp-chat-input',
@@ -11,7 +37,8 @@ import type { AgentConfig } from './acp-agent.types';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="acp-chat-input-container">
-      <div class="acp-chat-input-box">
+      <input #fileInput type="file" multiple hidden (change)="onFilesSelected($event)" />
+      <div class="acp-chat-input-box" [class.drag-over]="isDragOver()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
         @if (errorMessage(); as error) {
           <div class="chat-common-error-box">
             <div class="chat-error-banner">
@@ -44,15 +71,55 @@ import type { AgentConfig } from './acp-agent.types';
           </div>
         }
         <textarea #messageInput [ngModel]="inputValue()" (ngModelChange)="inputValue.set($event)"
-          (input)="onInput()" (keydown)="onKeydown($event)" placeholder="Describe what to build"
+          (input)="onInput()" (keydown)="onKeydown($event)" (paste)="onPaste($event)" placeholder="Describe what to build"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
           [disabled]="!acpService.sessionState().isConnected || acpService.hasActiveQuestions()" rows="1"
           class="message-textarea custom-scroll"></textarea>
+        @if (showLinkInput()) {
+          <div class="acp-chat-link-input">
+            <input [ngModel]="linkName()" (ngModelChange)="linkName.set($event)"
+              placeholder="Name (optional)" (keydown.enter)="confirmResourceLink()" />
+            <input [ngModel]="linkUri()" (ngModelChange)="linkUri.set($event)"
+              placeholder="file:/// or https:// URI" (keydown.enter)="confirmResourceLink()" />
+            <button class="link-add-btn" (click)="confirmResourceLink()" [disabled]="!linkUri().trim()">Add</button>
+            <button class="link-cancel-btn" (click)="showLinkInput.set(false)">Cancel</button>
+          </div>
+        }
+        @if (attachments().length > 0) {
+          <div class="acp-chat-attachments">
+            @for (att of attachments(); track att.id) {
+              <div class="attach-chip" [class]="'attach-' + att.kind">
+                @if (att.kind === 'image' && att.preview) {
+                  <img class="attach-thumb" [src]="att.preview" alt="">
+                } @else {
+                  <span class="attach-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                  </span>
+                }
+                <span class="attach-name" [title]="att.name">{{ att.name }}</span>
+                <button class="attach-remove" title="Remove" (click)="removeAttachment(att.id)">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          </div>
+        }
         <div class="acp-chat-toolbar">
           <div class="acp-chat-toolbar-left">
-            <button class="toolbar-icon-btn" title="Attach">
+            <button class="toolbar-icon-btn" title="Attach" (click)="openFilePicker()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+            <button class="toolbar-icon-btn" title="Add link" (click)="openLinkInput()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
             </button>
             <div class="agent-selector">
@@ -149,7 +216,7 @@ import type { AgentConfig } from './acp-agent.types';
               </svg>
             </button>
             <button class="send-button" (click)="acpService.isProcessing() ? stopGeneration() : sendMessage()"
-              [disabled]="!acpService.sessionState().isConnected || acpService.hasActiveQuestions() || (!inputValue().trim() && !acpService.isProcessing())">
+              [disabled]="!acpService.sessionState().isConnected || acpService.hasActiveQuestions() || (!inputValue().trim() && attachments().length === 0 && !acpService.isProcessing())">
               @if (acpService.isProcessing()) {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <rect x="6" y="6" width="12" height="12" rx="2"/>
@@ -184,6 +251,116 @@ import type { AgentConfig } from './acp-agent.types';
     }
     .acp-chat-input-box:focus-within {
       border-color: var(--vscode-focusBorder, #007acc);
+    }
+    .acp-chat-input-box.drag-over {
+      border-color: var(--vscode-focusBorder, #007acc);
+      box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007acc) inset;
+    }
+    .acp-chat-attachments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 6px 14px 0;
+    }
+    .attach-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 220px;
+      padding: 3px 6px 3px 4px;
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border-radius: 8px;
+      background-color: var(--vscode-editor-background, #1e1e1e);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+    .attach-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .attach-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      color: var(--vscode-textLink-foreground, #3794ff);
+    }
+    .attach-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+    .attach-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+      color: var(--vscode-foreground);
+    }
+    .attach-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      opacity: 0.6;
+      flex-shrink: 0;
+      transition: opacity 0.15s, background-color 0.15s;
+    }
+    .attach-remove:hover {
+      opacity: 1;
+      background-color: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+    }
+    .acp-chat-link-input {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px 0;
+    }
+    .acp-chat-link-input input {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 8px;
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border-radius: 6px;
+      background-color: var(--vscode-input-background, #1e1e1e);
+      color: var(--vscode-foreground);
+      font-size: 12px;
+      outline: none;
+    }
+    .acp-chat-link-input input:focus {
+      border-color: var(--vscode-focusBorder, #007acc);
+    }
+    .link-add-btn,
+    .link-cancel-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .link-add-btn {
+      background-color: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #ffffff);
+      border-color: transparent;
+    }
+    .link-add-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
     .chat-common-error-box {
       position: absolute;
@@ -532,9 +709,15 @@ export class AcpChatInputComponent {
   protected acpService = inject(AcpService);
 
   @ViewChild('messageInput') private messageInput!: ElementRef;
+  @ViewChild('fileInput') private fileInput!: ElementRef<HTMLInputElement>;
 
   inputValue = signal<string>('');
   errorMessage = signal<string | null>(null);
+  attachments = signal<AttachmentEntry[]>([]);
+  isDragOver = signal<boolean>(false);
+  showLinkInput = signal<boolean>(false);
+  linkName = signal<string>('');
+  linkUri = signal<string>('');
   showAgentDropdown = signal<boolean>(false);
   showModeDropdown = signal<boolean>(false);
   showModelDropdown = signal<boolean>(false);
@@ -666,9 +849,190 @@ export class AcpChatInputComponent {
     this.messageInput?.nativeElement?.focus();
   }
 
+  // ============================================================================
+  // Attachments
+  // ============================================================================
+
+  openFilePicker(): void {
+    this.fileInput?.nativeElement?.click();
+  }
+
+  async onFilesSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    await this.addFiles(files);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+  }
+
+  async onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    await this.addFiles(files);
+  }
+
+  async onPaste(event: ClipboardEvent): Promise<void> {
+    const items = Array.from(event.clipboardData?.items ?? []);
+    const files = items
+      .filter(item => item.kind === 'file')
+      .map(item => item.getAsFile())
+      .filter((file): file is File => !!file);
+    if (files.length === 0) return;
+    event.preventDefault();
+    await this.addFiles(files);
+  }
+
+  private async addFiles(files: File[]): Promise<void> {
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        this.errorMessage.set(`"${file.name}" exceeds the 10MB size limit`);
+        continue;
+      }
+      try {
+        const entry = await this.fileToAttachment(file);
+        if (entry) {
+          this.attachments.update(list => [...list, entry]);
+        }
+      } catch (error) {
+        console.error('[ACP Chat] Failed to attach file:', file.name, error);
+        this.errorMessage.set(`Failed to attach "${file.name}"`);
+      }
+    }
+  }
+
+  /**
+   * Maps a local file to an ACP ContentBlock based on its MIME type.
+   * image/* → ImageContent, audio/* → AudioContent, text/* → EmbeddedResource(text),
+   * everything else → EmbeddedResource(blob).
+   */
+  private async fileToAttachment(file: File): Promise<AttachmentEntry | null> {
+    const mimeType = file.type || 'application/octet-stream';
+    const id = crypto.randomUUID();
+    const uri = `file:///${file.name}`;
+
+    if (mimeType.startsWith('image/')) {
+      if (!this.supports('image')) {
+        this.errorMessage.set('The agent does not support image content');
+        return null;
+      }
+      const base64 = await this.readFileAsBase64(file);
+      return {
+        id, name: file.name, size: file.size, mimeType, kind: 'image',
+        preview: `data:${mimeType};base64,${base64}`,
+        block: { type: 'image', data: base64, mimeType },
+      };
+    }
+
+    if (mimeType.startsWith('audio/')) {
+      if (!this.supports('audio')) {
+        this.errorMessage.set('The agent does not support audio content');
+        return null;
+      }
+      const base64 = await this.readFileAsBase64(file);
+      return {
+        id, name: file.name, size: file.size, mimeType, kind: 'audio',
+        block: { type: 'audio', data: base64, mimeType },
+      };
+    }
+
+    if (mimeType.startsWith('text/') || TEXT_MIME_TYPES.has(mimeType)) {
+      if (!this.supports('embeddedContext')) {
+        this.errorMessage.set('The agent does not support embedded resources');
+        return null;
+      }
+      const text = await this.readFileAsText(file);
+      return {
+        id, name: file.name, size: file.size, mimeType, kind: 'text',
+        block: { type: 'resource', resource: { uri, text, mimeType } },
+      };
+    }
+
+    // Binary blob → embedded resource with base64 data
+    if (!this.supports('embeddedContext')) {
+      this.errorMessage.set('The agent does not support embedded resources');
+      return null;
+    }
+    const blob = await this.readFileAsBase64(file);
+    return {
+      id, name: file.name, size: file.size, mimeType, kind: 'blob',
+      block: { type: 'resource', resource: { uri, blob, mimeType } },
+    };
+  }
+
+  private supports(cap: 'image' | 'audio' | 'embeddedContext'): boolean {
+    const caps = this.acpService.sessionState().promptCapabilities;
+    // Unknown capabilities: allow (agent rejects unsupported types at prompt time)
+    if (!caps) return true;
+    return caps[cap] === true;
+  }
+
+  private readFileAsText(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+  private readFileAsBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result);
+        resolve(result.split(',')[1] ?? result);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  removeAttachment(id: string): void {
+    this.attachments.update(list => list.filter(att => att.id !== id));
+  }
+
+  openLinkInput(): void {
+    this.showLinkInput.set(true);
+    this.linkName.set('');
+    this.linkUri.set('');
+    this.messageInput?.nativeElement?.focus();
+  }
+
+  confirmResourceLink(): void {
+    const uri = this.linkUri().trim();
+    if (!uri) return;
+    const name = this.linkName().trim() || uri.split('/').pop() || uri;
+    this.attachments.update(list => [...list, {
+      id: crypto.randomUUID(),
+      name,
+      size: 0,
+      mimeType: '',
+      kind: 'link',
+      block: { type: 'resource_link', uri, name },
+    }]);
+    this.showLinkInput.set(false);
+    this.linkUri.set('');
+    this.linkName.set('');
+    this.messageInput?.nativeElement?.focus();
+  }
+
   async sendMessage(): Promise<void> {
     const text = this.inputValue().trim();
-    if (!text || this.acpService.isProcessing() || this.acpService.hasActiveQuestions()) {
+    const attachments = this.attachments();
+    if ((!text && attachments.length === 0) || this.acpService.isProcessing() || this.acpService.hasActiveQuestions()) {
       return;
     }
 
@@ -687,7 +1051,15 @@ export class AcpChatInputComponent {
         this.acpService.hasOpenedSession.set(true);
         this.acpService.showSessionHistory.set(false);
       }
-      await this.acpService.sendPrompt(text);
+      const content: ContentBlock[] = [];
+      if (text) {
+        content.push({ type: 'text', text });
+      }
+      for (const att of attachments) {
+        content.push(att.block);
+      }
+      await this.acpService.sendPrompt(content);
+      this.attachments.set([]);
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);
       this.errorMessage.set(error instanceof Error ? error.message : String(error));

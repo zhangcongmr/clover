@@ -68,7 +68,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   previousViewId: number = 1;
   astContentPanelOpen = true;
   acpPanelOpen = false;
-  dockPosition: 'left' | 'right' = 'right';
+  dockPosition: 'left' | 'right' = 'left';
   terminalBtnShow = true;
   terminalPanelShow = false;
   themePromptOpen = false;

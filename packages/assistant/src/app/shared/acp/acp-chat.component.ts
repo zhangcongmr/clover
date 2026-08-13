@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
+import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
 
 const INITIAL_LOAD = 30;
 const LOAD_MORE = 20;
@@ -129,6 +130,29 @@ export class AcpChatComponent implements OnDestroy {
 
   formatTime(date: Date): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ============================================================================
+  // Content block rendering
+  // ============================================================================
+
+  blockDataUrl(block: ImageContent | AudioContent): string {
+    return `data:${block.mimeType};base64,${block.data}`;
+  }
+
+  resourceName(block: EmbeddedResource): string {
+    const uri = block.resource.uri;
+    return uri.split(/[\\/]/).pop() || uri;
+  }
+
+  resourcePreview(block: EmbeddedResource): string {
+    const text = block.resource.text ?? '';
+    return text.length > 200 ? text.slice(0, 200) + '…' : text;
+  }
+
+  resourceDownloadUrl(block: EmbeddedResource): string {
+    const mime = block.resource.mimeType ?? 'application/octet-stream';
+    return `data:${mime};base64,${block.resource.blob ?? ''}`;
   }
 
   getToolStatusIcon(status?: string): string {

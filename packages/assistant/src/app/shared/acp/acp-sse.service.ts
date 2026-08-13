@@ -30,6 +30,7 @@ export class AcpSseService {
   private onSessionCreatedCallback: ((sessionId: string, payload?: any) => void) | null = null;
   private onErrorCallback: ((message: string) => void) | null = null;
   private onDisconnectedCallback: (() => void) | null = null;
+  private onStatusCallback: ((payload: any) => void) | null = null;
 
   constructor(private localAgentService: LocalAgentService) {}
 
@@ -63,6 +64,10 @@ export class AcpSseService {
 
   onDisconnected(callback: () => void): void {
     this.onDisconnectedCallback = callback;
+  }
+
+  onStatus(callback: (payload: any) => void): void {
+    this.onStatusCallback = callback;
   }
 
   // ============================================================================
@@ -127,6 +132,10 @@ export class AcpSseService {
         console.log('[ACP SSE] Connected to session:', event.payload.sessionId);
         this.connectionState.set('connected');
         this.onConnectedCallback?.();
+        break;
+
+      case 'status':
+        this.onStatusCallback?.(event.payload);
         break;
 
       case 'session_update':
@@ -220,8 +229,7 @@ export class AcpSseService {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+      throw new Error(await this.describeResponseError(response));
     }
 
     return response.json();
@@ -239,11 +247,42 @@ export class AcpSseService {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+      throw new Error(await this.describeResponseError(response));
     }
 
     return response.json();
+  }
+
+  /**
+   * Builds a friendly error message from a non-OK response. Servers may return
+   * JSON, plain text, or an HTML error page (e.g. Express body-parser 413), so
+   * the body is parsed defensively before falling back to the status code.
+   */
+  private async describeResponseError(response: Response): Promise<string> {
+    if (response.status === 413) {
+      return 'Payload too large (413): reduce the attachment size or attach fewer files (max 10MB per file)';
+    }
+
+    let text = '';
+    try {
+      text = await response.text();
+    } catch {
+      // ignore read errors
+    }
+
+    if (text.trim()) {
+      try {
+        const json = JSON.parse(text);
+        if (typeof json?.error === 'string') return `${response.status}: ${json.error}`;
+        if (typeof json?.message === 'string') return `${response.status}: ${json.message}`;
+      } catch {
+        // Not JSON, strip HTML tags to keep the message readable
+        const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (clean) return `${response.status}: ${clean.slice(0, 300)}`;
+      }
+    }
+
+    return `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
   }
 
   // ============================================================================

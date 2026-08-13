@@ -10,6 +10,7 @@ import {
   PromptCapabilities,
   ModelState,
   ContentBlock,
+  TextContent,
   ToolCall,
   ToolCallUpdate,
   Plan,
@@ -25,6 +26,8 @@ export interface AcpMessage {
   role: 'user' | 'assistant' | 'thought' | 'tool_call';
   content: string;
   timestamp: Date;
+  // Non-text content blocks (images, audio, resources) attached to this message
+  contentBlocks?: ContentBlock[];
   // For tool_call messages
   toolCallId?: string;
   toolTitle?: string;
@@ -170,6 +173,15 @@ export class AcpService {
       }));
     });
 
+    this.sseService.onStatus((payload) => {
+      // Surface agent prompt capabilities so UI can gate image/audio/embeddedContext
+      const promptCapabilities = (payload?.capabilities as { promptCapabilities?: PromptCapabilities } | null)?.promptCapabilities;
+      this.sessionState.update(s => ({
+        ...s,
+        promptCapabilities: promptCapabilities ?? s.promptCapabilities,
+      }));
+    });
+
     this.sseService.onError((message) => {
       this.sessionState.update(s => ({
         ...s,
@@ -287,7 +299,7 @@ export class AcpService {
     return sessionId;
   }
 
-  async sendPrompt(text: string): Promise<void> {
+  async sendPrompt(content: ContentBlock[]): Promise<void> {
     const sessionId = this.sessionState().sessionId;
     if (!sessionId) {
       throw new Error('No active session');
@@ -295,16 +307,21 @@ export class AcpService {
 
     this.isProcessing.set(true);
 
+    // Split text blocks for the plain-text message display
+    const textBlocks = content.filter(
+      (b): b is TextContent => b.type === 'text' && !!b.text
+    );
+    const nonTextBlocks = content.filter(b => b.type !== 'text');
+
     // Add user message
     this.messages.update(msgs => [...msgs, {
       id: crypto.randomUUID(),
       role: 'user',
-      content: text,
+      content: textBlocks.map(b => b.text).join('\n'),
+      contentBlocks: nonTextBlocks.length > 0 ? nonTextBlocks : undefined,
       timestamp: new Date()
     }]);
 
-    // Convert text to content array format
-    const content = [{ type: 'text', text }];
     await this.sseService.sendPrompt(sessionId, content);
   }
 
@@ -499,24 +516,18 @@ export class AcpService {
   private handleSessionUpdate(update: SessionUpdate): void {
     switch (update.sessionUpdate) {
       case 'agent_message_chunk':
-        if (update.content?.type === 'text' && update.content.text) {
-          this.appendAssistantMessage(update.content.text);
-        }
+        this.appendAssistantChunk(update.content);
         break;
 
       case 'agent_thought_chunk':
-        if (update.content?.type === 'text' && update.content.text) {
-          this.appendThoughtMessage(update.content.text);
-        }
+        this.appendThoughtChunk(update.content);
         break;
 
       case 'user_message_chunk':
-        if (update.content?.type === 'text' && update.content.text) {
-          if (this.isReplayingHistory) {
-            this.appendReplayedUserMessage(update.content.text, update.messageId);
-          }
-          // Live prompt: user message chunks are echoed back, we already added the user message
+        if (this.isReplayingHistory) {
+          this.appendReplayedUserChunk(update.content, update.messageId);
         }
+        // Live prompt: user message chunks are echoed back, we already added the user message
         break;
 
       case 'tool_call':
@@ -747,6 +758,87 @@ export class AcpService {
       }
     });
     window.dispatchEvent(event);
+  }
+
+  private appendAssistantChunk(content: ContentBlock): void {
+    if (content?.type === 'text') {
+      if (content.text) {
+        this.appendAssistantMessage(content.text);
+      }
+    } else {
+      this.appendAssistantBlock(content);
+    }
+  }
+
+  private appendThoughtChunk(content: ContentBlock): void {
+    if (content?.type === 'text') {
+      if (content.text) {
+        this.appendThoughtMessage(content.text);
+      }
+    } else {
+      this.appendThoughtBlock(content);
+    }
+  }
+
+  private appendReplayedUserChunk(content: ContentBlock, messageId?: string): void {
+    if (content?.type === 'text') {
+      if (content.text) {
+        this.appendReplayedUserMessage(content.text, messageId);
+      }
+    } else {
+      this.appendReplayedUserBlock(content, messageId);
+    }
+  }
+
+  private appendAssistantBlock(content: ContentBlock): void {
+    this.messages.update(msgs => {
+      const lastMsg = msgs[msgs.length - 1];
+      if (lastMsg && lastMsg.role === 'assistant') {
+        lastMsg.contentBlocks = [...(lastMsg.contentBlocks ?? []), content];
+        return [...msgs];
+      }
+      return [...msgs, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: '',
+        contentBlocks: [content],
+        timestamp: new Date()
+      }];
+    });
+  }
+
+  private appendThoughtBlock(content: ContentBlock): void {
+    this.messages.update(msgs => {
+      const lastMsg = msgs[msgs.length - 1];
+      if (lastMsg && lastMsg.role === 'thought') {
+        lastMsg.contentBlocks = [...(lastMsg.contentBlocks ?? []), content];
+        return [...msgs];
+      }
+      return [...msgs, {
+        id: crypto.randomUUID(),
+        role: 'thought',
+        content: '',
+        contentBlocks: [content],
+        timestamp: new Date()
+      }];
+    });
+  }
+
+  private appendReplayedUserBlock(content: ContentBlock, messageId?: string): void {
+    this.messages.update(msgs => {
+      const lastMsg = msgs[msgs.length - 1];
+      if (lastMsg && lastMsg.role === 'user' && messageId && lastMsg.id === messageId) {
+        lastMsg.contentBlocks = [...(lastMsg.contentBlocks ?? []), content];
+        return [...msgs];
+      }
+      return [...msgs, {
+        id: messageId || crypto.randomUUID(),
+        role: 'user',
+        content: '',
+        contentBlocks: [content],
+        timestamp: new Date()
+      }];
+    });
   }
 
   private appendAssistantMessage(text: string): void {

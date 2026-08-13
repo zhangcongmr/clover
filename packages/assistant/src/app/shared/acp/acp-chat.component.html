@@ -114,6 +114,42 @@
             <span class="message-time">{{ formatTime(message.timestamp) }}</span>
           </div>
           <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+          @if (message.contentBlocks && message.contentBlocks.length > 0) {
+            @for (block of message.contentBlocks; track $index) {
+              @switch (block.type) {
+                @case ('image') {
+                  <div class="content-block content-image">
+                    <img [src]="blockDataUrl(block)" alt="Image" />
+                  </div>
+                }
+                @case ('audio') {
+                  <div class="content-block content-audio">
+                    <audio controls [src]="blockDataUrl(block)"></audio>
+                  </div>
+                }
+                @case ('resource') {
+                  <div class="content-block content-resource">
+                    <span class="resource-icon">📎</span>
+                    <span class="resource-name">{{ resourceName(block) }}</span>
+                    @if (block.resource.text) {
+                      <pre class="resource-text">{{ resourcePreview(block) }}</pre>
+                    } @else if (block.resource.blob) {
+                      <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="resourceName(block)">Download</a>
+                    }
+                  </div>
+                }
+                @case ('resource_link') {
+                  <div class="content-block content-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <a [href]="block.uri" target="_blank" rel="noopener noreferrer">{{ block.name || block.uri }}</a>
+                  </div>
+                }
+              }
+            }
+          }
         </div>
       </div>
     }
