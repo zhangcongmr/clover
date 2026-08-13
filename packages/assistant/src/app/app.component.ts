@@ -66,7 +66,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
-  astContentPanelOpen = true;
+  astContentPanelOpen = false;
   acpPanelOpen = false;
   dockPosition: 'left' | 'right' = 'left';
   terminalBtnShow = true;
@@ -84,6 +84,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private readonly ACP_PANEL_OPEN_KEY = 'luxio_acp_panel_open';
   private readonly ACP_LEFT_PCT_KEY = 'luxio_acp_left_pct';
   private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'luxio_acp_previous_left_pct';
+  private static readonly ACP_LEFT_PCT_STORAGE_KEY = 'luxio_acp_left_pct';
 
   keepTerminalInstance = {
     value: false,
@@ -241,11 +242,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       if (savedOpen !== null) {
         this.acpPanelOpen = savedOpen === 'true';
       }
-      // 从 localStorage 恢复 ACP 面板宽度比例
-      const savedLeftPct = parseFloat(localStorage.getItem(this.ACP_LEFT_PCT_KEY) ?? '');
-      if (Number.isFinite(savedLeftPct) && savedLeftPct >= 0 && savedLeftPct <= 1) {
-        this.leftPct = savedLeftPct;
-      }
+      // leftPct 已由 getDefaultLeftPct() 在组件构造阶段恢复（见 getDefaultLeftPct），此处无需重复赋值
       // 从 localStorage 恢复 ACP 面板最大化前的宽度比例
       const savedPreviousLeftPct = parseFloat(localStorage.getItem(this.ACP_PREVIOUS_LEFT_PCT_KEY) ?? '');
       if (Number.isFinite(savedPreviousLeftPct) && savedPreviousLeftPct >= 0 && savedPreviousLeftPct <= 1) {
@@ -1446,6 +1443,14 @@ For each fileIcons entry:
   }
 
   protected override getDefaultLeftPct(): number {
+    // getDefaultLeftPct() 在基类构造函数（super()）期间即被调用，
+    // 此时实例字段尚未初始化，因此必须使用 static 常量 + 直接读 localStorage。
+    const saved = typeof localStorage !== 'undefined'
+      ? parseFloat(localStorage.getItem(AppComponent.ACP_LEFT_PCT_STORAGE_KEY) ?? '')
+      : NaN;
+    if (Number.isFinite(saved) && saved >= 0 && saved <= 1) {
+      return saved;
+    }
     return 0.75;
   }
 
