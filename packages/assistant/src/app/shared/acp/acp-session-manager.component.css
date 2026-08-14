@@ -86,6 +86,14 @@
   color: var(--vscode-input-placeholderForeground, #999);
 }
 
+.settings-input-readonly.required-empty {
+  border-color: var(--vscode-inputValidation-errorBorder, #f44336);
+}
+
+.settings-required {
+  color: var(--vscode-errorForeground, #d32f2f);
+}
+
 .settings-input:focus {
   outline: none;
   border-color: var(--vscode-focusBorder, #0066cc);

@@ -946,6 +946,10 @@ export class AcpService {
     this.sessionState.update(s => ({ ...s, error: null }));
   }
 
+  setError(message: string): void {
+    this.sessionState.update(s => ({ ...s, error: message }));
+  }
+
   clearMessages(): void {
     this.messages.set([]);
     this.plans.set(new Map());

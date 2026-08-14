@@ -41,6 +41,12 @@ export class AcpSessionManagerComponent {
   async connect(): Promise<void> {
     try {
       const cwd = this.workingDir().trim();
+
+      // 工作目录为必选项，为空时阻止连接
+      if (!cwd) {
+        this.acpService.setError('Working Directory is required');
+        return;
+      }
       
       // Set ACP config with the selected agent
       const agent = this.acpService.selectedAgent();
