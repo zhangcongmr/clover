@@ -45,6 +45,7 @@
     position: relative;
     display: flex;
     flex: 1;
+    width: 100%;
 }
 
 .ast-content-empty-state {
@@ -116,6 +117,7 @@
     display: flex;
     flex: 1;
     position: relative;
+    overflow: auto;
 }
 .ast-content-tabs-shrink-btn {
     position: absolute;

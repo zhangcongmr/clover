@@ -200,7 +200,7 @@
               [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
           </div>
 
-          <div ast-content [leftOffset]="dockPosition === 'right' ? 0 : acpPanelWidthPx()"
+          <div ast-content [leftOffset]="(dockPosition === 'right' || !acpPanelOpen) ? 0 : acpPanelWidthPx()"
             (fileTypeChange)="fileType=$event" (dataListChangeOutput)="onHandleDataListChange($event)"
             (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
           </div>
