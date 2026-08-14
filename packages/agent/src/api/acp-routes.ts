@@ -65,9 +65,15 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     try {
       const { cwd, agentCommand, agentArgs } = req.body;
 
+      // 工作目录为必选项，为空时拒绝创建会话
+      if (!cwd || !String(cwd).trim()) {
+        res.status(400).json({ error: 'cwd (working directory) is required' });
+        return;
+      }
+
       // 创建会话
       const sessionId = await sessionManager.createSession({
-        cwd,
+        cwd: String(cwd).trim(),
         agentCommand,
         agentArgs,
       });
