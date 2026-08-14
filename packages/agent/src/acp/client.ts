@@ -20,6 +20,7 @@ export interface AcpClientConfig {
   defaultCwd: string;
   agentCommand?: string;
   agentArgs?: string[];
+  agentEnv?: Record<string, string>;
 }
 
 /**
@@ -100,11 +101,12 @@ export class AcpClient {
   // Connect: spawn agent + create ACP connection
   // ==========================================================================
 
-  private async connect(params: { command?: string; args?: string[]; cwd?: string }): Promise<void> {
+  private async connect(params: { command?: string; args?: string[]; cwd?: string; env?: Record<string, string> }): Promise<void> {
     // Use config defaults when frontend doesn't provide command
     const command = params.command || this.config.agentCommand;
     const args = params.args || this.config.agentArgs;
     const cwd = params.cwd || this.config.defaultCwd;
+    const env = params.env || this.config.agentEnv;
 
     if (!command) {
       send(this.ws, 'error', { message: 'No agent command configured. Send { type: "connect", payload: { command: "..." } } or configure a default command.' });
@@ -130,6 +132,7 @@ export class AcpClient {
         command,
         args,
         cwd,
+        env,
       });
 
       // 2. Create stdio-based ACP stream

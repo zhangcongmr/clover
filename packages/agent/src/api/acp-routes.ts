@@ -63,7 +63,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    */
   app.post('/api/acp/session', async (req: Request, res: Response) => {
     try {
-      const { cwd, agentCommand, agentArgs } = req.body;
+      const { cwd, agentCommand, agentArgs, agentEnv } = req.body;
 
       // 工作目录为必选项，为空时拒绝创建会话
       if (!cwd || !String(cwd).trim()) {
@@ -76,6 +76,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         cwd: String(cwd).trim(),
         agentCommand,
         agentArgs,
+        agentEnv,
       });
 
       // 连接到 agent

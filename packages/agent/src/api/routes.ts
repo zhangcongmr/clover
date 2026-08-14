@@ -29,7 +29,7 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
 
   // ACP config endpoint
   app.post('/api/local/acp/config', (req, res) => {
-    const { command, args } = req.body;
+    const { command, args, env } = req.body;
     if (!command) {
       res.status(400).json({ success: false, message: 'command is required' });
       return;
@@ -44,7 +44,7 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
       }
     }
 
-    setAcpConfig({ command, args });  // This will trigger trySetup once
+    setAcpConfig({ command, args, env });  // This will trigger trySetup once
     res.json({ success: true, config: getAcpConfig() });
   });
 

@@ -7,6 +7,7 @@ export interface SseAcpClientConfig {
   defaultCwd: string;
   agentCommand?: string;
   agentArgs?: string[];
+  agentEnv?: Record<string, string>;
 }
 
 /**
@@ -43,10 +44,11 @@ export class SseAcpClient {
   /**
    * Connect to the agent process
    */
-  async connect(params: { command?: string; args?: string[]; cwd?: string }): Promise<void> {
+  async connect(params: { command?: string; args?: string[]; cwd?: string; env?: Record<string, string> }): Promise<void> {
     const command = params.command || this.config.agentCommand;
     const args = params.args || this.config.agentArgs;
     const cwd = params.cwd || this.config.defaultCwd;
+    const env = params.env || this.config.agentEnv;
 
     if (!command) {
       throw new Error('No agent command configured');
@@ -63,7 +65,7 @@ export class SseAcpClient {
 
     // 1. Spawn agent process
     this.agentProcess = new AgentProcess();
-    this.agentProcess.spawn({ command, args, cwd });
+    this.agentProcess.spawn({ command, args, cwd, env });
 
     // 2. Create stdio-based ACP stream
     const stream = this.agentProcess.createStream();

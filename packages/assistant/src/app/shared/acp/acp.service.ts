@@ -222,12 +222,12 @@ export class AcpService {
    * Sends ACP agent config (command + args) to the server.
    * This triggers the server to set up the ACP WebSocket endpoint.
    */
-  async setAcpConfig(agent: { command: string; args?: string[] }): Promise<void> {
+  async setAcpConfig(agent: { command: string; args?: string[]; env?: Record<string, string> }): Promise<void> {
     try {
       const response = await fetch('/api/local/acp/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: agent.command, args: agent.args }),
+        body: JSON.stringify({ command: agent.command, args: agent.args, env: agent.env }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -249,6 +249,7 @@ export class AcpService {
         cwd: this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
+        agentEnv: agent?.env,
       });
 
       this.sessionState.update(s => ({
@@ -283,6 +284,7 @@ export class AcpService {
       cwd,
       agentCommand: agent?.command,
       agentArgs: agent?.args,
+      agentEnv: agent?.env,
     });
 
     this.sessionState.update(s => ({
@@ -390,6 +392,7 @@ export class AcpService {
         cwd: this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
+        agentEnv: agent?.env,
       });
       this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
       await this.sseService.connect(currentSessionId);
@@ -427,6 +430,7 @@ export class AcpService {
         cwd: this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
+        agentEnv: agent?.env,
       });
       this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
       await this.sseService.connect(currentSessionId);
@@ -460,6 +464,7 @@ export class AcpService {
         cwd: this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
+        agentEnv: agent?.env,
       });
       await this.sseService.connect(wrapperSessionId);
       await this.sseService.deleteAcpSession(wrapperSessionId, sessionId);

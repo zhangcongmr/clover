@@ -16,6 +16,7 @@ export interface SessionCreateOptions {
   cwd?: string;
   agentCommand?: string;
   agentArgs?: string[];
+  agentEnv?: Record<string, string>;
   userId?: string;
 }
 
@@ -52,6 +53,7 @@ export class AcpSessionManager {
       defaultCwd,
       agentCommand: options.agentCommand,
       agentArgs: options.agentArgs,
+      agentEnv: options.agentEnv,
     };
 
     // 创建 ACP 客户端
@@ -200,6 +202,7 @@ export class AcpSessionManager {
         command: session.config.agentCommand || 'opencode',
         args: session.config.agentArgs || ['acp'],
         cwd: session.config.defaultCwd,
+        env: session.config.agentEnv,
       });
 
       session.status = 'active';
