@@ -768,7 +768,7 @@ export class AcpChatInputComponent {
     // Set ACP config on init with the default agent
     const agent = this.acpService.selectedAgent();
     if (agent) {
-      this.acpService.setAcpConfig({ command: agent.command, args: agent.args }).catch(() => {});
+      this.acpService.setAcpConfig({ command: agent.command, args: agent.args, env: agent.env }).catch(() => {});
     }
   }
 
@@ -799,7 +799,7 @@ export class AcpChatInputComponent {
   selectAgent(agent: AgentConfig): void {
     this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
-    this.acpService.setAcpConfig({ command: agent.command, args: agent.args }).catch(() => {});
+    this.acpService.setAcpConfig({ command: agent.command, args: agent.args, env: agent.env }).catch(() => {});
     this.messageInput?.nativeElement?.focus();
   }
 

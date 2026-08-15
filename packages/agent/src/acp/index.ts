@@ -9,11 +9,13 @@ export interface AcpWebSocketOptions {
   defaultCwd?: string;
   agentCommand?: string;
   agentArgs?: string[];
+  agentEnv?: Record<string, string>;
 }
 
 export interface AcpConfig {
   command?: string;
   args?: string[];
+  env?: Record<string, string>;
 }
 
 // ============================================================================
@@ -85,6 +87,7 @@ function trySetup(): void {
   setupAcpWebSocket(acpState.httpServer, acpState.isHttps, {
     agentCommand: acpState.config.command,
     agentArgs: acpState.config.args,
+    agentEnv: acpState.config.env,
   });
 }
 
@@ -102,7 +105,7 @@ export function setupAcpWebSocket(
   isHttps: boolean = false,
   options: AcpWebSocketOptions = {},
 ): void {
-  const { logPrefix = '[ACP]', defaultCwd = process.cwd(), agentCommand, agentArgs } = options;
+  const { logPrefix = '[ACP]', defaultCwd = process.cwd(), agentCommand, agentArgs, agentEnv } = options;
   const protocol = isHttps ? 'https' : 'http';
 
   const wss = new WebSocketServer({ noServer: true });
@@ -124,7 +127,7 @@ export function setupAcpWebSocket(
     const clientAddr = req.socket.remoteAddress;
     console.log(`${logPrefix} Client connected from ${clientAddr}`);
 
-    const client = new AcpClient(ws, { defaultCwd, agentCommand, agentArgs });
+    const client = new AcpClient(ws, { defaultCwd, agentCommand, agentArgs, agentEnv });
 
     ws.on('message', async (data) => {
       try {

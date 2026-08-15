@@ -292,7 +292,7 @@ export class AcpSseService {
   /**
    * 创建新会话
    */
-  async createSession(options?: { cwd?: string; agentCommand?: string; agentArgs?: string[] }): Promise<string> {
+  async createSession(options?: { cwd?: string; agentCommand?: string; agentArgs?: string[]; agentEnv?: Record<string, string> }): Promise<string> {
     const result = await this.post('/api/acp/session', options || {});
     return result.sessionId;
   }

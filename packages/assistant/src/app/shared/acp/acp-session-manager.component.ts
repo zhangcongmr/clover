@@ -51,7 +51,7 @@ export class AcpSessionManagerComponent {
       // Set ACP config with the selected agent
       const agent = this.acpService.selectedAgent();
       if (agent) {
-        await this.acpService.setAcpConfig({ command: agent.command, args: agent.args });
+        await this.acpService.setAcpConfig({ command: agent.command, args: agent.args, env: agent.env });
       }
 
       // Connect via SSE (creates session and connects to SSE)
