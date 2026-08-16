@@ -258,6 +258,11 @@ export class AcpSessionManager {
     }
 
     try {
+      // 复用已有 wrapper 时其 agent 可能已断开：先确保连接再建会话
+      if (!session.client.isConnected()) {
+        await this.connectSession(sessionId);
+      }
+
       const result = await session.client.handleNewSession({ cwd });
       session.lastActivity = Date.now();
 
