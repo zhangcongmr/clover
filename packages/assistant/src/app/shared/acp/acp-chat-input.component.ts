@@ -412,15 +412,15 @@ export interface AttachmentEntry {
       width: 100%;
       resize: none;
       border: none;
-      padding: 12px 14px 4px;
+      padding: 14px 14px 4px;
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
       color: var(--vscode-foreground);
       background: transparent;
       outline: none;
-      min-height: 32px;
-      max-height: 120px;
-      line-height: 1.5;
+      min-height: 48px;
+      max-height: 160px;
+      line-height: 1.6;
       overflow-y: hidden;
     }
     .message-textarea:disabled {
@@ -1078,7 +1078,7 @@ export class AcpChatInputComponent {
         this.selectedIndex.set(0);
       }
       textarea.style.height = 'auto';
-      const maxHeight = 120;
+      const maxHeight = 160;
       const newHeight = Math.min(textarea.scrollHeight, maxHeight);
       textarea.style.height = newHeight + 'px';
       textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
