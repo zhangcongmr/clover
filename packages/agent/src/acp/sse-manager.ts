@@ -117,6 +117,16 @@ export class SseManager {
     }
   }
 
+  /**
+   * Write an event directly to a session's SSE connection (bypasses Redis).
+   */
+  sendToConnection(sessionId: string, event: ServerEvent): void {
+    const connection = this.connections.get(sessionId);
+    if (connection) {
+      this.sendEvent(connection.response, event);
+    }
+  }
+
   broadcastHeartbeat(): void {
     for (const [sessionId] of this.connections) {
       this.sendHeartbeat(sessionId);

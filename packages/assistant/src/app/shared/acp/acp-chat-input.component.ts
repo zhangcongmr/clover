@@ -57,6 +57,15 @@ export interface AttachmentEntry {
             </div>
           </div>
         }
+        @if (showAgentDisconnectedWarning()) {
+          <div class="chat-agent-reconnect-banner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+              <polyline points="21 3 21 9 15 9"/>
+            </svg>
+            <span>Agent 已断开，发送后将自动重连并恢复对话</span>
+          </div>
+        }
         @if (showSlashMenu()) {
           <div class="slash-command-menu custom-scroll">
             @for (cmd of filteredCommands(); track cmd.name; let i = $index) {
@@ -261,6 +270,22 @@ export interface AttachmentEntry {
       flex-wrap: wrap;
       gap: 6px;
       padding: 6px 14px 0;
+    }
+    .chat-agent-reconnect-banner {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 6px 14px 0;
+      padding: 6px 8px;
+      border: 1px solid var(--vscode-editorWarning-border, #cca700);
+      border-radius: 8px;
+      background-color: var(--vscode-inputValidation-warningBackground, rgba(204, 167, 0, 0.15));
+      color: var(--vscode-editorWarning-foreground, #cca700);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .chat-agent-reconnect-banner svg {
+      flex-shrink: 0;
     }
     .attach-chip {
       display: flex;
@@ -762,6 +787,11 @@ export class AcpChatInputComponent {
 
   readonly showSlashMenu = computed(() => {
     return this.inputValue().startsWith('/') && this.filteredCommands().length > 0;
+  });
+
+  readonly showAgentDisconnectedWarning = computed(() => {
+    const s = this.acpService.sessionState();
+    return s.isConnected && !s.agentConnected;
   });
 
   constructor() {

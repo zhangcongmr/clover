@@ -52,6 +52,9 @@ export interface AcpSessionState {
   sessionId: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  /** Whether the underlying agent process is connected (distinct from the SSE
+   *  wrapper transport `isConnected`). False when the agent process crashed. */
+  agentConnected: boolean;
   error: string | null;
   promptCapabilities?: PromptCapabilities;
   models?: ModelState;
@@ -69,6 +72,7 @@ export class AcpService {
     sessionId: null,
     isConnected: false,
     isConnecting: false,
+    agentConnected: false,
     error: null
   });
 
@@ -178,6 +182,7 @@ export class AcpService {
       const promptCapabilities = (payload?.capabilities as { promptCapabilities?: PromptCapabilities } | null)?.promptCapabilities;
       this.sessionState.update(s => ({
         ...s,
+        agentConnected: payload?.connected === true,
         promptCapabilities: promptCapabilities ?? s.promptCapabilities,
       }));
     });
@@ -187,6 +192,7 @@ export class AcpService {
         ...s,
         isConnected: false,
         isConnecting: false,
+        agentConnected: false,
         error: message,
       }));
     });
@@ -341,6 +347,7 @@ export class AcpService {
       sessionId: null,
       isConnected: false,
       isConnecting: false,
+      agentConnected: false,
       error: null
     });
     this.messages.set([]);

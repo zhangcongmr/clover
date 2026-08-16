@@ -31,6 +31,9 @@ export class SseAcpClient {
   private sessionId: string;
   private redis: RedisClient;
   private unsubscribers: (() => void)[] = [];
+  private onDisconnectedCallback: (() => void) | null = null;
+  private onAgentSessionChangeCallback: (() => void) | null = null;
+  private connectPromise: Promise<void> | null = null;
 
   constructor(
     sessionId: string,
@@ -42,9 +45,24 @@ export class SseAcpClient {
   }
 
   /**
-   * Connect to the agent process
+   * Connect to the agent process. Serialized so concurrent callers (e.g. the
+   * SSE reconnect path and the prompt lazy-recovery path) cannot spawn two
+   * agent processes for the same wrapper.
    */
   async connect(params: { command?: string; args?: string[]; cwd?: string; env?: Record<string, string> }): Promise<void> {
+    if (this.connectPromise) {
+      await this.connectPromise;
+      return;
+    }
+    this.connectPromise = this.connectInternal(params);
+    try {
+      await this.connectPromise;
+    } finally {
+      this.connectPromise = null;
+    }
+  }
+
+  private async connectInternal(params: { command?: string; args?: string[]; cwd?: string; env?: Record<string, string> }): Promise<void> {
     const command = params.command || this.config.agentCommand;
     const args = params.args || this.config.agentArgs;
     const cwd = params.cwd || this.config.defaultCwd;
@@ -60,6 +78,7 @@ export class SseAcpClient {
       this.agentProcess = null;
       this.clientConnection = null;
       this.activeSession = null;
+      this.loadedSessionId = null;
       this.agentCapabilities = null;
     }
 
@@ -81,11 +100,13 @@ export class SseAcpClient {
       console.log(`[SSE ACP Client] Connection closed for session: ${this.sessionId}`);
       this.clientConnection = null;
       this.activeSession = null;
+      this.loadedSessionId = null;
       this.agentCapabilities = null;
       this.publishEvent({
         type: 'status',
         payload: { connected: false },
       });
+      this.onDisconnectedCallback?.();
     });
 
     // 6. Initialize the connection
@@ -120,11 +141,88 @@ export class SseAcpClient {
 
     // 9. Handle process exit
     this.agentProcess.onClose(() => {
+      this.clientConnection = null;
+      this.activeSession = null;
+      this.loadedSessionId = null;
+      this.agentCapabilities = null;
       this.publishEvent({
         type: 'status',
         payload: { connected: false },
       });
+      this.onDisconnectedCallback?.();
     });
+  }
+
+  /**
+   * Register a callback fired when the agent process/connection is lost.
+   */
+  onDisconnected(cb: () => void): void {
+    this.onDisconnectedCallback = cb;
+  }
+
+  /**
+   * Register a callback fired when the underlying ACP session id changes
+   * (created / loaded / resumed / deleted). Used to persist the agent session
+   * id so it can be resumed after a crash.
+   */
+  onAgentSessionChange(cb: () => void): void {
+    this.onAgentSessionChangeCallback = cb;
+  }
+
+  /**
+   * Whether the agent connection is live right now.
+   */
+  isConnected(): boolean {
+    return this.clientConnection !== null && (this.agentProcess?.isRunning() ?? false);
+  }
+
+  /**
+   * The current underlying agent session id, if any.
+   */
+  getAgentSessionId(): string | null {
+    return this.activeSession?.sessionId ?? this.loadedSessionId ?? null;
+  }
+
+  /**
+   * Reconnect to the agent process using the original config.
+   */
+  async reconnect(): Promise<void> {
+    await this.connect({
+      command: this.config.agentCommand,
+      args: this.config.agentArgs,
+      cwd: this.config.defaultCwd,
+      env: this.config.agentEnv,
+    });
+  }
+
+  /**
+   * Ensure the agent is connected and has an active ACP session.
+   *
+   * - Reconnects the agent process if the connection was lost.
+   * - If a previous agent session id is known, resumes it (context continuity).
+   * - Never creates a fresh session here: new sessions are created explicitly by
+   *   the frontend via `session/create`. If there is nothing to resume it throws,
+   *   so the caller can surface the failure instead of silently losing context.
+   */
+  async ensureSession(resumeSessionId?: string | null, resumeCwd?: string): Promise<void> {
+    if (!this.isConnected()) {
+      await this.reconnect();
+    }
+    if (this.activeSession || this.loadedSessionId) {
+      return;
+    }
+
+    if (!resumeSessionId) {
+      throw new Error('No previous agent session to resume; create a new session or load one from history');
+    }
+
+    const cwd = resumeCwd ?? this.config.defaultCwd;
+
+    const resumeCapability = this.agentCapabilities?.sessionCapabilities?.resume;
+    if (resumeCapability === undefined || resumeCapability === null) {
+      throw new Error('Agent does not support session resume; load the previous session from history or start a new one');
+    }
+    await this.handleResumeSession({ sessionId: resumeSessionId, cwd });
   }
 
   /**
@@ -280,6 +378,7 @@ export class SseAcpClient {
     // Start reading session updates in the background
     this.readSessionUpdates();
 
+    this.onAgentSessionChangeCallback?.();
     return this.mergeConfigOptions(sessionResponse);
   }
 
@@ -333,6 +432,7 @@ export class SseAcpClient {
 
       console.log(`[SSE ACP Client] Session loaded: ${params.sessionId}`);
 
+      this.onAgentSessionChangeCallback?.();
       return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to load session:`, error);
@@ -366,6 +466,7 @@ export class SseAcpClient {
 
       console.log(`[SSE ACP Client] Session resumed: ${params.sessionId}`);
 
+      this.onAgentSessionChangeCallback?.();
       return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to resume session:`, error);
@@ -404,6 +505,7 @@ export class SseAcpClient {
         this.loadedSessionId = null;
       }
 
+      this.onAgentSessionChangeCallback?.();
       console.log(`[SSE ACP Client] Session deleted: ${params.sessionId}`);
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to delete session:`, error);

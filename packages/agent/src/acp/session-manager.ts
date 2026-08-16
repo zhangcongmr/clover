@@ -10,6 +10,11 @@ export interface AcpSession {
   createdAt: number;
   lastActivity: number;
   status: 'active' | 'idle' | 'disconnected';
+  /** Last underlying agent ACP session id. Persisted in memory so it can be
+   *  resumed if the agent process crashes (survives agent re-spawn). */
+  agentSessionId: string | null;
+  /** Working directory associated with the last agent session. */
+  agentCwd: string | null;
 }
 
 export interface SessionCreateOptions {
@@ -59,6 +64,23 @@ export class AcpSessionManager {
     // 创建 ACP 客户端
     const client = new SseAcpClient(sessionId, config, this.redis);
 
+    // 同步 wrapper 状态：agent 连接断开时标记为 disconnected
+    client.onDisconnected(() => {
+      const s = this.sessions.get(sessionId);
+      if (s) {
+        s.status = 'disconnected';
+      }
+    });
+
+    // 持久化底层 agent session id，崩溃后可据此 resume
+    client.onAgentSessionChange(() => {
+      const s = this.sessions.get(sessionId);
+      if (s) {
+        s.agentSessionId = client.getAgentSessionId();
+        s.agentCwd = config.defaultCwd;
+      }
+    });
+
     // 订阅 Redis 频道接收客户端消息
     this.setupRedisSubscriptions(sessionId, client);
 
@@ -70,6 +92,8 @@ export class AcpSessionManager {
       createdAt: Date.now(),
       lastActivity: Date.now(),
       status: 'active',
+      agentSessionId: null,
+      agentCwd: null,
     };
     this.sessions.set(sessionId, session);
 
@@ -348,6 +372,37 @@ export class AcpSessionManager {
       if (session.status === 'active') count++;
     }
     return count;
+  }
+
+  /**
+   * Whether the agent process behind the wrapper is actually connected right now.
+   */
+  isAgentConnected(sessionId: string): boolean {
+    const session = this.sessions.get(sessionId);
+    return session ? session.client.isConnected() : false;
+  }
+
+  /**
+   * Ensure the agent is connected and has an active ACP session.
+   * If a previous agent session id was persisted (and the agent supports
+   * resume), it resumes that session to preserve context; otherwise it throws
+   * so the caller can surface the failure instead of silently losing context.
+   */
+  async ensureAgentSession(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Session ${sessionId} not found`);
+    }
+
+    await session.client.ensureSession(
+      session.agentSessionId,
+      session.agentCwd ?? session.config.defaultCwd,
+    );
+
+    session.lastActivity = Date.now();
+    session.status = session.client.isConnected() ? 'active' : 'disconnected';
+    session.agentSessionId = session.client.getAgentSessionId();
+    session.agentCwd = session.config.defaultCwd;
   }
 
   async removeSession(sessionId: string): Promise<void> {
