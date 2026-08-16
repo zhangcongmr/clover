@@ -112,6 +112,10 @@ export class AcpService {
   // messages (unlike live prompts where the user message is added locally first).
   private isReplayingHistory = false;
 
+  /** Agent id the current wrapper session was created with, used to detect
+   *  agent changes so a stale wrapper is not reused. */
+  private wrapperAgentId: string | null = null;
+
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
   readonly isConnected = computed(() => this.sessionState().isConnected);
@@ -262,6 +266,7 @@ export class AcpService {
         ...s,
         sessionId,
       }));
+      this.wrapperAgentId = agent?.id ?? null;
 
       // Connect to SSE with the session ID
       await this.sseService.connect(sessionId);
@@ -297,6 +302,7 @@ export class AcpService {
       ...s,
       sessionId,
     }));
+    this.wrapperAgentId = agent?.id ?? null;
 
     // Connect to SSE with the new session ID
     await this.sseService.connect(sessionId);
@@ -305,6 +311,23 @@ export class AcpService {
     await this.sseService.createAcpSession(sessionId, cwd);
 
     return sessionId;
+  }
+
+  /**
+   * Ensures there is an active wrapper with an underlying ACP session before
+   * chatting. Reuses the existing wrapper (created by connect() or history
+   * load/resume) when possible; only falls back to creating a new wrapper when
+   * there is no usable wrapper, SSE is disconnected, or the selected agent
+   * differs from the one the wrapper was created with.
+   */
+  async ensureChatSession(cwd?: string): Promise<void> {
+    const existing = this.sessionState().sessionId;
+    const agentChanged = this.wrapperAgentId !== (this.selectedAgent()?.id ?? null);
+    if (existing && this.sessionState().isConnected && !agentChanged) {
+      await this.sseService.createAcpSession(existing, cwd);
+      return;
+    }
+    await this.createSession(cwd);
   }
 
   async sendPrompt(content: ContentBlock[]): Promise<void> {
@@ -343,6 +366,7 @@ export class AcpService {
 
   async disconnect(): Promise<void> {
     this.sseService.disconnect();
+    this.wrapperAgentId = null;
     this.sessionState.set({
       sessionId: null,
       isConnected: false,
@@ -402,6 +426,7 @@ export class AcpService {
         agentEnv: agent?.env,
       });
       this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
+      this.wrapperAgentId = agent?.id ?? null;
       await this.sseService.connect(currentSessionId);
     }
 
@@ -440,6 +465,7 @@ export class AcpService {
         agentEnv: agent?.env,
       });
       this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
+      this.wrapperAgentId = agent?.id ?? null;
       await this.sseService.connect(currentSessionId);
     }
 

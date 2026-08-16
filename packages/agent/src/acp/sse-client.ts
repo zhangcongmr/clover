@@ -421,6 +421,7 @@ export class SseAcpClient {
     try {
       // Dispose previous session if any
       this.activeSession?.dispose();
+      this.activeSession = null;
 
       const result = await this.clientConnection.agent.request('session/load', {
         sessionId: params.sessionId,
@@ -455,6 +456,7 @@ export class SseAcpClient {
     try {
       // Dispose previous session if any
       this.activeSession?.dispose();
+      this.activeSession = null;
 
       const result = await this.clientConnection.agent.request('session/resume', {
         sessionId: params.sessionId,
