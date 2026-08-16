@@ -45,10 +45,31 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     // 添加 SSE 连接
     sseManager.addConnection(sessionId, res);
 
-    // 如果会话未连接，自动连接
-    if (session.status !== 'active') {
-      sessionManager.connectSession(sessionId).catch((error) => {
-        console.error(`[ACP Routes] Auto-connect failed for ${sessionId}:`, error);
+    // 如果 agent 未连接，自动重连并恢复会话（优先 resume 旧会话延续上下文）
+    if (!sessionManager.isAgentConnected(sessionId)) {
+      sessionManager.connectSession(sessionId)
+        .then(() => sessionManager.ensureAgentSession(sessionId))
+        .then(() => {
+          sseManager.sendToConnection(sessionId, {
+            type: 'status',
+            payload: { connected: true },
+            timestamp: Date.now(),
+          });
+        })
+        .catch((error) => {
+          console.error(`[ACP Routes] Auto-reconnect failed for ${sessionId}:`, error);
+          sessionManager.publishEvent(sessionId, {
+            type: 'error',
+            payload: { message: `Agent recovery failed: ${(error as Error).message}` },
+            timestamp: Date.now(),
+          });
+        });
+    } else {
+      // agent 已连接：直接告知前端当前状态（初始连接也保证收到 status）
+      sseManager.sendToConnection(sessionId, {
+        type: 'status',
+        payload: { connected: true },
+        timestamp: Date.now(),
       });
     }
   });
@@ -158,6 +179,9 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
+      // 确保 agent 连接并拥有活跃会话（agent 崩溃后在此懒恢复）
+      await sessionManager.ensureAgentSession(sessionId);
+
       // 发布 prompt 请求到 Redis
       await redis.publish(`acp:prompt:${sessionId}`, JSON.stringify({
         type: 'prompt',
