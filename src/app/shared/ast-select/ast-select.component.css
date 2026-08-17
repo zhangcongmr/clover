@@ -1,0 +1,72 @@
+:host {
+    display: inline-flex;
+    position: relative;
+    margin-left: 2px;
+    border: 0.8px solid rgb(240, 240, 240);
+}
+
+.menu-list {
+    display: none;
+    position: fixed; /* 改为 fixed，脱离文档流 */
+    top: auto;       /* 动态计算 */
+    left: auto;      /* 动态计算 */
+    /* width: 100%; */
+    max-height: 400px;
+    overflow: auto;
+    border: 0.8px solid rgb(240, 240, 240);
+    box-shadow: 1px 5px 10px 1px gainsboro;
+    flex-direction: column;
+    padding-left: 0;
+    margin-bottom: 0;
+    border-radius: .25rem;
+    z-index:1000;
+}
+
+.menu-list-group-item {
+    position: relative;
+    display: block;
+    padding: .5rem 1rem;
+    color: #212529;
+    text-decoration: none;
+    background-color: #fff;
+    border: 0;
+    width: 100%;
+    text-align: inherit;
+    box-sizing: border-box;
+}
+
+.menu-list-group-item:hover {
+    cursor: pointer;
+    background-color: lightgray;
+}
+
+.combo-box {
+  position: relative;
+  display: inline-block;
+  width: max-content;
+}
+
+.combo-box input {
+  height: 100%;
+  line-height: 100%;
+  box-sizing: border-box;
+  width: 6rem;
+  padding-left: 0.5rem;
+  cursor: pointer;
+  border: 0px;
+}
+
+.combo-box svg {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #666;
+}
+
+
+input:focus-within {
+    outline: 2px;
+    outline-color: #4791db;
+}

@@ -1,0 +1,47 @@
+{
+    "manifest_version": 3,
+    "name": "Trans",
+    "version": "1.0.0",
+    "description": "Tool for developers",
+    "icons": {
+        "16": "assets/lib/img/T.png",
+		"48": "assets/lib/img/T.png",
+		"128": "assets/lib/img/T.png"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+    },
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "ruleset_1",
+                "enabled": true,
+                "path": "utmsource.json"
+            }
+        ]
+    },
+    "permissions": [
+        "contextMenus",
+        "tabs",
+        "notifications",
+        "webRequest",
+        "webRequestBlocking",
+        "declarativeNetRequest",
+        "declarativeNetRequestFeedback",
+        "storage"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*",
+        "chrome-extension://*/*"
+    ],
+    "web_accessible_resources": [],
+    "homepage_url": "https://www.example.com",
+    "omnibox": {
+        "keyword": "go"
+    },
+    "devtools_page": "devtools.html"
+}

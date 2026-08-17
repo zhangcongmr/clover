@@ -1,0 +1,66 @@
+<!-- <div style="position: absolute;width: 100%;height: calc(100vh - 3rem - 1px);">
+  <div class="split-line" style="height: 100%;width: 4px;position: absolute;z-index: 100;" [style.left]="dragSideWidth"
+    (mousedown)="dragStart($event)"></div>
+</div>
+<div style="position: relative;display: flex;height: calc(100vh - 3rem - 1px);">
+  <div style="width:25%;overflow-y: auto;background-color: #F2F2F2;" [style.width]="dragSideWidth">
+    <server-tree (dataOutput)="serviceApis($event)"></server-tree>
+  </div>
+  <ast-table [columns]="columns" [data]="data" [headerSticky]="true" (selected)="apiCheckedFun($event)"
+    style="width: 75%;overflow-y: auto;"></ast-table>
+</div>
+<app-privacy-error-dialog /> -->
+@if(currentSidebarTab()!=4) {
+  <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
+    <div data-layer="desc" class="Desc codigma-desc">Import from API Ecosystem</div>
+  </div>
+}
+<div data-layer="outline-collection" class="OutlineCollection codigma-outline-collection">
+  @for(rawSpecBrief of rawSpecBriefDefs; track rawSpecBrief; let i = $index) {
+    <div data-layer="outline" class="Outline codigma-outline">
+      <div data-layer="outline-item" class="OutlineItem codigma-outline-item">
+        <div data-layer="outline-title" class="OutlineTitle codigma-outline-title" (click)="view(rawSpecBrief)">
+          <div data-layer="outline-title-text" class="OutlineTitleText codigma-outline-title-text">
+            {{rawSpecBrief['name']}}
+          </div>
+        </div>
+        <div data-layer="type" class="Type codigma-type">
+          <div data-layer="type-text" class="TypeText codigma-outline-title-text">openapi {{rawSpecBrief['type']}}</div>
+        </div>
+        <!-- <div data-layer="remote-url" class="RemoteUrl codigma-remote-url">
+          <div data-layer="remote-url-text" class="RemoteUrlText"><span
+              class="codigma-style-0">{{rawSpecDef['servers']}}</span></div>
+        </div> -->
+        @if(currentSidebarTab()==1) {
+          <div data-layer="operation" class="Operation codigma-operation">
+            <div data-layer="oper-btn" class="OperBtn codigma-oper-btn" (click)="view(rawSpecBrief)">
+              <div data-layer="view-btn-text" class="btn-text codigma-view-btn-text">View</div>
+            </div>
+            <div data-layer="oper-btn" class="OperBtn codigma-oper-btn" (click)="importFromApiDef(rawSpecBrief)">
+              <div data-layer="fetch-btn-text" class="btn-text codigma-view-btn-text">Import</div>
+            </div>
+            <!-- <div data-layer="oper-btn" class="OperBtn codigma-oper-btn">
+              <div data-layer="del-btn-text" class="btn-text codigma-del-btn-text">Delete</div>
+            </div> -->
+          </div>
+        }
+      </div>
+      <div data-layer="desc-details-sec" class="DescDetailsSec codigma-desc-details-sec">
+        <div data-layer="desc-cnr" class="DescCnr codigma-desc-cnr">
+          <div data-layer="desc-sec" class="DescSec codigma-desc-sec">
+            <div data-layer="desc" class="Desc codigma-style-0">From service-1</div>
+          </div>
+          <div data-layer="desc-sec" class="DescSec codigma-desc-sec">
+            <div data-layer="desc" class="Desc codigma-style-0">16 Oct, 2025</div>
+          </div>
+        </div>
+        <div data-layer="desc-sec" class="DescSec codigma-desc-sec">
+          <div data-layer="desc" class="Desc">{{rawSpecBrief['description']}}</div>
+        </div>
+      </div>
+    </div>
+  }
+   @empty {
+  <div aria-hidden="true" style="color: lightgray;font-size: 20px;"> There are no content. </div>
+}
+</div>

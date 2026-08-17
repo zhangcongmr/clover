@@ -1,0 +1,321 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    padding-top: 0.5rem;
+}
+
+.split-line:hover {
+    cursor: ns-resize;
+    background-color: lightgrey;
+}
+
+#sendRequestBtn {
+    border: 0.8px solid #D9D9D9;
+    background-color: white;
+    color: black;
+    margin-left: 5px;
+    line-height: 2.4rem;
+    width: 4rem;
+}
+
+#sendRequestBtn:hover {
+    background-color: #ccc;
+}
+
+.parameter-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* padding: 0 23px;
+    padding-top: 15px; */
+    margin: 10px 5px;
+    width: 100%;
+    background-color: white;
+    overflow: auto;
+}
+
+.parameter-item-with-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    width: 100%;
+}
+
+.parameter-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.parameter-label {
+    font-weight: 400;
+    color: #000000;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    width: 150px;
+    text-align: right;
+}
+
+.parameter-note {
+    font-weight: 400;
+    color: #000000;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-align: left;
+    max-width: 300px;
+    white-space: pre-wrap;
+    margin: 0;
+    color: gray;
+}
+
+.parameter-button {
+    font-weight: 400;
+    color: #000000;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    width: 150px;
+    height: 2rem;
+    border: 0; 
+    background-color: aliceblue;
+    cursor: pointer;
+    text-align: center;
+}
+
+.parameter-button:hover {
+    cursor: pointer;
+    background-color: lightgrey;
+}
+
+
+.input-area {
+    flex: 1;
+}
+
+.parameter-item.folder-row {
+    align-items: flex-start;
+    padding-top: 0;
+}
+
+.input-area::placeholder {
+    color: rgb(226, 229, 235);
+}
+
+.multi-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 0;
+}
+
+.input-with-btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 7px;
+}
+
+.input-with-btn .input-area {
+    width: 100%;
+}
+
+.flat-form {
+    max-width: 100%;
+    background-color: #fff;
+    border-radius: 5px;
+}
+
+/* .form-group {
+    margin-bottom: 5px;
+} */
+
+input[type="number"],
+input[type="button"],
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    padding: 3px;
+    border: 0.8px solid rgb(227, 230, 237);
+    border-radius: 5px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    border-color: #4CAF50;
+    /* 当输入字段获得焦点时改变边框颜色 */
+}
+
+#addItemBtn {
+    width: 3rem;
+    border: 0px;
+    padding: 3px;
+    margin-left: 3px;
+}
+
+#addItemBtn:hover {
+    background-color: grey;
+}
+
+#deleteItemBtn {
+    width: 3rem;
+    border: 0px;
+    padding: 3px;
+    margin-left: 3px;
+}
+
+#deleteItemBtn:hover {
+    background-color: grey;
+}
+
+.codigma-add-content-panel {
+    align-items: center;
+    background: white;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 5px;
+    height: 100%;
+    justify-content: center;
+    width: 100%
+}
+
+.codigma-no-content {
+    align-items: center;
+    display: inline-flex;
+    gap: 10px;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding-left: 18px;
+    padding-right: 18px
+}
+
+.codigma-no-content-tips {
+    align-items: center;
+    align-self: stretch;
+    display: inline-flex;
+    gap: 10px;
+    justify-content: center
+}
+
+.codigma-no-content-tips-text {
+    color: #727C8D;
+    font-family: Inter;
+    font-weight: 400;
+    text-align: center;
+    width: 600px;
+    word-wrap: break-word
+}
+
+.codigma-add-new-content-btn {
+    align-items: center;
+    background: var(--Grays-Gray-6, #F8F8F8);
+    display: inline-flex;
+    gap: 0.6rem;
+    height: 2rem;
+    justify-content: center;
+    width: 8rem;
+    cursor: pointer;
+}
+.codigma-add-new-content-btn:hover {
+    background: var(--Grays-Gray-5, #E5E5EA);
+}
+
+.codigma-add-new {
+    color: #5B6371;
+    font-family: Inter;
+    font-weight: 400;
+    word-wrap: break-word;
+}
+
+
+textarea:focus {
+    /* border-color: #007bff;  焦点时的边框颜色 */
+    outline: none;
+    /* 移除默认的焦点轮廓 */
+    /* box-shadow: 0 0 5px #007bff; 可选：添加阴影效果   */
+}
+
+/*headers*/
+/* 移除表格边框的合并效果 */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+/* 为表头和单元格添加边框 */
+th,
+td {
+    border: 0.8px solid rgb(243, 244, 246);
+    /* 使用浅灰色边框 */
+    padding: 2px;
+    /* 添加适当的内边距 */
+    text-align: left;
+    /* 文本左对齐 */
+}
+
+/* 为表头添加背景色 */
+th {
+    background-color: #f2f2f2;
+    /* 使用浅灰色背景 */
+    color: #333;
+    font-weight: var(--bs-body-font-weight);
+    /* 使用深灰色文本 */
+}
+
+/* 可选的：为表格的奇数行添加不同的背景色 */
+tr:nth-child(even) {
+    background-color: #fff;
+    /* 使用白色背景 */
+}
+
+tr:nth-child(odd) {
+    background-color: #f9f9f9;
+    /* 使用浅灰色背景 */
+}
+
+/* 移除鼠标悬停时的默认效果（如果需要的话） */
+table tr:hover {
+    background-color: transparent;
+    /* 透明背景 */
+}
+
+/* 如果有需要，可以添加其他样式，如字体大小、行高、圆角等 */
+
+.request-cancel-btn:hover {
+    background-color: #ccc;
+}
+
+.codigma-app-header {
+    align-items: center;
+    align-self: stretch;
+    display: inline-flex;
+    justify-content: flex-start;
+    padding-left: 16px;
+    padding-right: 16px
+}
+
+.codigma-left-app-header {
+    align-items: center;
+    display: flex;
+    height: 2rem;
+    justify-content: space-between;
+    width: 122px
+}
+
+.codigma-right-app-header {
+    align-items: flex-end;
+    display: inline-flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    gap: 10px;
+    height: 2rem;
+    justify-content: center
+}

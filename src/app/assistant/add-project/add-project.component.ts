@@ -1,0 +1,165 @@
+import { Component, OnInit, inject, output } from '@angular/core';
+import { CoreService, ConfigService } from '../../core.service';
+import { AstTableComponent } from '../../shared/ast-table/ast-table.component';
+import { FormsModule } from '@angular/forms';
+
+import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
+import { ServerTreeComponent } from '../../shared/server-tree/server.tree.component';
+import { FileInputComponent } from '../../shared/file-input/file-input.component';
+import { ExplorerComponent } from '../../explorer/explorer.component';
+
+@Component({
+    selector: 'app-add-project',
+    templateUrl: './add-project.component.html',
+    styleUrls: ['./add-project.component.css'],
+    standalone: true,
+    imports: [ExplorerComponent, AstModalComponent, ServerTreeComponent,FileInputComponent, FormsModule, AstTableComponent]
+})
+export class AddProjectComponent implements OnInit {
+  private coreService = inject(CoreService);
+
+  readonly confirmed = output<Array<any>>();
+  readonly apiInfoSelected = output<Array<any>>();
+
+  visible!: boolean;
+  importType = '1';  // 1 - From API Definition  2 - From API Ecosystem  3 - From Local
+  showPreviewOrCode = true;
+  sourceCodeText = '';
+  importFromApiDefUrl = ""
+
+  data = [];
+  columns = [
+    { key: "method", title: "Method" },
+    { key: "path", title: "Path" },
+    { key: "summary", title: "Summary" },
+    { key: "serviceName", title: "ServiceName" }
+  ];
+
+
+  serverList: Array<any> = [];
+  currentServer: any = {};
+  selectedApiInfos: Array<any> = [];
+  showServerInfo = false;
+  subPanelType = 1;
+
+  ngOnInit() {
+  }
+
+  async openAddDlg() {
+    this.visible = true;
+  }
+
+  close() {
+    this.data = [];
+    this.selectedApiInfos = [];
+    this.visible = false;
+    this.importType = '1';
+    this.subPanelType = 1;
+  }
+
+  beforeClose = () => {
+    // this.msgBox.confirm({
+    //   title: '提示',
+    //   content: '有未保存的数据，确认关闭吗？',
+    //   type: 'warning',
+    //   callback: (action: XMessageBoxAction) => {
+    //     action === 'confirm' && this.close();
+    //   }
+    // });
+    this.close();
+  };
+
+  confirm() {
+    this.confirmSelected(this.selectedApiInfos);
+  }
+
+  private confirmSelected(selectedData: any) {
+    this.apiInfoSelected.emit(selectedData);
+    this.close();
+    this.reset();
+  }
+
+  cancel() {
+    this.close();
+    this.reset();
+  }
+
+  clickRoot(evt: any) {
+    this.showServerInfo = true;
+    this.currentServer = evt;
+  }
+
+  serviceApis(evt: any) {
+    this.data = evt;
+    this.showServerInfo = false;
+  }
+
+  rawApiData(evt: any) {
+    this.sourceCodeText = JSON.stringify(evt, null, 2);
+  }
+
+  apiCheckedFun(evt: any) {
+    // this.selectedApiInfos = evt;
+  }
+
+  importTypeChangeFn(flag: string) {
+    this.importType = flag;
+    this.reset();
+  }
+
+  private reset() {
+    this.data = [];
+    this.selectedApiInfos = [];
+    this.sourceCodeText = '';
+    this.showPreviewOrCode = true;
+    this.subPanelType = 1;
+  }
+
+  backFn() {
+    this.subPanelType = 1;
+  }
+
+  showPreviewOrCodeFn(flag: boolean) {
+    this.showPreviewOrCode = flag;
+  }
+
+  fileContentChangedFn(evt: any) {
+    const json = JSON.parse(evt);
+    this.sourceCodeText = JSON.stringify(json, null, 2);
+    this.data = this.coreService.parseOpenApiSpec(json);
+  }
+
+  clearFileSelected() {
+    this.reset();
+  }
+
+  importFromApiDef(evt: any) {
+    let me = this;
+    this.coreService.fetchApiFromServer(this.importFromApiDefUrl, false).subscribe(
+      (rawData: any) => {
+        me.coreService.choosingApiLoading = false;
+        if (!rawData) {
+          return;
+        }
+
+        me.data = this.coreService.parseOpenApiSpec(rawData);
+        me.confirmSelected(me.data)
+      },
+      (reason: any) => {
+      });
+  }
+
+  importOutFromEcosystem(evt: any) {
+    this.confirmSelected(evt)
+  }
+
+  importOutFromLocal() {
+    this.confirmSelected(this.data)
+  }
+
+  viewApi(evt: any) {
+    this.subPanelType = 2;
+    this.data = evt.data;
+    this.sourceCodeText = JSON.stringify(evt.rawSpecDef, null, 2);
+  }
+}

@@ -1,0 +1,93 @@
+<ast-modal [title]="'Import API'" [visible]="visible" (close)="close()">
+  <div class="codigma-ast-modal-body">
+    <div data-layer="import-type" class="ImportType codigma-import-type">
+      <div data-layer="from-remote" class="FromRemote codigma-from-remote"
+        [class.selected-imported-type]="importType=='1'" (click)="importTypeChangeFn('1')">
+        <div data-svg-wrapper="" data-layer="remote-icon" class="RemoteIcon">
+          <svg class="icon" width="24" height="26">
+            <use href="assets/lib/svg_merged.svg#icon-remote-server"></use>
+          </svg>
+        </div>
+        <div data-layer="From Remote Server" class="FromRemoteServer codigma-from-remote-server">From API Definition
+        </div>
+      </div>
+      <div data-layer="from-ecosystem" class="FromEcosystem codigma-from-local"
+        [class.selected-imported-type]="importType=='2'" (click)="importTypeChangeFn('2')">
+        <div data-svg-wrapper="" data-layer="ecosystem-icon" class="LocalIcon">
+          <svg class="icon" width="24" height="26">
+            <use href="assets/lib/svg_merged.svg#icon-remote-server"></use>
+          </svg>
+        </div>
+        <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From API Ecosystem</div>
+      </div>
+      <div data-layer="from-local" class="FromLocal codigma-from-local" [class.selected-imported-type]="importType=='3'"
+        (click)="importTypeChangeFn('3')">
+        <div data-svg-wrapper="" data-layer="local-icon" class="LocalIcon">
+          <svg class="icon" width="24" height="24">
+            <use href="assets/lib/svg_merged.svg#icon-local-res"></use>
+          </svg>
+        </div>
+        <div data-layer="From Local" class="FromLocal codigma-from-remote-server">From Local</div>
+      </div>
+    </div>
+    <div data-layer="import-content" class="ImportContent codigma-import-content">
+      @if(subPanelType === 1) {
+        @if(importType=='1') {
+          <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section">
+            <div data-layer="import-desc-title" class="ImportDescTitle codigma-import-desc-title">
+              <div data-layer="import-desc" class="ImportDesc codigma-import-desc">
+                <div>Import from API Definition</div>
+              </div>
+              <div data-layer="import-desc-details" class="ImportDescDetails codigma-import-desc-details">
+                <div>Paste URL of OpenAPI 2.0, OpenAPI 3.0+ or cURL into the
+                  following input box.</div>
+              </div>
+            </div>
+            <div data-layer="input-box-section" class="InputBoxSection codigma-input-box-section">
+                <input type="text" name="ccdd" class="ccdd" [(ngModel)]="importFromApiDefUrl"
+                  placeholder="Input url of the api definition to fetch the api data."  class="InputBox codigma-input-box" autocomplete="off">
+            </div>
+            <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
+              <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importFromApiDef($event)">
+                Import</div>
+            </div>
+          </div>
+        } @else if(importType=='2'){
+          <app-api-explorer (importOut)="importOutFromEcosystem($event)" (viewOut)="viewApi($event)"></app-api-explorer>
+        } @else {
+          <div data-layer="import-content-section" class="ImportContentSection codigma-import-content-section" style="flex:none">
+            <file-input (fileContentChanged)="fileContentChangedFn($event)" (clearSelectd)="clearFileSelected()" />
+            <div data-layer="fetch-btn" class="FetchBtn codigma-fetch-btn">
+              <div data-layer="fetch-btn-text" class="btn-text codigma-fetch-btn-text" (click)="importOutFromLocal()">
+              Import</div>
+            </div>
+          </div>
+        }
+      } @else if(subPanelType === 2) {
+        <div data-layer="api-content" class="ApiContent codigma-api-content">
+          <div data-layer="overview-type" class="OverviewType codigma-overview-type">
+            <div data-svg-wrapper="" data-layer="back" class="back" (click)="backFn()">
+              <svg class="icon" width="24" height="24">
+                <use href="assets/lib/svg_merged.svg#icon-back"></use>
+              </svg>
+            </div>
+            <div data-svg-wrapper="" data-layer="preview" class="preview" (click)="showPreviewOrCodeFn(true)">
+              <svg class="icon" width="24" height="24">
+                <use href="assets/lib/svg_merged.svg#icon-preview"></use>
+              </svg>
+            </div>
+            <div data-svg-wrapper="" data-layer="view-source" class="ViewSource" (click)="showPreviewOrCodeFn(false)">
+              <svg class="icon" width="24" height="24">
+                <use href="assets/lib/svg_merged.svg#icon-view-code"></use>
+              </svg>
+            </div>
+          </div>
+          <ast-table [columns]="columns" [data]="data" [headerSticky]="true" style="overflow-y: auto;width: 100%;" [showCheckBox]="false"
+            [style.display]="showPreviewOrCode?'flex':'none'" (selected)="apiCheckedFun($event)"></ast-table>
+          <pre style="flex: 1 1 0;overflow-y: auto;white-space: pre-wrap;border: 1px solid gainsboro;width: 100%;overflow-wrap: break-word;word-break: break-word;"
+            [style.display]="!showPreviewOrCode?'flex':'none'">{{sourceCodeText}}</pre>
+        </div>
+      }
+    </div>
+  </div>
+</ast-modal>

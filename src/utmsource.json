@@ -1,0 +1,28 @@
+[
+    {
+        "id": 1,
+        "priority": 1,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "header": "Set-Cookie",
+                    "operation": "set",
+                    "value": "poki=-test"
+                },
+                {
+                    "header": "Cookie",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "regexFilter": ".*pet.*",
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "xmlhttprequest"
+            ]
+        }
+    }
+]

@@ -1,0 +1,79 @@
+<ast-modal [title]="'Add service'" [visible]="addServiceVisible" (close)="close()">
+  <div class="codigma-ast-modal-body">
+    <form class="flat-form">
+      <label for="serviceName">Service Name:</label>
+      <input type="text" placeholder="ServiceName" name="serviceName" [(ngModel)]="data.serviceRoute.serviceName"
+        autocomplete="off">
+
+      <label for="routeName">Route Name:</label>
+      <input type="text"  placeholder="RouteName" name="routeName" [(ngModel)]="data.serviceRoute.routeName"
+        autocomplete="off">
+
+      <label for="publishPort">publishPort:</label>
+      <input type="text"  placeholder="publishPort" name="publishPort" [(ngModel)]="data.serviceRoute.publishPort"
+        autocomplete="off">
+
+      <label for="publishUrl">publishUrl:</label>
+      <input type="text"  placeholder="publishUrl" name="publishUrl" [(ngModel)]="data.serviceRoute.publishUrl"
+        autocomplete="off">
+
+      <label for="specUrl">specUrl:</label>
+      <input type="text"  placeholder="specUrl" name="specUrl" [(ngModel)]="data.serviceRoute.specUrl" autocomplete="off">
+    </form>
+  </div>
+  <div class="codigma-describe-btns">
+    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn codigma-confirm-btn" (click)="confirm()">
+      <div data-layer="Confirm" class="Confirm codigma-confirm">Confirm</div>
+    </button>
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancel()">
+      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+    </button>
+  </div>
+</ast-modal>
+
+
+
+
+<ast-modal [title]="'Delete service'"  [visible]="deleteServiceVisible" (close)="close()">
+  <div class="codigma-ast-modal-body">
+    <div>
+        @for (service of services; track service) {
+          <ul style="overflow: auto;">
+            <li><span style="margin-right: 1rem;">{{service.routeName}}</span><button (click)="deleteAction(service)"
+          style="border: 0px;background-color: white;color: mediumvioletred;">Delete</button></li>
+        </ul>
+      }
+    </div>
+  </div>
+  <div class="codigma-describe-btns">
+    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn codigma-confirm-btn" (click)="confirm()">
+      <div data-layer="Confirm" class="Confirm codigma-confirm">Confirm</div>
+    </button>
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancel()">
+      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+    </button>
+  </div>
+</ast-modal>
+
+
+
+
+<ast-modal [title]="'Confirm to reset service'"  [visible]="resetServiceVisible" (close)="close()">
+  <div class="codigma-ast-modal-body">
+      <div>
+        @for (service of services; track service) {
+          <ul style="overflow: auto;">
+            <li><span style="margin-right: 1rem;">{{service.routeName}}</span></li>
+          </ul>
+        }
+      </div>
+  </div>
+  <div class="codigma-describe-btns">
+    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn codigma-confirm-btn" (click)="confirm()">
+      <div data-layer="Confirm" class="Confirm codigma-confirm">Confirm</div>
+    </button>
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancel()">
+      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+    </button>
+  </div>
+</ast-modal>

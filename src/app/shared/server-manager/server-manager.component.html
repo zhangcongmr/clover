@@ -1,0 +1,46 @@
+<ast-modal [title]="'Add server'"  [visible]="addServerVisible" (close)="close()">
+  <div class="codigma-ast-modal-body">
+    <form class="flat-form">
+      <label for="Scheme">Scheme:</label>
+      <ast-select [data]="dataList" [inputValue]="data.scheme"></ast-select>
+
+      <label for="IP">IP:</label>
+      <input type="text"  placeholder="IP" name="IP" [(ngModel)]="data.ip"
+        autocomplete="off">
+
+      <label for="Port">publishPort:</label>
+      <input type="text"  placeholder="Port" name="Port" [(ngModel)]="data.port"
+        autocomplete="off">
+    </form>
+  </div>
+  <div class="codigma-describe-btns">
+    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn codigma-confirm-btn" (click)="confirm()">
+      <div data-layer="Confirm" class="Confirm codigma-confirm">Confirm</div>
+    </button>
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancel()">
+      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+    </button>
+  </div>
+</ast-modal>
+
+<ast-modal [title]="'Delete server'"  [visible]="deleteServerVisible" (visibleChange)="visibleChangeDeleteDlg($event)"  (close)="close()">
+  <div class="codigma-ast-modal-body">
+    <div style="display: flex;height: 100%;">
+      <div>
+        @for (server of servers; track server) {
+          <ul style="overflow: auto;">
+            <li><span style="margin-right: 1rem;">{{server.text}}</span><button (click)="deleteAction(server)" style="border: 0px;background-color: white;color: mediumvioletred;">Delete</button></li>
+          </ul>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="codigma-describe-btns">
+    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn codigma-confirm-btn" (click)="confirm()">
+      <div data-layer="Confirm" class="Confirm codigma-confirm">Confirm</div>
+    </button>
+    <button type="submit" data-layer="cancel-btn" class="CancelBtn codigma-cancel-btn" (click)="cancel()">
+      <div data-layer="Cancel" class="Cancel codigma-cancel">Cancel</div>
+    </button>
+  </div>
+</ast-modal>

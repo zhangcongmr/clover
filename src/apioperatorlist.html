@@ -1,0 +1,206 @@
+<html lang="en" data-beasties-container=""><!--
+🔍 Found you, explorer!
+💡 We build the tools that turn Figma into code.
+🚀 Want to help us revolutionize UI development?
+
+📧 mehmet.alp@rastmobile.com
+👨‍💻 Let's code the future together at Rast Mobile!
+-->
+
+<head>
+    <style id="codigma-generated-styles">
+        .codigma-apioperatorlist {
+            align-items: flex-start;
+            background: white;
+            display: inline-flex;
+            flex-direction: column;
+            gap: 5px;
+            height: 100%;
+            justify-content: flex-start;
+            width: 100%
+        }
+
+        .codigma-apioperator {
+            align-items: center;
+            align-self: stretch;
+            background: #F0F1F4;
+            display: inline-flex;
+            gap: 10px;
+            height: 48px;
+            justify-content: flex-start
+        }
+
+        .codigma-method {
+            align-items: center;
+            display: flex;
+            gap: 5px;
+            height: 48px;
+            justify-content: center;
+            width: 64px
+        }
+
+        .codigma-methodtype {
+            align-items: center;
+            display: flex;
+            gap: 10px;
+            justify-content: center
+        }
+
+        .codigma-get {
+            color: var(--Labels---Vibrant---Controls-Primary-√, #404040);
+
+            font-size: 16px;
+            font-weight: 400;
+            word-wrap: break-word
+        }
+
+        .codigma-requrl {
+            color: black;
+            flex: 1 1 0;
+            font-size: 16px;
+            font-weight: 400;
+            word-wrap: break-word
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <div data-layer="apioperatorlist" class="Apioperatorlist codigma-apioperatorlist">
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="GET" class="Get codigma-get">GET</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">https://127.0.0.1:8980/api/service-2/v1/pet/{petId}
+            </div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="POST" class="Post codigma-get">POST</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">
+                https://127.0.0.1:8980/api/service-2/v1/pet/{petId}/{tags}</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="GET" class="Get codigma-get">GET</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">
+                https://127.0.0.1:8980/api/service-2/v1/pet/findByTags</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="POST" class="Post codigma-get">POST</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">https://127.0.0.1:8980/api/service-2/v1/pet</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="PUT" class="Put codigma-get">PUT</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">https://127.0.0.1:8980/api/service-2/v1/pet</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="GET" class="Get codigma-get">GET</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">
+                https://127.0.0.1:8980/api/service-2/v1/pet/findByStatus</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="POST" class="Post codigma-get">POST</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">
+                https://127.0.0.1:8980/api/service-2/v1/pet/{petId}/uploadImage</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="GET" class="Get codigma-get">GET</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">
+                https://127.0.0.1:8980/api/service-2/v1/store/inventory</div>
+        </div>
+        <div data-layer="apioperator" class="Apioperator codigma-apioperator">
+            <div data-layer="method" class="Method codigma-method">
+                <div data-layer="methodtype" class="Methodtype codigma-methodtype">
+                    <div data-layer="POST" class="Post codigma-get">POST</div>
+                </div>
+            </div>
+            <div data-layer="requrl" class="Requrl codigma-requrl">https://127.0.0.1:8980/api/service-2/v1/store/order
+            </div>
+        </div>
+    </div> -->
+</body>
+<script>
+    function generateReqOperators(apioperatorlist) {
+        const container = document.createElement('div');
+        container.setAttribute('data-layer', 'apioperatorlist');
+        container.className = 'Apioperatorlist codigma-apioperatorlist';
+
+        apioperatorlist.forEach(item => {
+            const reqOperator = document.createElement('div');
+            reqOperator.setAttribute('data-layer', 'apioperator');
+            reqOperator.className = 'Apioperator codigma-apioperator';
+
+            // 创建method部分
+            const methodContainer = document.createElement('div');
+            methodContainer.setAttribute('data-layer', 'method');
+            methodContainer.className = 'Method codigma-method';
+
+            const methodType = document.createElement('div');
+            methodType.setAttribute('data-layer', 'methodtype');
+            methodType.className = 'Methodtype codigma-methodtype';
+
+            const methodValue = document.createElement('div');
+            methodValue.setAttribute('data-layer', item.method.toLowerCase());
+            methodValue.className = `${item.method} codigma-${item.method.toLowerCase()}`;
+            methodValue.textContent = item.method;
+
+            methodType.appendChild(methodValue);
+            methodContainer.appendChild(methodType);
+            reqOperator.appendChild(methodContainer);
+
+            // 创建URL部分
+            const urlElement = document.createElement('div');
+            urlElement.setAttribute('data-layer', 'requrl');
+            urlElement.className = 'Requrl codigma-requrl';
+            urlElement.textContent = item.url;
+            reqOperator.appendChild(urlElement);
+
+            container.appendChild(reqOperator);
+        });
+
+        // 添加到文档（示例添加到body，实际使用时需指定容器）
+        document.body.appendChild(container);
+    }
+
+    // 示例数据
+    const apioperatorlist = [
+        { method: 'GET', url: 'https://127.0.0.1:8980/api/service-2/v1/pet/{petId}' },
+        { method: 'POST', url: 'https://127.0.0.1:8980/api/service-2/v1/pet/{petId}/{tags}' },
+         { method: 'GET', url: 'https://127.0.0.1:8980/api/service-2/v1/pet/findByTags' },
+          { method: 'POST', url: 'https://127.0.0.1:8980/api/service-2/v1/pet' },
+           { method: 'PUT', url: 'https://127.0.0.1:8980/api/service-2/v1/pet' },
+        // 添加更多数据...
+    ];
+
+    // 执行生成
+    generateReqOperators(apioperatorlist);
+</script>
+</html>

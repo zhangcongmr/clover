@@ -1,0 +1,73 @@
+.input_filter {
+    width: 100%;
+    background-color: #fff;
+    /* background-image: none; */
+    border-radius: 4px;
+    border: 1px solid #dcdfe6;
+    box-sizing: border-box;
+    color: #606266;
+    display: inline-block;
+    height: 2rem;
+    line-height: 2rem;
+    outline: none;
+    padding: 0 10px;
+    /* transition: border-color .2s cubic-bezier(.645,.045,.355,1); */
+}
+
+.child-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.child-item:hover {
+    cursor: pointer;
+    background-color: gainsboro;
+}
+
+.child-item.active {
+    background-color: rgb(213, 203, 203);
+}
+
+.child-item:focus {
+    background-color: cadetblue;
+}
+
+.btn-item {
+  width: 1.5rem; 
+  border: 0rem; 
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.more-btn-dropdown-content {
+    position: fixed;
+    z-index: 1000;
+    display: none;
+}
+
+.codigma-right-menu {
+    align-items: flex-start;
+    background: white;
+    width: 336px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+}
+
+.codigma-menu-every-item {
+    align-items: center;
+    /* 垂直居中 */
+    color: black;
+    display: flex;
+    font-size: 16px;
+    font-weight: 400;
+    height: 36px;
+    justify-content: start;
+    padding-left: 20px;
+    /* 替代空 span 做缩进 */
+    word-wrap: break-word;
+    cursor: pointer;
+}
+
+.codigma-menu-every-item:hover {
+    background-color: lightblue;
+}

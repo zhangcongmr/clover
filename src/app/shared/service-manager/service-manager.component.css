@@ -1,0 +1,74 @@
+
+.flat-form {
+  max-width: 400px;
+  margin: 0px auto;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.flat-form label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.flat-form input[type="text"],
+.flat-form input[type="password"] {
+  width: 100%;
+  padding: 5px;
+  margin-bottom: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.flat-form input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+.flat-form button {
+  width: 100%;
+  padding: 10px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.flat-form button:hover {
+  background-color: #0056b3;
+}
+
+  .button-group {
+    display: flex;
+    justify-content: right;
+    /* 水平居中按钮 */
+    margin-top: auto;
+    /* 将按钮推到容器的底部 */
+}
+
+.cancel-button {
+  padding: 4px 8px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 2px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.confirm-button {
+    padding: 4px 8px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.confirm-button:hover {
+    background-color: #0056b3;
+}

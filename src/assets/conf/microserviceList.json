@@ -1,0 +1,35 @@
+[
+    {
+        "namespace": "umebn",
+        "serviceName": "service-2",
+        "serviceVersion": "v1",
+        "publishProtocol": "https",
+        "publishPort": 8980,
+        "routeType": "api",
+        "routeName": "service-2",
+        "routeVersion": "v1",
+        "publishUrl": "/api/service-2/v1"
+    },
+    {
+        "namespace": "umebn",
+        "serviceName": "service-3",
+        "serviceVersion": "v1",
+        "publishProtocol": "https",
+        "publishPort": 8980,
+        "routeType": "api",
+        "routeName": "service-3",
+        "routeVersion": "v1",
+        "publishUrl": "/api/service-3/v1"
+    },
+    {
+        "namespace": "umebn",
+        "serviceName": "service-22",
+        "serviceVersion": "v1",
+        "publishProtocol": "https",
+        "publishPort": 8980,
+        "routeType": "api",
+        "routeName": "service-22",
+        "routeVersion": "v1",
+        "publishUrl": "/api/service-22/v1"
+    }
+]

@@ -1,0 +1,30 @@
+.button-group {
+    display: flex;
+    justify-content: right;
+    /* 水平居中按钮 */
+    margin-top: auto;
+    /* 将按钮推到容器的底部 */
+}
+
+.cancel-button {
+    padding: 4px 8px;
+    margin-left: 4px;
+    border: none;
+    border-radius: 2px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+.confirm-button {
+    padding: 4px 8px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.confirm-button:hover {
+    background-color: #0056b3;
+}

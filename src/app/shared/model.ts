@@ -1,0 +1,76 @@
+export class ServiceRouteInfo {
+    namespace?: string;
+    serviceName?: string;
+    serviceVersion?: string;
+    publishProtocol?: string;
+    publishPort?: number;
+    routeType?: string;
+    routeName?: string;
+    routeVersion?: string;
+    publishUrl?: string;
+    specUrl?: string;
+    id?: string;
+    label?: string;
+}
+
+export class BaseModel {
+    first  = 5;
+    second = "159";
+    third = "26";
+    additional = "66";
+    value = "8";
+
+}
+
+export class ServerAndServiceInfo {
+    server?: any;//  server.value  schemes + ip + port; eg: https://127.0.0.1:8080 、http://127.0.0.1:8080
+    serviceRoute?: ServiceRouteInfo;
+}
+
+// export interface TreeNodeType {
+//   id: string;
+//   label: string;
+//   children?: Array<TreeNodeType>;
+//   isExpanded?: boolean;
+//   nodeType?: 'root' | 'parent' | 'leaf';
+//   isNewData?: boolean;
+// }
+
+export interface ApiTreeNodeType {
+    id: string;
+    label: string;
+    children: Array<ApiTreeNodeType>;
+    isExpanded?: boolean;
+    nodeType?: 'root' | 'parent' | 'leaf';
+    isNewData?: boolean;
+
+    servers?: Array<string>;
+    folder?: string;
+    folderInfo?: {
+        servers: Array<any>
+    };
+    serviceName?: string;
+    method?: string;
+    symbol?: string;
+    path?: string;
+    url?: string;
+    summary?: string;
+    tabLabel?: string;
+    rawApiInfo?: any;
+    server?: any;
+    parentItem?: any,
+    symbolColor?: string;
+    consumes?: Array<any>;
+    produces?: Array<any>;
+    currentConsume?: string;
+    requestBody?: any; //适用于openapi 3.0
+    response?: any;
+    parameterHasBody?: boolean;
+    parameterHasFormDataVer2?: boolean; //区分openapi 2.0
+    isActive?: boolean;
+    custom?: boolean;
+    customQueryparameters?: Array<any>;
+    customHeaderparameters?: Array<any>;
+    auth?: any;
+    rename?: boolean
+}

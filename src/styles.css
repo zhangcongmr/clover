@@ -1,0 +1,32 @@
+/* You can add global styles to this file, and also import other style files */
+html {
+    height: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body,
+body::before,
+body::after {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 75%;
+}
+
+img, svg {
+    vertical-align: middle;
+}
+
+.btn-svg:hover {
+    background-color: #ccc;
+    cursor: pointer;
+}
+
+.btn-text {
+    cursor: pointer;
+}

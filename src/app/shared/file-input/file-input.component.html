@@ -1,0 +1,12 @@
+<section class="file-upload-section" id="dropZone">
+    <div class="file-icon">📁</div>
+    <p>Drag & drop your JSON file (openapi supported only) here</p>
+    <p>or</p>
+    <label for="fileInput" class="file-input-label">Browse Files</label><br>
+    <input type="file" id="fileInput" class="file-input-select" accept=".json,application/json" (change)="onFileSelected($event)">
+    @if(isFileSelected) {
+    <button class="action-button clear-button" (click)="clearFileSelect()">Clear Selection</button>
+    }
+
+    <div class="fileName">{{fileNameDisplay}}</div>
+</section>

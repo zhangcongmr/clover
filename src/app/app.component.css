@@ -1,0 +1,125 @@
+.codigma-app-ui-01 {
+      align-items: flex-start;
+      background: white;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      display: inline-flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: flex-start;
+      width: 100%
+    }
+
+    .codigma-app-header {
+      align-items: center;
+      align-self: stretch;
+      background: var(--ast-header-1, #F3F3F8);
+      display: inline-flex;
+      justify-content: flex-start;
+      padding-right: 100px
+    }
+
+    .codigma-left-app-header {
+      align-items: center;
+      display: flex;
+      height: 42px;
+      justify-content: space-between;
+      width: 122px
+    }
+
+    .codigma-project {
+      color: black;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      font-size: 16px;
+      font-weight: 400;
+      justify-content: center;
+      text-align: center;
+      word-wrap: break-word
+    }
+
+    .codigma-right-app-header {
+      align-items: flex-end;
+      display: inline-flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      gap: 10px;
+      height: 42px;
+      justify-content: center
+    }
+
+
+    .codigma-app-body {
+      align-items: flex-start;
+      align-self: stretch;
+      display: inline-flex;
+      flex: 1 1 0;
+      justify-content: flex-start;
+      overflow: hidden;
+    }
+
+    .codigma-left-side-area {
+      align-items: center;
+      align-self: stretch;
+      background: #F8F8F8;
+      border-right: 0.50px #DDDDDF solid;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 78px;
+      justify-content: flex-start;
+      padding-bottom: 10px;
+      padding-top: 10px;
+      width: 32px
+    }
+
+    .codigma-up-btnlist {
+      align-items: flex-start;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      gap: 33px;
+      justify-content: flex-start
+    }
+
+
+    .codigma-responsebody {
+      align-self: stretch;
+      flex: 1 1 0;
+      padding: 10px
+    }
+
+    .codigma-overview-longstrip {
+      align-items: center;
+      align-self: stretch;
+      background: #F8F8F8;
+      display: inline-flex;
+      gap: 10px;
+      justify-content: flex-start;
+      outline-offset: -0.50px;
+      outline: 0.50px #D9D9D9 solid;
+      padding-left: 10px;
+      padding-right: 10px
+    }
+
+    .codigma-notification-cnr {
+      align-items: center;
+      display: flex;
+      gap: 5px;
+      justify-content: flex-start
+    }
+
+
+    .codigma-methodtype {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      justify-content: center
+    }
+
+
+    .codigma-projectname {
+      color: black;
+      font-size: 16px;
+      font-weight: 400;
+      word-wrap: break-word
+    }

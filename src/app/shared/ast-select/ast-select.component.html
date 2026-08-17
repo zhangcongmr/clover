@@ -1,0 +1,15 @@
+<div class="menu-list"  [style.left.px]="dropdownLeft" [style.top.px]="dropdownTop" [style.width.px]="dropdownWidth" (mouseenter)="enterSelectArea($event)" (mouseleave)="leaveSelectArea($event)">
+  @for (item of displayItems; track item) {
+    <a class="menu-list-group-item" (click)="selectedItem($event, item)" [style.color]="item.color">{{item.displayName}}</a>
+  }
+</div>
+
+<span class="combo-box">
+  <input type="text" name="ccdd" class="ccdd" [(ngModel)]="selectedOption['displayName']" [style.color]="selectedOption['color']" [style.width]="width()" [readonly]="readonly()" (keyup)="keyUpSearch($event)"
+    (paste)="pasteSearch($event)" (cut)="cutSearch($event)" placeholder="Editable and selectable box"
+    (click)="clickSelectInput($event)" (blur)="whenBlur($event)" autocomplete="off" />
+  <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="2" class="feather-chevron-down">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+</span>

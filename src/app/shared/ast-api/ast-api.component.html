@@ -1,0 +1,338 @@
+<div style="display: flex;flex-wrap: nowrap;">
+  <ast-select [data]="methodOptions" [inputValue]="apiInfo.method.toUpperCase()" (selected)="methodChange($event)" [readonly]="true"></ast-select>
+  <input type="text" name="uri" [(ngModel)]="apiInfo.url"
+    style=" flex-grow: 1;display: inline;border-top-left-radius: 0;border-bottom-left-radius: 0;"
+    autocomplete="off" spellcheck="false">
+  <button id="sendRequestBtn" (click)="sendRequest()">Send</button>
+</div>
+<div
+  style="position: relative;text-align:left; margin-top: 0.5rem;border: 1px solid #dee2e6;background-color: white;
+        border-top-left-radius: 0.25rem;border-top-right-radius: 0.25rem;display: flex;flex-direction: column;flex: 1 1 0;">
+
+  <!-- 垂直拖动条 -->
+  <div style="position: absolute;width: 100%;height: 100%;">
+    <div class="split-line" style="height: 4px;width: 100%;position: absolute;z-index: 100;" [style.top]="dragHeight * 100 + '%'"
+      (mousedown)="dragStart($event)"></div>
+  </div>
+
+  <div id="req_section_{{apiInfo.id}}" class="flat-form" style="position: relative;height: 60%;background-color: white;"
+    [style.height]="dragHeight * 100 + '%'">
+    <div ast-tab-group [closable]="false" [tabType]="{'globalType':'bottom','tabType':'bottom','size':'small'}">
+      <div ast-tab [label]="'Parameters'" [id]="'request_parameters'" [minWidth]="'122px'" role="tabpanel"
+        aria-hidden="false" [isActivated]="true" (onClickTab)="onParamsClickTab($event)">
+        @if(rawQueryOrPathParasCount>0 || apiInfo.customQueryparameters.length>0) {
+         <div class="parameter-content">
+            @for (parameter of apiInfo.rawApiInfo.parameters; track parameter; let paraIndex = $index) {
+              @if(parameter.in=='path'||parameter.in=='query') {
+                @if (parameter.type!='array' && (parameter.schema!=null&&parameter.schema.type!='array')) {
+                  <div class="parameter-item-with-note">
+                    <div class="parameter-item">
+                      <label for="name" class="parameter-label">{{parameter.name}}:</label>
+                      <input [type]="parameter.uiType" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                          (keydown)="setEditStatus($event, true)" autocomplete="off" required>
+                    </div>
+                    <pre class="parameter-note"><strong>- {{parameter.in}}</strong><strong><br>- description: </strong>{{parameter.description}} <strong><br>- example: </strong>{{parameter.example}}</pre>
+                  </div>
+                }
+                 @else if (parameter.type=='array'||(parameter.schema!=null&&parameter.schema.type=='array')) {
+                  <div class="parameter-item-with-note">
+                    <!-- parameter-item row with multiple inputs -->
+                    <div class="parameter-item folder-row">
+                      <label class="parameter-label">{{parameter.name}}:</label>
+                      @if(parameter.value!=null&&parameter.value.length>0) {
+                        <div class="multi-inputs">
+                          @for (paraVal of parameter.value; track paraVal; let valIndex = $index) {
+                            <div class="input-with-btn">
+                              <input type="text" id="name" name="name"  class="input-area" [(ngModel)]="paraVal.value"
+                                (change)="inputValueChange(paraVal, valIndex)" (keydown)="setEditStatus($event, true)"
+                                (focus)="multiInputfocusFn($event,parameter,valIndex)" (blur)="multiInputblurFn($event,parameter,valIndex)"
+                                autocomplete="off" required>
+                              <svg class="btn-svg deleteItemBtn"  width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                              (click)="deleteParaValue(parameter, valIndex)">
+                                <path d="M3.75 8.25V9.75H14.25V8.25H3.75Z" fill="#787777" />
+                              </svg>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <svg  class="btn-svg addParaBtn" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"
+                          (click)="addParaValue(parameter)">
+                          <path d="M8.25 8.25V3.75H9.75V8.25H14.25V9.75H9.75V14.25H8.25V9.75H3.75V8.25H8.25Z" fill="#787777" />
+                        </svg>
+                      }
+                    </div>
+                    <pre class="parameter-note"><strong>- {{parameter.in}}</strong><strong><br>- description: </strong>{{parameter.description}} <strong><br>- example: </strong>{{parameter.example}}</pre>
+                  </div>
+
+                }
+              }
+            }
+            @for (parameter of apiInfo.customQueryparameters; track parameter; let paraIndex = $index) {
+              <div class="parameter-item">
+                <!-- <label for="name" class="parameter-label">{{parameter.name || 'Parameter'}}:</label> -->
+                <input type="text" id="name" name="name"  class="parameter-label" [(ngModel)]="parameter.name"
+                (focus)="customParamKeyFocus($event, apiInfo.customQueryparameters, paraIndex)" (blur)="customParamKeyBlur($event, apiInfo.customQueryparameters, paraIndex)"
+                  (keydown)="setEditStatus($event, true)" autocomplete="off" placeholder="Key" required>
+                <input type="text" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                (focus)="customParamValueFocus($event, apiInfo.customQueryparameters, paraIndex)" (blur)="customParamValueBlur($event, apiInfo.customQueryparameters, paraIndex)"
+                  (keydown)="setEditStatus($event, true)" autocomplete="off" placeholder="Value" required>
+                <svg class="btn-svg deleteItemBtn"  width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                  (click)="deleteCustomParams(apiInfo.customQueryparameters, paraIndex)">
+                  <path d="M3.75 8.25V9.75H14.25V8.25H3.75Z" fill="#787777" />
+                </svg>
+              </div>
+            }
+          </div>
+        } @else {
+          <div data-layer="add-content-panel" class="AddContentPanel codigma-add-content-panel">
+            <div data-layer="no-content" class="NoContent codigma-no-content">
+              <svg width="107" height="86" viewBox="0 0 107 86" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M89 0V86L70.4783 75.8888L53.5 85.1568L36.5217 75.8888L18 86V0H89ZM85.913 3.0888H21.087V80.7954L36.5217 72.3722L53.5 81.6386L70.4783 72.3722L85.913 80.7969V3.0888ZM76.6522 50.9653V54.0541H30.3478V50.9653H76.6522ZM76.6522 35.5212V38.61H30.3478V35.5212H76.6522ZM64.3043 20.0772V23.166H30.3478V20.0772H64.3043Z"
+                  fill="#F2F2F7" />
+              </svg>
+            </div>
+            <div data-layer="no-content-tips" class="NoContentTips codigma-no-content-tips">
+              <div data-layer="The request has no any parameters"
+                class="TheRequestHasNoAnyParameters codigma-no-content-tips-text">No parameters available.
+              </div>
+            </div>
+            <div data-layer="add-new-content" class="AddNewContent codigma-add-new-content-btn" (click)="addCustomParams(apiInfo.customQueryparameters)">
+              <div data-svg-wrapper="" data-layer="add-icon" class="AddIcon">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8.25 8.25V3.75H9.75V8.25H14.25V9.75H9.75V14.25H8.25V9.75H3.75V8.25H8.25Z" fill="#5B6371" />
+                </svg>
+              </div>
+              <div data-layer="Add New" class="AddNew codigma-add-new">Add New</div>
+            </div>
+          </div>
+        }
+      </div>
+      <div ast-tab [label]="'Headers'" [id]="'request_headers'" [minWidth]="'122px'" role="tabpanel" aria-hidden="false"
+        (onClickTab)="onHeadersClickTab($event)">
+        @if(rawHeaderParasCount>0 || apiInfo.customHeaderparameters.length>0) {
+         <div class="parameter-content">
+            @for (parameter of apiInfo.rawApiInfo.parameters; track parameter; let paraIndex = $index) {
+              @if(parameter.in=='header') {
+                <div class="parameter-item-with-note">
+                  <div class="parameter-item">
+                    <label for="name" class="parameter-label">{{parameter.name}}:</label>
+                    <input [type]="parameter.uiType" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                        (keydown)="setEditStatus($event, true)" autocomplete="off" required>
+                  </div>
+                  <pre class="parameter-note"><strong>- {{parameter.in}}</strong><strong><br>- description: </strong>{{parameter.description}} <strong><br>- example: </strong>{{parameter.example}}</pre>
+                </div>
+              }
+            }
+            @for (parameter of apiInfo.customHeaderparameters; track parameter; let paraIndex = $index) {
+              <div class="parameter-item">
+                <!-- <label for="name" class="parameter-label">{{parameter.name || 'Parameter'}}:</label> -->
+                <input type="text" id="name" name="name"  class="parameter-label" [(ngModel)]="parameter.name"
+                (focus)="customParamKeyFocus($event, apiInfo.customHeaderparameters, paraIndex)" (blur)="customParamKeyBlur($event, apiInfo.customHeaderparameters, paraIndex)"
+                  (keydown)="setEditStatus($event, true)" autocomplete="off" placeholder="Key" required>
+                <input type="text" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                (focus)="customParamValueFocus($event, apiInfo.customHeaderparameters, paraIndex)" (blur)="customParamValueBlur($event, apiInfo.customHeaderparameters, paraIndex)"
+                  (keydown)="setEditStatus($event, true)" autocomplete="off" placeholder="Value" required>
+                <svg class="btn-svg deleteItemBtn" width="18" height="18" viewBox="0 0 18 18" fill="none"
+                  xmlns="http://www.w3.org/2000/svg" (click)="deleteCustomParams(apiInfo.customHeaderparameters, paraIndex)">
+                  <path d="M3.75 8.25V9.75H14.25V8.25H3.75Z" fill="#787777" />
+                </svg>
+              </div>
+            }
+          </div>
+        } @else {
+          <div data-layer="add-content-panel" class="AddContentPanel codigma-add-content-panel">
+            <div data-layer="no-content" class="NoContent codigma-no-content">
+              <svg width="107" height="86" viewBox="0 0 107 86" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M89 0V86L70.4783 75.8888L53.5 85.1568L36.5217 75.8888L18 86V0H89ZM85.913 3.0888H21.087V80.7954L36.5217 72.3722L53.5 81.6386L70.4783 72.3722L85.913 80.7969V3.0888ZM76.6522 50.9653V54.0541H30.3478V50.9653H76.6522ZM76.6522 35.5212V38.61H30.3478V35.5212H76.6522ZM64.3043 20.0772V23.166H30.3478V20.0772H64.3043Z"
+                  fill="#F2F2F7" />
+              </svg>
+            </div>
+            <div data-layer="no-content-tips" class="NoContentTips codigma-no-content-tips">
+              <div data-layer="The request has no any parameters"
+                class="TheRequestHasNoAnyParameters codigma-no-content-tips-text">No parameters available.
+              </div>
+            </div>
+            <div data-layer="add-new-content" class="AddNewContent codigma-add-new-content-btn" (click)="addCustomParams(apiInfo.customHeaderparameters)">
+              <div data-svg-wrapper="" data-layer="add-icon" class="AddIcon">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8.25 8.25V3.75H9.75V8.25H14.25V9.75H9.75V14.25H8.25V9.75H3.75V8.25H8.25Z" fill="#5B6371" />
+                </svg>
+              </div>
+              <div data-layer="Add New" class="AddNew codigma-add-new">Add New</div>
+            </div>
+          </div>
+        }
+      </div>
+      <div ast-tab [label]="'Auth'" [id]="'request_auth'" [minWidth]="'122px'" role="tabpanel" aria-hidden="false"
+        (onClickTab)="onAuthClickTab($event)">
+          <div class="parameter-content">
+            <div class="parameter-item">
+              <label class="parameter-label">Authorization Type:</label>
+              <ast-select [data]="auths" [inputValue]="apiInfo.auth.authType"  [width]="'8rem'" (selected)="authTypeChange($event)" [readonly]="true"></ast-select>
+            </div>
+            @if (apiInfo.auth.authType=='Basic Auth') {
+              <div class="parameter-item">
+                <label for="userName" class="parameter-label">Username:</label>
+                <input type="text" id="userName" name="userName" class="input-area" [(ngModel)]="apiInfo.auth.userName"
+                   autocomplete="off" required>
+              </div>
+              <div class="parameter-item">
+                <label for="passWord" class="parameter-label">Password:</label>
+                <input type="text" id="passWord" name="passWord" class="input-area" [(ngModel)]="apiInfo.auth.passWord"
+                   autocomplete="off" required>
+              </div>
+            } @else if (apiInfo.auth.authType=='OAuth 2.0') {
+              <div class="parameter-item">
+                <label for="token" class="parameter-label">Token:</label>
+                <input type="text" id="token" name="token" class="input-area" [(ngModel)]="apiInfo.auth.token"
+                   autocomplete="off" required>
+              </div>
+              <div class="parameter-item">
+                <label  class="parameter-label">Grant Type:</label>
+                <ast-select [data]="grantTypes" [inputValue]="apiInfo.auth.grantType" [width]="'20rem'" (selected)="grantTypeChange($event)" [readonly]="true"></ast-select>
+              </div>
+              @if(apiInfo.auth.grantType=='authorization_code'||apiInfo.auth.grantType=='Implicit') {
+                <div class="parameter-item">
+                  <label for="authorizationEndpoint" class="parameter-label">Authorization Endpoint:</label>
+                  <input type="text" id="authorizationEndpoint" name="authorizationEndpoint" class="input-area" [(ngModel)]="apiInfo.auth.authorizationEndpoint"
+                    autocomplete="off" required>
+                </div>
+                <div class="parameter-item">
+                  <label for="RedirectURI" class="parameter-label">Redirect URI:</label>
+                  <input type="text" id="RedirectURI" name="RedirectURI" class="input-area" [(ngModel)]="apiInfo.auth.redirectURI"
+                    autocomplete="off" required>
+                </div>
+              }
+              @if(apiInfo.auth.grantType=='authorization_code'||apiInfo.auth.grantType=='client_credentials'||apiInfo.auth.grantType=='Resource Owner Password Credentials') {
+                <div class="parameter-item">
+                  <label for="TokenEndpoint" class="parameter-label">Token Endpoint:</label>
+                  <input type="text" id="TokenEndpoint" name="TokenEndpoint" class="input-area" [(ngModel)]="apiInfo.auth.tokenEndpoint"
+                    autocomplete="off" required>
+                </div>
+              }
+              <div class="parameter-item">
+                <label for="ClientID" class="parameter-label">Client ID:</label>
+                <input type="text" id="ClientID" name="ClientID" class="input-area" [(ngModel)]="apiInfo.auth.clientId"
+                   autocomplete="off" required>
+              </div>
+              @if(apiInfo.auth.grantType=='authorization_code'||apiInfo.auth.grantType=='client_credentials'||apiInfo.auth.grantType=='Resource Owner Password Credentials') {
+                <div class="parameter-item">
+                  <label for="ClientSecret" class="parameter-label">Client Secret:</label>
+                  <input type="text" id="ClientSecret" name="ClientSecret" class="input-area" [(ngModel)]="apiInfo.auth.clientSecret"
+                    autocomplete="off" required>
+                </div>
+              }
+              @if(apiInfo.auth.grantType=='Resource Owner Password Credentials') {
+                <div class="parameter-item">
+                  <label for="Username" class="parameter-label">Username:</label>
+                  <input type="text" id="Username" name="Username" class="input-area" [(ngModel)]="apiInfo.auth.username"
+                    autocomplete="off" required>
+                </div>
+                <div class="parameter-item">
+                  <label for="Password" class="parameter-label">Password:</label>
+                  <input type="text" id="Password" name="Password" class="input-area" [(ngModel)]="apiInfo.auth.password"
+                    autocomplete="off" required>
+                </div>
+              }
+
+              <div class="parameter-item">
+                <label for="Scopes" class="parameter-label">Scopes:</label>
+                <input type="text" id="Scopes" name="Scopes" class="input-area" [(ngModel)]="apiInfo.auth.scopes"
+                   autocomplete="off" required>
+              </div>
+              <div class="parameter-item">
+                <label for="clientAuthentication" class="parameter-label">Client Authentication:</label>
+                <ast-select [data]="clientAuthenticationOpts" [inputValue]="apiInfo.auth.clientAuthentication" [width]="'20rem'" (selected)="clientAuthenticationChange($event)" [readonly]="true"></ast-select>
+              </div>
+              <div class="parameter-item">
+                <button  class="parameter-button" (click)="generateOAuth2Token()">Generate Token</button>
+              </div>
+            }
+          </div>
+        </div>
+      <div ast-tab [label]="'Body'" [id]="'request_body'" [minWidth]="'122px'" role="tabpanel" aria-hidden="false"
+        (onClickTab)="onBodyClickTab($event)">
+        @if(apiInfo['parameterHasFormDataVer2']) {
+          <div class="parameter-content">
+            @for (parameter of apiInfo.rawApiInfo.parameters; track parameter; let paraIndex = $index) {
+              @if(parameter.in=='formData') {
+                <div class="parameter-item">
+                  <label for="name" class="parameter-label">{{parameter.name}}:</label>
+                  <input [type]="parameter.uiType" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                    (keydown)="setEditStatus($event, true)" autocomplete="off" required>
+                </div>
+              }
+            }
+          </div>
+        }
+         <!-- @else if(apiInfo['parameterHasFormDataVer3']) {
+          <div class="parameter-content">
+            @for(parameter of apiInfo.requestFormDataBody; track parameter; let paraIndex = $index) {
+              <div class="parameter-item">
+                <label for="name" class="parameter-label">{{parameter.name}}:</label>
+                <input [type]="parameter.uiType" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                  (keydown)="setEditStatus($event, true)" autocomplete="off" required>
+              </div>
+            }
+          </div>
+        } -->
+        @else {
+          <!-- <p> contains three scene
+            support openapi 2.0 
+            support openapi 3.0 
+            custom</p> -->
+          <!-- <textarea name="requestJsoneditor"
+            style="border: 0.8px solid rgb(240, 240, 240);width: 100%;margin: 5px;resize: none;"
+            [(ngModel)]="apiInfo.requestBody" (keydown)="setEditStatus($event, true)"></textarea> -->
+          <!-- Monaco Editor will be initialized here -->
+          <div class="parameter-content">
+            <div>
+              <label style="margin: 0 1rem;">Content-Type</label>
+              <ast-select [data]="consumeOpts" [inputValue]="apiInfo.currentConsume"  [width]="'18rem'" (selected)="consumeChange($event)" [readonly]="true">
+              </ast-select>
+            </div>
+            @if(apiInfo.currentConsume== null || apiInfo.currentConsume=='application/json' || apiInfo.currentConsume=='application/xml' || apiInfo.currentConsume=='None' || apiInfo.currentConsume=='text/plain') {
+              <div #reqEditorContainer style="overflow: hidden;height: 100%;"></div>
+            } @else if(apiInfo["requestBody"]&&(apiInfo.currentConsume=='application/x-www-form-urlencoded'||apiInfo.currentConsume=='multipart/form-data')) {
+              @for(parameter of apiInfo["requestBody"]["content"][apiInfo.currentConsume]; track parameter; let paraIndex = $index) {
+                <div class="parameter-item">
+                  <label for="name" class="parameter-label">{{parameter.name}}:</label>
+                  <input [type]="parameter.uiType" id="name" name="name"  class="input-area" [(ngModel)]="parameter.value"
+                    (keydown)="setEditStatus($event, true)" autocomplete="off" required>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  <div id="resp_section_{{apiInfo.id}}" class="flat-form"
+    style="position: relative;height: 40%;border: 0.8px solid rgb(240, 240, 240);border-radius:0;display: inline-flex;flex-direction: column;"
+    [style.height]="(1 - dragHeight) * 100 + '%'">
+    <div style="position: absolute;width: 100%;height: 100%;display: none;background-color: #ffffff;opacity: 0.8;"
+      [style.display]="ifSendingRequest?'block':'none'">
+      <div style="margin: 50px 40%;">Sending request...</div>
+      <div style="margin-top: 0px;margin-left: 40%;margin-right: 40%;">
+        <button class="request-cancel-btn" style="height: 2rem;width: 80px;border: 0;"
+          (click)="clickAbortRequest()">Cancel</button>
+      </div>
+    </div>
+
+    <div data-layer="app-header" class="AppHeader codigma-app-header">
+      <div data-layer="left-app-header" class="LeftAppHeader codigma-left-app-header">
+        <div data-layer="Project" class="Project codigma-project">Body</div>
+      </div>
+      <div data-layer="right-app-header" class="RightAppHeader codigma-right-app-header">
+        <div data-svg-wrapper="" data-layer="user-btn" class="UserBtn">
+          Status: {{apiInfo.response.status}} {{apiInfo.response.statusText}} Time: {{requestDuration}}
+        </div>
+      </div>
+    </div>
+
+    <textarea id="responseJsoneditor_{{apiInfo.id}}"
+      style="border: 0px solid lightgrey;width: 100%;resize: none;padding: 0;flex: 1 1 0;" readonly>Response</textarea>
+  </div>
+</div>
