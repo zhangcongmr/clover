@@ -47,7 +47,7 @@ authStore.subscribe((state) => {
 const { isAuthenticated, user } = authStore.getState();
 
 // Option 3: In React components
-import { useAuthStore } from '@luxio/common';
+import { useAuthStore } from '@julyware/common';
 
 function MyComponent() {
   const { state } = useAuthStore();
@@ -304,7 +304,7 @@ fetch('/api/auth/signin', {
 
 1. **Update package:**
    ```bash
-   pnpm install @luxio/common@latest
+   pnpm install @julyware/common@latest
    ```
 
 2. **Remove localStorage code:**

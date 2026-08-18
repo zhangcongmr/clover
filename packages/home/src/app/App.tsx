@@ -6,7 +6,7 @@ import { Header } from "@/app/components/Header";
 import { Repositories } from "@/app/components/Repositories";
 import { RightSidebar } from "@/app/components/RightSidebar";
 import { Sidebar } from "@/app/components/Sidebar";
-import { authStore } from "@luxio/common";
+import { authStore } from "@julyware/common";
 import { Profile } from "@/app/components/Profile";
 
 

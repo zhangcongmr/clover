@@ -1,5 +1,5 @@
 {
-  "name": "@luxio/community-widget",
+  "name": "@julyware/community-widget",
   "public": true,
   "version": "0.1.0",
   "type": "module",
@@ -19,7 +19,7 @@
   "dependencies": {
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
-    "@luxio/common": "workspace:*",
+    "@julyware/common": "workspace:*",
     "@mui/icons-material": "7.3.5",
     "@mui/material": "7.3.5",
     "@popperjs/core": "2.11.8",

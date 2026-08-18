@@ -85,7 +85,7 @@ Example response:
 
 ### 1. Update Package Dependencies
 
-- [ ] Ensure `@luxio/common` package is updated to latest version
+- [ ] Ensure `@julyware/common` package is updated to latest version
 - [ ] Run `pnpm install` to update dependencies
 
 ### 2. Remove localStorage Usage
@@ -101,7 +101,7 @@ Search and remove these patterns:
 
 **Before:**
 ```typescript
-import { authStore } from '@luxio/common';
+import { authStore } from '@julyware/common';
 
 // Old way - might have manually managed storage
 const user = JSON.parse(localStorage.getItem('user'));
@@ -110,7 +110,7 @@ authStore.setUser(user);
 
 **After:**
 ```typescript
-import { authStore } from '@luxio/common';
+import { authStore } from '@julyware/common';
 
 // New way - let authStore handle everything
 // On login success, just call setUser with backend response
@@ -222,7 +222,7 @@ If using `useAuthStore`:
 - [ ] State structure unchanged
 
 ```typescript
-import { useAuthStore } from '@luxio/common';
+import { useAuthStore } from '@julyware/common';
 
 function MyComponent() {
   const { state, setUser, logout } = useAuthStore();

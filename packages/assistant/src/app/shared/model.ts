@@ -1,4 +1,4 @@
-import { NodeDef, OpenApiV3Document } from "@luxio/common";
+import { NodeDef, OpenApiV3Document } from "@julyware/common";
 
 export class ServiceRouteInfo {
     namespace?: string;

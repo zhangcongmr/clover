@@ -1,4 +1,4 @@
-import { NodeDef } from "@luxio/common";
+import { NodeDef } from "@julyware/common";
 
 /**
  * Fetches repositories for a given user

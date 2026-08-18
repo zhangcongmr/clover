@@ -6,7 +6,7 @@ import { BrowserModule, bootstrapApplication, provideClientHydration, withEventR
 import { withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/common/http';
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
-import { loadCommunityWidget } from '@luxio/community-widget';
+import { loadCommunityWidget } from '@julyware/community-widget';
 import { DocModelType } from './app/shared/model';
 import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog, provideMarkdownRenderer} from '@a2ui/angular/v0_9';
 import { IMAGE_CONFIG } from '@angular/common';

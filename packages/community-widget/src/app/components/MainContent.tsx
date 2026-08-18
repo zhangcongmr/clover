@@ -2,7 +2,7 @@ import { ProjectCard } from './ProjectCard';
 import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { debounce } from 'lodash'; // 或自己实现
-import { NodeDef } from '@luxio/common';
+import { NodeDef } from '@julyware/common';
 import { coreService } from '../core.service';
 
 interface Data {

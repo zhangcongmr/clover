@@ -14,7 +14,7 @@ clover-monorepo/
 │   │                           # Redis 需独立部署，默认走内存模式（不订阅 Redis）
 │   ├── assistant/              # 主应用（luxio）: Angular 21 + SSR
 │   │                           # Main app: editor / terminal / ACP client UI
-│   ├── common/                 # 共享 TypeScript 库（@luxio/common）
+│   ├── common/                 # 共享 TypeScript 库（@julyware/common）
 │   ├── community-widget/       # 社区挂件
 │   ├── editor/                 # 编辑器
 │   ├── forgotpassword/         # 忘记密码流程
