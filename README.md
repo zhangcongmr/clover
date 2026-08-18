@@ -1,4 +1,4 @@
-# Luxio Monorepo
+# Clover Monorepo
 
 浏览器 Web 应用与本地代理 Agent 的通用开发方案（基于 ACP 协议）。
 
@@ -7,9 +7,9 @@ A universal development solution combining a browser web app with a local proxy 
 ## 仓库结构 / Repo Structure
 
 ```
-luxio-monorepo/
+clover-monorepo/
 ├── packages/
-│   ├── agent/                  # 本地代理 Agent（@luxio/agent）
+│   ├── agent/                  # 本地代理 Agent（@julyware/clover-agent）
 │   │                           # Local proxy agent: Express + WebSocket + ACP + node-pty + Redis
 │   │                           # Redis 需独立部署，默认走内存模式（不订阅 Redis）
 │   ├── assistant/              # 主应用（luxio）: Angular 21 + SSR
@@ -79,6 +79,6 @@ pnpm --filter ./packages/agent dev              # 监听构建
 | 命令 | 说明 |
 |------|------|
 | `pnpm build` | 构建全部（带计时） |
-| `pnpm build:agent` | 仅构建 @luxio/agent |
+| `pnpm build:agent` | 仅构建 @julyware/clover-agent |
 | `pnpm dev` | 并行启动所有包的开发服务 |
 | `pnpm test` | 并行运行所有包的测试 |

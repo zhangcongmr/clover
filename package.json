@@ -1,10 +1,10 @@
 {
   "name": "luxio-monorepo",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "node scripts/build-with-timer.mjs",
-    "build:agent": "pnpm --filter @luxio/agent build",
+    "build:agent": "pnpm --filter @julyware/clover-agent build",
     "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test"
   },

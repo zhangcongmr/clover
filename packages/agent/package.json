@@ -1,7 +1,7 @@
 {
-  "name": "@luxio/agent",
+  "name": "@julyware/clover-agent",
   "version": "0.1.0",
-  "description": "Local proxy agent for Luxio Web App - provides file system access and PTY terminal",
+  "description": "Local proxy agent for Clover - provides file system access, PTY terminal, and ACP server",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -18,7 +18,20 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "clover",
+    "agent",
+    "acp",
+    "pty",
+    "proxy"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangcongmr/clover.git"
   },
   "dependencies": {
     "express": "^5.2.1",

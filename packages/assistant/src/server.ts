@@ -6,7 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { createServer, setupAgentMiddleware } from '@luxio/agent';
+import { createServer, setupAgentMiddleware } from '@julyware/clover-agent';
 
 const rootDir = join(import.meta.dirname, '..');
 const browserDistFolder = join(rootDir, 'browser');

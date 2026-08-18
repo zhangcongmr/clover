@@ -1,7 +1,7 @@
 {
   "name": "@luxio/signin",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "build:lib": "cross-env BUILD_MODE=lib vite build",

@@ -1,17 +1,33 @@
 {
-  "name": "editor",
-  "private": true,
-  "version": "0.0.1",
+  "name": "@julyware/clover",
+  "version": "0.1.0",
+  "description": "Clover - SSR editor application (Vite + React) with an embedded local agent server",
   "type": "module",
+  "bin": {
+    "clover": "dist-server/server.js"
+  },
+  "files": [
+    "dist",
+    "dist-server",
+    "!dist-server/node_modules"
+  ],
   "scripts": {
     "build": "vite build && pnpm run build:server",
     "build:server": "node scripts/build-server.mjs",
     "dev": "node --experimental-strip-types src/server.ts",
     "dev:spa": "vite",
-    "serve:ssr": "node dist-server/server.js"
+    "serve:ssr": "node dist-server/server.js",
+    "prepublishOnly": "pnpm run build"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
-    "@luxio/agent": "workspace:*",
+    "node-pty": "^1.2.0-beta.14"
+  },
+  "devDependencies": {
+    "@julyware/clover-agent": "workspace:*",
+    "@julyware/clover-ui": "workspace:*",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@mdx-js/react": "^3.1.1",
@@ -68,9 +84,6 @@
     "tailwind-merge": "3.2.0",
     "tw-animate-css": "1.3.8",
     "vaul": "1.1.2",
-    "luxio": "workspace:*"
-  },
-  "devDependencies": {
     "@mdx-js/rollup": "^3.1.1",
     "@tailwindcss/vite": "4.1.12",
     "@types/express": "^5.0.6",
@@ -94,5 +107,16 @@
     "react-dom": {
       "optional": true
     }
+  },
+  "keywords": [
+    "clover",
+    "editor",
+    "ssr",
+    "agent"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangcongmr/clover.git"
   }
 }

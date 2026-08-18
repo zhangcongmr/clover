@@ -7,6 +7,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 
+// Clean stale artifacts (previous sourcemaps, old copies) so the output is reproducible
+const distServerDir = resolve(rootDir, 'dist-server');
+rmSync(distServerDir, { recursive: true, force: true });
+mkdirSync(distServerDir, { recursive: true });
+
 // esbuild is a transitive dep of tsup, resolve it from the pnpm store
 const esbuildFile = resolve(
   rootDir, '../..', 'node_modules', '.pnpm',
@@ -24,9 +29,10 @@ await build({
   target: 'node22',
   external: ['vite', 'node-pty'],
   define: { isProdBuild: 'true' },
-  sourcemap: true,
+  sourcemap: false,
   banner: {
     js: [
+      `#!/usr/bin/env node`,
       `import { createRequire as __cr } from 'node:module';`,
       `import { fileURLToPath as __ftp } from 'node:url';`,
       `var require = __cr(__ftp(import.meta.url));`,
