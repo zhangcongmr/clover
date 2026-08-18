@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams } from "react-router";
-import { Luxio } from 'luxio';
+import { Luxio } from '@julyware/clover-ui';
 
 // 防止重复加载
 let angularLoaded = false;
