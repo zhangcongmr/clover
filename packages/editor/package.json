@@ -6,8 +6,8 @@
   "scripts": {
     "build": "vite build && pnpm run build:server",
     "build:server": "node scripts/build-server.mjs",
-    "dev": "vite",
-    "dev:ssr": "node --experimental-strip-types src/server/server.ts",
+    "dev": "node --experimental-strip-types src/server.ts",
+    "dev:spa": "vite",
     "serve:ssr": "node dist-server/server.js"
   },
   "dependencies": {

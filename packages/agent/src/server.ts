@@ -34,6 +34,7 @@ export interface ServerConfig {
   rootDir?: string;
   sslDir?: string;
   logPrefix?: string;
+  logUrlPath?: string;
   app?: express.Express;
   staticDir?: string;
   staticOptions?: StaticOptions;
@@ -100,6 +101,7 @@ export function createServer(config: ServerConfig): ServerInstance {
     rootDir,
     sslDir: sslDirInput,
     logPrefix = '',
+    logUrlPath = '',
     app: existingApp,
     ...middlewareOptions
   } = config;
@@ -119,7 +121,7 @@ export function createServer(config: ServerConfig): ServerInstance {
   httpServer.listen(port, () => {
     const protocol = sslConfig ? 'https' : 'http';
     const prefix = logPrefix ? `${logPrefix} ` : '';
-    console.log(`${prefix}Server listening on ${protocol}://localhost:${port}`);
+    console.log(`${prefix}Server listening on ${protocol}://localhost:${port}${logUrlPath}`);
   });
 
   setupWebSocket(httpServer, services, sslConfig, { logPrefix });
