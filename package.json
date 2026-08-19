@@ -9,7 +9,7 @@
     "test": "pnpm -r test",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "node scripts/guard-publish.mjs && pnpm changeset version && pnpm -r publish --filter @julyware/clover-agent --filter @julyware/clover-ui --filter @julyware/clover"
+    "release": "node scripts/guard-publish.mjs && node scripts/release.mjs"
   },
   "engines": {
     "node": ">=22"
