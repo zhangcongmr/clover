@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "node ../../scripts/guard-publish.mjs && pnpm run build"
   },
   "keywords": [
     "clover",
