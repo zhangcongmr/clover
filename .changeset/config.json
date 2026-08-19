@@ -1,0 +1,19 @@
+{
+  "changelog": "@changesets/cli/changelog-git",
+  "commit": false,
+  "fixed": [
+    [
+      "@julyware/clover-agent",
+      "@julyware/clover-ui",
+      "@julyware/clover"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@julyware/common",
+    "@julyware/community-widget"
+  ]
+}

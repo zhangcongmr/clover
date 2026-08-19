@@ -3,6 +3,7 @@ import type http from 'node:http';
 import type https from 'node:https';
 import { createServer as createHttpsServer } from 'node:https';
 import { createServer as createHttpServer } from 'node:http';
+import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
 import { createCORSMiddleware } from './api/middleware.js';
 import { loadSslConfig } from './helpers/index.js';
@@ -121,10 +122,27 @@ export function createServer(config: ServerConfig): ServerInstance {
   httpServer.listen(port, () => {
     const protocol = sslConfig ? 'https' : 'http';
     const prefix = logPrefix ? `${logPrefix} ` : '';
-    console.log(`${prefix}Server listening on ${protocol}://localhost:${port}${logUrlPath}`);
+    const addresses = listIpv4Addresses();
+    const urls = [
+      `${protocol}://localhost:${port}${logUrlPath}`,
+      ...addresses.map((ip) => `${protocol}://${ip}:${port}${logUrlPath}`),
+    ];
+    console.log(`${prefix}Server listening on:\n${urls.map((u) => `  ${u}`).join('\n')}`);
   });
 
   setupWebSocket(httpServer, services, sslConfig, { logPrefix });
 
   return { app, httpServer, ...services };
+}
+
+function listIpv4Addresses(): string[] {
+  const addresses: string[] = [];
+  for (const infos of Object.values(networkInterfaces())) {
+    for (const info of infos ?? []) {
+      if (info.family === 'IPv4' && !info.internal) {
+        addresses.push(info.address);
+      }
+    }
+  }
+  return [...new Set(addresses)];
 }
