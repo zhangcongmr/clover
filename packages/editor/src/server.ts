@@ -2,7 +2,7 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import express from 'express';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from '@julyware/clover-agent';
 import type { Connect } from 'vite';
 
@@ -15,6 +15,47 @@ const isCompiled = typeof isProdBuild !== 'undefined' && isProdBuild === true;
 const isDev = !isCompiled;
 const rootDir = resolve(__dirname, '..');
 const distDir = isCompiled ? join(__dirname, 'dist') : join(rootDir, 'dist');
+
+const args = process.argv.slice(2);
+if (args.includes('-h') || args.includes('--help')) {
+  console.log([
+    'clover - SSR editor with an embedded local agent server',
+    '',
+    'Usage:',
+    '  clover [options]',
+    '',
+    'Options:',
+    '  -v, --version  Print the clover version',
+    '  -h, --help     Show this help message',
+    '  -p, --port N   Set the server port (default 5178)',
+    '',
+    'Environment:',
+    '  PORT                  Server port (default 5178)',
+    '  EDITOR_TOKEN_SECRET   Auth token secret for the agent server',
+  ].join('\n'));
+  process.exit(0);
+}
+
+if (args.includes('-v') || args.includes('--version')) {
+  const pkgPath = join(rootDir, 'package.json');
+  const version = existsSync(pkgPath)
+    ? JSON.parse(readFileSync(pkgPath, 'utf8')).version
+    : 'unknown';
+  console.log(version);
+  process.exit(0);
+}
+
+const portIndex = args.findIndex((a) => a === '-p' || a === '--port');
+if (portIndex !== -1) {
+  const rawPort = args[portIndex + 1];
+  const port = Number(rawPort);
+  if (Number.isInteger(port) && port > 0 && port <= 65535) {
+    process.env['PORT'] = String(port);
+  } else {
+    console.error(`Invalid port: ${rawPort}`);
+    process.exit(1);
+  }
+}
 
 const app = express();
 
