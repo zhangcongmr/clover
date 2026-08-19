@@ -22,7 +22,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:luxio": "node dist/luxio/server/server.mjs",
-    "prepublishOnly": "pnpm run build:common"
+    "prepublishOnly": "node ../../scripts/guard-publish.mjs && pnpm run build:common"
   },
   "keywords": [
     "clover",
