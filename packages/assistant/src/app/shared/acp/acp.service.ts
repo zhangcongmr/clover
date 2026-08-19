@@ -412,7 +412,6 @@ export class AcpService {
     this.plans.set(new Map());
     this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
-    this.showSessionHistory.set(false);
 
     let currentSessionId = this.sessionState().sessionId;
 
@@ -451,7 +450,6 @@ export class AcpService {
     this.plans.set(new Map());
     this.activeTodosId.set(null);
     this.hasOpenedSession.set(true);
-    this.showSessionHistory.set(false);
 
     let currentSessionId = this.sessionState().sessionId;
 
