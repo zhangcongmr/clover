@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
-import type { ContentBlock } from './acp-websocket.service';
+import type { ContentBlock, SessionInfo } from './acp-websocket.service';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const TEXT_MIME_TYPES = new Set([
@@ -1075,11 +1075,11 @@ export class AcpChatInputComponent {
     }
 
     try {
-      if (!this.acpService.hasOpenedSession()) {
+      const isNewSession = !this.acpService.hasOpenedSession();
+      if (isNewSession) {
         this.acpService.clearMessages();
         await this.acpService.ensureChatSession(this.acpService.workingDirHint() || undefined);
         this.acpService.hasOpenedSession.set(true);
-        this.acpService.showSessionHistory.set(false);
       }
       const content: ContentBlock[] = [];
       if (text) {
@@ -1090,6 +1090,22 @@ export class AcpChatInputComponent {
       }
       await this.acpService.sendPrompt(content);
       this.attachments.set([]);
+
+      if (isNewSession) {
+        const sessionId = this.acpService.sessionState().sessionId;
+        if (sessionId) {
+          const newSession: SessionInfo = {
+            cwd: this.acpService.workingDirHint() || '',
+            sessionId,
+            title: this.acpService.sessionState().title,
+            updatedAt: new Date().toISOString(),
+          };
+          this.acpService.sessions.update(list => [
+            newSession,
+            ...list.filter(s => s.sessionId !== sessionId),
+          ]);
+        }
+      }
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);
       this.errorMessage.set(error instanceof Error ? error.message : String(error));
