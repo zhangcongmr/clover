@@ -35,7 +35,7 @@ This is a package-level AI instruction file for the `packages/assistant` workspa
 
 - Preserve the Angular SSR hydration setup and existing bootstrap providers.
 - Avoid changing `scripts/inline-styles.mjs` or `tsconfig.declaration.json` unless the build is explicitly failing and the fix is validated.
-- If adding or updating features, keep in mind the package is part of a pnpm workspace and depends on other workspace packages such as `@luxio/common` and `@luxio/community-widget`.
+- If adding or updating features, keep in mind the package is part of a pnpm workspace and depends on other workspace packages such as `@julyware/common` and `@julyware/community-widget`.
 - Prefer using `ng` / Angular CLI for application changes and `pnpm` from the repo root for install/build/test commands.
 - When refactoring, prioritize `src/app` shared components and token/provider patterns rather than creating unrelated new runtime globals.
 - There is no existing package-specific documentation beyond a placeholder README; rely on code and package manifests.

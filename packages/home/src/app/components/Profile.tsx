@@ -1,7 +1,7 @@
 import { MapPin, Link as LinkIcon, Calendar, Users, Star, GitFork, Book, Mail, Upload, Loader2, Camera } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { projectId, publicAnonKey } from '/utils/supabase/info';
-import { authStore } from "@luxio/common";
+import { authStore } from "@julyware/common";
 
 interface Repository {
   id: number;

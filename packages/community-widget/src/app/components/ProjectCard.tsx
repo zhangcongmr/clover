@@ -1,7 +1,7 @@
 import { Star, GitFork, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { coreService } from '../core.service';
-import { NodeDef } from "@luxio/common";
+import { NodeDef } from "@julyware/common";
 
 interface ProjectCardProps {
   project: NodeDef;

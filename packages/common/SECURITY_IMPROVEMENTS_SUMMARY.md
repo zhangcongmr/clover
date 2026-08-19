@@ -238,7 +238,7 @@ describe('Secure Authentication', () => {
 
 ### Frontend Requirements
 
-- [ ] Update to latest `@luxio/common` package
+- [ ] Update to latest `@julyware/common` package
 - [ ] Remove localStorage auth code
 - [ ] Update logout handlers to use async method
 - [ ] Test in development environment

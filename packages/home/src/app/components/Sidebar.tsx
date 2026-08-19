@@ -12,7 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { NodeDef } from "@luxio/common";
+import { NodeDef } from "@julyware/common";
 import { fetchUserRepositories } from "./repositoryService";
 
 interface Repository {

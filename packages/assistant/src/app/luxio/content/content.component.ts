@@ -18,7 +18,7 @@ import { MyConfigService } from '../../my-config.service';
 import { AutoSaver } from '../../auto-saver';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { NoteBookComponent } from '../../shared/notebook/notebook.component';
-import { NodeDef } from '@luxio/common';
+import { NodeDef } from '@julyware/common';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';

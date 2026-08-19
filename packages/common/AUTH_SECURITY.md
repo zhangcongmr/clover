@@ -72,7 +72,7 @@ The `AuthStore` class maintains authentication state only in memory:
 #### AuthStore Features
 
 ```typescript
-import { authStore } from '@luxio/common';
+import { authStore } from '@julyware/common';
 
 // Subscribe to auth state changes
 const unsubscribe = authStore.subscribe((state) => {
@@ -92,7 +92,7 @@ await authStore.logout();
 #### React Integration
 
 ```tsx
-import { useAuthStore } from '@luxio/common';
+import { useAuthStore } from '@julyware/common';
 
 function MyComponent() {
   const { state, setUser, logout } = useAuthStore();
@@ -151,7 +151,7 @@ const user = JSON.parse(localStorage.getItem('user'));
 **After (Secure):**
 ```typescript
 // ✅ DO THIS
-import { authStore } from '@luxio/common';
+import { authStore } from '@julyware/common';
 
 // Set user after login (stored in memory only)
 authStore.setUser(userData);

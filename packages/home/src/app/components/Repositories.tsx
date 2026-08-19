@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Eye, Star, GitFork, Search as SearchIcon, ChevronDown } from "lucide-react";
-import { NodeDef } from "@luxio/common";
+import { NodeDef } from "@julyware/common";
 import { fetchUserRepositories } from "./repositoryService";
 
 interface Repository {
