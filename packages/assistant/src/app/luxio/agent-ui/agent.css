@@ -11,6 +11,7 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   background-color: var(--vscode-editor-background);
   border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
   overflow: hidden;
@@ -178,6 +179,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -226,9 +228,19 @@
 }
 
 .session-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
   padding: 0 16px 16px;
+}
+
+.session-list {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
+  overflow-y: auto;
 }
 
 /* ===== Session Groups ===== */
@@ -316,6 +328,23 @@
   white-space: nowrap;
 }
 
+.session-agent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 18px;
+  min-width: 24px;
+  border-radius: 3px;
+  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.3));
+  color: var(--vscode-badge-foreground, var(--vscode-foreground));
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
 /* ===== Empty State ===== */
 .empty-state {
   display: flex;
@@ -335,4 +364,105 @@
 
 .empty-state span {
   font-size: 13px;
+}
+
+/* ===== ACP Panel Overlay ===== */
+.acp-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--vscode-editor-background);
+  z-index: 100;
+}
+
+.acp-overlay-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  background-color: var(--vscode-editor-background);
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  transition: background-color 0.15s;
+}
+
+.back-btn:hover {
+  background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1));
+}
+
+.back-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.acp-overlay-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.acp-overlay-content app-acp-panel {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+}
+
+/* ===== Session Action Buttons ===== */
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.session-item:hover .session-actions {
+  opacity: 1;
+}
+
+.session-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  transition: opacity 0.12s, background-color 0.12s;
+}
+
+.session-action-btn:hover {
+  opacity: 1;
+  background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.15));
+}
+
+.session-action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.session-action-btn--delete:hover {
+  color: var(--vscode-errorForeground, #d32f2f);
 }

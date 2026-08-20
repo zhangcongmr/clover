@@ -14,15 +14,27 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 const PROJECTS_DIR = join(homedir(), '.clover');
 const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
 
+interface ProjectSession {
+  sessionId: string;
+  agentId: string;
+  title?: string;
+  updatedAt?: string;
+}
+
 interface Project {
   name: string;
   path: string;
+  sessions: ProjectSession[];
 }
 
 function readProjects(): Project[] {
   if (!existsSync(PROJECTS_FILE)) return [];
   try {
-    return JSON.parse(readFileSync(PROJECTS_FILE, 'utf-8'));
+    const raw = JSON.parse(readFileSync(PROJECTS_FILE, 'utf-8'));
+    return raw.map((p: any) => ({
+      ...p,
+      sessions: p.sessions || [],
+    }));
   } catch {
     return [];
   }
@@ -524,7 +536,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         res.status(409).json({ error: 'Project already exists' });
         return;
       }
-      projects.push({ name, path: projectPath });
+      projects.push({ name, path: projectPath, sessions: [] });
       writeProjects(projects);
       res.json({ success: true, projects });
     } catch (error) {
@@ -552,6 +564,108 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({ success: true, projects });
     } catch (error) {
       console.error('[ACP Routes] Delete project error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/projects/save-session
+   * 保存会话到项目
+   */
+  app.post('/api/projects/save-session', async (req: Request, res: Response) => {
+    const { projectPath, session } = req.body;
+
+    if (!projectPath || !session?.sessionId || !session?.agentId) {
+      res.status(400).json({ error: 'projectPath, sessionId, and agentId are required' });
+      return;
+    }
+
+    try {
+      const projects = readProjects();
+      const project = projects.find(p => p.path === projectPath);
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      const idx = project.sessions.findIndex(s => s.sessionId === session.sessionId && s.agentId === session.agentId);
+      if (idx >= 0) {
+        project.sessions[idx] = { ...project.sessions[idx], ...session };
+      } else {
+        project.sessions.push(session);
+      }
+
+      writeProjects(projects);
+      res.json({ success: true, project });
+    } catch (error) {
+      console.error('[ACP Routes] Save session error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/projects/delete-session
+   * 从项目中删除会话
+   */
+  app.post('/api/projects/delete-session', async (req: Request, res: Response) => {
+    const { projectPath, sessionId } = req.body;
+
+    if (!projectPath || !sessionId) {
+      res.status(400).json({ error: 'projectPath and sessionId are required' });
+      return;
+    }
+
+    try {
+      const projects = readProjects();
+      const project = projects.find(p => p.path === projectPath);
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      project.sessions = project.sessions.filter(s => s.sessionId !== sessionId);
+      writeProjects(projects);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[ACP Routes] Delete session error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  const SELECTED_PROJECT_FILE = join(PROJECTS_DIR, 'selected-project.json');
+
+  function readSelectedProject(): string | null {
+    if (!existsSync(SELECTED_PROJECT_FILE)) return null;
+    try {
+      const raw = JSON.parse(readFileSync(SELECTED_PROJECT_FILE, 'utf-8'));
+      return raw.selectedProject || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeSelectedProject(name: string | null): void {
+    mkdirSync(PROJECTS_DIR, { recursive: true });
+    writeFileSync(SELECTED_PROJECT_FILE, JSON.stringify({ selectedProject: name }, null, 2));
+  }
+
+  app.get('/api/projects/selected', (_req: Request, res: Response) => {
+    try {
+      const selectedProject = readSelectedProject();
+      res.json({ success: true, selectedProject });
+    } catch (error) {
+      console.error('[ACP Routes] Get selected project error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post('/api/projects/selected', (req: Request, res: Response) => {
+    const { selectedProject } = req.body;
+    try {
+      writeSelectedProject(selectedProject || null);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[ACP Routes] Save selected project error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
