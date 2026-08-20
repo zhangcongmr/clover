@@ -68,7 +68,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
   astContentPanelOpen = false;
-  agentPanelOpen = false;
+  agentPanelOpen = true;
   dockPosition: 'left' | 'right' = 'left';
   terminalBtnShow = true;
   terminalPanelShow = false;
@@ -1128,7 +1128,7 @@ For each fileIcons entry:
   }
 
   toggleAgentPanel() {
-    this.agentPanelOpen = !this.agentPanelOpen;
+    this.agentPanelOpen = true;
     localStorage.setItem(this.ACP_PANEL_OPEN_KEY, String(this.agentPanelOpen));
   }
 
