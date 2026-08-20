@@ -285,9 +285,9 @@
 | 268 | `style="position: relative;"` | `ast-terminal-tab-container` |
 
 #### 保留内联的动态绑定
-- `[style.display]="acpPanelOpen ? 'block' : 'none'"` - 条件显示
+- `[style.display]="agentPanelOpen ? 'block' : 'none'"` - 条件显示
 - `[style.left]="leftPct * 100 + '%'"` - 动态拖拽百分比
-- `[style.width]="acpPanelOpen ? (leftPct * 100 + '%') : '100%'"` - 动态宽度
+- `[style.width]="agentPanelOpen ? (leftPct * 100 + '%') : '100%'"` - 动态宽度
 - `[style.display]="terminalPanelShow ? 'block' : 'none'"` - 条件显示
 - `[style.top]="topPct * 100 + '%'"` - 动态拖拽百分比
 - `[style.height]="topPct * 100 + '%'"` - 动态拖拽百分比

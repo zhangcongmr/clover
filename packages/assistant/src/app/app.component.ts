@@ -24,6 +24,7 @@ import { Client } from './client';
 import { NotificationService } from './shared/notification/notification.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
+import { AgentComponent } from './luxio/agent-ui/agent';
 
 @Component({
     selector: 'app-root',
@@ -31,8 +32,8 @@ import { DatePipe } from '@angular/common';
     styleUrls: ['./app.component.css'],
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
-      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, AcpPanelComponent, DatePipe,
-       SurfaceComponent], // Add TerminalComponent and AcpPanelComponent to imports
+      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
+       SurfaceComponent, AgentComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
@@ -46,14 +47,14 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   private hostEl = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
-  protected acpPanelWidthPx = signal(0);
+  protected agentPanelWidthPx = signal(0);
 
-  private refreshAcpPanelWidth(): void {
+  private refreshAgentPanelWidth(): void {
     const baseWidth = this.hostEl.nativeElement.clientWidth;
     const raw = getComputedStyle(this.hostEl.nativeElement)
       .getPropertyValue('--left-side-area-width').trim();
     const leftArea = parseFloat(raw) || this.leftSideAreaWidth;
-    this.acpPanelWidthPx.set((1 - this.leftPct) * (baseWidth - leftArea - 15));
+    this.agentPanelWidthPx.set((1 - this.leftPct) * (baseWidth - leftArea - 15));
   }
   
   title = 'luxio';
@@ -67,7 +68,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
   astContentPanelOpen = false;
-  acpPanelOpen = false;
+  agentPanelOpen = false;
   dockPosition: 'left' | 'right' = 'left';
   terminalBtnShow = true;
   terminalPanelShow = false;
@@ -240,7 +241,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       // 从 localStorage 恢复面板打开状态
       const savedOpen = localStorage.getItem(this.ACP_PANEL_OPEN_KEY);
       if (savedOpen !== null) {
-        this.acpPanelOpen = savedOpen === 'true';
+        this.agentPanelOpen = savedOpen === 'true';
       }
       // leftPct 已由 getDefaultLeftPct() 在组件构造阶段恢复（见 getDefaultLeftPct），此处无需重复赋值
       // 从 localStorage 恢复 ACP 面板最大化前的宽度比例
@@ -286,9 +287,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   ngAfterViewInit(): void {
     if (typeof window !== 'undefined' && typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(() => this.refreshAcpPanelWidth());
+      this.resizeObserver = new ResizeObserver(() => this.refreshAgentPanelWidth());
       this.resizeObserver.observe(this.hostEl.nativeElement);
-      this.refreshAcpPanelWidth();
+      this.refreshAgentPanelWidth();
     }
 
     if (this.fileSubmenuRef) {
@@ -1123,16 +1124,16 @@ For each fileIcons entry:
       this.leftPct = this.previousLeftPct;
     }
     this.saveLeftPct();
-    this.refreshAcpPanelWidth();
+    this.refreshAgentPanelWidth();
   }
 
-  toggleAcpPanel() {
-    this.acpPanelOpen = !this.acpPanelOpen;
-    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, String(this.acpPanelOpen));
+  toggleAgentPanel() {
+    this.agentPanelOpen = !this.agentPanelOpen;
+    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, String(this.agentPanelOpen));
   }
 
   closeAcpPanel() {
-    this.acpPanelOpen = false;
+    this.agentPanelOpen = false;
     localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
   }
 
@@ -1460,13 +1461,13 @@ For each fileIcons entry:
     this.previousLeftPct = this.leftPct;
     this.leftPct = 0;
     this.saveLeftPct();
-    this.refreshAcpPanelWidth();
+    this.refreshAgentPanelWidth();
   }
 
   restoreAcpPanel() {
     this.leftPct = this.previousLeftPct;
     this.saveLeftPct();
-    this.refreshAcpPanelWidth();
+    this.refreshAgentPanelWidth();
   }
 
   override dragEnd(evt: any) {
@@ -1489,9 +1490,9 @@ For each fileIcons entry:
         super.whenMouseMove(evt);
         this.keepTerminalInstance.topPct = this.topPct;
       } else {
-        // acp panel position calculation
+        // agent panel position calculation
         this.leftPct = this.getHorizontalPct(evt);
-        this.refreshAcpPanelWidth();
+        this.refreshAgentPanelWidth();
       }
     }
   }

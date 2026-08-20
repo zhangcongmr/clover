@@ -635,7 +635,10 @@ export function getNodeAbsolutePath(nodes: AstTreeNode[], node: AstTreeNode, wit
   const root = nodes[0];
   const rootPath = (root?.rootPath || '');
   const fullPath = pathSegments.join('/');
-  return (rootPath ? rootPath + '/' + fullPath : fullPath).replace(/\/+/g, '/');
+  if (!rootPath) return fullPath;
+  const sep = rootPath.includes('\\') ? '\\' : '/';
+  const norm = rootPath.endsWith('/') || rootPath.endsWith('\\') ? '' : sep;
+  return rootPath + norm + fullPath.replace(/\//g, sep);
 }
 
 /**

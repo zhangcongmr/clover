@@ -87,7 +87,7 @@ export class FilePickerDialogComponent {
     const node: AstTreeNode = {
       id: this.uuid(),
       label: scanData.name,
-      rootPath: rootPath,
+      rootPath: isRoot && scanData.absolutePath ? scanData.absolutePath : rootPath,
       nodeType: scanData.kind === 'directory' ? 'folder' : 'file',
       isExpanded: isRoot,
       children: [],

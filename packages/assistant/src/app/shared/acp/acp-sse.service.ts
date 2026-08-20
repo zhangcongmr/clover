@@ -412,4 +412,47 @@ export class AcpSseService {
   async ping(sessionId: string): Promise<void> {
     await this.post('/api/acp/ping', { sessionId });
   }
+
+  // ============================================================================
+  // 项目管理方法（免认证）
+  // ============================================================================
+
+  private async postNoAuth(endpoint: string, body: any): Promise<any> {
+    const base = this.localAgentService.getBaseUrl();
+
+    const response = await fetch(`${base}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(await this.describeResponseError(response));
+    }
+
+    return response.json();
+  }
+
+  /**
+   * 列出所有项目
+   */
+  async listProjects(): Promise<any> {
+    return this.postNoAuth('/api/projects', {});
+  }
+
+  /**
+   * 新增项目
+   */
+  async addProject(name: string, path: string): Promise<any> {
+    return this.postNoAuth('/api/projects/add', { name, path });
+  }
+
+  /**
+   * 删除项目
+   */
+  async deleteProject(name: string): Promise<any> {
+    return this.postNoAuth('/api/projects/delete', { name });
+  }
 }
