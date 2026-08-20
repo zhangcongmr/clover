@@ -89,7 +89,7 @@ export function setupAgentMiddleware(
   const redis = RedisClient.getInstance();
   const sseManager = new SseManager(redis);
   const sessionManager = new AcpSessionManager(redis);
-  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis });
+  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService });
 
   return { tokenManager, fileService, ptyManager };
 }

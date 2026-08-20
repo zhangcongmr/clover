@@ -1,0 +1,130 @@
+<div class="agent-container">
+  <!-- Left: Project List -->
+  <div class="agent-sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">项目</span>
+      <button class="icon-btn" title="新增项目" (click)="openFolderPicker()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14m-7-7h14"/>
+        </svg>
+      </button>
+    </div>
+    <div class="project-list">
+      @for (project of projects(); track project.name) {
+        <div class="project-item" [class.active]="selectedProject() === project.name"
+          (click)="selectProject(project.name)">
+          <span class="project-icon" [style.background]="project.color">{{ getInitial(project.name) }}</span>
+          <span class="project-name">{{ project.name }}</span>
+          <button class="project-delete-btn" title="删除项目" (click)="deleteProject($event, project.name)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      }
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>设置</span>
+      </div>
+      <div class="sidebar-footer-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>帮助</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Session List -->
+  <div class="agent-main">
+    <div class="main-header">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="search-input" type="text" placeholder="在 assistant 中搜索会话"
+          [value]="searchQuery()" (input)="onSearchInput($event)" />
+      </div>
+    </div>
+
+    <div class="session-content">
+      <button class="new-session-btn" (click)="createNewSession()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14m-7-7h14"/>
+        </svg>
+        <span>新建会话</span>
+      </button>
+      @if (todaySessions().length > 0) {
+        <div class="session-group">
+          <div class="group-header">
+            <span class="group-title">今天</span>
+          </div>
+          @for (session of todaySessions(); track session.sessionId) {
+            <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
+              (click)="loadSession(session.sessionId)">
+              <span class="session-icon" [style.background]="getProjectColor(session.cwd)">
+                {{ getInitial(session.cwd) }}
+              </span>
+              <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (yesterdaySessions().length > 0) {
+        <div class="session-group">
+          <div class="group-header">
+            <span class="group-title">昨天</span>
+          </div>
+          @for (session of yesterdaySessions(); track session.sessionId) {
+            <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
+              (click)="loadSession(session.sessionId)">
+              <span class="session-icon" [style.background]="getProjectColor(session.cwd)">
+                {{ getInitial(session.cwd) }}
+              </span>
+              <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (olderSessions().length > 0) {
+        <div class="session-group">
+          <div class="group-header">
+            <span class="group-title">更早</span>
+          </div>
+          @for (session of olderSessions(); track session.sessionId) {
+            <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
+              (click)="loadSession(session.sessionId)">
+              <span class="session-icon" [style.background]="getProjectColor(session.cwd)">
+                {{ getInitial(session.cwd) }}
+              </span>
+              <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (filteredSessions().length === 0) {
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>暂无会话</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- File Picker Dialog -->
+<app-file-picker-dialog #filePicker (selected)="onFolderSelected($event)"></app-file-picker-dialog>

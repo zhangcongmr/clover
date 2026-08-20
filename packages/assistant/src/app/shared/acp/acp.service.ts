@@ -48,6 +48,11 @@ export interface AcpPlan {
   }>;
 }
 
+export interface ProjectInfo {
+  name: string;
+  path: string;
+}
+
 export interface AcpSessionState {
   sessionId: string | null;
   isConnected: boolean;
@@ -84,6 +89,10 @@ export class AcpService {
   // Session history
   readonly sessions = signal<SessionInfo[]>([]);
   readonly sessionsLoading = signal<boolean>(false);
+
+  // Projects
+  readonly projects = signal<ProjectInfo[]>([]);
+  readonly projectsLoading = signal<boolean>(false);
 
   // Working directory hint from file picker
   readonly workingDirHint = signal<string>('');
@@ -147,6 +156,9 @@ export class AcpService {
 
   constructor() {
     this.setupSseCallbacks();
+    if (typeof window !== 'undefined') {
+      this.listProjects();
+    }
   }
 
   private setupSseCallbacks(): void {
@@ -405,6 +417,42 @@ export class AcpService {
       console.error('[ACP] Failed to list sessions:', error);
       this.sessionsLoading.set(false);
     }
+  }
+
+  // ============================================================================
+  // 项目管理
+  // ============================================================================
+
+  async listProjects(): Promise<void> {
+    this.projectsLoading.set(true);
+    try {
+      const result = await this.sseService.listProjects();
+      this.projects.set(result?.projects ?? []);
+    } catch (error) {
+      console.error('[ACP] Failed to list projects:', error);
+    } finally {
+      this.projectsLoading.set(false);
+    }
+  }
+
+  async addProject(name: string, path: string): Promise<void> {
+    try {
+      await this.sseService.addProject(name, path);
+    } catch (error) {
+      console.error('[ACP] Failed to add project:', error);
+      throw error;
+    }
+    await this.listProjects();
+  }
+
+  async deleteProject(name: string): Promise<void> {
+    try {
+      await this.sseService.deleteProject(name);
+    } catch (error) {
+      console.error('[ACP] Failed to delete project:', error);
+      throw error;
+    }
+    await this.listProjects();
   }
 
   async loadSession(sessionId: string, cwd?: string): Promise<void> {

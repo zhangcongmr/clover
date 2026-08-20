@@ -5,17 +5,44 @@ import { AcpSessionManager } from '../acp/session-manager.js';
 import { SseManager } from '../acp/sse-manager.js';
 import { RedisClient } from '../redis/client.js';
 import type { TokenManager } from '../agent/auth.js';
+import type { FileService } from '../agent/file-service.js';
 import { createRequireAuth } from './middleware.js';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+
+const PROJECTS_DIR = join(homedir(), '.clover');
+const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
+
+interface Project {
+  name: string;
+  path: string;
+}
+
+function readProjects(): Project[] {
+  if (!existsSync(PROJECTS_FILE)) return [];
+  try {
+    return JSON.parse(readFileSync(PROJECTS_FILE, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function writeProjects(projects: Project[]): void {
+  mkdirSync(PROJECTS_DIR, { recursive: true });
+  writeFileSync(PROJECTS_FILE, JSON.stringify(projects, null, 2));
+}
 
 export interface AcpRouteOptions {
   tokenManager: TokenManager;
   sessionManager: AcpSessionManager;
   sseManager: SseManager;
   redis: RedisClient;
+  fileService: FileService;
 }
 
 export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
-  const { tokenManager, sessionManager, sseManager, redis } = options;
+  const { tokenManager, sessionManager, sseManager, redis, fileService } = options;
   const requireAuth = createRequireAuth(tokenManager);
 
   // Parse JSON bodies for ACP routes. Generous enough for base64 media
@@ -452,6 +479,81 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       mode: redis.isMemoryMode() ? 'memory' : 'redis',
       isMemoryMode: redis.isMemoryMode(),
     });
+  });
+
+  // ============================================================================
+  // 项目管理端点（免认证，使用 /api/projects 路径）
+  // ============================================================================
+
+  app.use('/api/projects', express.json());
+
+  /**
+   * POST /api/projects
+   * 列出所有项目
+   */
+  app.post('/api/projects', async (_req: Request, res: Response) => {
+    try {
+      const projects = readProjects();
+      res.json({ success: true, projects });
+    } catch (error) {
+      console.error('[ACP Routes] List projects error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/projects/add
+   * 新增项目
+   */
+  app.post('/api/projects/add', async (req: Request, res: Response) => {
+    const { name, path: projectPath } = req.body;
+
+    if (!name || !projectPath) {
+      res.status(400).json({ error: 'name and path are required' });
+      return;
+    }
+
+    if (!existsSync(projectPath)) {
+      res.status(400).json({ error: 'Directory does not exist' });
+      return;
+    }
+
+    try {
+      const projects = readProjects();
+      if (projects.some(p => p.name === name)) {
+        res.status(409).json({ error: 'Project already exists' });
+        return;
+      }
+      projects.push({ name, path: projectPath });
+      writeProjects(projects);
+      res.json({ success: true, projects });
+    } catch (error) {
+      console.error('[ACP Routes] Add project error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/projects/delete
+   * 删除项目
+   */
+  app.post('/api/projects/delete', async (req: Request, res: Response) => {
+    const { name } = req.body;
+
+    if (!name) {
+      res.status(400).json({ error: 'name is required' });
+      return;
+    }
+
+    try {
+      let projects = readProjects();
+      projects = projects.filter(p => p.name !== name);
+      writeProjects(projects);
+      res.json({ success: true, projects });
+    } catch (error) {
+      console.error('[ACP Routes] Delete project error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
   });
 }
 
