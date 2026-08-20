@@ -131,6 +131,12 @@
             </div>
           }
         </div>
+        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent"
+          (click)="toggleAgentPanel()">
+          <svg  class="icon" width="24" height="24">
+            <use href="#icon-app"></use>
+          </svg>
+        </div>
         <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleAstContentPanel()">
           <svg class="icon" width="26" height="24">
             <use href="#icon-editor"></use>
@@ -160,11 +166,6 @@
           <svg  class="icon" width="25" height="25" viewBox="0 0 24 24">
             <!--generate surface path icon-->
               <use href="#icon-preview"></use>
-          </svg>
-        </div>
-        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent" (click)="toggleAgentPanel()">
-          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
         </div>
         <!-- <div data-svg-wrapper="" data-layer="clean-up" class="btn-svg CleanUp" title="Clean Up" (click)="cleanUp()">
