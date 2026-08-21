@@ -455,4 +455,47 @@ export class AcpSseService {
   async deleteProject(name: string): Promise<any> {
     return this.postNoAuth('/api/projects/delete', { name });
   }
+
+  /**
+   * 保存会话到项目
+   */
+  async saveSessionToProject(projectPath: string, session: {
+    sessionId: string;
+    agentId: string;
+    title?: string;
+    updatedAt?: string;
+  }): Promise<any> {
+    return this.postNoAuth('/api/projects/save-session', { projectPath, session });
+  }
+
+  /**
+   * 从项目中删除会话
+   */
+  async deleteSessionFromProject(projectPath: string, sessionId: string): Promise<any> {
+    return this.postNoAuth('/api/projects/delete-session', { projectPath, sessionId });
+  }
+
+  /**
+   * 获取选中的项目
+   */
+  async getSelectedProject(): Promise<string | null> {
+    try {
+      const base = this.localAgentService.getBaseUrl();
+      const response = await fetch(`${base}/api/projects/selected`, {
+        method: 'GET',
+      });
+      if (!response.ok) return null;
+      const result = await response.json();
+      return result.selectedProject || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 保存选中的项目
+   */
+  async saveSelectedProject(selectedProject: string | null): Promise<void> {
+    await this.postNoAuth('/api/projects/selected', { selectedProject });
+  }
 }

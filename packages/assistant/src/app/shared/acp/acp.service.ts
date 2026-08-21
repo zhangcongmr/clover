@@ -48,9 +48,17 @@ export interface AcpPlan {
   }>;
 }
 
+export interface ProjectSessionInfo {
+  sessionId: string;
+  agentId: string;
+  title?: string;
+  updatedAt?: string;
+}
+
 export interface ProjectInfo {
   name: string;
   path: string;
+  sessions: ProjectSessionInfo[];
 }
 
 export interface AcpSessionState {
@@ -419,6 +427,106 @@ export class AcpService {
     }
   }
 
+  async listSessionsFromAllAgents(cwd?: string): Promise<void> {
+    this.sessionsLoading.set(true);
+    
+    const originalAgent = this.selectedAgent();
+    const originalSessionId = this.sessionState().sessionId;
+    const originalWrapperAgentId = this.wrapperAgentId;
+    const allSessions: SessionInfo[] = [];
+    
+    try {
+      for (const agent of AVAILABLE_AGENTS) {
+        try {
+          this.selectedAgent.set(agent);
+          
+          if (this.sessionState().sessionId) {
+            this.disconnect();
+          }
+          
+          const wrapperSessionId = await this.sseService.createSession({
+            cwd: cwd || this.workingDirHint() || undefined,
+            agentCommand: agent.command,
+            agentArgs: agent.args,
+            agentEnv: agent.env,
+          });
+          
+          this.sessionState.update(s => ({ ...s, sessionId: wrapperSessionId }));
+          this.wrapperAgentId = agent.id;
+          
+          await this.sseService.connect(wrapperSessionId);
+          
+          const result = await this.sseService.listSessions(wrapperSessionId);
+          const sessions: SessionInfo[] = result?.sessions ?? [];
+          
+          const sessionsWithAgent = sessions.map((s: SessionInfo) => ({
+            ...s,
+            agentId: agent.id,
+          }));
+          allSessions.push(...sessionsWithAgent);
+          
+          this.disconnect();
+        } catch (error) {
+          console.warn(`[ACP] Failed to list sessions for agent ${agent.id}:`, (error as Error).message || error);
+          if (this.sessionState().sessionId) {
+            this.disconnect();
+          }
+        }
+      }
+      
+      this.sessions.set(allSessions);
+      
+      if (cwd) {
+        const existingProject = this.projects().find(p => p.path === cwd);
+        const existingSessionIds = new Set(
+          (existingProject?.sessions || []).map(s => `${s.sessionId}:${s.agentId}`)
+        );
+        
+        for (const session of allSessions) {
+          const key = `${session.sessionId}:${(session as any).agentId}`;
+          if (existingSessionIds.has(key)) {
+            continue;
+          }
+          
+          try {
+            await this.sseService.saveSessionToProject(cwd, {
+              sessionId: session.sessionId,
+              agentId: (session as any).agentId,
+              title: session.title || `Session ${session.sessionId.substring(0, 8)}`,
+              updatedAt: session.updatedAt || new Date().toISOString(),
+            });
+            existingSessionIds.add(key);
+          } catch (error) {
+            console.error('[ACP] Failed to persist session:', session.sessionId, error);
+          }
+        }
+        await this.listProjects();
+      }
+      
+      if (originalAgent) {
+        this.selectedAgent.set(originalAgent);
+      }
+      
+      if (originalSessionId && originalWrapperAgentId) {
+        try {
+          const wrapperSessionId = await this.sseService.createSession({
+            cwd: cwd || this.workingDirHint() || undefined,
+            agentCommand: originalAgent?.command,
+            agentArgs: originalAgent?.args,
+            agentEnv: originalAgent?.env,
+          });
+          this.sessionState.update(s => ({ ...s, sessionId: wrapperSessionId }));
+          this.wrapperAgentId = originalWrapperAgentId;
+          await this.sseService.connect(wrapperSessionId);
+        } catch (error) {
+          console.error('[ACP] Failed to restore original agent session:', error);
+        }
+      }
+    } finally {
+      this.sessionsLoading.set(false);
+    }
+  }
+
   // ============================================================================
   // 项目管理
   // ============================================================================
@@ -455,7 +563,56 @@ export class AcpService {
     await this.listProjects();
   }
 
-  async loadSession(sessionId: string, cwd?: string): Promise<void> {
+  async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<void> {
+    try {
+      await this.sseService.saveSessionToProject(projectPath, session);
+      await this.listProjects();
+    } catch (error) {
+      console.error('[ACP] Failed to save session to project:', error);
+    }
+  }
+
+  async deleteSessionFromProject(projectPath: string, sessionId: string): Promise<void> {
+    try {
+      await this.sseService.deleteSessionFromProject(projectPath, sessionId);
+      await this.listProjects();
+    } catch (error) {
+      console.error('[ACP] Failed to delete session from project:', error);
+    }
+  }
+
+  async getSelectedProject(): Promise<string | null> {
+    return this.sseService.getSelectedProject();
+  }
+
+  async saveSelectedProject(name: string | null): Promise<void> {
+    await this.sseService.saveSelectedProject(name);
+  }
+
+  async switchAgent(agentId: string): Promise<void> {
+    const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
+    if (!agent) {
+      throw new Error(`Agent ${agentId} not found`);
+    }
+
+    if (this.wrapperAgentId === agentId && this.sessionState().isConnected) {
+      return;
+    }
+
+    if (this.sessionState().sessionId) {
+      this.disconnect();
+    }
+
+    this.selectedAgent.set(agent);
+    await this.createSession(this.workingDirHint() || undefined);
+  }
+
+  async loadSession(sessionId: string, cwd?: string, agentId?: string): Promise<void> {
+    // Auto-switch agent if needed
+    if (agentId && agentId !== this.wrapperAgentId) {
+      await this.switchAgent(agentId);
+    }
+
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
@@ -467,7 +624,7 @@ export class AcpService {
     if (!currentSessionId) {
       const agent = this.selectedAgent();
       currentSessionId = await this.sseService.createSession({
-        cwd: this.workingDirHint() || undefined,
+        cwd: cwd || this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
         agentEnv: agent?.env,
@@ -493,7 +650,12 @@ export class AcpService {
     }
   }
 
-  async resumeSession(sessionId: string, cwd?: string, replayFrom?: { type: string }): Promise<void> {
+  async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }): Promise<void> {
+    // Auto-switch agent if needed
+    if (agentId && agentId !== this.wrapperAgentId) {
+      await this.switchAgent(agentId);
+    }
+
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
@@ -505,7 +667,7 @@ export class AcpService {
     if (!currentSessionId) {
       const agent = this.selectedAgent();
       currentSessionId = await this.sseService.createSession({
-        cwd: this.workingDirHint() || undefined,
+        cwd: cwd || this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
         agentEnv: agent?.env,

@@ -1094,8 +1094,11 @@ export class AcpChatInputComponent {
       if (isNewSession) {
         const sessionId = this.acpService.sessionState().sessionId;
         if (sessionId) {
+          const cwd = this.acpService.workingDirHint() || '';
+          const agentId = this.acpService.selectedAgent()?.id || 'opencode';
+          
           const newSession: SessionInfo = {
-            cwd: this.acpService.workingDirHint() || '',
+            cwd,
             sessionId,
             title: this.acpService.sessionState().title,
             updatedAt: new Date().toISOString(),
@@ -1104,6 +1107,16 @@ export class AcpChatInputComponent {
             newSession,
             ...list.filter(s => s.sessionId !== sessionId),
           ]);
+          
+          const project = this.acpService.projects().find(p => p.path === cwd);
+          if (project) {
+            await this.acpService.saveSessionToProject(cwd, {
+              sessionId,
+              agentId,
+              title: this.acpService.sessionState().title || 'New session',
+              updatedAt: new Date().toISOString(),
+            });
+          }
         }
       }
     } catch (error) {

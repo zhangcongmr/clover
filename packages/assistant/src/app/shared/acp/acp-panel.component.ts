@@ -1,7 +1,6 @@
 import { Component, computed, ElementRef, inject, input, OnInit, OnDestroy, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService } from './acp.service';
-import { AcpSessionManagerComponent } from './acp-session-manager.component';
 import { AcpChatComponent } from './acp-chat.component';
 import { AcpChatInputComponent } from './acp-chat-input.component';
 import { AcpPermissionDialogComponent } from './acp-permission-dialog.component';
@@ -12,7 +11,6 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
   standalone: true,
   imports: [
     CommonModule,
-    AcpSessionManagerComponent,
     AcpChatComponent,
     AcpChatInputComponent,
     AcpPermissionDialogComponent
@@ -55,11 +53,6 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .acp-panel-container.is-wide {
       width: 70%;
-    }
-
-    .acp-panel-container app-acp-session-manager {
-      flex: 0 0 30%;
-      min-width: 0;
     }
 
     .acp-panel-container .acp-chat-container {
