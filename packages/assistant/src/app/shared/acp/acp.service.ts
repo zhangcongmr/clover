@@ -429,60 +429,20 @@ export class AcpService {
 
   async listSessionsFromAllAgents(cwd?: string): Promise<void> {
     this.sessionsLoading.set(true);
-    
-    const originalAgent = this.selectedAgent();
-    const originalSessionId = this.sessionState().sessionId;
-    const originalWrapperAgentId = this.wrapperAgentId;
-    const allSessions: SessionInfo[] = [];
-    
+
     try {
-      for (const agent of AVAILABLE_AGENTS) {
-        try {
-          this.selectedAgent.set(agent);
-          
-          if (this.sessionState().sessionId) {
-            this.disconnect();
-          }
-          
-          const targetCwd = cwd || this.workingDirHint() || undefined;
-          const wrapperSessionId = await this.sseService.createSession({
-            cwd: targetCwd,
-            agentCommand: agent.command,
-            agentArgs: agent.args,
-            agentEnv: agent.env,
-          });
-          
-          this.sessionState.update(s => ({ ...s, sessionId: wrapperSessionId }));
-          this.wrapperAgentId = agent.id;
-          
-          await this.sseService.connect(wrapperSessionId);
-          
-          const result = await this.sseService.listSessions(wrapperSessionId, targetCwd);
-          const sessions: SessionInfo[] = result?.sessions ?? [];
-          
-          const normalizePath = (p: string) => p.replace(/[\\/]+$/, '').toLowerCase();
-          const normalizedTarget = targetCwd ? normalizePath(targetCwd) : '';
-          const filteredSessions = targetCwd
-            ? sessions.filter(s => !s.cwd || normalizePath(s.cwd) === normalizedTarget)
-            : sessions;
-          
-          const sessionsWithAgent = filteredSessions.map((s: SessionInfo) => ({
-            ...s,
-            agentId: agent.id,
-          }));
-          allSessions.push(...sessionsWithAgent);
-          
-          this.disconnect();
-        } catch (error) {
-          console.warn(`[ACP] Failed to list sessions for agent ${agent.id}:`, (error as Error).message || error);
-          if (this.sessionState().sessionId) {
-            this.disconnect();
-          }
-        }
+      const targetCwd = cwd || this.workingDirHint() || undefined;
+      if (!targetCwd) {
+        this.sessions.set([]);
+        return;
       }
-      
+
+      // 聚合一次调用：服务端逐个 agent create/connect/list/清理
+      const result = await this.sseService.listAllSessions(targetCwd, AVAILABLE_AGENTS);
+      const allSessions: SessionInfo[] = result?.sessions ?? [];
+
       this.sessions.set(allSessions);
-      
+
       if (cwd) {
         const existingProject = this.projects().find(p => p.path === cwd);
         const existingSessionIds = new Set(
@@ -509,26 +469,8 @@ export class AcpService {
         }
         await this.listProjects();
       }
-      
-      if (originalAgent) {
-        this.selectedAgent.set(originalAgent);
-      }
-      
-      if (originalSessionId && originalWrapperAgentId) {
-        try {
-          const wrapperSessionId = await this.sseService.createSession({
-            cwd: cwd || this.workingDirHint() || undefined,
-            agentCommand: originalAgent?.command,
-            agentArgs: originalAgent?.args,
-            agentEnv: originalAgent?.env,
-          });
-          this.sessionState.update(s => ({ ...s, sessionId: wrapperSessionId }));
-          this.wrapperAgentId = originalWrapperAgentId;
-          await this.sseService.connect(wrapperSessionId);
-        } catch (error) {
-          console.error('[ACP] Failed to restore original agent session:', error);
-        }
-      }
+    } catch (error) {
+      console.warn('[ACP] Failed to list sessions from all agents:', (error as Error).message || error);
     } finally {
       this.sessionsLoading.set(false);
     }

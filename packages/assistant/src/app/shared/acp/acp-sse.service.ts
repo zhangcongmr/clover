@@ -374,6 +374,13 @@ export class AcpSseService {
   }
 
   /**
+   * 聚合列出所有 agent 的会话（服务端逐个 agent create/connect/list/清理）
+   */
+  async listAllSessions(cwd: string, agents: Array<{ id: string; command: string; args?: string[]; env?: Record<string, string> }>): Promise<any> {
+    return this.post('/api/acp/list-all-sessions', { cwd, agents });
+  }
+
+  /**
    * 加载会话（同步返回结果）
    */
   async loadSession(sessionId: string, loadSessionId: string, cwd?: string): Promise<any> {
