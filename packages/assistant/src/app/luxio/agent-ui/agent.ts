@@ -34,6 +34,13 @@ export class AgentComponent {
   acpPanelMaximized = signal<boolean>(false);
   acpPanelDockPosition = signal<'left' | 'right'>('right');
 
+  /** Session currently being loaded/resumed (spinner on item, guards double-click). */
+  sessionLoadingId = signal<string | null>(null);
+  /** Whether the ACP panel is waiting for a session load/resume to complete. */
+  panelLoading = signal<boolean>(false);
+  /** Load/resume failure message shown inside the panel. */
+  panelError = signal<string | null>(null);
+
   protected projects = computed(() => {
     return this.acpService.projects().map((p, i) => ({
       ...p,
@@ -209,17 +216,45 @@ export class AgentComponent {
   }
 
   async loadSession(sessionId: string): Promise<void> {
+    if (this.sessionLoadingId()) return;
+
     const { cwd, agentId } = this.findSessionInfo(sessionId);
-    await this.acpService.loadSession(sessionId, cwd, agentId);
-    await this.ensureSessionInProject(sessionId);
+    this.sessionLoadingId.set(sessionId);
+    this.panelError.set(null);
     this.showAcpPanel.set(true);
+    this.panelLoading.set(true);
+
+    try {
+      await this.acpService.loadSession(sessionId, cwd, agentId);
+      await this.ensureSessionInProject(sessionId);
+    } catch (error: any) {
+      console.error('[Agent] Failed to load session:', error);
+      this.panelError.set(error?.message || 'Failed to load session');
+    } finally {
+      this.panelLoading.set(false);
+      this.sessionLoadingId.set(null);
+    }
   }
 
   async resumeSession(sessionId: string): Promise<void> {
+    if (this.sessionLoadingId()) return;
+
     const { cwd, agentId } = this.findSessionInfo(sessionId);
-    await this.acpService.resumeSession(sessionId, cwd, agentId);
-    await this.ensureSessionInProject(sessionId);
+    this.sessionLoadingId.set(sessionId);
+    this.panelError.set(null);
     this.showAcpPanel.set(true);
+    this.panelLoading.set(true);
+
+    try {
+      await this.acpService.resumeSession(sessionId, cwd, agentId);
+      await this.ensureSessionInProject(sessionId);
+    } catch (error: any) {
+      console.error('[Agent] Failed to resume session:', error);
+      this.panelError.set(error?.message || 'Failed to resume session');
+    } finally {
+      this.panelLoading.set(false);
+      this.sessionLoadingId.set(null);
+    }
   }
 
   async deleteSession(event: MouseEvent, sessionId: string): Promise<void> {
