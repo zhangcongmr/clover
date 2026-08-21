@@ -131,6 +131,7 @@ export class AgentComponent {
   protected activeSessionId = computed(() => this.acpService.sessionState().sessionId);
   
   private isLoadingSessions = false;
+  private syncedProjectPath: string | null = null;
   private initialized = false;
 
   constructor() {
@@ -146,7 +147,7 @@ export class AgentComponent {
       const project = this.selectedProject();
       if (project && !this.isLoadingSessions) {
         const projectInfo = this.acpService.projects().find(p => p.name === project);
-        if (projectInfo) {
+        if (projectInfo && projectInfo.path !== this.syncedProjectPath) {
           this.loadSessionsForProject(projectInfo.path);
         }
       }
@@ -184,6 +185,7 @@ export class AgentComponent {
   selectProject(name: string): void {
     if (this.selectedProject() === name) {
       this.selectedProject.set(null);
+      this.syncedProjectPath = null;
       this.acpService.saveSelectedProject(null);
     } else {
       this.selectedProject.set(name);
@@ -198,6 +200,7 @@ export class AgentComponent {
     }
     
     this.isLoadingSessions = true;
+    this.syncedProjectPath = cwd;
     try {
       await this.acpService.listSessionsFromAllAgents(cwd);
     } finally {

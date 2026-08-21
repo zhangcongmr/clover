@@ -287,6 +287,66 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   });
 
   /**
+   * POST /api/acp/list-all-sessions
+   * 聚合列出所有 agent 的会话（每个 agent 独立 create → connect → list → 清理）
+   */
+  app.post('/api/acp/list-all-sessions', async (req: Request, res: Response) => {
+    const { cwd, agents } = req.body;
+
+    if (!cwd || !String(cwd).trim()) {
+      res.status(400).json({ error: 'cwd (working directory) is required' });
+      return;
+    }
+
+    if (!Array.isArray(agents) || agents.length === 0) {
+      res.status(400).json({ error: 'agents is required' });
+      return;
+    }
+
+    const workingDir = String(cwd).trim();
+    const allSessions: any[] = [];
+    const failures: { agentId: string; error: string }[] = [];
+
+    for (const agent of agents) {
+      if (!agent || typeof agent.id !== 'string' || typeof agent.command !== 'string') {
+        continue;
+      }
+
+      let sessionId: string | null = null;
+      try {
+        sessionId = await sessionManager.createSession({
+          cwd: workingDir,
+          agentCommand: agent.command,
+          agentArgs: agent.args,
+          agentEnv: agent.env,
+        });
+
+        await sessionManager.connectSession(sessionId);
+
+        const result = await sessionManager.listAcpSessions(sessionId, workingDir);
+        const sessions: any[] = result?.sessions ?? [];
+
+        for (const s of sessions) {
+          allSessions.push({ ...s, agentId: agent.id });
+        }
+      } catch (error) {
+        console.warn(`[ACP Routes] Failed to list sessions for agent ${agent.id}:`, (error as Error).message || error);
+        failures.push({ agentId: agent.id, error: (error as Error).message || String(error) });
+      } finally {
+        if (sessionId) {
+          try {
+            await sessionManager.removeSession(sessionId);
+          } catch (cleanupError) {
+            console.warn(`[ACP Routes] Failed to clean up wrapper session for agent ${agent.id}:`, cleanupError);
+          }
+        }
+      }
+    }
+
+    res.json({ success: true, sessions: allSessions, failures });
+  });
+
+  /**
    * POST /api/acp/session/load
    * 加载会话（同步等待 agent 返回）
    */
