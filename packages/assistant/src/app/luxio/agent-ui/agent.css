@@ -377,6 +377,18 @@
   flex-direction: column;
   background-color: var(--vscode-editor-background);
   z-index: 100;
+  animation: acp-overlay-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes acp-overlay-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .acp-overlay-header {
@@ -411,6 +423,7 @@
 }
 
 .acp-overlay-content {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -421,6 +434,101 @@
   flex: 1;
   min-height: 0;
   margin: 0;
+}
+
+/* ===== In-panel session loading overlay ===== */
+.session-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background-color: var(--vscode-editor-background);
+}
+
+.session-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.25));
+  border-top-color: var(--vscode-textLink-foreground, #0078d4);
+  border-radius: 50%;
+  animation: session-spin 0.8s linear infinite;
+}
+
+.session-loading-text {
+  font-size: 13px;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+}
+
+.session-loading-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+  text-align: center;
+  color: var(--vscode-errorForeground, #d32f2f);
+  font-size: 13px;
+}
+
+.session-loading-error .back-btn {
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+}
+
+@keyframes session-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Session item loading state ===== */
+.session-spinner {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  border: 2px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.25));
+  border-top-color: var(--vscode-textLink-foreground, #0078d4);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.session-spinner.visible {
+  opacity: 1;
+  transform: scale(1);
+  animation: session-spin 0.8s linear infinite;
+}
+
+.session-item.disabled {
+  cursor: default;
+}
+
+.session-item.loading {
+  background: var(--vscode-list-activeSelectionBackground, rgba(0, 120, 212, 0.15));
+}
+
+.session-item.loading .session-title {
+  opacity: 0.6;
+}
+
+.session-item.loading .session-actions {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.session-action-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
 }
 
 /* ===== Session Action Buttons ===== */
