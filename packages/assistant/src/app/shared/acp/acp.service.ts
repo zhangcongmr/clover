@@ -417,7 +417,7 @@ export class AcpService {
       }
 
       // 同步等待 agent 返回会话列表
-      const result = await this.sseService.listSessions(sessionId, cursor);
+      const result = await this.sseService.listSessions(sessionId, cwd, cursor);
       const sessions = result?.sessions ?? [];
       this.sessions.set(sessions);
       this.sessionsLoading.set(false);
@@ -444,8 +444,9 @@ export class AcpService {
             this.disconnect();
           }
           
+          const targetCwd = cwd || this.workingDirHint() || undefined;
           const wrapperSessionId = await this.sseService.createSession({
-            cwd: cwd || this.workingDirHint() || undefined,
+            cwd: targetCwd,
             agentCommand: agent.command,
             agentArgs: agent.args,
             agentEnv: agent.env,
@@ -456,10 +457,16 @@ export class AcpService {
           
           await this.sseService.connect(wrapperSessionId);
           
-          const result = await this.sseService.listSessions(wrapperSessionId);
+          const result = await this.sseService.listSessions(wrapperSessionId, targetCwd);
           const sessions: SessionInfo[] = result?.sessions ?? [];
           
-          const sessionsWithAgent = sessions.map((s: SessionInfo) => ({
+          const normalizePath = (p: string) => p.replace(/[\\/]+$/, '').toLowerCase();
+          const normalizedTarget = targetCwd ? normalizePath(targetCwd) : '';
+          const filteredSessions = targetCwd
+            ? sessions.filter(s => !s.cwd || normalizePath(s.cwd) === normalizedTarget)
+            : sessions;
+          
+          const sessionsWithAgent = filteredSessions.map((s: SessionInfo) => ({
             ...s,
             agentId: agent.id,
           }));
@@ -589,7 +596,7 @@ export class AcpService {
     await this.sseService.saveSelectedProject(name);
   }
 
-  async switchAgent(agentId: string): Promise<void> {
+  async switchAgent(agentId: string, cwd?: string): Promise<void> {
     const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
     if (!agent) {
       throw new Error(`Agent ${agentId} not found`);
@@ -604,13 +611,13 @@ export class AcpService {
     }
 
     this.selectedAgent.set(agent);
-    await this.createSession(this.workingDirHint() || undefined);
+    await this.createSession(cwd || this.workingDirHint() || undefined);
   }
 
   async loadSession(sessionId: string, cwd?: string, agentId?: string): Promise<void> {
     // Auto-switch agent if needed
     if (agentId && agentId !== this.wrapperAgentId) {
-      await this.switchAgent(agentId);
+      await this.switchAgent(agentId, cwd);
     }
 
     this.messages.set([]);
@@ -653,7 +660,7 @@ export class AcpService {
   async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }): Promise<void> {
     // Auto-switch agent if needed
     if (agentId && agentId !== this.wrapperAgentId) {
-      await this.switchAgent(agentId);
+      await this.switchAgent(agentId, cwd);
     }
 
     this.messages.set([]);
