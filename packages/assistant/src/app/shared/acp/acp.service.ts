@@ -109,6 +109,9 @@ export class AcpService {
   readonly showSessionHistory = signal<boolean>(true);
   readonly hasOpenedSession = signal<boolean>(false);
 
+  // Whether the panel was opened via load/resume (read-only agent) vs a new session
+  readonly isLoadedSession = signal<boolean>(false);
+
   // Model
   readonly currentModelId = signal<string | null>(null);
 
