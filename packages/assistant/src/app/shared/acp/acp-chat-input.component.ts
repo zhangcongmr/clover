@@ -131,8 +131,35 @@ export interface AttachmentEntry {
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
             </button>
-            <div class="agent-selector">
-              <button class="toolbar-tag-btn" (click)="toggleAgentDropdown($event)" title="Agent">
+            @if (!acpService.isLoadedSession()) {
+              <div class="agent-selector">
+                <button class="toolbar-tag-btn" (click)="toggleAgentDropdown($event)" title="Agent">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="4"/>
+                    <line x1="21.17" y1="8" x2="12" y2="8"/>
+                    <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
+                    <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+                  </svg>
+                  <span>{{ acpService.selectedAgent()?.name || 'Agent' }}</span>
+                </button>
+                @if (showAgentDropdown()) {
+                  <div class="agent-dropdown">
+                    @for (agent of agents; track agent.id; let i = $index) {
+                      <button class="agent-option" (mousedown)="selectAgent(agent)"
+                        (mouseenter)="agentSelectedIndex.set(i)"
+                        [class.active]="i === agentSelectedIndex()">
+                        <span class="agent-name">{{ agent.name }}</span>
+                        @if (agent.description) {
+                          <span class="agent-desc">{{ agent.description }}</span>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <span class="agent-label" title="Agent">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <circle cx="12" cy="12" r="4"/>
@@ -141,22 +168,8 @@ export interface AttachmentEntry {
                   <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
                 </svg>
                 <span>{{ acpService.selectedAgent()?.name || 'Agent' }}</span>
-              </button>
-              @if (showAgentDropdown()) {
-                <div class="agent-dropdown">
-                  @for (agent of agents; track agent.id; let i = $index) {
-                    <button class="agent-option" (mousedown)="selectAgent(agent)"
-                      (mouseenter)="agentSelectedIndex.set(i)"
-                      [class.active]="i === agentSelectedIndex()">
-                      <span class="agent-name">{{ agent.name }}</span>
-                      @if (agent.description) {
-                        <span class="agent-desc">{{ agent.description }}</span>
-                      }
-                    </button>
-                  }
-                </div>
-              }
-            </div>
+              </span>
+            }
             @if (modeConfig()) {
             <div class="mode-selector">
               <button class="toolbar-tag-btn" (click)="toggleModeDropdown($event)" [title]="modeConfig()!.name">
@@ -527,6 +540,18 @@ export interface AttachmentEntry {
     }
     .agent-selector {
       position: relative;
+    }
+    .agent-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 26px;
+      padding: 0 8px;
+      color: var(--vscode-foreground);
+      font-size: 12px;
+      opacity: 0.55;
+      user-select: none;
+      cursor: default;
     }
     .agent-dropdown {
       position: absolute;

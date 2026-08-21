@@ -221,6 +221,7 @@ export class AgentComponent {
     const { cwd, agentId } = this.findSessionInfo(sessionId);
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
+    this.acpService.isLoadedSession.set(true);
     this.showAcpPanel.set(true);
     this.panelLoading.set(true);
 
@@ -242,6 +243,7 @@ export class AgentComponent {
     const { cwd, agentId } = this.findSessionInfo(sessionId);
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
+    this.acpService.isLoadedSession.set(true);
     this.showAcpPanel.set(true);
     this.panelLoading.set(true);
 
@@ -360,6 +362,7 @@ export class AgentComponent {
   toggleAcpPanel(): void {
     this.showAcpPanel.update(v => !v);
     if (this.showAcpPanel()) {
+      this.acpService.isLoadedSession.set(false);
       this.createNewSession();
     }
   }
