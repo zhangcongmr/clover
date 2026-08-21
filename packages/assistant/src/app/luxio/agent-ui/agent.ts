@@ -63,7 +63,7 @@ export class AgentComponent {
       const mergedMap = new Map<string, SessionWithAgent>();
       
       for (const s of agentSessions) {
-        mergedMap.set(s.sessionId, { ...s, agentId: this.acpService.selectedAgent()?.id });
+        mergedMap.set(s.sessionId, { ...s, agentId: (s as any).agentId || this.acpService.selectedAgent()?.id });
       }
       
       for (const s of persistedSessions) {
@@ -84,7 +84,7 @@ export class AgentComponent {
     } else {
       sessions = this.acpService.sessions().map(s => ({
         ...s,
-        agentId: this.acpService.selectedAgent()?.id,
+        agentId: (s as any).agentId || this.acpService.selectedAgent()?.id,
       }));
     }
     
@@ -209,12 +209,14 @@ export class AgentComponent {
     const { cwd, agentId } = this.findSessionInfo(sessionId);
     await this.acpService.loadSession(sessionId, cwd, agentId);
     await this.ensureSessionInProject(sessionId);
+    this.showAcpPanel.set(true);
   }
 
   async resumeSession(sessionId: string): Promise<void> {
     const { cwd, agentId } = this.findSessionInfo(sessionId);
     await this.acpService.resumeSession(sessionId, cwd, agentId);
     await this.ensureSessionInProject(sessionId);
+    this.showAcpPanel.set(true);
   }
 
   async deleteSession(event: MouseEvent, sessionId: string): Promise<void> {

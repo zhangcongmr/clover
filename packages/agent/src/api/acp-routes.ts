@@ -270,7 +270,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 列出会话（同步等待 agent 返回）
    */
   app.post('/api/acp/session/list', async (req: Request, res: Response) => {
-    const { sessionId, cursor } = req.body;
+    const { sessionId, cwd, cursor } = req.body;
 
     if (!sessionId) {
       res.status(400).json({ error: 'sessionId is required' });
@@ -278,7 +278,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
-      const result = await sessionManager.listAcpSessions(sessionId, undefined, cursor);
+      const result = await sessionManager.listAcpSessions(sessionId, cwd, cursor);
       res.json({ success: true, ...result });
     } catch (error) {
       console.error('[ACP Routes] List sessions error:', error);

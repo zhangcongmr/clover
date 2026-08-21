@@ -369,8 +369,8 @@ export class AcpSseService {
   /**
    * 列出会话（同步返回结果）
    */
-  async listSessions(sessionId: string, cursor?: string): Promise<any> {
-    return this.post('/api/acp/session/list', { sessionId, cursor });
+  async listSessions(sessionId: string, cwd?: string, cursor?: string): Promise<any> {
+    return this.post('/api/acp/session/list', { sessionId, cwd, cursor });
   }
 
   /**
