@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, computed, inject, input, model, output, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnChanges, OnDestroy, OnInit, SimpleChanges, computed, inject, input, model, output, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -63,7 +63,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   readonly filePicker = viewChild(FilePickerDialogComponent);
   public myConfigService = inject(MyConfigService)
   public coreService = inject(CoreService);
-  private notificationService = inject(NotificationService);
+  public notificationService = inject(NotificationService);
   private localAgentService = inject(LocalAgentService);
   private settingsService = inject(SettingsService);
   private acpService = inject(AcpService);
@@ -92,8 +92,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   selectedParentNodeId: string | null = null;
 
   nodeDef: NodeDef | null = null;
-  /** event emitted when selected node's file type changes */
-  @Output() fileTypeChange = new EventEmitter<string>();
+  /** file type of the currently selected node, displayed in the overview strip */
+  readonly fileType = signal<string>('');
+  /** emitted when the user clicks an indicator (1 - notification, 2 - saving, 3 - progress) */
+  readonly indicatorDetail = output<number>();
   dataListChangeOutput = output<Array<AstTreeNode>>();
   disconnectTerminal = output<void>();
 
@@ -974,6 +976,11 @@ Always use the welcome_greeting tool.`;
     }
   }
 
+  // 显示上传进度详情
+  showUploadProgressDetails(): void {
+    this.coreService.showNotification(this.coreService.progressDetails(), 'info');
+  }
+
   async listClick(evt: any) {
     if (evt['nodeType'] != 'bookmark' && evt['nodeType'] != 'api'&& evt['nodeType'] != 'file') {
       return;
@@ -989,7 +996,7 @@ Always use the welcome_greeting tool.`;
     } else {
       type = item.nodeType || '';
     }
-    this.fileTypeChange.emit(type);
+    this.fileType.set(type);
 
     if (item.nodeType == 'file' && item.label.endsWith('.ospec')) {
       // parse spec file and display APIs in tree view under the spec file node

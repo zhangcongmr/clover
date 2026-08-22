@@ -65,9 +65,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   luxioAppTabId: any;
   textArr: Array<String> = []
 
-  // current selected file type (extension or nodeType)
-  fileType: string = '';
-
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
@@ -357,22 +354,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       this.resizeObserver.disconnect();
       this.resizeObserver = undefined;
     }
-  }
-
-  // 显示上传进度详情
-  showUploadProgressDetails(): void {
-    // 准备要显示的进度详情文本
-    let progressDetails = "";
-    if (this.coreService.uploadTasks().length > 0) {
-      progressDetails = this.coreService.uploadTasks().map(task => 
-        `${task.fileName}: ${Math.floor(task.progress() * 100)}% (${task.status})`
-      ).join('\n');
-    } else {
-      progressDetails = "No active uploads";
-    }
-
-    // 使用通知组件显示进度详情
-    this.coreService.showNotification(this.coreService.progressDetails(), 'info');
   }
 
   private saveThemeIcon(): void {

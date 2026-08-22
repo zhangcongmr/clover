@@ -1,5 +1,6 @@
 :host {
     display: flex;
+    flex-direction: column;
     position: relative;
     /* background-color: var(--vscode-editor-background); */
     background-color: var(--vscode-sideBar-background, var(--vscode-editorGroupHeader-tabsBackground, rgba(0, 0, 0, 0.05)));
@@ -322,4 +323,107 @@ textarea:focus {
 .ShareOnActions .btn.confirm {
     background: #1976d2;
     color: white;
+}
+
+/* Saving and Forking indicators */
+.saving-indicator, .forking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--vscode-foreground);
+  font-size: 0.9rem;
+  margin-right: 1rem;
+  overflow: hidden; /* Prevent overflow from animation */
+}
+
+.saving-indicator svg, .forking-indicator svg {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0; /* Prevent SVG from shrinking */
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ast-overview-longstrip {
+  height: 1.5rem;
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  display: inline-flex;
+  gap: 10px;
+  justify-content: flex-start;
+  outline-offset: -0.50px;
+  outline: none;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-top: none;
+}
+
+.ast-notification-cnr {
+  cursor: pointer;
+  align-items: center;
+  display: flex;
+}
+.ast-notification-cnr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+.ast-justfill-place {
+  flex: 1 1 0;
+  display: flex;
+}
+
+/* 上传进度条样式 */
+.upload-progress-container {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: var(--vscode-radius-sm, 10px);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.upload-progress-bar {
+  height: 100%;
+  width: 0;
+  transition: width var(--vscode-motion-duration, 0.3s) var(--vscode-motion-easing, ease), background var(--vscode-motion-duration, 0.3s) var(--vscode-motion-easing, ease);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-text {
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.progress-icon {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  font-size: 12px;
+  background: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
 }
