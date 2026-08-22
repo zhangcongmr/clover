@@ -3,17 +3,15 @@
   "commit": false,
   "fixed": [
     [
-      "@julyware/clover-agent",
-      "@julyware/clover-ui",
-      "@julyware/clover"
+      "@julyware/*"
     ]
   ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@julyware/common",
-    "@julyware/community-widget"
-  ]
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  }
 }
