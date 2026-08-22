@@ -187,9 +187,14 @@
       @if(astContentPanelOpen && agentPanelOpen) {
         <div style="position: absolute;width: 100%;height: 100%;">
           <div class="split-line-ew ast-split-handle-ew"
-            [style.left]="dockPosition === 'right' ? 'calc(5px + ' + leftPct + ' * (100% - 15px))' : 'calc((1 - ' + leftPct + ') * (100% - 15px) + 5px)'"
+            [style.left]="dockPosition === 'right' ? 'calc(100% - ' + agentPanelWidthPx() + 'px - 4px)' : agentPanelWidthPx() + 'px'"
             (mousedown)="dragStart($event, 'ew')"></div>
         </div>
+      }
+
+      <!-- Docked Agent panel -->
+      @if(agentPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
+        <div ast-agent [style.flex]="'none'" [style.width]="agentPanelWidthPx() + 'px'"></div>
       }
 
       <!-- Middle panel -->
@@ -223,11 +228,6 @@
             </div>
           }
         </div>
-      }
-
-      <!-- Docked Agent panel -->
-      @if(agentPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
-        <div ast-agent></div>
       }
     </div>
   </div>

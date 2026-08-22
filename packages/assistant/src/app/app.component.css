@@ -143,11 +143,12 @@
   flex: 1 1 0;
   height: 100%;
   overflow: hidden;
+  flex-direction: row-reverse;
   background-color: var(--vscode-sideBar-background, var(--vscode-editorGroupHeader-tabsBackground, rgba(0, 0, 0, 0.05)));
 }
 
 .ast-panel-container.dock-left {
-  flex-direction: row-reverse;
+  flex-direction: row;
 }
 
 .card-base {

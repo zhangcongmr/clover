@@ -54,6 +54,10 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     const raw = getComputedStyle(this.hostEl.nativeElement)
       .getPropertyValue('--left-side-area-width').trim();
     const leftArea = parseFloat(raw) || this.leftSideAreaWidth;
+    if (!this.astContentPanelOpen) {
+      this.agentPanelWidthPx.set(baseWidth - leftArea);
+      return;
+    }
     this.agentPanelWidthPx.set((1 - this.leftPct) * (baseWidth - leftArea - 15));
   }
   
@@ -1498,11 +1502,12 @@ For each fileIcons entry:
   }
 
   private getHorizontalPct(evt: MouseEvent): number {
-    const raw = (evt.clientX - this.leftSideAreaWidth) / (window.innerWidth - this.leftSideAreaWidth);
+    const baseWidth = this.hostEl.nativeElement.clientWidth;
+    const usable = baseWidth - this.leftSideAreaWidth - 15;
     if (this.dockPosition === 'left') {
-      return 1 - raw;
+      return 1 - (evt.clientX - this.leftSideAreaWidth) / usable;
     }
-    return raw;
+    return 1 - (baseWidth - evt.clientX - 4) / usable;
   }
 
   /**
