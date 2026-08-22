@@ -1,7 +1,7 @@
 {
   "name": "@julyware/signup",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "build:lib": "cross-env BUILD_MODE=lib vite build",

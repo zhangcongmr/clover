@@ -1,6 +1,6 @@
 {
   "name": "@julyware/clover-agent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local proxy agent for Clover - provides file system access, PTY terminal, and ACP server",
   "type": "module",
   "main": "./dist/index.cjs",
