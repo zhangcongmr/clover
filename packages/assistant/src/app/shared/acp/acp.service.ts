@@ -105,6 +105,9 @@ export class AcpService {
   // Working directory hint from file picker
   readonly workingDirHint = signal<string>('');
 
+  // Currently selected project path (synced from agent project selection)
+  readonly selectedProjectPath = signal<string | null>(null);
+
   // Session display state (persisted across panel show/hide)
   readonly showSessionHistory = signal<boolean>(true);
   readonly hasOpenedSession = signal<boolean>(false);
@@ -169,6 +172,10 @@ export class AcpService {
     this.setupSseCallbacks();
     if (typeof window !== 'undefined') {
       this.listProjects();
+      // Hydrate the persisted selected project path so live sync works on first open
+      this.getSelectedProject().then(p => {
+        if (p) this.selectedProjectPath.set(p);
+      });
     }
   }
 
@@ -367,6 +374,15 @@ export class AcpService {
     );
     const nonTextBlocks = content.filter(b => b.type !== 'text');
 
+    // 会话标题：用首条用户消息文本生成（ACP agent 不会主动下发 session_info_update 标题）
+    if (!this.sessionState().title && textBlocks.length > 0) {
+      const firstText = textBlocks[0].text!.trim().replace(/\s+/g, ' ');
+      this.sessionState.update(s => ({
+        ...s,
+        title: firstText.length > 50 ? firstText.slice(0, 50) + '…' : firstText,
+      }));
+    }
+
     // Add user message
     this.messages.update(msgs => [...msgs, {
       id: crypto.randomUUID(),
@@ -537,8 +553,9 @@ export class AcpService {
     return this.sseService.getSelectedProject();
   }
 
-  async saveSelectedProject(name: string | null): Promise<void> {
-    await this.sseService.saveSelectedProject(name);
+  async saveSelectedProject(selectedProject: string | null): Promise<void> {
+    this.selectedProjectPath.set(selectedProject);
+    await this.sseService.saveSelectedProject(selectedProject);
   }
 
   async switchAgent(agentId: string, cwd?: string): Promise<void> {
@@ -597,6 +614,12 @@ export class AcpService {
         isConnecting: false,
         configOptions: result?.configOptions ?? s.configOptions,
       }));
+
+      // 会话标题：从已加载的会话列表取回
+      const loaded = this.sessions().find(s => s.sessionId === sessionId);
+      if (loaded?.title) {
+        this.sessionState.update(s => ({ ...s, title: loaded.title }));
+      }
     } finally {
       this.isReplayingHistory = false;
     }
@@ -639,6 +662,12 @@ export class AcpService {
         isConnected: true,
         isConnecting: false,
       }));
+
+      // 会话标题：从已加载的会话列表取回
+      const resumed = this.sessions().find(s => s.sessionId === sessionId);
+      if (resumed?.title) {
+        this.sessionState.update(s => ({ ...s, title: resumed.title }));
+      }
     } finally {
       this.isReplayingHistory = false;
     }
