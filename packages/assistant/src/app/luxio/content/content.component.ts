@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnChanges, OnDestroy, OnInit, SimpleChanges, computed, inject, input, model, output, resource, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Injector, OnChanges, OnDestroy, OnInit, SimpleChanges, computed, effect, inject, input, model, output, resource, runInInjectionContext, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -68,8 +68,14 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private settingsService = inject(SettingsService);
   private acpService = inject(AcpService);
   private elementRef = inject(ElementRef);
+  private injector = inject(Injector);
 
   private static readonly SIDE_PANEL_HOVER_THRESHOLD = 50;
+
+  // 当前已加载的 agent 选中项目路径（普通字段，不进 effect 依赖，避免 dataList 触发重跑）
+  private currentProjectPath: string | null = null;
+  // 项目加载令牌，用于极速切换时以最新选中为准
+  private projectLoadToken = 0;
 
   // 本地项目检测
   isLocalProject = signal(false);
@@ -84,6 +90,9 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   serverList: Array<any> = [];
   dataList= signal<Array<AstTreeNode>>([]);
   /***aside */
+
+  // 加载 agent 选中项目期间为 true，用于抑制过渡阶段的空态显示
+  readonly agentProjectLoading = signal(false);
 
   // 添加位置选择器相关的属性
   showLocationSelector = signal<boolean>(false);
@@ -157,14 +166,18 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     },
   });
   // Create a computed signal based on the result of the resource's loader function.
-  showButtonPlaceholder = computed(() => {
+showButtonPlaceholder = computed(() => {
+    if (this.agentProjectLoading()) {
+      // 加载 agent 选中项目过渡期不显示空态
+      return false;
+    }
     if (this.userResource.hasValue() && this.userResource.status() === 'resolved') {
-      // `hasValue` serves 2 purposes:
-      // - It acts as type guard to strip `false` from the type
-      // - If protects against reading a throwing `value` when the resource is in error state
+      // `hasValue` 充当 2 层用途：
+      // - 从类型层面剥离 `false`
+      // - 保护读取抛错的 `value`（resource 处于 error 状态时）
       return this.userResource.value();
     }
-    // fallback in case the resource value is `false` or if the resource is in error state
+    // 兜底：resource 值为 `false` 或处于 error 状态
     return false;
   });
 
@@ -173,6 +186,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     if (doc == null || doc === undefined) {
       setTimeout(() => {
         this.dataList.set([]);
+        void this.loadInitialAgentProject();
+        this.setupProjectSyncEffect();
       }, 0); // simulate async loading delay
       return;
     }
@@ -215,6 +230,12 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     }
     if (Object.keys(docObj).length === 0) {
       this.dataList.set([]);
+    }
+
+    // doc 未恢复出树时，尝试加载 agent 选中项目；doc 驱动模式不创建联动 effect
+    if (this.dataList().length === 0) {
+      void this.loadInitialAgentProject();
+      this.setupProjectSyncEffect();
     }
 
     this.refreshLeftMoreBtns();
@@ -893,7 +914,7 @@ Always use the welcome_greeting tool.`;
   }
 
   // Open folder via Node.js API (SSR scan endpoint)
-  async openFolderViaNodeApi(path: string) {
+  async openFolderViaNodeApi(path: string, silent: boolean = false) {
     try {
       const data = await this.localAgentService.scanDir(path, 1, [
         'node_modules', '.git', 'dist', 'build', '__pycache__',
@@ -923,9 +944,55 @@ Always use the welcome_greeting tool.`;
       this.checkIsLocalProject();
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
     } catch (err) {
-      console.error('[Content] Failed to open folder via Node API:', err);
-      this.notificationService.showNotification('Failed to open folder', 'error');
+      if (silent) {
+        console.warn('[Content] Failed to open folder via Node API:', err);
+      } else {
+        console.error('[Content] Failed to open folder via Node API:', err);
+        this.notificationService.showNotification('Failed to open folder', 'error');
+      }
     }
+  }
+
+  // 加载 agent 选中的项目到 dataList（实时联动与初始加载共用；只依赖 selectedProjectPath）
+  private async loadAgentProject(path: string): Promise<void> {
+    if (!path || path === this.currentProjectPath) return;
+    const token = ++this.projectLoadToken;
+    this.currentProjectPath = path;
+    this.acpService.workingDirHint.set(path);
+    this.openedList.set([]); // 切换项目时清空已打开的文件 tab
+    this.agentProjectLoading.set(true);
+    try {
+      await this.openFolderViaNodeApi(path, true);
+      if (this.currentProjectPath !== path) {
+        // 极速切换时以最新选中为准，自愈重新加载
+        void this.loadAgentProject(this.currentProjectPath!);
+      }
+    } finally {
+      this.agentProjectLoading.set(false);
+    }
+  }
+
+  private async loadInitialAgentProject(): Promise<void> {
+    this.agentProjectLoading.set(true);
+    try {
+      const path = this.acpService.selectedProjectPath()
+        ?? await this.acpService.getSelectedProject();
+      if (path) await this.loadAgentProject(path);
+    } catch (err) {
+      console.warn('[Content] Failed to load selected project:', err);
+    } finally {
+      this.agentProjectLoading.set(false);
+    }
+  }
+
+  // 编辑器打开状态下，agent 切换选中项目时实时联动
+  private setupProjectSyncEffect(): void {
+    runInInjectionContext(this.injector, () => {
+      effect(() => {
+        const path = this.acpService.selectedProjectPath();
+        if (path) void this.loadAgentProject(path);
+      }, { allowSignalWrites: true });
+    });
   }
 
   // Hook: lazy-load children for local project folder nodes
