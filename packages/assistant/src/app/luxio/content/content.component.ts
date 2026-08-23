@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, Injector, OnChanges, OnDestroy, OnInit, SimpleChanges, computed, effect, inject, input, model, output, resource, runInInjectionContext, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnChanges, OnDestroy, OnInit, SimpleChanges, computed, effect, inject, input, output, resource, signal, viewChild } from '@angular/core';
 import { CoreService } from '../../core.service';
 import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
@@ -68,7 +68,13 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private settingsService = inject(SettingsService);
   private acpService = inject(AcpService);
   private elementRef = inject(ElementRef);
-  private injector = inject(Injector);
+
+
+  constructor() {
+    super();
+    // 在构造器注入上下文中创建联动 effect，确保其一定存在且能响应 selectedProjectPath 变化
+    this.setupProjectSyncEffect();
+  }
 
   private static readonly SIDE_PANEL_HOVER_THRESHOLD = 50;
 
@@ -187,7 +193,6 @@ showButtonPlaceholder = computed(() => {
       setTimeout(() => {
         this.dataList.set([]);
         void this.loadInitialAgentProject();
-        this.setupProjectSyncEffect();
       }, 0); // simulate async loading delay
       return;
     }
@@ -232,10 +237,9 @@ showButtonPlaceholder = computed(() => {
       this.dataList.set([]);
     }
 
-    // doc 未恢复出树时，尝试加载 agent 选中项目；doc 驱动模式不创建联动 effect
+    // doc 未恢复出树时，尝试加载 agent 选中项目；doc 驱动模式不联动
     if (this.dataList().length === 0) {
       void this.loadInitialAgentProject();
-      this.setupProjectSyncEffect();
     }
 
     this.refreshLeftMoreBtns();
@@ -914,7 +918,7 @@ Always use the welcome_greeting tool.`;
   }
 
   // Open folder via Node.js API (SSR scan endpoint)
-  async openFolderViaNodeApi(path: string, silent: boolean = false) {
+  async openFolderViaNodeApi(path: string, silent: boolean = false): Promise<boolean> {
     try {
       const data = await this.localAgentService.scanDir(path, 1, [
         'node_modules', '.git', 'dist', 'build', '__pycache__',
@@ -943,6 +947,7 @@ Always use the welcome_greeting tool.`;
       this.dataListChangeOutput.emit(this.dataList());
       this.checkIsLocalProject();
       try { await this.storeApi(); } catch (e) { console.warn('storeApi failed', e); }
+      return true;
     } catch (err) {
       if (silent) {
         console.warn('[Content] Failed to open folder via Node API:', err);
@@ -950,6 +955,7 @@ Always use the welcome_greeting tool.`;
         console.error('[Content] Failed to open folder via Node API:', err);
         this.notificationService.showNotification('Failed to open folder', 'error');
       }
+      return false;
     }
   }
 
@@ -962,7 +968,11 @@ Always use the welcome_greeting tool.`;
     this.openedList.set([]); // 切换项目时清空已打开的文件 tab
     this.agentProjectLoading.set(true);
     try {
-      await this.openFolderViaNodeApi(path, true);
+      const ok = await this.openFolderViaNodeApi(path, true);
+      if (!ok) {
+        // 扫描失败时复位，避免该路径被守卫拦截导致后续切换无法重载
+        this.currentProjectPath = null;
+      }
       if (this.currentProjectPath !== path) {
         // 极速切换时以最新选中为准，自愈重新加载
         void this.loadAgentProject(this.currentProjectPath!);
@@ -984,15 +994,46 @@ Always use the welcome_greeting tool.`;
       this.agentProjectLoading.set(false);
     }
   }
-
   // 编辑器打开状态下，agent 切换选中项目时实时联动
   private setupProjectSyncEffect(): void {
-    runInInjectionContext(this.injector, () => {
-      effect(() => {
-        const path = this.acpService.selectedProjectPath();
-        if (path) void this.loadAgentProject(path);
-      }, { allowSignalWrites: true });
-    });
+    let prevPath: string | null = null;
+    effect(() => {
+      const path = this.acpService.selectedProjectPath();
+      if (path) {
+        prevPath = path;
+        void this.loadAgentProject(path);
+      }
+      else if (prevPath !== null) {
+        const clearedPath = prevPath;
+        prevPath = null;
+        // 微任务中检查项目是否仍存在：仅当选中的项目被删除时才清空编辑器（取消选中不清空）
+        queueMicrotask(() => {
+          const stillExists = this.acpService.projects().some(p => p.path === clearedPath);
+          if (!stillExists) this.clearAgentProject();
+        });
+      }
+    }, { allowSignalWrites: true });
+  }
+
+  // 清除由 agent 选中项目加载的编辑器内容
+  private clearAgentProject(): void {
+    if (this.dataList().length === 0) return;
+    this.currentProjectPath = null;
+    this.openedList.set([]);
+    this.dataList.set([]);
+    // 同步清除 OPFS 中残留的 dataList / openedList，避免下次启动恢复出已删除项目的数据
+    void this.clearOpfsEditorData();
+  }
+
+  // 删除 OPFS 中持久化的 dataList 与 openedList
+  private async clearOpfsEditorData(): Promise<void> {
+    if (this.isLocked) return;
+    try {
+      await file('/dir/file.txt').remove();
+      await file('/dir/openedList.txt').remove();
+    } catch (err) {
+      console.warn('[Content] Failed to clear OPFS editor data:', err);
+    }
   }
 
   // Hook: lazy-load children for local project folder nodes

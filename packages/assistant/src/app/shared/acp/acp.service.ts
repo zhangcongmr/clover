@@ -533,6 +533,7 @@ export class AcpService {
   }
 
   async deleteProject(name: string): Promise<void> {
+    const path = this.projects().find(p => p.name === name)?.path;
     try {
       await this.sseService.deleteProject(name);
     } catch (error) {
@@ -540,6 +541,10 @@ export class AcpService {
       throw error;
     }
     await this.listProjects();
+    // 关联清除该项目下的 session 列表
+    if (path) {
+      this.sessions.update(list => list.filter(s => s.cwd !== path));
+    }
   }
 
   async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<void> {

@@ -419,7 +419,14 @@ export class AgentComponent {
   async deleteProject(event: MouseEvent, name: string): Promise<void> {
     event.stopPropagation();
     if (confirm(`Delete project "${name}"?`)) {
+      const wasSelected = this.selectedProject() === name;
+      // 先删除（deleteProject 内部会刷新 projects 列表），再清除选中状态，保证编辑器能感知项目已删除
       await this.acpService.deleteProject(name);
+      if (wasSelected) {
+        this.selectedProject.set(null);
+        this.syncedProjectPath = null;
+        await this.acpService.saveSelectedProject(null);
+      }
     }
   }
 }
