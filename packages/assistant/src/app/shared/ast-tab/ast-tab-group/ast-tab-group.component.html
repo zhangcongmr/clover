@@ -71,7 +71,7 @@
   <div data-layer="tab_presentation" [style.width]="'100%'" aria-hidden="true"
     class="ast-tab-presentation">
     <div class="slider ast-tab-slider"
-      [style.width]="computedScrollBarLength" [style.left]="scrollBarLeft + 'px'">
+      [style.width]="computedScrollBarLength()" [style.left]="scrollBarLeft() + 'px'">
     </div>
   </div>
 </div>

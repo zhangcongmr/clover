@@ -242,12 +242,23 @@ export class AcpService {
     // Sync connection state from SSE service
     const syncState = () => {
       const sseState = this.sseService.connectionState();
-      this.sessionState.update(s => ({
-        ...s,
-        isConnected: sseState === 'connected',
-        isConnecting: sseState === 'connecting',
-        error: this.sseService.error()
-      }));
+      const isConnected = sseState === 'connected';
+      const isConnecting = sseState === 'connecting';
+      const error = this.sseService.error();
+      const current = this.sessionState();
+      // 仅在实际变化时更新，避免每 100ms 无条件触发变更检测
+      if (
+        current.isConnected !== isConnected ||
+        current.isConnecting !== isConnecting ||
+        current.error !== error
+      ) {
+        this.sessionState.update(s => ({
+          ...s,
+          isConnected,
+          isConnecting,
+          error,
+        }));
+      }
     };
 
     // Watch for state changes

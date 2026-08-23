@@ -137,9 +137,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     if (totalLiWidth <= totalUlWidth) {
       // 无溢出
       this.computedScrollBarLengthNum = 0;
-      this.computedScrollBarLength = '0px';
+      this.computedScrollBarLength.set('0px');
       this.leftScroll = 0;
-      this.scrollBarLeft = 0;
+      this.scrollBarLeft.set(0);
       this.scrollToLeftEnable = false;
       this.scrollToRightEnable = false;
       ulElement.scrollTo({ left: 0, behavior: 'instant' });
@@ -157,7 +157,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     const maxSliderLeft = totalUlWidth - sliderWidth;
 
     this.computedScrollBarLengthNum = sliderWidth;
-    this.computedScrollBarLength = sliderWidth + 'px';
+    this.computedScrollBarLength.set(sliderWidth + 'px');
 
     // 校正 scroll 位置
     if (this.leftScroll > maxScrollLeft) this.leftScroll = maxScrollLeft;
@@ -166,7 +166,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     // 重新计算滑动条位置（horizontal mode）
     if (this.mode === 'horizontal') {
       const ratio = maxScrollLeft > 0 ? this.leftScroll / maxScrollLeft : 0;
-      this.scrollBarLeft = ratio * maxSliderLeft;
+      this.scrollBarLeft.set(ratio * maxSliderLeft);
     }
 
     ulElement.scrollTo({ left: this.leftScroll, behavior: 'instant' });
@@ -326,13 +326,13 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     if (this.mode === 'horizontal') {
       const ratio = maxScrollLeft > 0 ? newScrollLeft / maxScrollLeft : 0;
       const sliderMaxLeft = ulWidth - this.computedScrollBarLengthNum;
-      this.scrollBarLeft = ratio * sliderMaxLeft;
+      this.scrollBarLeft.set(ratio * sliderMaxLeft);
       this.scrollToLeftEnable = newScrollLeft > 0;
       this.scrollToRightEnable = newScrollLeft < maxScrollLeft;
     }
   }
 
-  computedScrollBarLength = "0px";
+computedScrollBarLength = signal("0px");
   computedScrollBarLengthNum = 0;
   whenMouseEnterTabContainer(evt: any) {
     const ulElement = evt.currentTarget.children[0];
@@ -344,19 +344,19 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     if (totalLiWidth > Number(totalUlWidth)) {
       tab_presentation.style.display = "block";
       this.computedScrollBarLengthNum = Number(totalUlWidth) * Number(totalUlWidth) / totalLiWidth;
-      this.computedScrollBarLength = this.computedScrollBarLengthNum + "px";
+      this.computedScrollBarLength.set(this.computedScrollBarLengthNum + "px");
 
       // 校正滑动条位置（防止因外部 resize 导致越界）
       const maxSliderLeft = Number(totalUlWidth) - this.computedScrollBarLengthNum;
-      if (this.scrollBarLeft > maxSliderLeft) {
-        this.scrollBarLeft = maxSliderLeft;
+      if (this.scrollBarLeft() > maxSliderLeft) {
+        this.scrollBarLeft.set(maxSliderLeft);
       }
-      if (this.scrollBarLeft < 0) {
-        this.scrollBarLeft = 0;
+      if (this.scrollBarLeft() < 0) {
+        this.scrollBarLeft.set(0);
       }
     } else {
       this.computedScrollBarLengthNum = 0;
-      this.computedScrollBarLength = "0px";
+      this.computedScrollBarLength.set("0px");
       tab_presentation.style.display = "none";
     }
   }
@@ -369,7 +369,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   topScroll = 0; // Element.scrollTo()  指定的坐标位置的垂直坐标，是绝对位置， 滚动对象为元素ul
   leftScroll = 0; // Element.scrollTo() 指定的坐标位置的水平坐标，是绝对位置， 滚动对象为元素ul
   scrollBarTop = 0; //滚动条的位置top
-  scrollBarLeft = 0; //滚动条的位置left
+  scrollBarLeft = signal(0); //滚动条的位置left
   mode = "horizontal";
   scrollToRightEnable = true; //表示滚动条是否还可以向右移动 
   scrollToLeftEnable = false; //表示滚动条是否还可以向左移动 
@@ -405,7 +405,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
         // 重新计算滑动条位置
         const maxSliderLeft = totalUlWidth - this.computedScrollBarLengthNum;
         const ratio = maxScrollLeft > 0 ? this.leftScroll / maxScrollLeft : 0;
-        this.scrollBarLeft = ratio * maxSliderLeft;
+        this.scrollBarLeft.set(ratio * maxSliderLeft);
 
         this.scrollToLeftEnable = true;
         this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
@@ -420,7 +420,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
         const maxSliderLeft = totalUlWidth - this.computedScrollBarLengthNum;
         const ratio = maxScrollLeft > 0 ? this.leftScroll / maxScrollLeft : 0;
-        this.scrollBarLeft = ratio * maxSliderLeft;
+        this.scrollBarLeft.set(ratio * maxSliderLeft);
 
         this.scrollToRightEnable = true;
         this.scrollToLeftEnable = this.leftScroll > 0;
