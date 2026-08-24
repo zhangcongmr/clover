@@ -292,9 +292,9 @@ export class AcpSseService {
   /**
    * 创建新会话
    */
-  async createSession(options?: { cwd?: string; agentCommand?: string; agentArgs?: string[]; agentEnv?: Record<string, string> }): Promise<string> {
+  async createSession(options?: { cwd?: string; agentCommand?: string; agentArgs?: string[]; agentEnv?: Record<string, string> }): Promise<{ sessionId: string; cwd: string }> {
     const result = await this.post('/api/acp/session', options || {});
-    return result.sessionId;
+    return { sessionId: result.sessionId, cwd: result.cwd || options?.cwd || '' };
   }
 
   /**
@@ -504,5 +504,54 @@ export class AcpSseService {
    */
   async saveSelectedProject(selectedProject: string | null): Promise<void> {
     await this.postNoAuth('/api/projects/selected', { selectedProject });
+  }
+
+  // ============================================================================
+  // 任务管理方法（免认证）
+  // ============================================================================
+
+  /**
+   * 列出所有任务
+   */
+  async listTasks(): Promise<any> {
+    return this.postNoAuth('/api/tasks', {});
+  }
+
+  /**
+   * 新增任务
+   */
+  async addTask(task: { id: string; title: string; sessionId: string; agentId: string; cwd?: string }): Promise<any> {
+    return this.postNoAuth('/api/tasks/add', task);
+  }
+
+  /**
+   * 删除任务
+   */
+  async deleteTask(id: string): Promise<any> {
+    return this.postNoAuth('/api/tasks/delete', { id });
+  }
+
+  /**
+   * 获取选中的任务
+   */
+  async getSelectedTask(): Promise<string | null> {
+    try {
+      const base = this.localAgentService.getBaseUrl();
+      const response = await fetch(`${base}/api/tasks/selected`, {
+        method: 'GET',
+      });
+      if (!response.ok) return null;
+      const result = await response.json();
+      return result.selectedTask || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 保存选中的任务
+   */
+  async saveSelectedTask(selectedTask: string | null): Promise<void> {
+    await this.postNoAuth('/api/tasks/selected', { selectedTask });
   }
 }

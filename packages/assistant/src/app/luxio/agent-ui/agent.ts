@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, effect, viewChild } from "@angular
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { AcpService } from "../../shared/acp/acp.service";
+import type { TaskInfo } from "../../shared/acp/acp.service";
 import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
@@ -33,6 +34,11 @@ export class AgentComponent {
   showAcpPanel = signal<boolean>(false);
   acpPanelMaximized = signal<boolean>(false);
   acpPanelDockPosition = signal<'left' | 'right'>('right');
+
+  /** Sidebar view state: which section is active */
+  activeView = signal<'tasks' | 'new-task'>('tasks');
+  /** Currently selected task ID (for highlighting in sidebar) */
+  selectedTaskId = signal<string | null>(null);
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -189,7 +195,19 @@ export class AgentComponent {
     return (name || '?')[0].toUpperCase();
   }
 
+  switchToTasksView(): void {
+    this.activeView.set('tasks');
+    this.selectedProject.set(null);
+    this.syncedProjectPath = null;
+    this.acpService.saveSelectedProject(null);
+    this.selectedTaskId.set(null);
+    this.acpService.saveSelectedTask(null);
+  }
+
   selectProject(name: string): void {
+    this.selectedTaskId.set(null);
+    this.acpService.saveSelectedTask(null);
+    this.activeView.set('new-task');
     if (this.selectedProject() === name) {
       this.selectedProject.set(null);
       this.syncedProjectPath = null;
@@ -301,6 +319,72 @@ export class AgentComponent {
     }
   }
 
+  async createNewTask(): Promise<void> {
+    this.selectedProject.set(null);
+    this.syncedProjectPath = null;
+    this.panelError.set(null);
+    this.acpService.isLoadedSession.set(false);
+    this.showAcpPanel.set(true);
+    this.panelLoading.set(true);
+
+    try {
+      await this.acpService.createSession(undefined);
+      this.acpService.pendingTaskCreation.set(true);
+      this.activeView.set('tasks');
+    } catch (error: any) {
+      console.error('[Agent] Failed to create new task:', error);
+      this.panelError.set(error?.message || 'Failed to create task');
+    } finally {
+      this.panelLoading.set(false);
+    }
+  }
+
+  async loadTask(taskId: string): Promise<void> {
+    const task = this.acpService.tasks().find(t => t.id === taskId);
+    if (!task) return;
+    if (this.sessionLoadingId()) return;
+
+    this.selectedProject.set(null);
+    this.syncedProjectPath = null;
+    this.sessionLoadingId.set(task.sessionId);
+    this.panelError.set(null);
+    this.selectedTaskId.set(taskId);
+    this.acpService.saveSelectedTask(taskId);
+    this.showAcpPanel.set(true);
+
+    const currentSessionId = this.acpService.sessionState().sessionId;
+    if (currentSessionId === task.sessionId && this.acpService.sessionState().isConnected) {
+      this.acpService.isLoadedSession.set(false);
+      this.sessionLoadingId.set(null);
+      return;
+    }
+
+    this.acpService.isLoadedSession.set(true);
+    this.panelLoading.set(true);
+
+    try {
+      await this.acpService.loadSession(task.sessionId, task.cwd, task.agentId);
+    } catch (error: any) {
+      console.error('[Agent] Failed to load task:', error);
+      this.panelError.set(error?.message || 'Failed to load task');
+    } finally {
+      this.panelLoading.set(false);
+      this.sessionLoadingId.set(null);
+    }
+  }
+
+  async deleteTask(event: MouseEvent, taskId: string): Promise<void> {
+    event.stopPropagation();
+    if (confirm('Are you sure you want to delete this task?')) {
+      const wasSelected = this.selectedTaskId() === taskId;
+      await this.acpService.deleteTask(taskId);
+      if (wasSelected) {
+        this.selectedTaskId.set(null);
+        this.acpService.saveSelectedTask(null);
+      }
+    }
+  }
+
   private findSessionInfo(sessionId: string): { cwd?: string; agentId?: string } {
     const selectedName = this.selectedProject();
     if (selectedName) {
@@ -359,6 +443,19 @@ export class AgentComponent {
     return icons[agentId || ''] || '??';
   }
 
+  getRelativeTime(dateStr: string): string {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h`;
+    const diffDay = Math.floor(diffHr / 24);
+    return `${diffDay}d`;
+  }
+
   toggleAcpPanel(): void {
     this.showAcpPanel.update(v => !v);
     if (this.showAcpPanel()) {
@@ -369,6 +466,7 @@ export class AgentComponent {
 
   closeAcpPanel(): void {
     this.showAcpPanel.set(false);
+    this.activeView.set('tasks');
   }
 
   onAcpPanelMaximize(): void {

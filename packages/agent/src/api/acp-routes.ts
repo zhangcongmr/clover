@@ -13,6 +13,34 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
 const PROJECTS_DIR = join(homedir(), '.clover');
 const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
+const TASKS_FILE = join(PROJECTS_DIR, 'tasks.json');
+
+interface TaskInfo {
+  id: string;
+  title: string;
+  sessionId: string;
+  agentId: string;
+  cwd: string;
+  createdAt: string;
+}
+
+function readTasks(): TaskInfo[] {
+  if (!existsSync(TASKS_FILE)) return [];
+  try {
+    const raw = JSON.parse(readFileSync(TASKS_FILE, 'utf-8'));
+    const tasks = Array.isArray(raw) ? raw : (raw.tasks || []);
+    return tasks.sort((a: TaskInfo, b: TaskInfo) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeTasks(tasks: TaskInfo[]): void {
+  mkdirSync(PROJECTS_DIR, { recursive: true });
+  writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
+}
 
 interface ProjectSession {
   sessionId: string;
@@ -123,13 +151,18 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    */
   app.post('/api/acp/session', async (req: Request, res: Response) => {
     try {
-      const { cwd, agentCommand, agentArgs, agentEnv } = req.body;
+      const { cwd: rawCwd, agentCommand, agentArgs, agentEnv } = req.body;
 
-      // 工作目录为必选项，为空时拒绝创建会话
-      if (!cwd || !String(cwd).trim()) {
-        res.status(400).json({ error: 'cwd (working directory) is required' });
-        return;
+      let cwd = rawCwd;
+      if (cwd && String(cwd).trim()) {
+        cwd = String(cwd).trim().replace(/^~(?=\/|\\|$)/, homedir());
+      } else {
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        cwd = join(PROJECTS_DIR, ts);
       }
+      mkdirSync(cwd, { recursive: true });
 
       // 创建会话
       const sessionId = await sessionManager.createSession({
@@ -145,6 +178,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({
         success: true,
         sessionId,
+        cwd: String(cwd).trim(),
         message: 'Session created and connected',
       });
     } catch (error) {
@@ -726,6 +760,122 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({ success: true });
     } catch (error) {
       console.error('[ACP Routes] Save selected project error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  // ============================================================================
+  // 任务管理端点（免认证）
+  // ============================================================================
+
+  app.use('/api/tasks', express.json());
+
+  /**
+   * POST /api/tasks
+   * 列出所有任务
+   */
+  app.post('/api/tasks', async (_req: Request, res: Response) => {
+    try {
+      const tasks = readTasks();
+      res.json({ success: true, tasks });
+    } catch (error) {
+      console.error('[ACP Routes] List tasks error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/tasks/add
+   * 新增任务
+   */
+  app.post('/api/tasks/add', async (req: Request, res: Response) => {
+    const { id, title, sessionId, agentId, cwd } = req.body;
+
+    if (!id || !title || !sessionId || !agentId) {
+      res.status(400).json({ error: 'id, title, sessionId, and agentId are required' });
+      return;
+    }
+
+    try {
+      const tasks = readTasks();
+      const existing = tasks.findIndex(t => t.id === id);
+      const task: TaskInfo = {
+        id,
+        title,
+        sessionId,
+        agentId,
+        cwd: cwd || '',
+        createdAt: new Date().toISOString(),
+      };
+      if (existing >= 0) {
+        tasks[existing] = { ...tasks[existing], ...task };
+      } else {
+        tasks.unshift(task);
+      }
+      writeTasks(tasks);
+      res.json({ success: true, task });
+    } catch (error) {
+      console.error('[ACP Routes] Add task error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/tasks/delete
+   * 删除任务
+   */
+  app.post('/api/tasks/delete', async (req: Request, res: Response) => {
+    const { id } = req.body;
+
+    if (!id) {
+      res.status(400).json({ error: 'id is required' });
+      return;
+    }
+
+    try {
+      const tasks = readTasks().filter(t => t.id !== id);
+      writeTasks(tasks);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[ACP Routes] Delete task error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  const SELECTED_TASK_FILE = join(PROJECTS_DIR, 'selected-task.json');
+
+  function readSelectedTask(): string | null {
+    if (!existsSync(SELECTED_TASK_FILE)) return null;
+    try {
+      const raw = JSON.parse(readFileSync(SELECTED_TASK_FILE, 'utf-8'));
+      return raw.selectedTask || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeSelectedTask(id: string | null): void {
+    mkdirSync(PROJECTS_DIR, { recursive: true });
+    writeFileSync(SELECTED_TASK_FILE, JSON.stringify({ selectedTask: id }, null, 2));
+  }
+
+  app.get('/api/tasks/selected', (_req: Request, res: Response) => {
+    try {
+      const selectedTask = readSelectedTask();
+      res.json({ success: true, selectedTask });
+    } catch (error) {
+      console.error('[ACP Routes] Get selected task error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post('/api/tasks/selected', (req: Request, res: Response) => {
+    const { selectedTask } = req.body;
+    try {
+      writeSelectedTask(selectedTask || null);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[ACP Routes] Save selected task error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });

@@ -61,6 +61,15 @@ export interface ProjectInfo {
   sessions: ProjectSessionInfo[];
 }
 
+export interface TaskInfo {
+  id: string;
+  title: string;
+  sessionId: string;
+  agentId: string;
+  cwd?: string;
+  createdAt: string;
+}
+
 export interface AcpSessionState {
   sessionId: string | null;
   isConnected: boolean;
@@ -73,6 +82,7 @@ export interface AcpSessionState {
   models?: ModelState;
   configOptions?: ConfigOption[];
   title?: string;
+  cwd?: string;
 }
 
 @Injectable({
@@ -101,6 +111,13 @@ export class AcpService {
   // Projects
   readonly projects = signal<ProjectInfo[]>([]);
   readonly projectsLoading = signal<boolean>(false);
+
+  // Tasks
+  readonly tasks = signal<TaskInfo[]>([]);
+  readonly tasksLoading = signal<boolean>(false);
+  readonly selectedTaskId = signal<string | null>(null);
+  /** When true, the next prompt completion will create a new task */
+  readonly pendingTaskCreation = signal<boolean>(false);
 
   // Working directory hint from file picker
   readonly workingDirHint = signal<string>('');
@@ -172,9 +189,14 @@ export class AcpService {
     this.setupSseCallbacks();
     if (typeof window !== 'undefined') {
       this.listProjects();
+      this.listTasks();
       // Hydrate the persisted selected project path so live sync works on first open
       this.getSelectedProject().then(p => {
         if (p) this.selectedProjectPath.set(p);
+      });
+      // Hydrate the persisted selected task
+      this.getSelectedTask().then(id => {
+        if (id) this.selectedTaskId.set(id);
       });
     }
   }
@@ -192,6 +214,33 @@ export class AcpService {
       this.isProcessing.set(false);
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
+      }
+
+      // Create task after first successful prompt response
+      if (this.pendingTaskCreation()) {
+        this.pendingTaskCreation.set(false);
+        const sessionId = this.sessionState().sessionId;
+        const title = this.sessionState().title || 'New Task';
+        const agentId = this.selectedAgent()?.id || 'opencode';
+        const cwd = this.sessionState().cwd || '';
+        if (sessionId && cwd) {
+          // Extract taskId from cwd (e.g., C:\Users\zhang\.clover\2026-08-24-14-07-02)
+          const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
+          if (taskId) {
+            this.addTask({
+              id: taskId,
+              title,
+              sessionId,
+              agentId,
+              cwd,
+            }).then(() => {
+              this.selectedTaskId.set(taskId);
+              this.saveSelectedTask(taskId);
+            }).catch(err => {
+              console.error('[ACP] Failed to create task after prompt:', err);
+            });
+          }
+        }
       }
     });
 
@@ -296,7 +345,7 @@ export class AcpService {
     try {
       // Create a new session first
       const agent = this.selectedAgent();
-      const sessionId = await this.sseService.createSession({
+      const { sessionId, cwd } = await this.sseService.createSession({
         cwd: this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
@@ -306,6 +355,7 @@ export class AcpService {
       this.sessionState.update(s => ({
         ...s,
         sessionId,
+        cwd,
       }));
       this.wrapperAgentId = agent?.id ?? null;
 
@@ -332,7 +382,7 @@ export class AcpService {
 
   async createSession(cwd?: string): Promise<string> {
     const agent = this.selectedAgent();
-    const sessionId = await this.sseService.createSession({
+    const { sessionId, cwd: actualCwd } = await this.sseService.createSession({
       cwd,
       agentCommand: agent?.command,
       agentArgs: agent?.args,
@@ -342,6 +392,7 @@ export class AcpService {
     this.sessionState.update(s => ({
       ...s,
       sessionId,
+      cwd: actualCwd,
     }));
     this.wrapperAgentId = agent?.id ?? null;
 
@@ -349,7 +400,7 @@ export class AcpService {
     await this.sseService.connect(sessionId);
 
     // Create the underlying ACP session so prompt requests have an active session
-    await this.sseService.createAcpSession(sessionId, cwd);
+    await this.sseService.createAcpSession(sessionId, actualCwd);
 
     return sessionId;
   }
@@ -574,6 +625,51 @@ export class AcpService {
     await this.sseService.saveSelectedProject(selectedProject);
   }
 
+  // ============================================================================
+  // 任务管理
+  // ============================================================================
+
+  async listTasks(): Promise<void> {
+    this.tasksLoading.set(true);
+    try {
+      const result = await this.sseService.listTasks();
+      this.tasks.set(result?.tasks ?? []);
+    } catch (error) {
+      console.error('[ACP] Failed to list tasks:', error);
+    } finally {
+      this.tasksLoading.set(false);
+    }
+  }
+
+  async addTask(task: { id: string; title: string; sessionId: string; agentId: string; cwd?: string }): Promise<void> {
+    try {
+      await this.sseService.addTask(task);
+      await this.listTasks();
+    } catch (error) {
+      console.error('[ACP] Failed to add task:', error);
+      throw error;
+    }
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    try {
+      await this.sseService.deleteTask(id);
+      await this.listTasks();
+    } catch (error) {
+      console.error('[ACP] Failed to delete task:', error);
+      throw error;
+    }
+  }
+
+  async getSelectedTask(): Promise<string | null> {
+    return this.sseService.getSelectedTask();
+  }
+
+  async saveSelectedTask(id: string | null): Promise<void> {
+    this.selectedTaskId.set(id);
+    await this.sseService.saveSelectedTask(id);
+  }
+
   async switchAgent(agentId: string, cwd?: string): Promise<void> {
     const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
     if (!agent) {
@@ -608,13 +704,14 @@ export class AcpService {
     // 如果没有活跃的 wrapper session，先创建并连接
     if (!currentSessionId) {
       const agent = this.selectedAgent();
-      currentSessionId = await this.sseService.createSession({
+      const result = await this.sseService.createSession({
         cwd: cwd || this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
         agentEnv: agent?.env,
       });
-      this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
+      currentSessionId = result.sessionId;
+      this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, cwd: result.cwd, isConnecting: true, isConnected: false }));
       this.wrapperAgentId = agent?.id ?? null;
       await this.sseService.connect(currentSessionId);
     }
@@ -657,13 +754,14 @@ export class AcpService {
     // 如果没有活跃的 wrapper session，先创建并连接
     if (!currentSessionId) {
       const agent = this.selectedAgent();
-      currentSessionId = await this.sseService.createSession({
+      const result = await this.sseService.createSession({
         cwd: cwd || this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
         agentEnv: agent?.env,
       });
-      this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, isConnecting: true, isConnected: false }));
+      currentSessionId = result.sessionId;
+      this.sessionState.update(s => ({ ...s, sessionId: currentSessionId, cwd: result.cwd, isConnecting: true, isConnected: false }));
       this.wrapperAgentId = agent?.id ?? null;
       await this.sseService.connect(currentSessionId);
     }
@@ -698,7 +796,7 @@ export class AcpService {
     } else {
       // 无活跃 wrapper：先创建并连接 wrapper，再通过它删除目标 ACP 会话
       const agent = this.selectedAgent();
-      const wrapperSessionId = await this.sseService.createSession({
+      const { sessionId: wrapperSessionId } = await this.sseService.createSession({
         cwd: this.workingDirHint() || undefined,
         agentCommand: agent?.command,
         agentArgs: agent?.args,
