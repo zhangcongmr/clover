@@ -1,0 +1,218 @@
+<div class="acp-chat-input-container">
+  <input #fileInput type="file" multiple hidden (change)="onFilesSelected($event)" />
+  <div class="acp-chat-input-box" [class.drag-over]="isDragOver()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+	@if (errorMessage(); as error) {
+	  <div class="chat-common-error-box">
+		<div class="chat-error-banner">
+		  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<circle cx="12" cy="12" r="10"/>
+			<line x1="12" y1="8" x2="12" y2="12"/>
+			<line x1="12" y1="16" x2="12.01" y2="16"/>
+		  </svg>
+		  <span class="chat-error-text">{{ error }}</span>
+		  <button class="chat-error-close" title="Dismiss" (click)="errorMessage.set('')">
+			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <line x1="18" y1="6" x2="6" y2="18"/>
+			  <line x1="6" y1="6" x2="18" y2="18"/>
+			</svg>
+		  </button>
+		</div>
+	  </div>
+	}
+	@if (showAgentDisconnectedWarning()) {
+	  <div class="chat-agent-reconnect-banner">
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+		  <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+		  <polyline points="21 3 21 9 15 9"/>
+		</svg>
+		<span>Agent 已断开，发送后将自动重连并恢复对话</span>
+	  </div>
+	}
+	@if (showSlashMenu()) {
+	  <div class="slash-command-menu custom-scroll">
+		@for (cmd of filteredCommands(); track cmd.name; let i = $index) {
+		  <button class="slash-command-item" [class.active]="i === selectedIndex()"
+			(mousedown)="selectCommand(cmd)" (mouseenter)="selectedIndex.set(i)">
+			<span class="slash-command-name">/{{ cmd.name }}</span>
+			<span class="slash-command-desc">{{ cmd.description }}</span>
+		  </button>
+		} @empty {
+		  <div class="slash-command-empty">No matching commands</div>
+		}
+	  </div>
+	}
+	<textarea #messageInput [ngModel]="inputValue()" (ngModelChange)="inputValue.set($event)"
+	  (input)="onInput()" (keydown)="onKeydown($event)" (paste)="onPaste($event)" placeholder="Describe what to build"
+	  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+	  [disabled]="acpService.hasActiveQuestions()" rows="1"
+	  class="message-textarea custom-scroll"></textarea>
+	@if (showLinkInput()) {
+	  <div class="acp-chat-link-input">
+		<input [ngModel]="linkName()" (ngModelChange)="linkName.set($event)"
+		  placeholder="Name (optional)" (keydown.enter)="confirmResourceLink()" />
+		<input [ngModel]="linkUri()" (ngModelChange)="linkUri.set($event)"
+		  placeholder="file:/// or https:// URI" (keydown.enter)="confirmResourceLink()" />
+		<button class="link-add-btn" (click)="confirmResourceLink()" [disabled]="!linkUri().trim()">Add</button>
+		<button class="link-cancel-btn" (click)="showLinkInput.set(false)">Cancel</button>
+	  </div>
+	}
+	@if (attachments().length > 0) {
+	  <div class="acp-chat-attachments">
+		@for (att of attachments(); track att.id) {
+		  <div class="attach-chip" [class]="'attach-' + att.kind">
+			@if (att.kind === 'image' && att.preview) {
+			  <img class="attach-thumb" [src]="att.preview" alt="">
+			} @else {
+			  <span class="attach-icon">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+				</svg>
+			  </span>
+			}
+			<span class="attach-name" [title]="att.name">{{ att.name }}</span>
+			<button class="attach-remove" title="Remove" (click)="removeAttachment(att.id)">
+			  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<line x1="18" y1="6" x2="6" y2="18"/>
+				<line x1="6" y1="6" x2="18" y2="18"/>
+			  </svg>
+			</button>
+		  </div>
+		}
+	  </div>
+	}
+	<div class="acp-chat-toolbar">
+	  <div class="acp-chat-toolbar-left">
+		<button class="toolbar-icon-btn" title="Attach" (click)="openFilePicker()">
+		  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+		  </svg>
+		</button>
+		<button class="toolbar-icon-btn" title="Add link" (click)="openLinkInput()">
+		  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+			<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+		  </svg>
+		</button>
+		@if (!acpService.isLoadedSession()) {
+		  <div class="agent-selector">
+			<button class="toolbar-tag-btn" (click)="toggleAgentDropdown($event)" title="Agent">
+			  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="12" cy="12" r="10"/>
+				<circle cx="12" cy="12" r="4"/>
+				<line x1="21.17" y1="8" x2="12" y2="8"/>
+				<line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
+				<line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+			  </svg>
+			  <span>{{ acpService.selectedAgent()?.name || 'Agent' }}</span>
+			</button>
+			@if (showAgentDropdown()) {
+			  <div class="agent-dropdown">
+				@for (agent of agents; track agent.id; let i = $index) {
+				  <button class="agent-option" (mousedown)="selectAgent(agent)"
+					(mouseenter)="agentSelectedIndex.set(i)"
+					[class.active]="i === agentSelectedIndex()">
+					<span class="agent-name">{{ agent.name }}</span>
+					@if (agent.description) {
+					  <span class="agent-desc">{{ agent.description }}</span>
+					}
+				  </button>
+				}
+			  </div>
+			}
+		  </div>
+		} @else {
+		  <span class="agent-label" title="Agent">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <circle cx="12" cy="12" r="10"/>
+			  <circle cx="12" cy="12" r="4"/>
+			  <line x1="21.17" y1="8" x2="12" y2="8"/>
+			  <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
+			  <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+			</svg>
+			<span>{{ acpService.selectedAgent()?.name || 'Agent' }}</span>
+		  </span>
+		}
+		@if (modeConfig()) {
+		<div class="mode-selector">
+		  <button class="toolbar-tag-btn" (click)="toggleModeDropdown($event)" [title]="modeConfig()!.name">
+			<span>{{ currentModeLabel() }}</span>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <polyline points="6 9 12 15 18 9"/>
+			</svg>
+		  </button>
+		  @if (showModeDropdown()) {
+			<div class="mode-dropdown">
+			  @for (option of modeConfig()!.options ?? []; track option.value; let i = $index) {
+				<button class="mode-option" (click)="selectMode($event, option.value)"
+				  (mouseenter)="modeSelectedIndex.set(i)"
+				  [class.active]="option.value === modeConfig()!.currentValue">
+				  <div class="mode-info">
+					<span class="mode-name">{{ option.name }}</span>
+					@if (option.description) {
+					  <span class="mode-desc">{{ option.description }}</span>
+					}
+				  </div>
+				</button>
+			  }
+			</div>
+		  }
+		</div>
+		}
+		@if (modelConfig()) {
+		<div class="model-selector">
+		  <button class="toolbar-tag-btn" (click)="toggleModelDropdown($event)" [title]="modelConfig()!.name">
+			<span>{{ currentModelLabel() }}</span>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <polyline points="6 9 12 15 18 9"/>
+			</svg>
+		  </button>
+		  @if (showModelDropdown()) {
+			<div class="model-dropdown custom-scroll">
+			  @for (option of modelConfig()!.options ?? []; track option.value; let i = $index) {
+				<button class="model-option" (click)="selectModel($event, option.value)"
+				  (mouseenter)="modelSelectedIndex.set(i)"
+				  [class.active]="option.value === modelConfig()!.currentValue">
+				  <div class="model-info">
+					<span class="model-name">{{ option.name }}</span>
+					@if (option.description) {
+					  <span class="model-desc">{{ option.description }}</span>
+					}
+				  </div>
+				</button>
+			  }
+			</div>
+		  }
+		</div>
+		}
+	  </div>
+	  <div class="acp-chat-toolbar-right">
+		<button class="toolbar-icon-btn" title="Settings">
+		  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			<line x1="4" y1="21" x2="4" y2="14"></line>
+			<line x1="4" y1="10" x2="4" y2="3"></line>
+			<line x1="12" y1="21" x2="12" y2="12"></line>
+			<line x1="12" y1="8" x2="12" y2="3"></line>
+			<line x1="20" y1="21" x2="20" y2="16"></line>
+			<line x1="20" y1="12" x2="20" y2="3"></line>
+			<line x1="1" y1="14" x2="7" y2="14"></line>
+			<line x1="9" y1="8" x2="15" y2="8"></line>
+			<line x1="17" y1="16" x2="23" y2="16"></line>
+		  </svg>
+		</button>
+		<button class="send-button" (click)="acpService.isProcessing() ? stopGeneration() : sendMessage()"
+		  [disabled]="acpService.hasActiveQuestions() || (!inputValue().trim() && attachments().length === 0 && !acpService.isProcessing())">
+		  @if (acpService.isProcessing()) {
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+			  <rect x="6" y="6" width="12" height="12" rx="2"/>
+			</svg>
+		  } @else {
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <line x1="12" y1="19" x2="12" y2="5"></line>
+			  <polyline points="5 12 12 5 19 12"></polyline>
+			</svg>
+		  }
+		</button>
+	  </div>
+	</div>
+  </div>
+</div>

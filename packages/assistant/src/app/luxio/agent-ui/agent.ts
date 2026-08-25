@@ -291,32 +291,9 @@ export class AgentComponent {
   }
 
   async createNewSession(): Promise<void> {
-    const selectedProjectName = this.selectedProject();
-    const agentId = this.acpService.selectedAgent()?.id || 'opencode';
-    let cwd: string | undefined;
-    let projectPath: string | undefined;
-    
-    if (selectedProjectName) {
-      const project = this.acpService.projects().find(p => p.name === selectedProjectName);
-      cwd = project?.path;
-      projectPath = project?.path;
-    }
-    if (!cwd) {
-      cwd = this.acpService.workingDirHint() || undefined;
-      projectPath = cwd;
-    }
-    
-    await this.acpService.createSession(cwd);
-    
-    const sessionId = this.acpService.sessionState().sessionId;
-    if (sessionId && projectPath) {
-      await this.acpService.saveSessionToProject(projectPath, {
-        sessionId,
-        agentId,
-        title: 'New session',
-        updatedAt: new Date().toISOString(),
-      });
-    }
+    this.acpService.pendingTaskCreation.set(false);
+    await this.acpService.disconnect();
+    this.acpService.hasOpenedSession.set(false);
   }
 
   async createNewTask(): Promise<void> {
@@ -324,19 +301,11 @@ export class AgentComponent {
     this.syncedProjectPath = null;
     this.panelError.set(null);
     this.acpService.isLoadedSession.set(false);
+    await this.acpService.disconnect();
+    this.acpService.hasOpenedSession.set(false);
+    this.acpService.pendingTaskCreation.set(true);
     this.showAcpPanel.set(true);
-    this.panelLoading.set(true);
-
-    try {
-      await this.acpService.createSession(undefined);
-      this.acpService.pendingTaskCreation.set(true);
-      this.activeView.set('tasks');
-    } catch (error: any) {
-      console.error('[Agent] Failed to create new task:', error);
-      this.panelError.set(error?.message || 'Failed to create task');
-    } finally {
-      this.panelLoading.set(false);
-    }
+    this.activeView.set('tasks');
   }
 
   async loadTask(taskId: string): Promise<void> {
@@ -352,8 +321,8 @@ export class AgentComponent {
     this.acpService.saveSelectedTask(taskId);
     this.showAcpPanel.set(true);
 
-    const currentSessionId = this.acpService.sessionState().sessionId;
-    if (currentSessionId === task.sessionId && this.acpService.sessionState().isConnected) {
+    // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
+    if (this.acpService.acpSessionId() === task.sessionId && this.acpService.sessionState().isConnected) {
       this.acpService.isLoadedSession.set(false);
       this.sessionLoadingId.set(null);
       return;
@@ -364,6 +333,10 @@ export class AgentComponent {
 
     try {
       await this.acpService.loadSession(task.sessionId, task.cwd, task.agentId);
+      // 用任务记录的标题填充会话标题（任务会话通常不在 sessions 列表，无法回填）
+      if (task.title) {
+        this.acpService.sessionState.update(s => ({ ...s, title: task.title }));
+      }
     } catch (error: any) {
       console.error('[Agent] Failed to load task:', error);
       this.panelError.set(error?.message || 'Failed to load task');
@@ -456,11 +429,11 @@ export class AgentComponent {
     return `${diffDay}d`;
   }
 
-  toggleAcpPanel(): void {
+  async toggleAcpPanel(): Promise<void> {
     this.showAcpPanel.update(v => !v);
     if (this.showAcpPanel()) {
       this.acpService.isLoadedSession.set(false);
-      this.createNewSession();
+      await this.createNewSession();
     }
   }
 
