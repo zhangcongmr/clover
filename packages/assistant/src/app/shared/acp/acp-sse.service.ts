@@ -450,21 +450,28 @@ export class AcpSseService {
   }
 
   /**
-   * 新增项目
+   * 列出所有任务
    */
-  async addProject(name: string, path: string): Promise<any> {
-    return this.postNoAuth('/api/projects/add', { name, path });
+  async listTasks(): Promise<any> {
+    return this.postNoAuth('/api/tasks', {});
   }
 
   /**
-   * 删除项目
+   * 新增项目或任务（通过 type 区分）
    */
-  async deleteProject(name: string): Promise<any> {
-    return this.postNoAuth('/api/projects/delete', { name });
+  async addProject(project: { name: string; path: string; type: string; sessions?: any[]; id?: string; createdAt?: string }): Promise<any> {
+    return this.postNoAuth('/api/projects/add', project);
   }
 
   /**
-   * 保存会话到项目
+   * 删除项目或任务
+   */
+  async deleteProject(name: string, type: string): Promise<any> {
+    return this.postNoAuth('/api/projects/delete', { name, type });
+  }
+
+  /**
+   * 保存会话到项目或任务
    */
   async saveSessionToProject(projectPath: string, session: {
     sessionId: string;
@@ -504,54 +511,5 @@ export class AcpSseService {
    */
   async saveSelectedProject(selectedProject: string | null): Promise<void> {
     await this.postNoAuth('/api/projects/selected', { selectedProject });
-  }
-
-  // ============================================================================
-  // 任务管理方法（免认证）
-  // ============================================================================
-
-  /**
-   * 列出所有任务
-   */
-  async listTasks(): Promise<any> {
-    return this.postNoAuth('/api/tasks', {});
-  }
-
-  /**
-   * 新增任务
-   */
-  async addTask(task: { id: string; title: string; sessionId: string; agentId: string; cwd?: string }): Promise<any> {
-    return this.postNoAuth('/api/tasks/add', task);
-  }
-
-  /**
-   * 删除任务
-   */
-  async deleteTask(id: string): Promise<any> {
-    return this.postNoAuth('/api/tasks/delete', { id });
-  }
-
-  /**
-   * 获取选中的任务
-   */
-  async getSelectedTask(): Promise<string | null> {
-    try {
-      const base = this.localAgentService.getBaseUrl();
-      const response = await fetch(`${base}/api/tasks/selected`, {
-        method: 'GET',
-      });
-      if (!response.ok) return null;
-      const result = await response.json();
-      return result.selectedTask || null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * 保存选中的任务
-   */
-  async saveSelectedTask(selectedTask: string | null): Promise<void> {
-    await this.postNoAuth('/api/tasks/selected', { selectedTask });
   }
 }

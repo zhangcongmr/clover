@@ -14,33 +14,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 const PROJECTS_DIR = join(homedir(), '.clover');
 const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
 const TASKS_FILE = join(PROJECTS_DIR, 'tasks.json');
-
-interface TaskInfo {
-  id: string;
-  title: string;
-  sessionId: string;
-  agentId: string;
-  cwd: string;
-  createdAt: string;
-}
-
-function readTasks(): TaskInfo[] {
-  if (!existsSync(TASKS_FILE)) return [];
-  try {
-    const raw = JSON.parse(readFileSync(TASKS_FILE, 'utf-8'));
-    const tasks = Array.isArray(raw) ? raw : (raw.tasks || []);
-    return tasks.sort((a: TaskInfo, b: TaskInfo) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  } catch {
-    return [];
-  }
-}
-
-function writeTasks(tasks: TaskInfo[]): void {
-  mkdirSync(PROJECTS_DIR, { recursive: true });
-  writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
-}
+const SELECTED_FILE = join(PROJECTS_DIR, 'selected.json');
 
 interface ProjectSession {
   sessionId: string;
@@ -49,18 +23,23 @@ interface ProjectSession {
   updatedAt?: string;
 }
 
-interface Project {
+interface ProjectInfo {
   name: string;
   path: string;
+  type: 'project' | 'task';
   sessions: ProjectSession[];
+  id?: string;
+  createdAt?: string;
 }
 
-function readProjects(): Project[] {
+function readProjects(): ProjectInfo[] {
   if (!existsSync(PROJECTS_FILE)) return [];
   try {
     const raw = JSON.parse(readFileSync(PROJECTS_FILE, 'utf-8'));
     return raw.map((p: any) => ({
-      ...p,
+      name: p.name,
+      path: p.path,
+      type: 'project' as const,
       sessions: p.sessions || [],
     }));
   } catch {
@@ -68,9 +47,41 @@ function readProjects(): Project[] {
   }
 }
 
-function writeProjects(projects: Project[]): void {
+function writeProjects(projects: ProjectInfo[]): void {
   mkdirSync(PROJECTS_DIR, { recursive: true });
-  writeFileSync(PROJECTS_FILE, JSON.stringify(projects, null, 2));
+  const data = projects.filter(p => p.type === 'project').map(p => ({
+    name: p.name,
+    path: p.path,
+    sessions: p.sessions,
+  }));
+  writeFileSync(PROJECTS_FILE, JSON.stringify(data, null, 2));
+}
+
+function readTasks(): ProjectInfo[] {
+  if (!existsSync(TASKS_FILE)) return [];
+  try {
+    const raw = JSON.parse(readFileSync(TASKS_FILE, 'utf-8'));
+    const tasks = Array.isArray(raw) ? raw : [];
+    return tasks
+      .map((t: any) => ({ ...t, type: 'task' as const }))
+      .sort((a: ProjectInfo, b: ProjectInfo) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+  } catch {
+    return [];
+  }
+}
+
+function writeTasks(tasks: ProjectInfo[]): void {
+  mkdirSync(PROJECTS_DIR, { recursive: true });
+  const data = tasks.map(t => ({
+    name: t.name,
+    path: t.path,
+    sessions: t.sessions,
+    id: t.id,
+    createdAt: t.createdAt,
+  }));
+  writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
 }
 
 export interface AcpRouteOptions {
@@ -608,43 +619,84 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   });
 
   /**
-   * POST /api/projects/add
-   * 新增项目
+   * POST /api/tasks
+   * 列出所有任务
    */
-  app.post('/api/projects/add', async (req: Request, res: Response) => {
-    const { name, path: projectPath } = req.body;
-
-    if (!name || !projectPath) {
-      res.status(400).json({ error: 'name and path are required' });
-      return;
-    }
-
-    if (!existsSync(projectPath)) {
-      res.status(400).json({ error: 'Directory does not exist' });
-      return;
-    }
-
+  app.post('/api/tasks', async (_req: Request, res: Response) => {
     try {
-      const projects = readProjects();
-      if (projects.some(p => p.name === name)) {
-        res.status(409).json({ error: 'Project already exists' });
-        return;
-      }
-      projects.push({ name, path: projectPath, sessions: [] });
-      writeProjects(projects);
-      res.json({ success: true, projects });
+      const tasks = readTasks();
+      res.json({ success: true, tasks });
     } catch (error) {
-      console.error('[ACP Routes] Add project error:', error);
+      console.error('[ACP Routes] List tasks error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
 
   /**
+   * POST /api/projects/add
+   * 新增项目或任务（通过 type 区分）
+   */
+  app.post('/api/projects/add', async (req: Request, res: Response) => {
+    const { name, path: projectPath, type, sessions, id, createdAt } = req.body;
+
+    if (type === 'task') {
+      if (!id || !name) {
+        res.status(400).json({ error: 'id and name are required for tasks' });
+        return;
+      }
+      try {
+        const tasks = readTasks();
+        const existing = tasks.findIndex(t => t.id === id);
+        const task: ProjectInfo = {
+          name,
+          path: projectPath || '',
+          type: 'task',
+          sessions: sessions || [],
+          id,
+          createdAt: createdAt || new Date().toISOString(),
+        };
+        if (existing >= 0) {
+          tasks[existing] = { ...tasks[existing], ...task };
+        } else {
+          tasks.unshift(task);
+        }
+        writeTasks(tasks);
+        res.json({ success: true, task });
+      } catch (error) {
+        console.error('[ACP Routes] Add task error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    } else {
+      if (!name || !projectPath) {
+        res.status(400).json({ error: 'name and path are required' });
+        return;
+      }
+      if (!existsSync(projectPath)) {
+        res.status(400).json({ error: 'Directory does not exist' });
+        return;
+      }
+      try {
+        const projects = readProjects();
+        if (projects.some(p => p.name === name)) {
+          res.status(409).json({ error: 'Project already exists' });
+          return;
+        }
+        projects.push({ name, path: projectPath, type: 'project', sessions: sessions || [] });
+        writeProjects(projects);
+        res.json({ success: true, projects });
+      } catch (error) {
+        console.error('[ACP Routes] Add project error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    }
+  });
+
+  /**
    * POST /api/projects/delete
-   * 删除项目
+   * 删除项目或任务（通过 type 区分）
    */
   app.post('/api/projects/delete', async (req: Request, res: Response) => {
-    const { name } = req.body;
+    const { name, type } = req.body;
 
     if (!name) {
       res.status(400).json({ error: 'name is required' });
@@ -652,12 +704,17 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
-      let projects = readProjects();
-      projects = projects.filter(p => p.name !== name);
-      writeProjects(projects);
-      res.json({ success: true, projects });
+      if (type === 'task') {
+        const tasks = readTasks().filter(t => t.name !== name);
+        writeTasks(tasks);
+      } else {
+        let projects = readProjects();
+        projects = projects.filter(p => p.name !== name);
+        writeProjects(projects);
+      }
+      res.json({ success: true });
     } catch (error) {
-      console.error('[ACP Routes] Delete project error:', error);
+      console.error('[ACP Routes] Delete error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -760,122 +817,6 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({ success: true });
     } catch (error) {
       console.error('[ACP Routes] Save selected project error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  // ============================================================================
-  // 任务管理端点（免认证）
-  // ============================================================================
-
-  app.use('/api/tasks', express.json());
-
-  /**
-   * POST /api/tasks
-   * 列出所有任务
-   */
-  app.post('/api/tasks', async (_req: Request, res: Response) => {
-    try {
-      const tasks = readTasks();
-      res.json({ success: true, tasks });
-    } catch (error) {
-      console.error('[ACP Routes] List tasks error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  /**
-   * POST /api/tasks/add
-   * 新增任务
-   */
-  app.post('/api/tasks/add', async (req: Request, res: Response) => {
-    const { id, title, sessionId, agentId, cwd } = req.body;
-
-    if (!id || !title || !sessionId || !agentId) {
-      res.status(400).json({ error: 'id, title, sessionId, and agentId are required' });
-      return;
-    }
-
-    try {
-      const tasks = readTasks();
-      const existing = tasks.findIndex(t => t.id === id);
-      const task: TaskInfo = {
-        id,
-        title,
-        sessionId,
-        agentId,
-        cwd: cwd || '',
-        createdAt: new Date().toISOString(),
-      };
-      if (existing >= 0) {
-        tasks[existing] = { ...tasks[existing], ...task };
-      } else {
-        tasks.unshift(task);
-      }
-      writeTasks(tasks);
-      res.json({ success: true, task });
-    } catch (error) {
-      console.error('[ACP Routes] Add task error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  /**
-   * POST /api/tasks/delete
-   * 删除任务
-   */
-  app.post('/api/tasks/delete', async (req: Request, res: Response) => {
-    const { id } = req.body;
-
-    if (!id) {
-      res.status(400).json({ error: 'id is required' });
-      return;
-    }
-
-    try {
-      const tasks = readTasks().filter(t => t.id !== id);
-      writeTasks(tasks);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[ACP Routes] Delete task error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  const SELECTED_TASK_FILE = join(PROJECTS_DIR, 'selected-task.json');
-
-  function readSelectedTask(): string | null {
-    if (!existsSync(SELECTED_TASK_FILE)) return null;
-    try {
-      const raw = JSON.parse(readFileSync(SELECTED_TASK_FILE, 'utf-8'));
-      return raw.selectedTask || null;
-    } catch {
-      return null;
-    }
-  }
-
-  function writeSelectedTask(id: string | null): void {
-    mkdirSync(PROJECTS_DIR, { recursive: true });
-    writeFileSync(SELECTED_TASK_FILE, JSON.stringify({ selectedTask: id }, null, 2));
-  }
-
-  app.get('/api/tasks/selected', (_req: Request, res: Response) => {
-    try {
-      const selectedTask = readSelectedTask();
-      res.json({ success: true, selectedTask });
-    } catch (error) {
-      console.error('[ACP Routes] Get selected task error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  app.post('/api/tasks/selected', (req: Request, res: Response) => {
-    const { selectedTask } = req.body;
-    try {
-      writeSelectedTask(selectedTask || null);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[ACP Routes] Save selected task error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
