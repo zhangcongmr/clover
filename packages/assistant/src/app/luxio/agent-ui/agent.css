@@ -204,6 +204,51 @@
   font-size: 12px;
 }
 
+.task-session {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.task-session:hover {
+  opacity: 0.8;
+  background: var(--vscode-list-hoverBackground);
+}
+
+.task-session.active {
+  opacity: 0.7;
+}
+
+.task-session.loading {
+  opacity: 1;
+}
+
+.session-agent-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-size: 9px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.session-id-text {
+  font-family: var(--vscode-editor-font-family, monospace);
+  opacity: 0.6;
+}
+
 .project-list {
   flex: 1;
   overflow-y: auto;
@@ -651,7 +696,7 @@
 }
 
 .session-item.loading {
-  background: var(--vscode-list-activeSelectionBackground, rgba(0, 120, 212, 0.15));
+  background: var(--vscode-text-selectionBackground, rgba(0, 120, 212, 0.15));
 }
 
 .session-item.loading .session-title {

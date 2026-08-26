@@ -13,7 +13,7 @@
     </div>
 
     <!-- Tasks Header -->
-    <div class="nav-item" [class.active]="activeView() === 'tasks' && !selectedTaskId()" (click)="switchToTasksView()">
+    <div class="nav-item" [class.active]="activeView() === 'tasks' && !selectedProject()" (click)="switchToTasksView()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M9 11l3 3L22 4" />
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
@@ -24,13 +24,13 @@
     <!-- Task List -->
     <div class="task-list custom-scroll">
       @for (task of acpService.tasks(); track task.id) {
-        <div class="task-item" [class.active]="selectedTaskId() === task.id"
-          [class.loading]="sessionLoadingId() === task.sessionId"
-          (click)="loadTask(task.id)">
-          <span class="task-title">{{ task.title }}</span>
-          <span class="task-time">{{ getRelativeTime(task.createdAt) }}</span>
+        <div class="task-item"
+          [class.active]="selectedProject()?.id === task.id"
+          [class.loading]="sessionLoadingId() === (task.sessions[0]?.sessionId || '')"
+          (click)="loadTaskSession(task.id!, task.sessions[0]?.sessionId || '')">
+          <span class="task-title">{{ task.sessions[0]?.title || 'Untitled' }}</span>
           <button class="task-delete-btn" title="Delete task"
-            (click)="deleteTask($event, task.id)">
+            (click)="deleteTask($event, task.id!)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -61,7 +61,7 @@
     </div>
     <div class="project-list">
       @for (project of projects(); track project.name) {
-        <div class="project-item" [class.active]="activeView() !== 'tasks' && selectedProject() === project.name"
+        <div class="project-item" [class.active]="activeView() === 'projects' && selectedProject()?.name === project.name"
           (click)="selectProject(project.name)">
           <span class="project-icon" [style.background]="project.color">{{ getInitial(project.name) }}</span>
           <span class="project-name">{{ project.name }}</span>
@@ -95,7 +95,7 @@
 
   <!-- Right: Session List -->
   <div class="agent-main">
-    @if (activeView() !== 'tasks') {
+    @if (activeView() === 'projects') {
       <div class="main-header">
         <div class="search-bar">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

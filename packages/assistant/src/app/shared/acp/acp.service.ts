@@ -58,16 +58,12 @@ export interface ProjectSessionInfo {
 export interface ProjectInfo {
   name: string;
   path: string;
+  type: 'project' | 'task';
   sessions: ProjectSessionInfo[];
-}
-
-export interface TaskInfo {
-  id: string;
-  title: string;
-  sessionId: string;
-  agentId: string;
-  cwd?: string;
-  createdAt: string;
+  /** Task id — required when type='task' */
+  id?: string;
+  /** Task creation timestamp — required when type='task' */
+  createdAt?: string;
 }
 
 export interface AcpSessionState {
@@ -113,9 +109,8 @@ export class AcpService {
   readonly projectsLoading = signal<boolean>(false);
 
   // Tasks
-  readonly tasks = signal<TaskInfo[]>([]);
-  readonly tasksLoading = signal<boolean>(false);
-  readonly selectedTaskId = signal<string | null>(null);
+  readonly tasks = signal<ProjectInfo[]>([]);
+
   /** When true, the next prompt completion will create a new task */
   readonly pendingTaskCreation = signal<boolean>(false);
 
@@ -193,15 +188,10 @@ export class AcpService {
   constructor() {
     this.setupSseCallbacks();
     if (typeof window !== 'undefined') {
-      this.listProjects();
-      this.listTasks();
+      this.listAll();
       // Hydrate the persisted selected project path so live sync works on first open
       this.getSelectedProject().then(p => {
         if (p) this.selectedProjectPath.set(p);
-      });
-      // Hydrate the persisted selected task
-      this.getSelectedTask().then(id => {
-        if (id) this.selectedTaskId.set(id);
       });
     }
   }
@@ -233,16 +223,14 @@ export class AcpService {
           // Extract taskId from cwd (e.g., C:\Users\zhang\.clover\2026-08-24-14-07-02)
           const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
           if (taskId) {
-            this.addTask({
+            this.sseService.addProject({
+              name: title,
+              path: cwd,
+              type: 'task',
+              sessions: [{ sessionId, agentId, title }],
               id: taskId,
-              title,
-              sessionId,
-              agentId,
-              cwd,
-            }).then(() => {
-              this.selectedTaskId.set(taskId);
-              this.saveSelectedTask(taskId);
-            }).catch(err => {
+              createdAt: new Date().toISOString(),
+            }).then(() => this.listTasks()).catch(err => {
               console.error('[ACP] Failed to create task after prompt:', err);
             });
           }
@@ -562,7 +550,6 @@ export class AcpService {
             console.error('[ACP] Failed to persist session:', session.sessionId, error);
           }
         }
-        await this.listProjects();
       }
     } catch (error) {
       console.warn('[ACP] Failed to list sessions from all agents:', (error as Error).message || error);
@@ -587,9 +574,22 @@ export class AcpService {
     }
   }
 
+  async listTasks(): Promise<void> {
+    try {
+      const result = await this.sseService.listTasks();
+      this.tasks.set(result?.tasks ?? []);
+    } catch (error) {
+      console.error('[ACP] Failed to list tasks:', error);
+    }
+  }
+
+  async listAll(): Promise<void> {
+    await Promise.all([this.listProjects(), this.listTasks()]);
+  }
+
   async addProject(name: string, path: string): Promise<void> {
     try {
-      await this.sseService.addProject(name, path);
+      await this.sseService.addProject({ name, path, type: 'project' });
     } catch (error) {
       console.error('[ACP] Failed to add project:', error);
       throw error;
@@ -598,24 +598,23 @@ export class AcpService {
   }
 
   async deleteProject(name: string): Promise<void> {
-    const path = this.projects().find(p => p.name === name)?.path;
+    const project = this.projects().find(p => p.name === name);
     try {
-      await this.sseService.deleteProject(name);
+      await this.sseService.deleteProject(name, project?.type || 'project');
     } catch (error) {
       console.error('[ACP] Failed to delete project:', error);
       throw error;
     }
     await this.listProjects();
     // 关联清除该项目下的 session 列表
-    if (path) {
-      this.sessions.update(list => list.filter(s => s.cwd !== path));
+    if (project?.path) {
+      this.sessions.update(list => list.filter(s => s.cwd !== project.path));
     }
   }
 
   async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<void> {
     try {
       await this.sseService.saveSessionToProject(projectPath, session);
-      await this.listProjects();
     } catch (error) {
       console.error('[ACP] Failed to save session to project:', error);
     }
@@ -643,45 +642,15 @@ export class AcpService {
   // 任务管理
   // ============================================================================
 
-  async listTasks(): Promise<void> {
-    this.tasksLoading.set(true);
-    try {
-      const result = await this.sseService.listTasks();
-      this.tasks.set(result?.tasks ?? []);
-    } catch (error) {
-      console.error('[ACP] Failed to list tasks:', error);
-    } finally {
-      this.tasksLoading.set(false);
-    }
-  }
-
-  async addTask(task: { id: string; title: string; sessionId: string; agentId: string; cwd?: string }): Promise<void> {
-    try {
-      await this.sseService.addTask(task);
-      await this.listTasks();
-    } catch (error) {
-      console.error('[ACP] Failed to add task:', error);
-      throw error;
-    }
-  }
-
   async deleteTask(id: string): Promise<void> {
     try {
-      await this.sseService.deleteTask(id);
-      await this.listTasks();
+      const task = this.tasks().find(t => t.id === id);
+      await this.sseService.deleteProject(task?.name || '', 'task');
+      await this.listProjects();
     } catch (error) {
       console.error('[ACP] Failed to delete task:', error);
       throw error;
     }
-  }
-
-  async getSelectedTask(): Promise<string | null> {
-    return this.sseService.getSelectedTask();
-  }
-
-  async saveSelectedTask(id: string | null): Promise<void> {
-    this.selectedTaskId.set(id);
-    await this.sseService.saveSelectedTask(id);
   }
 
   async switchAgent(agentId: string, cwd?: string): Promise<void> {
