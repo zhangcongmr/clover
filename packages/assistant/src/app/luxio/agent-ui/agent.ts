@@ -7,6 +7,7 @@ import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp-websocket.service";
+import { LayoutService } from "../layout.service";
 
 interface SessionWithAgent extends SessionInfo {
   agentId?: string;
@@ -27,6 +28,7 @@ const PROJECT_COLORS = [
 })
 export class AgentComponent {
   protected acpService = inject(AcpService);
+  protected layoutService = inject(LayoutService);
   readonly filePicker = viewChild(FilePickerDialogComponent);
 
   searchQuery = signal('');
@@ -297,45 +299,6 @@ export class AgentComponent {
     this.activeView.set('new-task');
   }
 
-  async loadTask(taskId: string): Promise<void> {
-    const task = this.acpService.tasks().find(t => t.id === taskId);
-    if (!task) return;
-    if (this.sessionLoadingId()) return;
-
-    // 任务视图与项目/新建任务互斥
-    this.activeView.set('tasks');
-    this.selectedProject.set(task);
-    this.sessionLoadingId.set(task.sessions?.[0]?.sessionId || '');
-    this.panelError.set(null);
-    this.acpService.saveSelectedProject(task.path || null);
-    this.showAcpPanel.set(true);
-
-    const sessionId = task.sessions?.[0]?.sessionId;
-    // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
-    if (sessionId && this.acpService.acpSessionId() === sessionId && this.acpService.sessionState().isConnected) {
-      this.acpService.isLoadedSession.set(false);
-      this.sessionLoadingId.set(null);
-      return;
-    }
-
-    this.acpService.isLoadedSession.set(true);
-    this.panelLoading.set(true);
-
-    try {
-      await this.acpService.loadSession(sessionId || '', task.path, task.sessions?.[0]?.agentId);
-      // 用任务记录的标题填充会话标题（任务会话通常不在 sessions 列表，无法回填）
-      if (task.name) {
-        this.acpService.sessionState.update(s => ({ ...s, title: task.name }));
-      }
-    } catch (error: any) {
-      console.error('[Agent] Failed to load task:', error);
-      this.panelError.set(error?.message || 'Failed to load task');
-    } finally {
-      this.panelLoading.set(false);
-      this.sessionLoadingId.set(null);
-    }
-  }
-
   async deleteTask(event: MouseEvent, taskId: string): Promise<void> {
     event.stopPropagation();
     if (confirm('Are you sure you want to delete this task?')) {
@@ -353,6 +316,7 @@ export class AgentComponent {
     if (!task) return;
     if (this.sessionLoadingId()) return;
 
+    // 任务视图与项目/新建任务互斥
     this.activeView.set('tasks');
     this.selectedProject.set(task);
     this.sessionLoadingId.set(sessionId);
@@ -360,6 +324,7 @@ export class AgentComponent {
     this.acpService.saveSelectedProject(task.path || null);
     this.showAcpPanel.set(true);
 
+    // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
     if (this.acpService.acpSessionId() === sessionId && this.acpService.sessionState().isConnected) {
       this.acpService.isLoadedSession.set(false);
       this.sessionLoadingId.set(null);
@@ -372,6 +337,7 @@ export class AgentComponent {
     const agentId = task.sessions?.find(s => s.sessionId === sessionId)?.agentId;
     try {
       await this.acpService.loadSession(sessionId, task.path, agentId);
+      // 用任务记录的标题填充会话标题（任务会话通常不在 sessions 列表，无法回填）
       if (task.name) {
         this.acpService.sessionState.update(s => ({ ...s, title: task.name }));
       }

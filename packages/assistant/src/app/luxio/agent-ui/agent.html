@@ -105,6 +105,11 @@
           <input class="search-input" type="text" placeholder="Search sessions"
             [value]="searchQuery()" (input)="onSearchInput($event)" />
         </div>
+        <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()" title="Open Editor" (click)="layoutService.toggleAstContentPanel()">
+            <svg class="icon" width="20" height="20">
+              <use href="#icon-shrink-close"></use>
+            </svg>
+        </button>
       </div>
 
       <div class="session-content">
@@ -264,6 +269,11 @@
         </svg>
         <span>Back to Sessions</span>
       </button>
+        <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()" title="Close Editor" (click)="layoutService.toggleAstContentPanel()">
+          <svg class="icon" width="20" height="20">
+            <use href="#icon-shrink-close"></use>
+          </svg>
+        </button>
     </div>
     <div class="acp-overlay-content">
       @if (panelLoading() || panelError()) {

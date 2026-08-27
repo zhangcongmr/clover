@@ -194,7 +194,7 @@
 
       <!-- Docked Agent panel -->
       @if(agentPanelOpen && (dockPosition === 'right' || dockPosition === 'left')) {
-        <div ast-agent [style.flex]="'none'" [style.width]="agentPanelWidthPx() + 'px'"></div>
+        <div ast-agent [style.flex]="astContentPanelOpen ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen ? agentPanelWidthPx() + 'px' : 'auto'"></div>
       }
 
       <!-- Middle panel -->

@@ -25,6 +25,7 @@ import { NotificationService } from './shared/notification/notification.service'
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
 import { AgentComponent } from './luxio/agent-ui/agent';
+import { LayoutService } from './luxio/layout.service';
 
 @Component({
     selector: 'app-root',
@@ -40,6 +41,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected themeService = inject(ThemeService);
   protected notificationService = inject(NotificationService);
   protected acpService = inject(AcpService);
+  protected layoutService = inject(LayoutService);
   contentComp = viewChild(ContentComponent);
   upBtnlist = viewChild<ElementRef<HTMLElement>>('upBtnlist');
   http = inject(HttpClient);
@@ -68,7 +70,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
-  astContentPanelOpen = false;
+  get astContentPanelOpen() { return this.layoutService.astContentPanelOpen(); }
+  set astContentPanelOpen(value: boolean) { this.layoutService.astContentPanelOpen.set(value); }
   agentPanelOpen = true;
   dockPosition: 'left' | 'right' = 'left';
   terminalBtnShow = true;
