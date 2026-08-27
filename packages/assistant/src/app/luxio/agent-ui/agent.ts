@@ -1,5 +1,5 @@
-import { Component, inject, signal, computed, effect, viewChild } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { Component, inject, signal, computed, effect, viewChild, output, PLATFORM_ID } from "@angular/core";
+import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { AcpService } from "../../shared/acp/acp.service";
 import type { ProjectInfo } from "../../shared/acp/acp.service";
@@ -29,16 +29,19 @@ const PROJECT_COLORS = [
 export class AgentComponent {
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
+  private readonly platformId = inject(PLATFORM_ID);
+  /** True only in the browser; used to skip rendering the ACP panel during SSR. */
+  protected readonly isBrowser = computed(() => isPlatformBrowser(this.platformId));
   readonly filePicker = viewChild(FilePickerDialogComponent);
 
   searchQuery = signal('');
   selectedProject = signal<ProjectInfo | null>(null);
-  showAcpPanel = signal<boolean>(false);
+  showAcpPanel = signal<boolean>(true);
   acpPanelMaximized = signal<boolean>(false);
   acpPanelDockPosition = signal<'left' | 'right'>('right');
 
   /** Sidebar view state: which section is active */
-  activeView = signal<'tasks' | 'projects' | 'new-task'>('tasks');
+  activeView = signal<'tasks' | 'projects' | 'new-task'>('new-task');
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -46,6 +49,9 @@ export class AgentComponent {
   panelLoading = signal<boolean>(false);
   /** Load/resume failure message shown inside the panel. */
   panelError = signal<string | null>(null);
+
+  /** Re-emitted upward so app.component can toggle the AST content (editor) panel. */
+  editorToggle = output<void>();
 
   protected projects = computed(() => {
     return this.acpService.projects()
@@ -56,91 +62,59 @@ export class AgentComponent {
       }));
   });
 
-  protected filteredSessions = computed(() => {
+  /** Merge a project's live + persisted sessions, deduped, with search applied. */
+  protected sessionsOf(project: ProjectInfo): SessionWithAgent[] {
     const query = this.searchQuery().toLowerCase();
-    const selected = this.selectedProject();
-    
-    let sessions: SessionWithAgent[];
-    
-    if (selected) {
-      const agentSessions = this.acpService.sessions()
-        .filter(s => s.cwd === selected.path);
-      
-      const persistedSessions = (selected.sessions || []).map(s => ({
-        sessionId: s.sessionId,
-        cwd: selected.path,
-        title: s.title,
-        updatedAt: s.updatedAt,
-        agentId: s.agentId,
-      }));
-      
-      const mergedMap = new Map<string, SessionWithAgent>();
-      
-      for (const s of agentSessions) {
-        mergedMap.set(s.sessionId, { ...s, agentId: (s as any).agentId || this.acpService.selectedAgent()?.id });
-      }
-      
-      for (const s of persistedSessions) {
-        if (!mergedMap.has(s.sessionId)) {
-          mergedMap.set(s.sessionId, s);
-        } else {
-          const existing = mergedMap.get(s.sessionId)!;
-          if (!existing.agentId && s.agentId) {
-            existing.agentId = s.agentId;
-          }
-          if (!existing.title && s.title) {
-            existing.title = s.title;
-          }
+
+    const agentSessions = this.acpService.sessions()
+      .filter(s => s.cwd === project.path);
+
+    const persistedSessions = (project.sessions || []).map(s => ({
+      sessionId: s.sessionId,
+      cwd: project.path,
+      title: s.title,
+      updatedAt: s.updatedAt,
+      agentId: s.agentId,
+    }));
+
+    const mergedMap = new Map<string, SessionWithAgent>();
+
+    for (const s of agentSessions) {
+      mergedMap.set(s.sessionId, { ...s, agentId: (s as any).agentId || this.acpService.selectedAgent()?.id });
+    }
+
+    for (const s of persistedSessions) {
+      if (!mergedMap.has(s.sessionId)) {
+        mergedMap.set(s.sessionId, s);
+      } else {
+        const existing = mergedMap.get(s.sessionId)!;
+        if (!existing.agentId && s.agentId) {
+          existing.agentId = s.agentId;
+        }
+        if (!existing.title && s.title) {
+          existing.title = s.title;
         }
       }
-      
-      sessions = Array.from(mergedMap.values());
-    } else {
-      sessions = this.acpService.sessions().map(s => ({
-        ...s,
-        agentId: (s as any).agentId || this.acpService.selectedAgent()?.id,
-      }));
     }
-    
+
+    let sessions = Array.from(mergedMap.values());
+
     if (query) {
       sessions = sessions.filter(s =>
         (s.title || '').toLowerCase().includes(query) ||
         s.sessionId.toLowerCase().includes(query)
       );
     }
-    
+
+    // 最新更新的排在最前
+    sessions.sort((a, b) => {
+      const ta = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const tb = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return tb - ta;
+    });
+
     return sessions;
-  });
-
-  protected todaySessions = computed(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return this.filteredSessions().filter(s => {
-      if (!s.updatedAt) return false;
-      return new Date(s.updatedAt) >= todayStart;
-    });
-  });
-
-  protected yesterdaySessions = computed(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterdayStart = new Date(todayStart);
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-    return this.filteredSessions().filter(s => {
-      if (!s.updatedAt) return false;
-      const d = new Date(s.updatedAt);
-      return d >= yesterdayStart && d < todayStart;
-    });
-  });
-
-  protected olderSessions = computed(() => {
-    const now = new Date();
-    const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-    return this.filteredSessions().filter(s => {
-      if (!s.updatedAt) return true;
-      return new Date(s.updatedAt) < yesterdayStart;
-    });
-  });
+  }
 
   protected activeSessionId = computed(() => this.acpService.sessionState().sessionId);
   
@@ -149,6 +123,11 @@ export class AgentComponent {
   private lastLoadedProjectPath: string | null = null;
 
   constructor() {
+    // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
+    this.acpService.pendingTaskCreation.set(true);
+    this.acpService.isLoadedSession.set(false);
+    this.acpService.hasOpenedSession.set(false);
+
     // 核心 effect：依赖 projects()、tasks()、selectedProjectPath()、selectedProject()
     // 当任一依赖变化时重跑，依次执行：清理失效选中 → 恢复持久化选中 → 加载 sessions
     // 注意：listSessionsFromAllAgents 末尾会调用 listProjects() 更新 projects()，
@@ -184,11 +163,6 @@ export class AgentComponent {
         this.lastLoadedProjectPath = null;
       }
     });
-  }
-
-  getProjectColor(name: string): string {
-    const project = this.projects().find(p => p.name === name);
-    return project?.color || '#607d8b';
   }
 
   getInitial(name: string): string {
@@ -423,6 +397,15 @@ export class AgentComponent {
       this.acpService.isLoadedSession.set(false);
       await this.createNewSession();
     }
+  }
+
+  /** Open a fresh (new) session in the ACP panel without toggling it closed. */
+  async openNewSession(): Promise<void> {
+    this.acpService.pendingTaskCreation.set(false);
+    this.acpService.isLoadedSession.set(false);
+    this.showAcpPanel.set(true);
+    await this.acpService.disconnect();
+    this.acpService.hasOpenedSession.set(false);
   }
 
   closeAcpPanel(): void {

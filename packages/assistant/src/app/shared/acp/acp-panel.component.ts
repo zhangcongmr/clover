@@ -36,8 +36,6 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     .card-base {
       background-color: var(--vscode-editor-background);
       border-radius: 0;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -206,6 +204,39 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       height: 16px;
     }
 
+    .editor-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--vscode-foreground);
+      opacity: 0.6;
+      transition: opacity 0.15s, background-color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .editor-toggle-btn:hover {
+      opacity: 1;
+      background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+    }
+
+    .editor-toggle-btn.active {
+      opacity: 1;
+      color: var(--vscode-textLink-foreground, #3794ff);
+      background: var(--vscode-toolbar-activeBackground, rgba(128, 128, 128, 0.3));
+    }
+
+    .editor-toggle-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
     .status-dot {
       width: 8px;
       height: 8px;
@@ -239,8 +270,12 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   maximizePanel = output<void>();
   restorePanel = output<void>();
   dockPositionChange = output<'left' | 'right'>();
+  /** Emitted when the editor (AST content panel) toggle button is clicked. */
+  editorToggle = output<void>();
   isMaximized = input<boolean>(false);
   dockPosition = input<'left' | 'right'>('right');
+  /** Whether the editor (AST content panel) is open; drives the toggle button state. */
+  editorToggleActive = input<boolean>(false);
   protected acpService = inject(AcpService);
   showDockMenu = signal<boolean>(false);
   showSettings = signal<boolean>(false);

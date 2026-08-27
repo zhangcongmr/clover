@@ -1012,7 +1012,7 @@ Always use the welcome_greeting tool.`;
           if (!stillExists) this.clearAgentProject();
         });
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   // 清除由 agent 选中项目加载的编辑器内容
