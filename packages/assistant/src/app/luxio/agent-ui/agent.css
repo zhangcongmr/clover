@@ -25,6 +25,19 @@
   min-width: 240px;
   border-right: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
   background-color: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  transition: width 0.2s, min-width 0.2s;
+}
+
+.agent-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  border-right: none;
+  overflow: hidden;
+}
+
+.agent-sidebar > .icon-btn {
+  align-self: flex-end;
+  margin: 6px 8px 0;
 }
 
 .sidebar-header {

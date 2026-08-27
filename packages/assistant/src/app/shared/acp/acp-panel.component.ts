@@ -237,6 +237,34 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       height: 16px;
     }
 
+    .sidebar-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--vscode-foreground);
+      opacity: 0.6;
+      transition: opacity 0.15s, background-color 0.15s;
+      flex-shrink: 0;
+      transform: rotate(180deg);
+    }
+
+    .sidebar-toggle-btn:hover {
+      opacity: 1;
+      background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+    }
+
+    .sidebar-toggle-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
     .status-dot {
       width: 8px;
       height: 8px;
@@ -272,10 +300,14 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   dockPositionChange = output<'left' | 'right'>();
   /** Emitted when the editor (AST content panel) toggle button is clicked. */
   editorToggle = output<void>();
+  /** Emitted when the sidebar expand button is clicked. */
+  sidebarExpand = output<void>();
   isMaximized = input<boolean>(false);
   dockPosition = input<'left' | 'right'>('right');
   /** Whether the editor (AST content panel) is open; drives the toggle button state. */
   editorToggleActive = input<boolean>(false);
+  /** Whether the left sidebar is collapsed; controls visibility of the expand button. */
+  sidebarCollapsed = input<boolean>(false);
   protected acpService = inject(AcpService);
   showDockMenu = signal<boolean>(false);
   showSettings = signal<boolean>(false);
