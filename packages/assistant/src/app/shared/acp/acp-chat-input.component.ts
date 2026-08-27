@@ -880,22 +880,33 @@ export class AcpChatInputComponent {
       textarea.style.height = 'auto';
     }
 
+    // Build content blocks
+    const content: ContentBlock[] = [];
+    if (text) {
+      content.push({ type: 'text', text });
+    }
+    for (const att of attachments) {
+      content.push(att.block);
+    }
+
+    // Add user message immediately for instant visual feedback
+    const textBlocks = content.filter(
+      (b): b is { type: 'text'; text: string } => b.type === 'text' && !!b.text
+    );
+    const nonTextBlocks = content.filter(b => b.type !== 'text');
+    this.acpService.addUserMessage(
+      textBlocks.map(b => b.text).join('\n'),
+      nonTextBlocks.length > 0 ? nonTextBlocks : undefined
+    );
+
     try {
       const isNewSession = !this.acpService.hasOpenedSession();
       if (isNewSession) {
-        this.acpService.clearMessages();
         const cwd = this.acpService.pendingTaskCreation()
           ? undefined
           : (this.acpService.selectedProjectPath() || this.acpService.workingDirHint() || undefined);
         await this.acpService.ensureChatSession(cwd);
         this.acpService.hasOpenedSession.set(true);
-      }
-      const content: ContentBlock[] = [];
-      if (text) {
-        content.push({ type: 'text', text });
-      }
-      for (const att of attachments) {
-        content.push(att.block);
       }
       await this.acpService.sendPrompt(content);
       this.attachments.set([]);
