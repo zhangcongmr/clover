@@ -1,10 +1,16 @@
 <div class="agent-container">
   <div class="agent-sidebar" [class.collapsed]="layoutService.sidebarCollapsed()">
-    @if (!layoutService.sidebarCollapsed()) {
-      <button class="icon-btn" (click)="layoutService.collapseSidebar()" title="Collapse Sidebar">
-        <svg class="icon" width="20" height="20"><use href="#icon-shrink-close"></use></svg>
-      </button>
-    }
+    <div class="sidebar-brand">
+      <span class="sidebar-brand-name">Clover</span>
+      @if (!layoutService.sidebarCollapsed()) {
+        <button class="icon-btn" (click)="layoutService.collapseSidebar()" title="Collapse Sidebar">
+          <svg class="icon" width="20" height="20">
+            <use href="#icon-shrink-close"></use>
+          </svg>
+        </button>
+      }
+    </div>
+
     <!-- New Task nav -->
     <div class="sidebar-nav">
       <div class="nav-item" [class.active]="activeView() === 'new-task' && showAcpPanel()"
