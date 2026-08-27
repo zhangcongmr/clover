@@ -48,19 +48,19 @@
   "conv_template": {
     "name": "llama-3_1",
     "system_template": "<|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|>",
-    "system_message": "You are a helpful, respectful and honest luxio.",
+    "system_message": "You are a helpful, respectful and honest clover.",
     "system_prefix_token_ids": [
       128000
     ],
     "add_role_after_system_message": true,
     "roles": {
       "user": "<|start_header_id|>user",
-      "luxio": "<|start_header_id|>luxio",
+      "clover": "<|start_header_id|>clover",
       "tool": "<|start_header_id|>ipython"
     },
     "role_templates": {
       "user": "{user_message}",
-      "luxio": "{luxio_message}",
+      "clover": "{clover_message}",
       "tool": "{tool_message}"
     },
     "messages": [],

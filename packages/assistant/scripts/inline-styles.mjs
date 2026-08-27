@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const cssPath = join(__dirname, '..', 'dist', 'luxio-common','browser', 'styles.css');
+const cssPath = join(__dirname, '..', 'dist', 'clover-common','browser', 'styles.css');
 const outputPath = join(__dirname, '..', 'src', 'inlined-styles.ts');
 
 try {

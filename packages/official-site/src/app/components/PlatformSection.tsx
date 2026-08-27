@@ -15,10 +15,10 @@ export function PlatformSection() {
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Connect Luxio to your favorite tools
+            Connect Clover to your favorite tools
           </h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Download our native apps or use Luxio on the web. Available on all major platforms and integrated with your favorite development tools.
+            Download our native apps or use Clover on the web. Available on all major platforms and integrated with your favorite development tools.
           </p>
         </div>
 

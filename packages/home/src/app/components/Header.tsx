@@ -51,7 +51,7 @@ export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile
         <div className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgb(103, 137, 186)' }}>
           <span className="text-white font-bold text-sm">L</span>
         </div>
-        <span className="font-semibold text-xl">Luxio</span>
+        <span className="font-semibold text-xl">Clover</span>
       </div>
 
       {/* Navigation */}
@@ -65,11 +65,11 @@ export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile
         <a href="/education" className="text-sm text-gray-700 hover:text-gray-900">
           Education
         </a>
-        <a href="/luxio-premium" className="text-sm text-gray-700 hover:text-gray-900">
-          Luxio Premium
+        <a href="/clover-premium" className="text-sm text-gray-700 hover:text-gray-900">
+          Clover Premium
         </a> */}
-        <a href="/luxio-ai" className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1">
-          Luxio AI
+        <a href="/clover-ai" className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1">
+          Clover AI
           <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1 rounded">
             AI
           </span>
@@ -101,7 +101,7 @@ export function Header({ isAuthenticated, onLogin, onLogout, onNavigateToProfile
         </button>
         <button className="text-gray-600 hover:bg-gray-100 cursor-pointer border border-gray-300 rounded px-2 py-1 flex items-center gap-1">
           {/* <SquarePlus className="w-5 h-5" /> */}
-          <a href="/editor" target="_blank" className="text-sm">Luxio Editor</a>
+          <a href="/editor" target="_blank" className="text-sm">Clover Editor</a>
         </button>
 
         {/* User avatar with dropdown */}

@@ -2,7 +2,7 @@
 
 ## 概述
 
-将 `packages/assistant/src/app/luxio/settings/` 从占位组件改造为功能完整的设置面板。分 4 轮迭代实现 **15 项功能**，每轮交付一个可用版本。
+将 `packages/assistant/src/app/main/settings/` 从占位组件改造为功能完整的设置面板。分 4 轮迭代实现 **15 项功能**，每轮交付一个可用版本。
 
 > 状态标注：✅ 已实现 &nbsp; ⚡ 部分实现 &nbsp; ❌ 未实现
 
@@ -78,7 +78,7 @@
 
 ### 功能 9：通知首选项 ✅
 - 数字输入（秒），0 = 永不自动关闭
-- **逻辑**：`NotificationService.autoCloseDuration` 可配置，持久化到 localStorage `luxio_notification_duration`
+- **逻辑**：`NotificationService.autoCloseDuration` 可配置，持久化到 localStorage `main_notification_duration`
 
 ### UI 设计
 - 新增分类 "Editor" + "Data"
@@ -93,7 +93,7 @@
 
 ### 功能 10：AI 模型选择 ✅
 - 下拉选择器：deepseek-v4-flash / deepseek-v3 / gpt-4o / gpt-4o-mini
-- 持久化到 localStorage `luxio_selected_model`
+- 持久化到 localStorage `main_selected_model`
 
 ### 功能 11：AI 主题生成器入口 ❌
 - **跳过原因**：需要迁移或嵌入当前的主题生成弹出逻辑（`themePromptOpen` 在 `AppComponent` 中），涉及跨组件通信，需后续迭代处理
@@ -108,7 +108,7 @@
 - **跳过原因**：项目无 i18n 基础设施，预留了 Advanced 分类位置，待后续补充
 
 ### 功能 15：插件视图开关 ✅
-- toggle 开关，持久化到 localStorage `luxio_plugins_enabled`
+- toggle 开关，持久化到 localStorage `main_plugins_enabled`
 - 注：当前仅持久化状态，`app.component.html` 中视图 ID 3 的分支已被注释掉，需外部代码放开渲染条件
 
 ---
@@ -145,10 +145,10 @@ interface SettingsCategory {
 
 | 文件 | 操作 | 说明 |
 |---|---|---|
-| `luxio/settings/settings.component.ts` | ✅ 修改 | 完整设置面板组件，5 个分类的处理逻辑 |
-| `luxio/settings/settings.component.html` | ✅ 重写 | 完整设置面板模板（General / Appearance / Editor / Data / Advanced） |
-| `luxio/settings/settings.component.css` | ✅ 重写 | 设置面板样式（含主题选择器、toggle、OPFS 信息、select、danger 按钮等） |
-| `luxio/settings/settings.service.ts` | ✅ **新建** | 设置状态管理服务（Angular Signals + localStorage 持久化） |
+| `main/settings/settings.component.ts` | ✅ 修改 | 完整设置面板组件，5 个分类的处理逻辑 |
+| `main/settings/settings.component.html` | ✅ 重写 | 完整设置面板模板（General / Appearance / Editor / Data / Advanced） |
+| `main/settings/settings.component.css` | ✅ 重写 | 设置面板样式（含主题选择器、toggle、OPFS 信息、select、danger 按钮等） |
+| `main/settings/settings.service.ts` | ✅ **新建** | 设置状态管理服务（Angular Signals + localStorage 持久化） |
 | `core.service.ts` | ❌ 无需改动 | folderReadWriteMode 移入 SettingsService，未修改 core.service.ts |
 | `content/content.component.ts` | ✅ 修改 | 注入 SettingsService，移除本地 folderReadWriteMode，autoRefreshEnabled 改为委派到 Service |
 | `theme.service.ts` | ❌ 无需改动 | 直接复用现有 API |

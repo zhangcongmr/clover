@@ -310,14 +310,14 @@ fetch('/api/auth/signin', {
 2. **Remove localStorage code:**
    ```typescript
    // Delete these lines
-   localStorage.setItem('luxio_auth', ...)
-   localStorage.getItem('luxio_auth')
+   localStorage.setItem('clover_auth', ...)
+   localStorage.getItem('clover_auth')
    ```
 
 3. **Update logout:**
    ```typescript
    // Before
-   localStorage.removeItem('luxio_auth');
+   localStorage.removeItem('clover_auth');
    
    // After
    await authStore.logout();

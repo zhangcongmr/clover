@@ -1,17 +1,17 @@
 {
   "name": "@julyware/clover-ui",
   "version": "0.1.2",
-  "description": "Clover embeddable UI library (Luxio component) built with Angular",
+  "description": "Clover embeddable UI library (Clover component) built with Angular",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/luxio-common/index.js",
-      "require": "./dist/luxio-common/index.cjs"
+      "import": "./dist/clover-common/index.js",
+      "require": "./dist/clover-common/index.cjs"
     }
   },
-  "types": "./dist/luxio-common/index.d.ts",
+  "types": "./dist/clover-common/index.d.ts",
   "files": [
-    "dist/luxio-common"
+    "dist/clover-common"
   ],
   "scripts": {
     "ng": "ng",
@@ -21,12 +21,12 @@
     "build": "pnpm run build:common && pnpm run build:app && node scripts/copy-node-pty.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:luxio": "node dist/luxio/server/server.mjs",
+    "serve:ssr:clover": "node dist/clover/server/server.mjs",
     "prepublishOnly": "node ../../scripts/guard-publish.mjs && pnpm run build:common"
   },
   "keywords": [
     "clover",
-    "luxio",
+    "clover",
     "angular",
     "editor"
   ],

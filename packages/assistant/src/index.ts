@@ -27,7 +27,7 @@ const createAppRoot = (domId: string) => {
   }
 }
 
-export const Luxio = (domId: string, doc?: DocModelType, fileName?: string) => {
+export const Clover = (domId: string, doc?: DocModelType, fileName?: string) => {
   // 使用
   appendInlineStyle(GLOBAL_STYLES);
 

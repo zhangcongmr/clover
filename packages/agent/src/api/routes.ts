@@ -24,7 +24,7 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
 
   // Health check
   app.get('/api/local/health', (_req, res) => {
-    res.json({ status: 'ok', readonly: process.env['LUXIO_READONLY'] === 'true' });
+    res.json({ status: 'ok', readonly: process.env['CLOVER_READONLY'] === 'true' });
   });
 
   // ACP config endpoint

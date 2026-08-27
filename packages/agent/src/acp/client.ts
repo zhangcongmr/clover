@@ -157,7 +157,7 @@ export class AcpClient {
       const initResult = await this.clientConnection.agent.request('initialize', {
         protocolVersion: PROTOCOL_VERSION,
         clientInfo: {
-          name: 'luxio-agent',
+          name: 'clover-agent',
           version: '1.0.0',
         },
         clientCapabilities: {
@@ -204,7 +204,7 @@ export class AcpClient {
     const ws = this.ws;
     const pendingPermissions = this.pendingPermissions;
 
-    return client({ name: 'luxio-agent' })
+    return client({ name: 'clover-agent' })
       .onNotification('session/update', (ctx) => {
         // Keep the config cache current when the agent pushes config changes
         const update = ctx.params as { sessionUpdate?: string; configOptions?: acp.SessionConfigOption[] };

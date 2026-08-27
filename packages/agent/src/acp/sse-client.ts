@@ -113,7 +113,7 @@ export class SseAcpClient {
     const initResult = await this.clientConnection.agent.request('initialize', {
       protocolVersion: PROTOCOL_VERSION,
       clientInfo: {
-        name: 'luxio-agent-sse',
+        name: 'clover-agent-sse',
         version: '1.0.0',
       },
       clientCapabilities: {
@@ -232,7 +232,7 @@ export class SseAcpClient {
     const sessionId = this.sessionId;
     const pendingPermissions = this.pendingPermissions;
 
-    return client({ name: 'luxio-agent-sse' })
+    return client({ name: 'clover-agent-sse' })
       .onNotification('session/update', (ctx) => {
         // Keep the config cache current when the agent pushes config changes
         const update = ctx.params as { sessionUpdate?: string; configOptions?: acp.SessionConfigOption[] };

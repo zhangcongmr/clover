@@ -4,11 +4,11 @@ import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from './shared/ast-tab/ast-tab-group/ast-tab-group.component';
-import { ContentComponent } from './luxio/content/content.component';
+import { ContentComponent } from './main/content/content.component';
 import { AstMenuComponent } from './shared/ast-menu/ast-menu.component';
 import { AstSubmenuComponent } from './shared/ast-menu/ast-submenu.component';
-import { SettingsComponent } from './luxio/settings/settings.component';
-import { UserCenterComponent } from './luxio/user-center/user-center.component';
+import { SettingsComponent } from './main/settings/settings.component';
+import { UserCenterComponent } from './main/user-center/user-center.component';
 import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
 import { customFileIcons, customFileIconPaths } from './shared/ast-tree/ast-tree.component';
@@ -16,7 +16,6 @@ import { computeFileIcons } from './shared/ast-tree/ast-tree.component';
 import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
-import { AcpPanelComponent } from './shared/acp/acp-panel.component';
 import { AcpService } from './shared/acp/acp.service';
 import * as Types from '@a2ui/web_core/types/types';
 import { A2uiRendererService, SurfaceComponent } from '@a2ui/angular/v0_9';
@@ -24,8 +23,8 @@ import { Client } from './client';
 import { NotificationService } from './shared/notification/notification.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
-import { AgentComponent } from './luxio/agent-ui/agent';
-import { LayoutService } from './luxio/layout.service';
+import { AgentComponent } from './main/agent-ui/agent';
+import { LayoutService } from './main/layout.service';
 
 @Component({
     selector: 'app-root',
@@ -63,8 +62,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     this.agentPanelWidthPx.set((1 - this.leftPct) * (baseWidth - leftArea - 15));
   }
   
-  title = 'luxio';
-  luxioAppTabId: any;
+  title = 'clover';
+  cloverAppTabId: any;
   textArr: Array<String> = []
 
   lastSelectedDisplayViewId: number = 1;
@@ -84,11 +83,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
-  private readonly AST_CONTENT_PANEL_OPEN_KEY = 'luxio_ast_content_panel_open';
-  private readonly ACP_DOCK_POSITION_KEY = 'luxio_acp_dock_position';
-  private readonly ACP_PANEL_OPEN_KEY = 'luxio_acp_panel_open';
-  private static readonly  ACP_LEFT_PCT_KEY = 'luxio_acp_left_pct';
-  private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'luxio_acp_previous_left_pct';
+  private readonly AST_CONTENT_PANEL_OPEN_KEY = 'clover_ast_content_panel_open';
+  private readonly ACP_DOCK_POSITION_KEY = 'clover_acp_dock_position';
+  private readonly ACP_PANEL_OPEN_KEY = 'clover_acp_panel_open';
+  private static readonly  ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
+  private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'clover_acp_previous_left_pct';
 
   keepTerminalInstance = {
     value: false,
@@ -137,18 +136,18 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       if (chrome && chrome.tabs) {
         chrome.tabs.getCurrent((val: any) => {
           console.log("current tab id is:" + val.id);
-          this.luxioAppTabId = val.id;
-          chrome.storage.local.get(ConfigService.luxioAppTabIdList, (result: any) => {
-            const luxioAppTabIdList = result[ConfigService.luxioAppTabIdList];
-            if (!luxioAppTabIdList) {
-              chrome.storage.local.set({ [ConfigService.luxioAppTabIdList]: [val.id] }, function () {
+          this.cloverAppTabId = val.id;
+          chrome.storage.local.get(ConfigService.cloverAppTabIdList, (result: any) => {
+            const cloverAppTabIdList = result[ConfigService.cloverAppTabIdList];
+            if (!cloverAppTabIdList) {
+              chrome.storage.local.set({ [ConfigService.cloverAppTabIdList]: [val.id] }, function () {
                 // let us know it worked
                 console.log("V3 Test: initialized test click counter to 0");
               });
             } else {
-              if (luxioAppTabIdList.length >= 0 && !luxioAppTabIdList.includes(val.id)) {
-                luxioAppTabIdList.push(val.id);
-                chrome.storage.local.set({ [ConfigService.luxioAppTabIdList]: luxioAppTabIdList }, function () {
+              if (cloverAppTabIdList.length >= 0 && !cloverAppTabIdList.includes(val.id)) {
+                cloverAppTabIdList.push(val.id);
+                chrome.storage.local.set({ [ConfigService.cloverAppTabIdList]: cloverAppTabIdList }, function () {
                   // let us know it worked
                   console.log("V3 Test: initialized test click counter to 0");
                 });

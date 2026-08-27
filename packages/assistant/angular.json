@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "luxio": {
+    "clover": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/luxio",
+            "outputPath": "dist/clover",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -92,7 +92,7 @@
             },
             "common": {
               "browser": "src/main.common.ts",
-              "outputPath": "dist/luxio-common",
+              "outputPath": "dist/clover-common",
               "optimization": false,
               "outputHashing": "none",
               "outputMode": "static",
@@ -147,10 +147,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "luxio:build:production"
+              "buildTarget": "clover:build:production"
             },
             "development": {
-              "buildTarget": "luxio:build:development"
+              "buildTarget": "clover:build:development"
             }
           },
           "defaultConfiguration": "development",

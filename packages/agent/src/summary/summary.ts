@@ -2,7 +2,7 @@
  * Work Summary
  *
  * ## Objective
- * Extract common Express + API endpoint code into shared `@luxio/agent` package,
+ * Extract common Express + API endpoint code into shared `@clover/agent` package,
  * refactor consumers, and set up production SSR build for the editor with a
  * portable server bundle.
  *
@@ -11,7 +11,7 @@
  *   No React SSR rendering.
  * - `node-pty` loaded dynamically via `require()` in `pty-manager.ts` –
  *   must use `createRequire` / dynamic `import('node:module')` to work in ESM.
- * - `@luxio/agent` built with tsup (CJS + ESM + DTS), `"type": "module"`.
+ * - `@clover/agent` built with tsup (CJS + ESM + DTS), `"type": "module"`.
  * - Node.js 24 eagerly resolves `import()` calls statically, even behind dead
  *   code branches, `new Function`, or char-code encoding. Tree-shaking at build
  *   time (esbuild `define`) is the only effective workaround.
@@ -29,9 +29,9 @@
  * - Created `packages/agent/` (14 source files + tsup/tsconfig configs);
  *   builds CJS + ESM + DTS.
  * - Refactored `packages/editor/src/server/server.ts` (86 lines) and
- *   `packages/assistant/src/server.ts` (85 lines) to use `@luxio/agent`.
+ *   `packages/assistant/src/server.ts` (85 lines) to use `@clover/agent`.
  * - Deleted `packages/editor/src/server/agent/` (5 files moved to agent pkg).
- * - Updated package.jsons: added `@luxio/agent`, removed
+ * - Updated package.jsons: added `@clover/agent`, removed
  *   `uuid`/`ws`/`@a2a-js/sdk`/`@types/uuid`.
  * - `pty-manager.ts` bugfix: `loadNodePty()` / `create()` made async; uses
  *   `await import('node:module')` (dynamic) instead of static `import` (which

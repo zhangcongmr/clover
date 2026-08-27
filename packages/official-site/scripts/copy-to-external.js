@@ -4,7 +4,7 @@ import { resolve } from 'path';
 
 const sourceDir = resolve(process.cwd(), 'dist-lib');
 const targets = [
-  resolve(process.cwd(), '../../luxio/src/assets/js'),
+  resolve(process.cwd(), '../../clover/src/assets/js'),
   // 可添加多个目标目录
 ];
 

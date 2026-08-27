@@ -12,7 +12,7 @@ clover-monorepo/
 │   ├── agent/                  # 本地代理 Agent（@julyware/clover-agent）
 │   │                           # Local proxy agent: Express + WebSocket + ACP + node-pty + Redis
 │   │                           # Redis 需独立部署，默认走内存模式（不订阅 Redis）
-│   ├── assistant/              # 主应用（luxio）: Angular 21 + SSR
+│   ├── assistant/              # 主应用（clover）: Angular 21 + SSR
 │   │                           # Main app: editor / terminal / ACP client UI
 │   ├── common/                 # 共享 TypeScript 库（@julyware/common）
 │   ├── community-widget/       # 社区挂件
@@ -67,7 +67,7 @@ pnpm build
 # assistant 主应用
 pnpm --filter ./packages/assistant start        # 开发服务器（HTTPS）
 pnpm --filter ./packages/assistant build        # 构建 + 样式内联 + 类型声明
-pnpm --filter ./packages/assistant serve:ssr:luxio  # 运行 SSR 服务
+pnpm --filter ./packages/assistant serve:ssr:clover  # 运行 SSR 服务
 
 # agent 本地代理
 pnpm --filter ./packages/agent build            # tsup 构建

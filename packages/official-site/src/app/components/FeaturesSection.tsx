@@ -13,7 +13,7 @@ export function FeaturesSection() {
                 Design, debug, and test APIs with an all-in-one platform for API development
               </h2>
               <p className="text-gray-300 mb-6 text-lg">
-                Luxio's API development environment provides a seamless workflow for designing, debugging, and testing APIs.
+                Clover's API development environment provides a seamless workflow for designing, debugging, and testing APIs.
               </p>
               <Button className="bg-[#FF6C37] hover:bg-[#FF5722] text-white">
                 Learn more <ArrowRight className="w-4 h-4 ml-2" />
@@ -47,7 +47,7 @@ export function FeaturesSection() {
                 Design APIs your teams control end-to-end
               </h2>
               <p className="text-gray-600 mb-6">
-                Use Luxio's powerful tools to design APIs that are consistent, reusable, and easy to understand. Define your API structure and collaborate with your team in real-time.
+                Use Clover's powerful tools to design APIs that are consistent, reusable, and easy to understand. Define your API structure and collaborate with your team in real-time.
               </p>
               <a href="#" className="text-[#FF6C37] font-medium inline-flex items-center hover:underline">
                 Learn more <ArrowRight className="w-4 h-4 ml-2" />

