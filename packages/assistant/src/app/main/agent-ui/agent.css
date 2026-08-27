@@ -28,16 +28,29 @@
   transition: width 0.2s, min-width 0.2s;
 }
 
+.sidebar-brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 6px;
+}
+
+.sidebar-brand-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--vscode-foreground);
+}
+
+.sidebar-brand > .icon-btn {
+  margin-left: auto;
+}
+
 .agent-sidebar.collapsed {
   width: 0;
   min-width: 0;
   border-right: none;
   overflow: hidden;
-}
-
-.agent-sidebar > .icon-btn {
-  align-self: flex-end;
-  margin: 6px 8px 0;
 }
 
 .sidebar-header {
