@@ -73,8 +73,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   set astContentPanelOpen(value: boolean) { this.layoutService.astContentPanelOpen.set(value); }
   agentPanelOpen = true;
   dockPosition: 'left' | 'right' = 'left';
-  terminalBtnShow = true;
   terminalPanelShow = false;
+  readonly fileType = signal<string>('');
   themePromptOpen = false;
   themePromptText = '';
   themePromptLoading = false;
@@ -1156,6 +1156,9 @@ For each fileIcons entry:
     }
   }
 
+  showUploadProgressDetails(): void {
+    this.coreService.showNotification(this.coreService.progressDetails(), 'info');
+  }
 
   private openTab(targetTab: any) {
     let oldTab = false;
@@ -1343,7 +1346,6 @@ For each fileIcons entry:
     if (dataList.length > 0) {
       const docObj = dataList[0];
       setTimeout(() => {
-        // this.terminalBtnShow = !docObj.isLocked;
       }, 0);
     }
   }
