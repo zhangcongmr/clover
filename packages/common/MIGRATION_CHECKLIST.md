@@ -92,9 +92,9 @@ Example response:
 
 Search and remove these patterns:
 
-- [ ] `localStorage.setItem('luxio_auth', ...)`
-- [ ] `localStorage.getItem('luxio_auth')`
-- [ ] `localStorage.removeItem('luxio_auth')`
+- [ ] `localStorage.setItem('clover_auth', ...)`
+- [ ] `localStorage.getItem('clover_auth')`
+- [ ] `localStorage.removeItem('clover_auth')`
 - [ ] Any manual JSON parsing of auth data from storage
 
 ### 3. Update Auth Store Usage
@@ -169,7 +169,7 @@ const handleSignIn = async (e: React.FormEvent) => {
 ```typescript
 const handleLogout = async () => {
   await fetch('/api/auth/logout', { method: 'POST' });
-  localStorage.removeItem('luxio_auth');
+  localStorage.removeItem('clover_auth');
   window.location.href = '/signin';
 };
 ```
@@ -263,7 +263,7 @@ function MyComponent() {
 - [ ] **XSS Resistance**
   - Open browser console
   - Try: `document.cookie` - should NOT show session cookie
-  - Try: `localStorage.getItem('luxio_auth')` - should return null
+  - Try: `localStorage.getItem('clover_auth')` - should return null
 
 ### Automated Testing
 

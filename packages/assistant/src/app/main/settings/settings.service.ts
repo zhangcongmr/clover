@@ -80,19 +80,19 @@ export class SettingsService {
     }
 
     if (typeof localStorage !== 'undefined') {
-      const model = localStorage.getItem('luxio_selected_model');
+      const model = localStorage.getItem('clover_selected_model');
       if (model) {
         this.selectedModel.set(model);
       }
-      const plugins = localStorage.getItem('luxio_plugins_enabled');
+      const plugins = localStorage.getItem('clover_plugins_enabled');
       if (plugins === 'true') {
         this.pluginsEnabled.set(true);
       }
-      const useMemory = localStorage.getItem('luxio_use_memory_mode');
+      const useMemory = localStorage.getItem('clover_use_memory_mode');
       if (useMemory === 'false') {
         this.useMemoryMode.set(false);
       }
-      const dur = localStorage.getItem('luxio_notification_duration');
+      const dur = localStorage.getItem('clover_notification_duration');
       if (dur) {
         const num = Number(dur);
         if (!isNaN(num) && num >= 0) {
@@ -154,28 +154,28 @@ export class SettingsService {
     this.notificationDuration.set(seconds);
     this.notificationService.autoCloseDuration = seconds * 1000;
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('luxio_notification_duration', String(seconds));
+      localStorage.setItem('clover_notification_duration', String(seconds));
     }
   }
 
   setSelectedModel(model: string) {
     this.selectedModel.set(model);
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('luxio_selected_model', model);
+      localStorage.setItem('clover_selected_model', model);
     }
   }
 
   setPluginsEnabled(enabled: boolean) {
     this.pluginsEnabled.set(enabled);
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('luxio_plugins_enabled', String(enabled));
+      localStorage.setItem('clover_plugins_enabled', String(enabled));
     }
   }
 
   setUseMemoryMode(enabled: boolean) {
     this.useMemoryMode.set(enabled);
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('luxio_use_memory_mode', String(enabled));
+      localStorage.setItem('clover_use_memory_mode', String(enabled));
     }
   }
 

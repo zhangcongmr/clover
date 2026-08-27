@@ -8,9 +8,9 @@
 
 | # | 文件 | 操作 |
 |---|------|------|
-| 1 | `packages/assistant/src/app/luxio/user-center/user-center.component.ts` | 重写 |
-| 2 | `packages/assistant/src/app/luxio/user-center/user-center.component.html` | 重写 |
-| 3 | `packages/assistant/src/app/luxio/user-center/user-center.component.css` | 重写 |
+| 1 | `packages/assistant/src/app/main/user-center/user-center.component.ts` | 重写 |
+| 2 | `packages/assistant/src/app/main/user-center/user-center.component.html` | 重写 |
+| 3 | `packages/assistant/src/app/main/user-center/user-center.component.css` | 重写 |
 | 4 | `packages/assistant/src/app/app.component.html` | 修改菜单结构 & 文案 |
 | 5 | `packages/assistant/src/app/app.component.ts` | 更新引用标识 |
 

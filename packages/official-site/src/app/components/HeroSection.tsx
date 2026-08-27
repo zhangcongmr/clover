@@ -12,7 +12,7 @@ export function HeroSection() {
               Where the world builds APIs
             </h1>
             <p className="text-lg text-gray-600 mb-8">
-              The Luxio API Platform's features simplify each step of the API lifecycle and streamline collaboration to help you create better APIs faster.
+              The Clover API Platform's features simplify each step of the API lifecycle and streamline collaboration to help you create better APIs faster.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Button className="bg-[#FF6C37] hover:bg-[#FF5722] text-white px-6 py-6 text-base">

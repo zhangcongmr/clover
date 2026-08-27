@@ -440,7 +440,7 @@ export class AcpClient {
       const initResult = await this.connection.initialize({
         protocolVersion: acp.PROTOCOL_VERSION,
         clientInfo: {
-          name: 'luxio-agent',
+          name: 'clover-agent',
           version: '1.0.0',
         },
         clientCapabilities: {

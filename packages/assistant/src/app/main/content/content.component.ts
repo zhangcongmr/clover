@@ -554,7 +554,7 @@ showButtonPlaceholder = computed(() => {
   }
 
   private async generateWelcomeContent(): Promise<void> {
-    const systemPrompt = `You are a welcome assistant for Luxio, a web-based editor.
+    const systemPrompt = `You are a welcome assistant for Clover, a web-based editor.
 Generate a short welcome tip and a matching SVG icon path.
 The tip should be 2-10 words, friendly, and related to editing, creativity, or productivity.
 The icon should be a simple 24x24 SVG path representing the tip theme.
@@ -565,7 +565,7 @@ Always use the welcome_greeting tool.`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: 'Generate a welcome greeting for the Luxio editor',
+          message: 'Generate a welcome greeting for the Clover editor',
           model: 'deepseek-v4-flash',
           history: [],
           system: systemPrompt,

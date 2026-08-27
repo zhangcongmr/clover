@@ -10,7 +10,7 @@ const require = createRequire(import.meta.url);
 
 const sourcePackageJsonPath = require.resolve('node-pty/package.json');
 const sourceRoot = path.dirname(sourcePackageJsonPath);
-const targetRoot = path.join(packageRoot, 'dist', 'luxio');
+const targetRoot = path.join(packageRoot, 'dist', 'clover');
 
 function copyNodePty(src, dest) {
   if (!fs.existsSync(src)) {

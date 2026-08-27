@@ -5,8 +5,8 @@ This is a package-level AI instruction file for the `packages/assistant` workspa
 ## What this package is
 
 - Angular 21 application / library package with server-side rendering support.
-- Package name is `luxio` in `packages/assistant/package.json`.
-- Built output is `dist/luxio`.
+- Package name is `clover` in `packages/assistant/package.json`.
+- Built output is `dist/clover`.
 - Intended to run as both a web app and an embeddable library via `src/index.ts`.
 
 ## Key behaviors
@@ -14,10 +14,10 @@ This is a package-level AI instruction file for the `packages/assistant` workspa
 - `pnpm --filter ./packages/assistant start` runs `ng serve --host=0.0.0.0 --ssl`.
 - `pnpm --filter ./packages/assistant build` runs `ng build`, then `node scripts/inline-styles.mjs`, then `tsc -p tsconfig.declaration.json`.
 - `pnpm --filter ./packages/assistant test` runs `ng test`.
-- `pnpm --filter ./packages/assistant serve:ssr:luxio` starts the SSR server from `dist/luxio/server/server.mjs`.
+- `pnpm --filter ./packages/assistant serve:ssr:clover` starts the SSR server from `dist/clover/server/server.mjs`.
 - `src/main.ts` initializes the browser app and reads initial data via `opfs-tools`.
 - `src/main.server.ts` and `src/server.ts` implement SSR rendering and an Express server.
-- `src/index.ts` exports `Luxio(domId, doc?, fileName?)` for third-party embedding.
+- `src/index.ts` exports `Clover(domId, doc?, fileName?)` for third-party embedding.
 
 ## Important files
 

@@ -59,11 +59,7 @@ export const sharedAppProxy: Record<string, ProxyOptions> = {
   '/resetpassword': {
     target: 'http://localhost:5180',
     ...defaultProxyOptions,
-  },
-  '/luxio-ai': {
-    target: 'http://localhost:5181',
-    ...defaultProxyOptions,
-  },
+  }
 }
 
 export function createSharedAppProxy(excludeRoute?: string): Record<string, ProxyOptions> {

@@ -21,10 +21,10 @@ export function IntegrationSection() {
             Streamline-ready for modern API integrations
           </h2>
           <p className="text-gray-300 text-lg mb-2">
-            Connect Luxio to your favorite tools and services to automate your API workflows.
+            Connect Clover to your favorite tools and services to automate your API workflows.
           </p>
           <p className="text-gray-300 text-lg">
-            With 50+ integrations, you can integrate Luxio into virtually any development or monitoring workflow.
+            With 50+ integrations, you can integrate Clover into virtually any development or monitoring workflow.
           </p>
         </div>
 

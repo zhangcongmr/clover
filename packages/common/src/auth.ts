@@ -7,7 +7,7 @@ export interface AuthState {
   loading: boolean;
 }
 
-const AUTH_STATE_KEY = 'luxio_auth_state';
+const AUTH_STATE_KEY = 'clover_auth_state';
 const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // Check session every 5 minutes
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 

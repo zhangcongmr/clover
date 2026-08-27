@@ -216,7 +216,7 @@
 
 ### 3. add-project.component
 
-**组件路径**: `src/app/luxio/add-project/`
+**组件路径**: `src/app/main/add-project/`
 **样式文件**: `add-project.component.css`
 
 #### 新增 CSS
@@ -337,7 +337,7 @@
 
 ### 6. content.component
 
-**组件路径**: `src/app/luxio/content/`
+**组件路径**: `src/app/main/content/`
 **样式文件**: `content.component.css`
 
 #### 新增 CSS

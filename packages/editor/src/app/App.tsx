@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams } from "react-router";
-import { Luxio } from '@julyware/clover-ui';
+import { Clover } from '@julyware/clover-ui';
 
 // 防止重复加载
 let angularLoaded = false;
@@ -84,7 +84,7 @@ async function afterQueryApiModel(rawData: any): Promise<void> {
     processInstanceContainer(userData, rawData);
   }
 
-  Luxio("coderEditor", rawData, rawData?.name)
+  Clover("coderEditor", rawData, rawData?.name)
     .catch(err => {
       console.error('Angular failed to start', err);
       angularLoaded = false;
@@ -115,7 +115,7 @@ function ViewPage() {
     if (params && params.id) {
       projectDef({ id: params.id });
     } else {
-      Luxio("coderEditor")
+      Clover("coderEditor")
         .catch(err => {
           console.error('Angular failed to start', err);
           angularLoaded = false; // 可选：允许重试

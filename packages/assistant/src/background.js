@@ -15,11 +15,11 @@ if(chrome && chrome.webRequest) {
 
 
     chrome.webRequest.onBeforeRequest.addListener(data => {
-        // chrome.storage.local.get("luxioAppTabIdList", result => {
-        //     if (data.tabId == result["luxioAppTabIdList"]) {
+        // chrome.storage.local.get("cloverAppTabIdList", result => {
+        //     if (data.tabId == result["cloverAppTabIdList"]) {
         //         if (data.url.includes("/apijson/")) {
         //             console.log("update tabs--------------")
-        //             // chrome.tabs.update(Number(result["luxioAppTabIdList"]), {
+        //             // chrome.tabs.update(Number(result["cloverAppTabIdList"]), {
         //             //     url: data.initiator + "/index.html"
         //             // });
         //         }
@@ -93,10 +93,10 @@ if(chrome && chrome.webRequest) {
     }, { urls: ["<all_urls>"] }, ["requestBody"]);
 
     chrome.webRequest.onErrorOccurred.addListener(data => {
-        chrome.storage.local.get("luxioAppTabIdList", result => {
-            const luxioAppTabIdList = result["luxioAppTabIdList"];
-            if (luxioAppTabIdList && luxioAppTabIdList.length > 0) {
-                if (luxioAppTabIdList.includes(data.tabId)) {
+        chrome.storage.local.get("cloverAppTabIdList", result => {
+            const cloverAppTabIdList = result["cloverAppTabIdList"];
+            if (cloverAppTabIdList && cloverAppTabIdList.length > 0) {
+                if (cloverAppTabIdList.includes(data.tabId)) {
                     if (data.url.includes("chrome-extension") && data.type == chrome.webRequest.ResourceType.MAIN_FRAME) {
                         chrome.tabs.update(Number(data.tabId), {
                             url: data.initiator + "/index.html"
@@ -120,17 +120,17 @@ if(chrome && chrome.storage) {
 
     // const panelLeft = (screen.availWidth - panelWidth) * 0.5;
     // const panelTop = (screen.availHeight - panelHeight) * 0.5;
-    chrome.storage.local.get("luxioMenusIdCreatedStatus", result => {
-        const luxioMenusIdCreatedStatus = result['luxioMenusIdCreatedStatus'];
-        if(!luxioMenusIdCreatedStatus || luxioMenusIdCreatedStatus == 0) {
+    chrome.storage.local.get("cloverMenusIdCreatedStatus", result => {
+        const cloverMenusIdCreatedStatus = result['cloverMenusIdCreatedStatus'];
+        if(!cloverMenusIdCreatedStatus || cloverMenusIdCreatedStatus == 0) {
             chrome.contextMenus.create({
-                id: "luxio_menus_id",
-                title: 'Luxio', // %s表示选中的文字
+                id: "clover_menus_id",
+                title: 'Clover', // %s表示选中的文字
                 contexts: ['page'], // 只有当选中文字时才会出现此右键菜单
                 documentUrlPatterns: ["http://*/*", "https://*/*", "file://*"]
             });
-            chrome.storage.local.set({"luxioMenusIdCreatedStatus": 1}, ()=> {
-                console.log("luxio_menus_id has been created.");
+            chrome.storage.local.set({"cloverMenusIdCreatedStatus": 1}, ()=> {
+                console.log("clover_menus_id has been created.");
             });
         }
     });
@@ -140,15 +140,15 @@ if(chrome && chrome.storage) {
 if(chrome && chrome.tabs) {
 
     chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-        chrome.storage.local.get("luxioAppTabIdList", (result) => {
+        chrome.storage.local.get("cloverAppTabIdList", (result) => {
             if (result) {
-                const luxioAppTabIdList = result["luxioAppTabIdList"];
-                if (luxioAppTabIdList.length == 1 && luxioAppTabIdList[0] == tabId) {
+                const cloverAppTabIdList = result["cloverAppTabIdList"];
+                if (cloverAppTabIdList.length == 1 && cloverAppTabIdList[0] == tabId) {
                     clearAllAuthorize();
                 }
-                if (luxioAppTabIdList.length >= 0 && luxioAppTabIdList.includes(tabId)) {
-                    const results = luxioAppTabIdList.filter((id) => Number(id) !== Number(tabId));
-                    chrome.storage.local.set({ "luxioAppTabIdList": results }, function () {
+                if (cloverAppTabIdList.length >= 0 && cloverAppTabIdList.includes(tabId)) {
+                    const results = cloverAppTabIdList.filter((id) => Number(id) !== Number(tabId));
+                    chrome.storage.local.set({ "cloverAppTabIdList": results }, function () {
                         // let us know it worked
                         console.log("V3 Test: initialized test click counter to 0");
                     });
@@ -161,7 +161,7 @@ if(chrome && chrome.tabs) {
 
 if(chrome && chrome.contextMenus) {
     chrome.contextMenus.onClicked.addListener(event => {
-        if (event.menuItemId == "luxio_menus_id") {
+        if (event.menuItemId == "clover_menus_id") {
             chrome.storage.local.get("windowRect", result => {
                 const windowRect = result['windowRect'] || { x: 100, y: 100, width: 1200, height: 800 };
                 chrome.windows.create({

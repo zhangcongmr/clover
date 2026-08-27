@@ -66,14 +66,14 @@ export function setupAgentMiddleware(
     corsPorts,
     corsOrigins = [],
     tokenSecret,
-    tokenSecretEnvKey = 'LUXIO_TOKEN_SECRET',
+    tokenSecretEnvKey = 'CLOVER_TOKEN_SECRET',
     staticDir,
     staticOptions = { maxAge: '1y', index: false, redirect: false },
   } = options;
 
   const secret = tokenSecret ?? process.env[tokenSecretEnvKey];
   const tokenManager = new TokenManager(secret, 30);
-  const fileService = new FileService(process.env['LUXIO_READONLY'] === 'true');
+  const fileService = new FileService(process.env['CLOVER_READONLY'] === 'true');
   const ptyManager = new PtyManager();
 
   app.use(createCORSMiddleware(corsPorts, corsOrigins));
