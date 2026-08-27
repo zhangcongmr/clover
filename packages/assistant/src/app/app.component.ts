@@ -87,9 +87,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private readonly AST_CONTENT_PANEL_OPEN_KEY = 'luxio_ast_content_panel_open';
   private readonly ACP_DOCK_POSITION_KEY = 'luxio_acp_dock_position';
   private readonly ACP_PANEL_OPEN_KEY = 'luxio_acp_panel_open';
-  private readonly ACP_LEFT_PCT_KEY = 'luxio_acp_left_pct';
+  private static readonly  ACP_LEFT_PCT_KEY = 'luxio_acp_left_pct';
   private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'luxio_acp_previous_left_pct';
-  private static readonly ACP_LEFT_PCT_STORAGE_KEY = 'luxio_acp_left_pct';
 
   keepTerminalInstance = {
     value: false,
@@ -1105,7 +1104,7 @@ For each fileIcons entry:
   toggleAstContentPanel() {
     this.astContentPanelOpen = !this.astContentPanelOpen;
     localStorage.setItem(this.AST_CONTENT_PANEL_OPEN_KEY, String(this.astContentPanelOpen));
-    if(!this.astContentPanelOpen) {
+    if (!this.astContentPanelOpen) {
       this.previousLeftPct = this.leftPct;
       this.leftPct = 0;
     } else {
@@ -1435,7 +1434,7 @@ For each fileIcons entry:
     // getDefaultLeftPct() 在基类构造函数（super()）期间即被调用，
     // 此时实例字段尚未初始化，因此必须使用 static 常量 + 直接读 localStorage。
     const saved = typeof localStorage !== 'undefined'
-      ? parseFloat(localStorage.getItem(AppComponent.ACP_LEFT_PCT_STORAGE_KEY) ?? '')
+      ? parseFloat(localStorage.getItem(AppComponent.ACP_LEFT_PCT_KEY) ?? '')
       : NaN;
     if (Number.isFinite(saved) && saved >= 0 && saved <= 1) {
       return saved;
@@ -1465,7 +1464,7 @@ For each fileIcons entry:
 
   private saveLeftPct(): void {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(this.ACP_LEFT_PCT_KEY, String(this.leftPct));
+      localStorage.setItem(AppComponent.ACP_LEFT_PCT_KEY, String(this.leftPct));
       localStorage.setItem(this.ACP_PREVIOUS_LEFT_PCT_KEY, String(this.previousLeftPct));
     }
   }

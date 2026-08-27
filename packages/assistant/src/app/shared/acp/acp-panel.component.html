@@ -20,6 +20,12 @@
             }
         </div>
         <div class="acp-actions">
+            <button class="editor-toggle-btn" [class.active]="editorToggleActive()"
+                (click)="editorToggle.emit()" title="Toggle Editor">
+                <svg class="icon" width="20" height="20">
+                    <use href="#icon-shrink-close"></use>
+                </svg>
+            </button>
             <button class="acp-icon-button" (click)="toggleSettings()" title="Settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"/>

@@ -59,7 +59,18 @@
         </svg>
       </button>
     </div>
-    <div class="project-list">
+
+    <!-- Session search (moved from right panel) -->
+    <div class="sidebar-search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input class="search-input" type="text" placeholder="Search sessions"
+        [value]="searchQuery()" (input)="onSearchInput($event)" />
+    </div>
+
+    <div class="project-list custom-scroll">
       @for (project of projects(); track project.name) {
         <div class="project-item" [class.active]="activeView() === 'projects' && selectedProject()?.name === project.name"
           (click)="selectProject(project.name)">
@@ -72,6 +83,61 @@
             </svg>
           </button>
         </div>
+
+        <!-- Accordion: sessions nested under the selected project -->
+        @if (activeView() === 'projects' && selectedProject()?.name === project.name) {
+          <div class="project-sessions">
+            <button class="new-session-btn" (click)="openNewSession()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14m-7-7h14"/>
+              </svg>
+              <span>New Session</span>
+            </button>
+
+            @for (session of sessionsOf(project); track session.sessionId) {
+              <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
+                [class.loading]="sessionLoadingId() === session.sessionId"
+                [class.disabled]="sessionLoadingId() !== null"
+                (click)="loadSession(session.sessionId)">
+                <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
+                <div class="session-meta">
+                  <span class="session-agent" [title]="getAgentName(session.agentId)">
+                    {{ getAgentIcon(session.agentId) }}
+                  </span>
+                  <span class="session-spinner" [class.visible]="sessionLoadingId() === session.sessionId"></span>
+                  <div class="session-actions">
+                    <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="loadSession(session.sessionId); $event.stopPropagation()" title="Load Session">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                      </svg>
+                    </button>
+                    <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="resumeSession(session.sessionId); $event.stopPropagation()" title="Resume Session">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                    </button>
+                    <button class="session-action-btn session-action-btn--delete" [disabled]="sessionLoadingId() !== null" (click)="deleteSession($event, session.sessionId)" title="Delete Session">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (sessionsOf(project).length === 0) {
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>No sessions</span>
+              </div>
+            }
+          </div>
+        }
       }
     </div>
     <div class="sidebar-footer">
@@ -93,218 +159,22 @@
     </div>
   </div>
 
-  <!-- Right: Session List -->
+  <!-- Right: ACP panel (always occupies the right panel) -->
   <div class="agent-main">
-    @if (activeView() === 'projects') {
-      <div class="main-header">
-        <div class="search-bar">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input class="search-input" type="text" placeholder="Search sessions"
-            [value]="searchQuery()" (input)="onSearchInput($event)" />
-        </div>
-        <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()" title="Open Editor" (click)="layoutService.toggleAstContentPanel()">
-            <svg class="icon" width="20" height="20">
-              <use href="#icon-shrink-close"></use>
-            </svg>
-        </button>
-      </div>
-
-      <div class="session-content">
-        <button class="new-session-btn" (click)="toggleAcpPanel()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14m-7-7h14"/>
-          </svg>
-          <span>New Session</span>
-        </button>
-        <div class="session-list custom-scroll">
-        @if (todaySessions().length > 0) {
-          <div class="session-group">
-            <div class="group-header">
-              <span class="group-title">Today</span>
-            </div>
-            @for (session of todaySessions(); track session.sessionId) {
-              <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
-                [class.loading]="sessionLoadingId() === session.sessionId"
-                [class.disabled]="sessionLoadingId() !== null"
-                (click)="loadSession(session.sessionId)">
-                <span class="session-icon" [style.background]="getProjectColor(session.cwd)">
-                  {{ getInitial(session.cwd) }}
-                </span>
-                <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
-                <span class="session-agent" [title]="getAgentName(session.agentId)">
-                  {{ getAgentIcon(session.agentId) }}
-                </span>
-                <span class="session-spinner" [class.visible]="sessionLoadingId() === session.sessionId"></span>
-                <div class="session-actions">
-                  <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="loadSession(session.sessionId); $event.stopPropagation()" title="Load Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                      <polyline points="13 2 13 9 20 9"/>
-                    </svg>
-                  </button>
-                  <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="resumeSession(session.sessionId); $event.stopPropagation()" title="Resume Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                  </button>
-                  <button class="session-action-btn session-action-btn--delete" [disabled]="sessionLoadingId() !== null" (click)="deleteSession($event, session.sessionId)" title="Delete Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        @if (yesterdaySessions().length > 0) {
-          <div class="session-group">
-            <div class="group-header">
-              <span class="group-title">Yesterday</span>
-            </div>
-            @for (session of yesterdaySessions(); track session.sessionId) {
-              <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
-                [class.loading]="sessionLoadingId() === session.sessionId"
-                [class.disabled]="sessionLoadingId() !== null"
-                (click)="loadSession(session.sessionId)">
-                <span class="session-icon" [style.background]="getProjectColor(session.cwd)">
-                  {{ getInitial(session.cwd) }}
-                </span>
-                <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
-                <span class="session-agent" [title]="getAgentName(session.agentId)">
-                  {{ getAgentIcon(session.agentId) }}
-                </span>
-                <span class="session-spinner" [class.visible]="sessionLoadingId() === session.sessionId"></span>
-                <div class="session-actions">
-                  <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="loadSession(session.sessionId); $event.stopPropagation()" title="Load Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                      <polyline points="13 2 13 9 20 9"/>
-                    </svg>
-                  </button>
-                  <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="resumeSession(session.sessionId); $event.stopPropagation()" title="Resume Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                  </button>
-                  <button class="session-action-btn session-action-btn--delete" [disabled]="sessionLoadingId() !== null" (click)="deleteSession($event, session.sessionId)" title="Delete Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        @if (olderSessions().length > 0) {
-          <div class="session-group">
-            <div class="group-header">
-              <span class="group-title">Older</span>
-            </div>
-            @for (session of olderSessions(); track session.sessionId) {
-              <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
-                [class.loading]="sessionLoadingId() === session.sessionId"
-                [class.disabled]="sessionLoadingId() !== null"
-                (click)="loadSession(session.sessionId)">
-                <span class="session-icon" [style.background]="getProjectColor(session.cwd)">
-                  {{ getInitial(session.cwd) }}
-                </span>
-                <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
-                <span class="session-agent" [title]="getAgentName(session.agentId)">
-                  {{ getAgentIcon(session.agentId) }}
-                </span>
-                <span class="session-spinner" [class.visible]="sessionLoadingId() === session.sessionId"></span>
-                <div class="session-actions">
-                  <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="loadSession(session.sessionId); $event.stopPropagation()" title="Load Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                      <polyline points="13 2 13 9 20 9"/>
-                    </svg>
-                  </button>
-                  <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="resumeSession(session.sessionId); $event.stopPropagation()" title="Resume Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                  </button>
-                  <button class="session-action-btn session-action-btn--delete" [disabled]="sessionLoadingId() !== null" (click)="deleteSession($event, session.sessionId)" title="Delete Session">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        @if (filteredSessions().length === 0) {
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span>No sessions</span>
-          </div>
-        }
-      </div>
-    </div>
-    }
-  </div>
-
-<!-- ACP Panel Overlay -->
-@if (showAcpPanel()) {
-  <div class="acp-overlay">
-    <div class="acp-overlay-header">
-      <button class="back-btn" (click)="closeAcpPanel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5m7-7l-7 7 7 7"/>
-        </svg>
-        <span>Back to Sessions</span>
-      </button>
-        <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()" title="Close Editor" (click)="layoutService.toggleAstContentPanel()">
-          <svg class="icon" width="20" height="20">
-            <use href="#icon-shrink-close"></use>
-          </svg>
-        </button>
-    </div>
-    <div class="acp-overlay-content">
-      @if (panelLoading() || panelError()) {
-        <div class="session-loading-overlay">
-          @if (panelError()) {
-            <div class="session-loading-error">
-              <span>{{ panelError() }}</span>
-              <button class="back-btn" (click)="closeAcpPanel()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M19 12H5m7-7l-7 7 7 7"/>
-                </svg>
-                <span>Back to Sessions</span>
-              </button>
-            </div>
-          } @else {
-            <span class="session-loading-spinner"></span>
-            <span class="session-loading-text">Loading session&hellip;</span>
-          }
-        </div>
-      }
+    @if (isBrowser()) {
       <app-acp-panel
         [isMaximized]="acpPanelMaximized()"
         [dockPosition]="acpPanelDockPosition()"
+        [editorToggleActive]="layoutService.astContentPanelOpen()"
         (closePanel)="closeAcpPanel()"
         (maximizePanel)="onAcpPanelMaximize()"
         (restorePanel)="onAcpPanelRestore()"
         (dockPositionChange)="onAcpPanelDockChange($event)"
+        (editorToggle)="editorToggle.emit()"
       />
-    </div>
+    }
   </div>
-}
+</div>
 
 <!-- File Picker Dialog -->
 <app-file-picker-dialog #filePicker (selected)="onFolderSelected($event)"></app-file-picker-dialog>

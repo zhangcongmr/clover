@@ -78,39 +78,6 @@
   height: 14px;
 }
 
-.editor-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--vscode-foreground);
-  opacity: 0.6;
-  transition: opacity 0.15s, background-color 0.15s;
-  flex-shrink: 0;
-}
-
-.editor-toggle-btn:hover {
-  opacity: 1;
-  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
-}
-
-.editor-toggle-btn.active {
-  opacity: 1;
-  color: var(--vscode-textLink-foreground, #3794ff);
-  background: var(--vscode-toolbar-activeBackground, rgba(128, 128, 128, 0.3));
-}
-
-.editor-toggle-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
 /* ===== Sidebar Navigation ===== */
 .sidebar-nav {
   padding: 8px 0;
@@ -397,30 +364,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-}
-
-.main-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.1));
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--vscode-input-background, rgba(128, 128, 128, 0.08));
-  border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.2));
-  border-radius: 6px;
-  transition: border-color 0.15s;
-}
-
-.search-bar:focus-within {
-  border-color: var(--vscode-focusBorder, #0078d4);
+  position: relative;
 }
 
 .search-icon {
@@ -445,15 +389,6 @@
 
 .search-input::placeholder {
   color: var(--vscode-input-placeholderForeground, rgba(128, 128, 128, 0.5));
-}
-
-.session-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  padding: 0 16px 16px;
 }
 
 .session-list {
@@ -510,8 +445,9 @@
 /* ===== Session Items ===== */
 .session-item {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -526,26 +462,24 @@
 }
 
 .session-item.active {
-  background: var(--vscode-list-activeSelectionBackground, rgba(0, 120, 212, 0.15));
-}
-
-.session-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
+  background: var(--vscode-list-inactiveSelectionBackground, rgba(0, 120, 212, 0.08));
 }
 
 .session-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.session-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .session-agent {
@@ -561,7 +495,6 @@
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  margin-left: 4px;
   flex-shrink: 0;
 }
 
@@ -586,122 +519,80 @@
   font-size: 13px;
 }
 
-/* ===== ACP Panel Overlay ===== */
-.acp-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--vscode-editor-background);
-  z-index: 100;
-  animation: acp-overlay-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes acp-overlay-in {
-  from {
-    opacity: 0;
-    transform: translateX(28px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.acp-overlay-header {
+/* ===== Sidebar session search (moved from right panel) ===== */
+.sidebar-search {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
-  background-color: var(--vscode-editor-background);
+  gap: 8px;
+  margin: 6px 10px;
+  padding: 6px 10px;
+  background: var(--vscode-input-background, rgba(128, 128, 128, 0.08));
+  border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.2));
+  border-radius: 6px;
+  transition: border-color 0.15s;
 }
 
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--vscode-foreground);
-  font-size: 13px;
-  transition: background-color 0.15s;
+.sidebar-search:focus-within {
+  border-color: var(--vscode-focusBorder, #0078d4);
 }
 
-.back-btn:hover {
-  background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1));
-}
-
-.back-btn svg {
+.sidebar-search .search-icon {
   width: 14px;
   height: 14px;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  flex-shrink: 0;
 }
 
-.acp-overlay-content {
-  position: relative;
+.sidebar-search .search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0;
+  min-width: 0;
+}
+
+.sidebar-search .search-input::placeholder {
+  color: var(--vscode-input-placeholderForeground, rgba(128, 128, 128, 0.5));
+}
+
+/* ===== Nested sessions under a project (accordion) ===== */
+.project-sessions {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0 8px;
+}
+
+.project-sessions .new-session-btn {
+  align-self: flex-start;
+  margin: 2px 10px 6px 12px;
+}
+
+.project-sessions .session-item {
+  padding: 7px 12px 7px 30px;
+  font-size: 12px;
+}
+
+.project-sessions .session-agent {
+  width: 20px;
+  height: 15px;
+  min-width: 20px;
+  font-size: 8px;
+}
+
+.project-sessions .empty-state {
+  padding: 20px 12px;
+}
+
+/* ===== ACP Panel (fills the right panel) ===== */
+.agent-main app-acp-panel {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.acp-overlay-content app-acp-panel {
-  flex: 1;
-  min-height: 0;
-  margin: 0;
-}
-
-/* ===== In-panel session loading overlay ===== */
-.session-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  background-color: var(--vscode-editor-background);
-}
-
-.session-loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.25));
-  border-top-color: var(--vscode-textLink-foreground, #0078d4);
-  border-radius: 50%;
-  animation: session-spin 0.8s linear infinite;
-}
-
-.session-loading-text {
-  font-size: 13px;
-  color: var(--vscode-foreground);
-  opacity: 0.6;
-}
-
-.session-loading-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  max-width: 320px;
-  text-align: center;
-  color: var(--vscode-errorForeground, #d32f2f);
-  font-size: 13px;
-}
-
-.session-loading-error .back-btn {
-  color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  min-width: 0;
 }
 
 @keyframes session-spin {
