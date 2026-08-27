@@ -98,6 +98,7 @@ export class AcpService {
   readonly messages = signal<AcpMessage[]>([]);
   readonly plans = signal<Map<string, AcpPlan>>(new Map());
   readonly isProcessing = signal<boolean>(false);
+  readonly isSwitchingSession = signal<boolean>(false);
   readonly activeTodosId = signal<string | null>(null);
 
   // Session history
@@ -431,11 +432,10 @@ export class AcpService {
 
     this.isProcessing.set(true);
 
-    // Split text blocks for the plain-text message display
+    // Split text blocks for session title generation
     const textBlocks = content.filter(
       (b): b is TextContent => b.type === 'text' && !!b.text
     );
-    const nonTextBlocks = content.filter(b => b.type !== 'text');
 
     // 会话标题：用首条用户消息文本生成（ACP agent 不会主动下发 session_info_update 标题）
     if (!this.sessionState().title && textBlocks.length > 0) {
@@ -446,16 +446,21 @@ export class AcpService {
       }));
     }
 
-    // Add user message
+    await this.sseService.sendPrompt(sessionId, content);
+  }
+
+  /**
+   * Adds a user message to the messages list immediately for instant visual feedback.
+   * Called by the chat input component before the async session creation / prompt send.
+   */
+  addUserMessage(content: string, contentBlocks?: ContentBlock[]): void {
     this.messages.update(msgs => [...msgs, {
       id: crypto.randomUUID(),
       role: 'user',
-      content: textBlocks.map(b => b.text).join('\n'),
-      contentBlocks: nonTextBlocks.length > 0 ? nonTextBlocks : undefined,
+      content,
+      contentBlocks,
       timestamp: new Date()
     }]);
-
-    await this.sseService.sendPrompt(sessionId, content);
   }
 
   async cancel(): Promise<void> {
@@ -671,6 +676,7 @@ export class AcpService {
   }
 
   async loadSession(sessionId: string, cwd?: string, agentId?: string): Promise<void> {
+    this.isSwitchingSession.set(true);
     // Auto-switch agent if needed
     if (agentId && agentId !== this.wrapperAgentId) {
       await this.switchAgent(agentId, cwd);
@@ -717,6 +723,7 @@ export class AcpService {
   }
 
   async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }): Promise<void> {
+    this.isSwitchingSession.set(true);
     // Auto-switch agent if needed
     if (agentId && agentId !== this.wrapperAgentId) {
       await this.switchAgent(agentId, cwd);
@@ -912,6 +919,7 @@ export class AcpService {
   }
 
   private handleToolCall(update: any): void {
+    this.maybeClearSwitchingSession();
     const isTodo = AcpService.hasTodosPayload(update);
 
     if (isTodo) {
@@ -1078,7 +1086,14 @@ export class AcpService {
     window.dispatchEvent(event);
   }
 
+  private maybeClearSwitchingSession(): void {
+    if (this.isSwitchingSession()) {
+      this.isSwitchingSession.set(false);
+    }
+  }
+
   private appendAssistantChunk(content: ContentBlock): void {
+    this.maybeClearSwitchingSession();
     if (content?.type === 'text') {
       if (content.text) {
         this.appendAssistantMessage(content.text);
@@ -1089,6 +1104,7 @@ export class AcpService {
   }
 
   private appendThoughtChunk(content: ContentBlock): void {
+    this.maybeClearSwitchingSession();
     if (content?.type === 'text') {
       if (content.text) {
         this.appendThoughtMessage(content.text);
@@ -1099,6 +1115,7 @@ export class AcpService {
   }
 
   private appendReplayedUserChunk(content: ContentBlock, messageId?: string): void {
+    this.maybeClearSwitchingSession();
     if (content?.type === 'text') {
       if (content.text) {
         this.appendReplayedUserMessage(content.text, messageId);

@@ -76,7 +76,7 @@
     </div>
     <div class="acp-panel-container">
         <div class="acp-chat-container">
-            @if (!hasMessages()) {
+            @if (!hasMessages() && !acpService.isSwitchingSession()) {
                 <div class="acp-welcome-screen">
                     <div class="welcome-content">
                         <h2 class="welcome-title">What can I help you with today?</h2>
@@ -143,6 +143,12 @@
                         <app-acp-chat-input />
                     </div>
                 </div>
+            } @else if (acpService.isSwitchingSession() && !hasMessages()) {
+                <div class="acp-loading-screen">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">Loading session...</p>
+                </div>
+                <app-acp-chat-input />
             } @else {
                 <app-acp-chat />
                 <app-acp-chat-input />

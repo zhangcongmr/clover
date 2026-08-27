@@ -153,11 +153,20 @@ export class AgentComponent {
         }
       }
 
-      // 3. project 切换时加载 sessions（task 不需要，sessions 已存在 task.sessions[0] 中）
+      // 3. 切换时加载 sessions
       const cur = this.selectedProject();
-      if (cur && cur.type === 'project' && !this.isLoadingSessions) {
-        if (cur.path !== this.lastLoadedProjectPath) {
-          this.loadSessionsForProject(cur.path);
+      if (cur && !this.isLoadingSessions && !this.sessionLoadingId()) {
+        if (cur.type === 'project') {
+          // project: 加载 sessions 列表
+          if (cur.path !== this.lastLoadedProjectPath) {
+            this.loadSessionsForProject(cur.path);
+          }
+        } else if (cur.type === 'task' && cur.sessions?.length > 0) {
+          // task: 页面刷新时加载 session 消息
+          const sessionId = cur.sessions[0]?.sessionId;
+          if (sessionId && this.acpService.acpSessionId() !== sessionId && !this.acpService.hasOpenedSession()) {
+            this.loadTaskSession(cur.id!, sessionId);
+          }
         }
       } else if (!cur) {
         this.lastLoadedProjectPath = null;
