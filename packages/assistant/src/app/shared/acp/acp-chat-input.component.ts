@@ -231,14 +231,14 @@ export interface AttachmentEntry {
       width: 100%;
       resize: none;
       border: none;
-      padding: 14px 14px 4px;
+      padding: 14px 14px 6px;
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
       color: var(--vscode-foreground);
       background: transparent;
       outline: none;
-      min-height: 48px;
-      max-height: 160px;
+      min-height: 72px;
+      max-height: 240px;
       line-height: 1.6;
       overflow-y: hidden;
     }

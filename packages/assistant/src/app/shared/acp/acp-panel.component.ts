@@ -290,6 +290,96 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
     }
+
+    /* ===== Welcome Screen ===== */
+    .acp-welcome-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      min-height: 0;
+    }
+
+    .welcome-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .welcome-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--vscode-foreground);
+      text-align: center;
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .welcome-category-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .welcome-tab {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+
+    .welcome-tab:hover {
+      background-color: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+    }
+
+    .welcome-tab.active {
+      background-color: var(--vscode-button-background, #0e639c);
+      color: var(--vscode-button-foreground, #ffffff);
+      border-color: transparent;
+    }
+
+    .welcome-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .quick-action-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .quick-action-tag:hover {
+      background-color: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+    }
+
+    .quick-action-tag svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.7;
+    }
+
+    .welcome-chat-wrapper {
+      width: 100%;
+      max-width: 640px;
+    }
   `]
 })
 export class AcpPanelComponent implements OnInit, OnDestroy {
@@ -313,6 +403,7 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   showSettings = signal<boolean>(false);
   protected hostWidth = signal<number>(0);
   protected isPanelWide = computed(() => this.hostWidth() >= AcpPanelComponent.PANEL_WIDE_THRESHOLD);
+  protected hasMessages = computed(() => this.acpService.messages().length > 0);
   private hostRef = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
 

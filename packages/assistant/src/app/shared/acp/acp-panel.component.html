@@ -2,26 +2,17 @@
     <div class="acp-header">
         <div class="acp-title">
             @if (sidebarCollapsed()) {
-              <button class="sidebar-toggle-btn" (click)="sidebarExpand.emit()" title="Expand Sidebar">
-                <svg class="icon" width="20" height="20"><use href="#icon-shrink-close"></use></svg>
-              </button>
+                <button class="sidebar-toggle-btn" (click)="sidebarExpand.emit()" title="Expand Sidebar">
+                    <svg class="icon" width="20" height="20"><use href="#icon-shrink-close"></use></svg>
+                </button>
             }
-            <svg class="acp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 16v-4m0-4h.01"/>
-            </svg>
-            <!-- <button class="acp-back-button" (click)="goBackToSessionList()" title="Back to sessions">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5m7-7-7 7 7 7"/>
+            @if(hasMessages()) {
+                <svg class="acp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4m0-4h.01"/>
                 </svg>
-            </button> -->
-            <span class="acp-chat-title">{{ acpService.sessionState().title || 'Chat' }}</span>
-            @if (acpService.sessionState().isConnected) {
-                <span class="status-dot connected"></span>
-            } @else if (acpService.sessionState().isConnecting) {
-                <span class="status-dot connecting"></span>
-            } @else {
-                <span class="status-dot disconnected"></span>
+                <span class="acp-chat-title">{{ acpService.sessionState().title || 'Chat' }}</span>
+                <span class ="status-dot" [class]="acpService.sessionState().isConnected ? 'connected' : (acpService.sessionState().isConnecting ? 'connecting' : 'disconnected')"></span>
             }
         </div>
         <div class="acp-actions">
@@ -85,8 +76,77 @@
     </div>
     <div class="acp-panel-container">
         <div class="acp-chat-container">
-            <app-acp-chat />
-            <app-acp-chat-input />
+            @if (!hasMessages()) {
+                <div class="acp-welcome-screen">
+                    <div class="welcome-content">
+                        <h2 class="welcome-title">What can I help you with today?</h2>
+                        <div class="welcome-category-tabs">
+                            <button class="welcome-tab active">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                                Working
+                            </button>
+                            <button class="welcome-tab">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"/>
+                                    <polyline points="8 6 2 12 8 18"/>
+                                </svg>
+                                Coding
+                            </button>
+                            <button class="welcome-tab">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                                </svg>
+                                Design
+                            </button>
+                        </div>
+                        <div class="welcome-quick-actions">
+                            <button class="quick-action-tag">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                    <polyline points="10 9 9 9 8 9"/>
+                                </svg>
+                                Documentation
+                            </button>
+                            <button class="quick-action-tag">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"/>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                                Financial Services
+                            </button>
+                            <button class="quick-action-tag">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                                    <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                                </svg>
+                                Visualization
+                            </button>
+                            <button class="quick-action-tag">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                    <polyline points="9 22 9 12 15 12 15 22"/>
+                                </svg>
+                                Personal Workspace
+                            </button>
+                        </div>
+                    </div>
+                    <div class="welcome-chat-wrapper">
+                        <app-acp-chat-input />
+                    </div>
+                </div>
+            } @else {
+                <app-acp-chat />
+                <app-acp-chat-input />
+            }
         </div>
 
         <app-acp-permission-dialog />
