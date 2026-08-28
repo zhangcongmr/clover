@@ -985,9 +985,9 @@ Always use the welcome_greeting tool.`;
   private async loadInitialAgentProject(): Promise<void> {
     this.agentProjectLoading.set(true);
     try {
-      const path = this.acpService.selectedProjectPath()
-        ?? await this.acpService.getSelectedProject();
-      if (path) await this.loadAgentProject(path);
+      const saved = this.acpService.selectedProjectPath()
+        ?? (await this.acpService.getSelectedProject()).selectedProject;
+      if (saved) await this.loadAgentProject(saved);
     } catch (err) {
       console.warn('[Content] Failed to load selected project:', err);
     } finally {

@@ -99,6 +99,8 @@ export class AcpService {
   readonly plans = signal<Map<string, AcpPlan>>(new Map());
   readonly isProcessing = signal<boolean>(false);
   readonly isSwitchingSession = signal<boolean>(false);
+  readonly loadingText = signal<string | null>(null);
+
   readonly activeTodosId = signal<string | null>(null);
 
   // Session history
@@ -132,6 +134,9 @@ export class AcpService {
    *  Distinct from the wrapper session id (`sessionState.sessionId`), which is
    *  an internal transport id. Required to load sessions/tasks on the agent. */
   readonly acpSessionId = signal<string | null>(null);
+
+  /** Persisted selected session id for the current project (restored on page load). */
+  readonly selectedSessionId = signal<string | null>(null);
 
   // Model
   readonly currentModelId = signal<string | null>(null);
@@ -190,9 +195,10 @@ export class AcpService {
     this.setupSseCallbacks();
     if (typeof window !== 'undefined') {
       this.listAll();
-      // Hydrate the persisted selected project path so live sync works on first open
+      // Hydrate the persisted selected project path and session id
       this.getSelectedProject().then(p => {
-        if (p) this.selectedProjectPath.set(p);
+        if (p.selectedProject) this.selectedProjectPath.set(p.selectedProject);
+        if (p.selectedSessionId) this.selectedSessionId.set(p.selectedSessionId);
       });
     }
   }
@@ -634,13 +640,18 @@ export class AcpService {
     }
   }
 
-  async getSelectedProject(): Promise<string | null> {
+  async getSelectedProject(): Promise<{ selectedProject: string | null; selectedSessionId: string | null }> {
     return this.sseService.getSelectedProject();
   }
 
   async saveSelectedProject(selectedProject: string | null): Promise<void> {
     this.selectedProjectPath.set(selectedProject);
     await this.sseService.saveSelectedProject(selectedProject);
+  }
+
+  async saveSelectedSession(sessionId: string | null): Promise<void> {
+    this.selectedSessionId.set(sessionId);
+    await this.sseService.saveSelectedProject(this.selectedProjectPath(), sessionId);
   }
 
   // ============================================================================
@@ -677,11 +688,15 @@ export class AcpService {
 
   async loadSession(sessionId: string, cwd?: string, agentId?: string): Promise<void> {
     this.isSwitchingSession.set(true);
-    // Auto-switch agent if needed
+
+    // Phase 1: Switch agent if needed
     if (agentId && agentId !== this.wrapperAgentId) {
+      this.loadingText.set('Switching agent...');
       await this.switchAgent(agentId, cwd);
     }
 
+    // Phase 2: Reset state
+    this.loadingText.set('Preparing session...');
     this.pendingTaskCreation.set(false);
     this.messages.set([]);
     this.plans.set(new Map());
@@ -692,14 +707,16 @@ export class AcpService {
 
     let currentSessionId = this.sessionState().sessionId;
 
-    // 如果没有活跃的 wrapper session，先创建并连接（仅建 wrapper，不建内部 ACP 会话）
+    // Phase 3: Create wrapper session if needed
     if (!currentSessionId) {
+      this.loadingText.set('Connecting to server...');
       const wrapper = await this.createWrapperSession(cwd || this.workingDirHint() || undefined);
       currentSessionId = wrapper.sessionId;
       this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
     }
 
-    // 通过 wrapper session 同步加载目标 ACP 会话
+    // Phase 4: Load session history
+    this.loadingText.set('Loading session history...');
     this.isReplayingHistory = true;
     try {
       const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd);
@@ -719,16 +736,21 @@ export class AcpService {
       }
     } finally {
       this.isReplayingHistory = false;
+      this.loadingText.set(null);
     }
   }
 
   async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }): Promise<void> {
     this.isSwitchingSession.set(true);
-    // Auto-switch agent if needed
+
+    // Phase 1: Switch agent if needed
     if (agentId && agentId !== this.wrapperAgentId) {
+      this.loadingText.set('Switching agent...');
       await this.switchAgent(agentId, cwd);
     }
 
+    // Phase 2: Reset state
+    this.loadingText.set('Preparing session...');
     this.pendingTaskCreation.set(false);
     this.messages.set([]);
     this.plans.set(new Map());
@@ -739,14 +761,16 @@ export class AcpService {
 
     let currentSessionId = this.sessionState().sessionId;
 
-    // 如果没有活跃的 wrapper session，先创建并连接（仅建 wrapper，不建内部 ACP 会话）
+    // Phase 3: Create wrapper session if needed
     if (!currentSessionId) {
+      this.loadingText.set('Connecting to server...');
       const wrapper = await this.createWrapperSession(cwd || this.workingDirHint() || undefined);
       currentSessionId = wrapper.sessionId;
       this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
     }
 
-    // 通过 wrapper session 同步恢复目标 ACP 会话
+    // Phase 4: Resume session
+    this.loadingText.set('Loading session history...');
     this.isReplayingHistory = true;
     try {
       await this.sseService.resumeSession(currentSessionId, sessionId, cwd);
@@ -765,6 +789,7 @@ export class AcpService {
       }
     } finally {
       this.isReplayingHistory = false;
+      this.loadingText.set(null);
     }
   }
 

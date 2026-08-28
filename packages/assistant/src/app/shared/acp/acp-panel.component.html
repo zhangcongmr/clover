@@ -143,12 +143,6 @@
                         <app-acp-chat-input />
                     </div>
                 </div>
-            } @else if (acpService.isSwitchingSession() && !hasMessages()) {
-                <div class="acp-loading-screen">
-                    <div class="loading-spinner"></div>
-                    <p class="loading-text">Loading session...</p>
-                </div>
-                <app-acp-chat-input />
             } @else {
                 <app-acp-chat />
                 <app-acp-chat-input />

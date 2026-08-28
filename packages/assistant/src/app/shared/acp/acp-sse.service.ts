@@ -490,26 +490,26 @@ export class AcpSseService {
   }
 
   /**
-   * 获取选中的项目
+   * 获取选中的项目和会话
    */
-  async getSelectedProject(): Promise<string | null> {
+  async getSelectedProject(): Promise<{ selectedProject: string | null; selectedSessionId: string | null }> {
     try {
       const base = this.localAgentService.getBaseUrl();
       const response = await fetch(`${base}/api/projects/selected`, {
         method: 'GET',
       });
-      if (!response.ok) return null;
+      if (!response.ok) return { selectedProject: null, selectedSessionId: null };
       const result = await response.json();
-      return result.selectedProject || null;
+      return { selectedProject: result.selectedProject || null, selectedSessionId: result.selectedSessionId || null };
     } catch {
-      return null;
+      return { selectedProject: null, selectedSessionId: null };
     }
   }
 
   /**
-   * 保存选中的项目
+   * 保存选中的项目和会话
    */
-  async saveSelectedProject(selectedProject: string | null): Promise<void> {
-    await this.postNoAuth('/api/projects/selected', { selectedProject });
+  async saveSelectedProject(selectedProject: string | null, selectedSessionId?: string | null): Promise<void> {
+    await this.postNoAuth('/api/projects/selected', { selectedProject, selectedSessionId });
   }
 }

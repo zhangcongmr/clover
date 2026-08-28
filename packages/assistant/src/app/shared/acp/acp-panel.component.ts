@@ -380,37 +380,6 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       width: 100%;
       max-width: 640px;
     }
-
-    /* ===== Loading Screen ===== */
-    .acp-loading-screen {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 24px 16px;
-    }
-
-    .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--vscode-input-border, #3c3c3c);
-      border-top-color: var(--vscode-textLink-foreground, #3794ff);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    .loading-text {
-      font-size: 14px;
-      color: var(--vscode-foreground);
-      opacity: 0.6;
-      margin: 0;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
   `]
 })
 export class AcpPanelComponent implements OnInit, OnDestroy {

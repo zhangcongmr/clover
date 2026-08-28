@@ -785,25 +785,25 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   const SELECTED_PROJECT_FILE = join(PROJECTS_DIR, 'selected-project.json');
 
-  function readSelectedProject(): string | null {
-    if (!existsSync(SELECTED_PROJECT_FILE)) return null;
+  function readSelectedProject(): { selectedProject: string | null; selectedSessionId: string | null } {
+    if (!existsSync(SELECTED_PROJECT_FILE)) return { selectedProject: null, selectedSessionId: null };
     try {
       const raw = JSON.parse(readFileSync(SELECTED_PROJECT_FILE, 'utf-8'));
-      return raw.selectedProject || null;
+      return { selectedProject: raw.selectedProject || null, selectedSessionId: raw.selectedSessionId || null };
     } catch {
-      return null;
+      return { selectedProject: null, selectedSessionId: null };
     }
   }
 
-  function writeSelectedProject(name: string | null): void {
+  function writeSelectedProject(name: string | null, sessionId: string | null): void {
     mkdirSync(PROJECTS_DIR, { recursive: true });
-    writeFileSync(SELECTED_PROJECT_FILE, JSON.stringify({ selectedProject: name }, null, 2));
+    writeFileSync(SELECTED_PROJECT_FILE, JSON.stringify({ selectedProject: name, selectedSessionId: sessionId }, null, 2));
   }
 
   app.get('/api/projects/selected', (_req: Request, res: Response) => {
     try {
-      const selectedProject = readSelectedProject();
-      res.json({ success: true, selectedProject });
+      const { selectedProject, selectedSessionId } = readSelectedProject();
+      res.json({ success: true, selectedProject, selectedSessionId });
     } catch (error) {
       console.error('[ACP Routes] Get selected project error:', error);
       res.status(500).json({ error: (error as Error).message });
@@ -811,9 +811,9 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   });
 
   app.post('/api/projects/selected', (req: Request, res: Response) => {
-    const { selectedProject } = req.body;
+    const { selectedProject, selectedSessionId } = req.body;
     try {
-      writeSelectedProject(selectedProject || null);
+      writeSelectedProject(selectedProject || null, selectedSessionId || null);
       res.json({ success: true });
     } catch (error) {
       console.error('[ACP Routes] Save selected project error:', error);

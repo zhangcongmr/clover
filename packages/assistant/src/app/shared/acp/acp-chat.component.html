@@ -1,222 +1,229 @@
 <div class="acp-chat-container">
   <div class="acp-chat-messages custom-scroll" #messagesContainer (scroll)="onScroll()">
-  @if (acpService.messages().length === 0) {
-  <div class="acp-chat-empty">
-    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-    <p>Start a conversation with the ACP agent</p>
-  </div>
-  } @else {
-  @if (hasMoreMessages) {
-  <div class="load-more-hint">Scroll up to load older messages</div>
-  }
-  @for (message of visibleMessages; track trackByMessageId($index, message)) {
-    @if (message.role === 'tool_call') {
-      @if (acpService.isQuestionToolCall(message)) {
-        <!-- Question in messages: show as small indicator when active, or as completed badge -->
-        @if (acpService.submittedQuestions().has(message.toolCallId!)) {
-          <div class="acp-message tool-call">
-            <div class="message-avatar tool-call-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-            </div>
-            <div class="message-content">
-              <div class="message-header">
-                <span class="message-role">Question</span>
-                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-              </div>
-              <div class="tool-call-card status-completed">
-                <div class="tool-call-title-row">
-                  <span class="tool-call-status-icon">✅</span>
-                  <span class="tool-call-title-text">{{ message.toolTitle || 'Questions answered' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-        <!-- Active questions are rendered in the pinned section below -->
+    @if (acpService.messages().length === 0) {
+      @if (acpService.isSwitchingSession()) {
+        <div class="acp-loading-screen">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">{{ acpService.loadingText() || 'Loading...' }}</p>
+        </div>
       } @else {
-        <!-- Regular tool call card -->
-        <div class="acp-message tool-call">
-          <div class="message-avatar tool-call-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path
-                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-          </div>
-          <div class="message-content">
-            <div class="message-header">
-              <span class="message-role">Tool Call</span>
-              <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-            </div>
-            <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
-              <div class="tool-call-title-row">
-                <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
-                <span class="tool-call-title-text">{{ message.toolTitle }}</span>
-                @if (message.toolKind) {
-                <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
-                }
-              </div>
-              @if (message.toolLocations && message.toolLocations.length > 0) {
-              <div class="tool-call-location">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-                  <polyline points="13 2 13 9 20 9" />
-                </svg>
-                <span>{{ message.toolLocations[0].path }}</span>
-              </div>
-              }
-            </div>
-          </div>
+        <div class="acp-chat-empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <p>Start a conversation with the ACP agent</p>
         </div>
       }
     } @else {
-      <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'"
-        [class.thought]="message.role === 'thought'">
-        <div class="message-avatar">
-          @if (message.role === 'user') {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          } @else if (message.role === 'thought') {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 16v-4m0-4h.01" />
-          </svg>
+      @if (hasMoreMessages) {
+        <div class="load-more-hint">Scroll up to load older messages</div>
+      }
+      @for (message of visibleMessages; track trackByMessageId($index, message)) {
+        @if (message.role === 'tool_call') {
+          @if (acpService.isQuestionToolCall(message)) {
+            <!-- Question in messages: show as small indicator when active, or as completed badge -->
+            @if (acpService.submittedQuestions().has(message.toolCallId!)) {
+              <div class="acp-message tool-call">
+                <div class="message-avatar tool-call-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+                <div class="message-content">
+                  <div class="message-header">
+                    <span class="message-role">Question</span>
+                    <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+                  </div>
+                  <div class="tool-call-card status-completed">
+                    <div class="tool-call-title-row">
+                      <span class="tool-call-status-icon">✅</span>
+                      <span class="tool-call-title-text">{{ message.toolTitle || 'Questions answered' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+            <!-- Active questions are rendered in the pinned section below -->
           } @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path
-              d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-          </svg>
-          }
-        </div>
-        <div class="message-content">
-          <div class="message-header">
-            <span class="message-role">
-              {{message.role === 'user' ? 'You' : message.role === 'thought' ? 'Thought' : 'Agent'}}
-            </span>
-            <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-          </div>
-          <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
-          @if (message.contentBlocks && message.contentBlocks.length > 0) {
-            @for (block of message.contentBlocks; track $index) {
-              @switch (block.type) {
-                @case ('image') {
-                  <div class="content-block content-image">
-                    <img [src]="blockDataUrl(block)" alt="Image" />
-                  </div>
-                }
-                @case ('audio') {
-                  <div class="content-block content-audio">
-                    <audio controls [src]="blockDataUrl(block)"></audio>
-                  </div>
-                }
-                @case ('resource') {
-                  <div class="content-block content-resource">
-                    <span class="resource-icon">📎</span>
-                    <span class="resource-name">{{ resourceName(block) }}</span>
-                    @if (block.resource.text) {
-                      <pre class="resource-text">{{ resourcePreview(block) }}</pre>
-                    } @else if (block.resource.blob) {
-                      <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="resourceName(block)">Download</a>
+            <!-- Regular tool call card -->
+            <div class="acp-message tool-call">
+              <div class="message-avatar tool-call-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>
+              </div>
+              <div class="message-content">
+                <div class="message-header">
+                  <span class="message-role">Tool Call</span>
+                  <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+                </div>
+                <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
+                  <div class="tool-call-title-row">
+                    <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
+                    <span class="tool-call-title-text">{{ message.toolTitle }}</span>
+                    @if (message.toolKind) {
+                      <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
                     }
                   </div>
-                }
-                @case ('resource_link') {
-                  <div class="content-block content-link">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                    </svg>
-                    <a [href]="block.uri" target="_blank" rel="noopener noreferrer">{{ block.name || block.uri }}</a>
-                  </div>
+                  @if (message.toolLocations && message.toolLocations.length > 0) {
+                    <div class="tool-call-location">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                        <polyline points="13 2 13 9 20 9" />
+                      </svg>
+                      <span>{{ message.toolLocations[0].path }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'"
+            [class.thought]="message.role === 'thought'">
+            <div class="message-avatar">
+              @if (message.role === 'user') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              } @else if (message.role === 'thought') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4m0-4h.01" />
+              </svg>
+              } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+              </svg>
+              }
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="message-role">
+                  {{message.role === 'user' ? 'You' : message.role === 'thought' ? 'Thought' : 'Agent'}}
+                </span>
+                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+              </div>
+              <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+              @if (message.contentBlocks && message.contentBlocks.length > 0) {
+                @for (block of message.contentBlocks; track $index) {
+                  @switch (block.type) {
+                    @case ('image') {
+                      <div class="content-block content-image">
+                        <img [src]="blockDataUrl(block)" alt="Image" />
+                      </div>
+                    }
+                    @case ('audio') {
+                      <div class="content-block content-audio">
+                        <audio controls [src]="blockDataUrl(block)"></audio>
+                      </div>
+                    }
+                    @case ('resource') {
+                      <div class="content-block content-resource">
+                        <span class="resource-icon">📎</span>
+                        <span class="resource-name">{{ resourceName(block) }}</span>
+                        @if (block.resource.text) {
+                          <pre class="resource-text">{{ resourcePreview(block) }}</pre>
+                        } @else if (block.resource.blob) {
+                          <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="resourceName(block)">Download</a>
+                        }
+                      </div>
+                    }
+                    @case ('resource_link') {
+                      <div class="content-block content-link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        <a [href]="block.uri" target="_blank" rel="noopener noreferrer">{{ block.name || block.uri }}</a>
+                      </div>
+                    }
+                  }
                 }
               }
-            }
-          }
-        </div>
-      </div>
+            </div>
+          </div>
+        }
+      }
     }
-  }
-  }
   </div>
 
   @if (activeQuestionMessage(); as questionMsg) {
-  <div class="acp-question-pinned">
-    <app-acp-question
-      [questions]="getQuestions(questionMsg)"
-      [toolCallId]="questionMsg.toolCallId!"
-      [submitted]="false"
-      (onSubmit)="onQuestionSubmit(questionMsg.toolCallId!, $event)"
-      (onIgnore)="onQuestionIgnore(questionMsg.toolCallId!)"
-    />
-  </div>
+    <div class="acp-question-pinned">
+      <app-acp-question
+        [questions]="getQuestions(questionMsg)"
+        [toolCallId]="questionMsg.toolCallId!"
+        [submitted]="false"
+        (onSubmit)="onQuestionSubmit(questionMsg.toolCallId!, $event)"
+        (onIgnore)="onQuestionIgnore(questionMsg.toolCallId!)"
+      />
+    </div>
   }
 
   @if (activeTodosMessage(); as todoMsg) {
-  <div class="acp-todos-pinned">
-    <div class="todos-card">
-      <div class="todos-header" (click)="toggleTodosCollapse()">
-        <span class="todos-progress">已完成 {{ completedCount(todoMsg) }} 个任务 (共 {{ totalCount(todoMsg) }} 个)</span>
-        <span class="todos-toggle-icon" [class.collapsed]="todosCollapsed">
-          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
-        </span>
-      </div>
-      @if (!todosCollapsed) {
-      <div class="todos-list">
-        @for (todo of getTodos(todoMsg); track todo.content) {
-        <div class="todo-item" [class]="'todo-status-' + todo.status">
-          <span class="todo-checkbox">
-            @if (todo.status === 'completed') {
-            <svg viewBox="0 0 16 16" fill="currentColor">
-              <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
-            </svg>
-            } @else if (todo.status === 'in_progress') {
-            <svg viewBox="0 0 16 16" fill="currentColor">
-              <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
-              <circle cx="8" cy="8" r="3" />
-            </svg>
-            } @else {
-            <svg viewBox="0 0 16 16" fill="currentColor">
-              <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
-            </svg>
-            }
+    <div class="acp-todos-pinned">
+      <div class="todos-card">
+        <div class="todos-header" (click)="toggleTodosCollapse()">
+          <span class="todos-progress">已完成 {{ completedCount(todoMsg) }} 个任务 (共 {{ totalCount(todoMsg) }} 个)</span>
+          <span class="todos-toggle-icon" [class.collapsed]="todosCollapsed">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
           </span>
-          <span class="todo-text">{{ todo.content }}</span>
+        </div>
+        @if (!todosCollapsed) {
+        <div class="todos-list">
+          @for (todo of getTodos(todoMsg); track todo.content) {
+          <div class="todo-item" [class]="'todo-status-' + todo.status">
+            <span class="todo-checkbox">
+              @if (todo.status === 'completed') {
+              <svg viewBox="0 0 16 16" fill="currentColor">
+                <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
+              </svg>
+              } @else if (todo.status === 'in_progress') {
+              <svg viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle cx="8" cy="8" r="3" />
+              </svg>
+              } @else {
+              <svg viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+              </svg>
+              }
+            </span>
+            <span class="todo-text">{{ todo.content }}</span>
+          </div>
+          }
         </div>
         }
       </div>
-      }
     </div>
-  </div>
   }
 
   @if (hasPlans) {
-  <div class="acp-plan-section">
-    <app-acp-plan />
-  </div>
+    <div class="acp-plan-section">
+      <app-acp-plan />
+    </div>
   }
 
   @if (acpService.isProcessing()) {
-  <div class="acp-message assistant">
-    <div class="message-avatar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path
-          d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-      </svg>
-    </div>
-    <div class="message-content">
-      <div class="typing-indicator">
-        <span></span>
-        <span></span>
-        <span></span>
+    <div class="acp-message assistant">
+      <div class="message-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+        </svg>
+      </div>
+      <div class="message-content">
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </div>
     </div>
-  </div>
   }
 </div>
