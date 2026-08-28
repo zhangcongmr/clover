@@ -8,6 +8,7 @@ import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp-websocket.service";
 import { LayoutService } from "../layout.service";
+import { APP_VERSION } from "../../../app-version";
 
 interface SessionWithAgent extends SessionInfo {
   agentId?: string;
@@ -27,6 +28,7 @@ const PROJECT_COLORS = [
   imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent],
 })
 export class AgentComponent {
+  readonly version = APP_VERSION;
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
   private readonly platformId = inject(PLATFORM_ID);

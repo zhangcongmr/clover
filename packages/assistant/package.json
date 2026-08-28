@@ -17,7 +17,7 @@
     "ng": "ng",
     "start": "ng serve --host=0.0.0.0 --ssl",
     "build:app": "ng build",
-    "build:common": "ng build --configuration=common && node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
+    "build:common": "node scripts/version.mjs && ng build --configuration=common && node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
     "build": "pnpm run build:common && pnpm run build:app && node scripts/copy-node-pty.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

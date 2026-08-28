@@ -1,7 +1,7 @@
 <div class="agent-container">
   <div class="agent-sidebar" [class.collapsed]="layoutService.sidebarCollapsed()">
     <div class="sidebar-brand">
-      <span class="sidebar-brand-name">Clover</span>
+      <span class="sidebar-brand-name">Clover <small>v{{version}}</small></span>
       @if (!layoutService.sidebarCollapsed()) {
         <button class="icon-btn" (click)="layoutService.collapseSidebar()" title="Collapse Sidebar">
           <svg class="icon" width="20" height="20">
