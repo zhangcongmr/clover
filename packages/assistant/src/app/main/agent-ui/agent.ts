@@ -116,11 +116,13 @@ export class AgentComponent {
     return sessions;
   }
 
-  protected activeSessionId = computed(() => this.acpService.sessionState().sessionId);
+  protected activeSessionId = computed(() => this.acpService.acpSessionId());
   
   private isLoadingSessions = false;
   /** 上次加载 sessions 的 project path，防止 listProjects() 更新后 effect 重复触发加载 */
   private lastLoadedProjectPath: string | null = null;
+  /** 已恢复的 sessionId，防止 effect 重复触发自动加载 */
+  private restoredSessionId: string | null = null;
 
   constructor() {
     // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
@@ -159,7 +161,16 @@ export class AgentComponent {
         if (cur.type === 'project') {
           // project: 加载 sessions 列表
           if (cur.path !== this.lastLoadedProjectPath) {
+            this.lastLoadedProjectPath = cur.path;
+            this.restoredSessionId = null;
             this.loadSessionsForProject(cur.path);
+          }
+
+          // 4. 自动恢复上次选中的 session（sessions 加载完成后）
+          const savedSessionId = this.acpService.selectedSessionId();
+          if (savedSessionId && !this.acpService.acpSessionId() && this.restoredSessionId !== savedSessionId) {
+            this.restoredSessionId = savedSessionId;
+            this.loadSession(savedSessionId);
           }
         } else if (cur.type === 'task' && cur.sessions?.length > 0) {
           // task: 页面刷新时加载 session 消息
@@ -181,7 +192,10 @@ export class AgentComponent {
   switchToTasksView(): void {
     this.activeView.set('tasks');
     this.selectedProject.set(null);
+    this.lastLoadedProjectPath = null;
+    this.restoredSessionId = null;
     this.acpService.saveSelectedProject(null);
+    this.acpService.saveSelectedSession(null);
   }
 
   selectProject(name: string): void {
@@ -219,6 +233,7 @@ export class AgentComponent {
     try {
       await this.acpService.loadSession(sessionId, cwd, agentId);
       await this.ensureSessionInProject(sessionId);
+      await this.acpService.saveSelectedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to load session:', error);
       this.panelError.set(error?.message || 'Failed to load session');
@@ -241,6 +256,7 @@ export class AgentComponent {
     try {
       await this.acpService.resumeSession(sessionId, cwd, agentId);
       await this.ensureSessionInProject(sessionId);
+      await this.acpService.saveSelectedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to resume session:', error);
       this.panelError.set(error?.message || 'Failed to resume session');
@@ -274,6 +290,7 @@ export class AgentComponent {
     this.panelError.set(null);
     this.acpService.isLoadedSession.set(false);
     await this.acpService.saveSelectedProject(null);
+    await this.acpService.saveSelectedSession(null);
     await this.acpService.disconnect();
     this.acpService.hasOpenedSession.set(false);
     this.acpService.pendingTaskCreation.set(true);
@@ -290,6 +307,7 @@ export class AgentComponent {
       if (wasSelected) {
         this.selectedProject.set(null);
         this.acpService.saveSelectedProject(null);
+        this.acpService.saveSelectedSession(null);
       }
     }
   }
@@ -475,6 +493,7 @@ export class AgentComponent {
       if (wasSelected) {
         this.selectedProject.set(null);
         await this.acpService.saveSelectedProject(null);
+        await this.acpService.saveSelectedSession(null);
       }
     }
   }
