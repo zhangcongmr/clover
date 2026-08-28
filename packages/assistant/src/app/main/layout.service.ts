@@ -19,4 +19,18 @@ export class LayoutService {
   expandSidebar(): void {
     this.sidebarCollapsed.set(false);
   }
+
+  /** Tasks 区域是否折叠 */
+  readonly tasksSectionCollapsed = signal(false);
+
+  toggleTasksSection(): void {
+    this.tasksSectionCollapsed.update(v => !v);
+  }
+
+  /** Projects 区域是否折叠 */
+  readonly projectsSectionCollapsed = signal(false);
+
+  toggleProjectsSection(): void {
+    this.projectsSectionCollapsed.update(v => !v);
+  }
 }
