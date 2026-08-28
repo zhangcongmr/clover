@@ -46,3 +46,4 @@ Thumbs.db
 
 # Build generated files
 packages/assistant/src/inlined-styles.ts
+packages/assistant/src/app-version.ts
