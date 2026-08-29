@@ -218,6 +218,6 @@ export class AcpChatComponent implements OnDestroy {
 
   goBackToSessionList(): void {
     this.acpService.showSessionHistory.set(true);
-    this.acpService.hasOpenedSession.set(false);
+    this.acpService.isNewSession.set(true);
   }
 }

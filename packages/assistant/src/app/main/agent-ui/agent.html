@@ -36,7 +36,7 @@
       </svg>
     </div>
 
-    <!-- Task List -->
+    <!-- Left: Task List -->
     @if (!layoutService.tasksSectionCollapsed()) {
       <div class="task-list custom-scroll">
         @for (task of acpService.tasks(); track task.id) {
@@ -62,7 +62,6 @@
       </div>
     }
 
-    <!-- Left: Project List -->
     <div class="sidebar-header" (click)="layoutService.toggleProjectsSection()">
       <div class="sidebar-header-label">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sidebar-header-icon">
@@ -80,6 +79,7 @@
       </button>
     </div>
 
+    <!-- Left: Project List -->
     @if (!layoutService.projectsSectionCollapsed()) {
       <!-- Session search (moved from right panel) -->
       <div class="sidebar-search">
@@ -108,13 +108,6 @@
         <!-- Accordion: sessions nested under the selected project -->
         @if (activeView() === 'projects' && selectedProject()?.name === project.name) {
           <div class="project-sessions">
-            <button class="new-session-btn" (click)="openNewSession()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14m-7-7h14"/>
-              </svg>
-              <span>New Session</span>
-            </button>
-
             @for (session of sessionsOf(project); track session.sessionId) {
               <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
                 [class.loading]="sessionLoadingId() === session.sessionId"

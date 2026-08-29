@@ -128,9 +128,7 @@ export class AgentComponent {
 
   constructor() {
     // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
-    this.acpService.pendingTaskCreation.set(true);
-    this.acpService.isLoadedSession.set(false);
-    this.acpService.hasOpenedSession.set(false);
+    this.acpService.isNewSession.set(true);
 
     // 核心 effect：依赖 projects()、tasks()、selectedProjectPath()、selectedProject()
     // 当任一依赖变化时重跑，依次执行：清理失效选中 → 恢复持久化选中 → 加载 sessions
@@ -177,7 +175,7 @@ export class AgentComponent {
         } else if (cur.type === 'task' && cur.sessions?.length > 0) {
           // task: 页面刷新时加载 session 消息
           const sessionId = cur.sessions[0]?.sessionId;
-          if (sessionId && this.acpService.acpSessionId() !== sessionId && !this.acpService.hasOpenedSession()) {
+          if (sessionId && this.acpService.acpSessionId() !== sessionId && this.acpService.isNewSession()) {
             this.loadTaskSession(cur.id!, sessionId);
           }
         }
@@ -228,7 +226,7 @@ export class AgentComponent {
     const { cwd, agentId } = this.findSessionInfo(sessionId);
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
-    this.acpService.isLoadedSession.set(true);
+    this.acpService.isNewSession.set(false);
     this.showAcpPanel.set(true);
     this.panelLoading.set(true);
 
@@ -251,7 +249,7 @@ export class AgentComponent {
     const { cwd, agentId } = this.findSessionInfo(sessionId);
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
-    this.acpService.isLoadedSession.set(true);
+    this.acpService.isNewSession.set(false);
     this.showAcpPanel.set(true);
     this.panelLoading.set(true);
 
@@ -282,23 +280,26 @@ export class AgentComponent {
   }
 
   async createNewSession(): Promise<void> {
-    this.acpService.pendingTaskCreation.set(false);
     await this.acpService.disconnect();
-    this.acpService.hasOpenedSession.set(false);
+    this.acpService.isNewSession.set(true);
   }
 
   async createNewTask(): Promise<void> {
-    this.selectedProject.set(null);
+    const hasProject = !!this.selectedProject();
+
     this.panelError.set(null);
-    this.acpService.isLoadedSession.set(false);
-    await this.acpService.saveSelectedProject(null);
-    await this.acpService.saveSelectedSession(null);
     await this.acpService.disconnect();
-    this.acpService.hasOpenedSession.set(false);
-    this.acpService.pendingTaskCreation.set(true);
+    this.acpService.isNewSession.set(true);
     this.showAcpPanel.set(true);
-    // 新建任务视图，使「New Task」导航高亮（与任务/项目互斥）
-    this.activeView.set('new-task');
+
+    if (!hasProject) {
+      // Standalone task: clear project, switch to new-task view
+      this.selectedProject.set(null);
+      await this.acpService.saveSelectedProject(null);
+      await this.acpService.saveSelectedSession(null);
+      this.activeView.set('new-task');
+    }
+    // If project selected: keep it, stay in projects view (project highlighted, not "New Task")
   }
 
   async deleteTask(event: MouseEvent, taskId: string): Promise<void> {
@@ -329,12 +330,11 @@ export class AgentComponent {
 
     // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
     if (this.acpService.acpSessionId() === sessionId && this.acpService.sessionState().isConnected) {
-      this.acpService.isLoadedSession.set(false);
       this.sessionLoadingId.set(null);
       return;
     }
 
-    this.acpService.isLoadedSession.set(true);
+    this.acpService.isNewSession.set(false);
     this.panelLoading.set(true);
 
     const agentId = task.sessions?.find(s => s.sessionId === sessionId)?.agentId;
@@ -418,23 +418,6 @@ export class AgentComponent {
     if (diffHr < 24) return `${diffHr}h`;
     const diffDay = Math.floor(diffHr / 24);
     return `${diffDay}d`;
-  }
-
-  async toggleAcpPanel(): Promise<void> {
-    this.showAcpPanel.update(v => !v);
-    if (this.showAcpPanel()) {
-      this.acpService.isLoadedSession.set(false);
-      await this.createNewSession();
-    }
-  }
-
-  /** Open a fresh (new) session in the ACP panel without toggling it closed. */
-  async openNewSession(): Promise<void> {
-    this.acpService.pendingTaskCreation.set(false);
-    this.acpService.isLoadedSession.set(false);
-    this.showAcpPanel.set(true);
-    await this.acpService.disconnect();
-    this.acpService.hasOpenedSession.set(false);
   }
 
   closeAcpPanel(): void {
