@@ -114,9 +114,6 @@ export class AcpService {
   // Tasks
   readonly tasks = signal<ProjectInfo[]>([]);
 
-  /** When true, the next prompt completion will create a new task */
-  readonly pendingTaskCreation = signal<boolean>(false);
-
   // Working directory hint from file picker
   readonly workingDirHint = signal<string>('');
 
@@ -125,10 +122,9 @@ export class AcpService {
 
   // Session display state (persisted across panel show/hide)
   readonly showSessionHistory = signal<boolean>(true);
-  readonly hasOpenedSession = signal<boolean>(false);
 
-  // Whether the panel was opened via load/resume (read-only agent) vs a new session
-  readonly isLoadedSession = signal<boolean>(false);
+  /** True when no session has been opened/loaded yet (fresh start). */
+  readonly isNewSession = signal<boolean>(true);
 
   /** Real ACP/OpenCode session id of the current wrapper's active session.
    *  Distinct from the wrapper session id (`sessionState.sessionId`), which is
@@ -217,35 +213,9 @@ export class AcpService {
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
       }
-
-      // Create task after first successful prompt response
-      if (this.pendingTaskCreation()) {
-        this.pendingTaskCreation.set(false);
-        // 用真实 ACP 会话 id（wrapper id 无法被 OpenCode session/load 识别）
-        const sessionId = this.acpSessionId();
-        const title = this.sessionState().title || 'New Task';
-        const agentId = this.selectedAgent()?.id || 'opencode';
-        const cwd = this.sessionState().cwd || '';
-        if (sessionId && cwd) {
-          // Extract taskId from cwd (e.g., C:\Users\zhang\.clover\2026-08-24-14-07-02)
-          const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
-          if (taskId) {
-            this.sseService.addProject({
-              name: title,
-              path: cwd,
-              type: 'task',
-              sessions: [{ sessionId, agentId, title }],
-              id: taskId,
-              createdAt: new Date().toISOString(),
-            }).then(() => this.listTasks()).catch(err => {
-              console.error('[ACP] Failed to create task after prompt:', err);
-            });
-          }
-        }
-      }
     });
 
-    this.sseService.onSessionCreated((sessionId, payload) => {
+    this.sseService.onSessionCreated(async (sessionId, payload) => {
       // payload.sessionId 是 OpenCode 返回的真实 ACP 会话 id（wrapper session id 保持不变）
       this.acpSessionId.set(payload?.sessionId ?? sessionId ?? null);
       this.sessionState.update(s => ({
@@ -253,6 +223,66 @@ export class AcpService {
         // 保持 wrapper session id，不覆盖为 agent 返回的 ACP session id
         configOptions: payload?.configOptions,
       }));
+
+      // Create task (task creation = isNewSession && no selected project)
+      if (this.isNewSession() && !this.selectedProjectPath()) {
+        const acpSessionId = this.acpSessionId();
+        const title = this.sessionState().title || 'New Task';
+        const agentId = this.selectedAgent()?.id || 'opencode';
+        const cwd = this.sessionState().cwd || '';
+        if (acpSessionId && cwd) {
+          const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
+          if (taskId) {
+            try {
+              await this.sseService.addProject({
+                name: title,
+                path: cwd,
+                type: 'task',
+                sessions: [{ sessionId: acpSessionId, agentId, title }],
+                id: taskId,
+                createdAt: new Date().toISOString(),
+              });
+              await this.listTasks();
+              await this.saveSelectedProject(cwd);
+            } catch (err) {
+              console.error('[ACP] Failed to create task:', err);
+            }
+          }
+        }
+      }
+
+      // Create session record (moved from acp-chat-input sendMessage)
+      if (this.isNewSession()) {
+        const acpSessionId = this.acpSessionId();
+        if (acpSessionId) {
+          const cwd = this.sessionState().cwd || this.workingDirHint() || '';
+          const agentId = this.selectedAgent()?.id || 'opencode';
+
+          const newSession: SessionInfo = {
+            cwd,
+            sessionId: acpSessionId,
+            title: this.sessionState().title,
+            updatedAt: new Date().toISOString(),
+          };
+          this.sessions.update(list => [
+            newSession,
+            ...list.filter(s => s.sessionId !== acpSessionId),
+          ]);
+
+          const project = this.projects().find(p => p.path === cwd);
+          if (project) {
+            await this.saveSessionToProject(cwd, {
+              sessionId: acpSessionId,
+              agentId,
+              title: this.sessionState().title || 'New session',
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
+
+      // Reset isNewSession after task/session creation logic has read it
+      this.isNewSession.set(false);
     });
 
     this.sseService.onConnected(() => {
@@ -697,11 +727,10 @@ export class AcpService {
 
     // Phase 2: Reset state
     this.loadingText.set('Preparing session...');
-    this.pendingTaskCreation.set(false);
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
-    this.hasOpenedSession.set(true);
+    this.isNewSession.set(false);
     // 重置标题，避免加载新会话时沿用上一个会话/任务的标题
     this.sessionState.update(s => ({ ...s, title: undefined }));
 
@@ -751,11 +780,10 @@ export class AcpService {
 
     // Phase 2: Reset state
     this.loadingText.set('Preparing session...');
-    this.pendingTaskCreation.set(false);
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
-    this.hasOpenedSession.set(true);
+    this.isNewSession.set(false);
     // 重置标题，避免恢复新会话时沿用上一个会话/任务的标题
     this.sessionState.update(s => ({ ...s, title: undefined }));
 

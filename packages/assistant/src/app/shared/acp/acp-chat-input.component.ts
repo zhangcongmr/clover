@@ -1,10 +1,12 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, HostListener, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp-websocket.service';
+import type { ProjectInfo } from './acp.service';
+import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const TEXT_MIME_TYPES = new Set([
@@ -34,7 +36,7 @@ export interface AttachmentEntry {
 @Component({
   selector: 'app-acp-chat-input',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent],
   templateUrl: './acp-chat-input.component.html',
   styles: [`
     :host {
@@ -478,6 +480,82 @@ export interface AttachmentEntry {
       margin-top: 1px;
       color: var(--vscode-descriptionForeground, #666666);
     }
+    .project-selector {
+      position: relative;
+    }
+    .project-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 4px;
+      min-width: 250px;
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: var(--vscode-dropdown-background, #ffffff);
+      border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+    }
+    .project-option {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-foreground, #333333);
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.15s;
+    }
+    .project-option:hover {
+      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+    }
+    .project-option.active {
+      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+    }
+    .project-option .project-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--vscode-foreground, #333333);
+    }
+    .project-option .project-path {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 2px;
+      color: var(--vscode-descriptionForeground, #666666);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .project-check {
+      margin-left: auto;
+      flex-shrink: 0;
+      color: var(--vscode-terminal-ansiGreen, #4ec9b0);
+    }
+    .project-divider {
+      height: 1px;
+      margin: 4px 0;
+      background-color: var(--vscode-dropdown-border, #e0e0e0);
+    }
+    .project-action {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 14px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-foreground, #333333);
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      transition: background-color 0.15s;
+    }
+    .project-action:hover {
+      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+    }
     .slash-command-menu {
       position: absolute;
       bottom: 100%;
@@ -541,6 +619,7 @@ export class AcpChatInputComponent {
 
   @ViewChild('messageInput') private messageInput!: ElementRef;
   @ViewChild('fileInput') private fileInput!: ElementRef<HTMLInputElement>;
+  readonly filePicker = viewChild(FilePickerDialogComponent);
 
   inputValue = signal<string>('');
   errorMessage = signal<string | null>(null);
@@ -552,10 +631,12 @@ export class AcpChatInputComponent {
   showAgentDropdown = signal<boolean>(false);
   showModeDropdown = signal<boolean>(false);
   showModelDropdown = signal<boolean>(false);
+  showProjectDropdown = signal<boolean>(false);
   selectedIndex = signal<number>(0);
   agentSelectedIndex = signal<number>(0);
   modeSelectedIndex = signal<number>(0);
   modelSelectedIndex = signal<number>(0);
+  projectSelectedIndex = signal<number>(0);
   protected agents = AVAILABLE_AGENTS;
 
   readonly modeConfig = computed(() => {
@@ -580,6 +661,13 @@ export class AcpChatInputComponent {
     if (!config) return '';
     const option = config.options?.find(o => o.value === config.currentValue);
     return option?.name ?? String(config.currentValue ?? '');
+  });
+
+  readonly currentProjectName = computed(() => {
+    const path = this.acpService.selectedProjectPath();
+    if (!path) return '';
+    const project = this.acpService.projects().find(p => p.path === path);
+    return project?.name ?? path.split(/[/\\]/).pop() ?? '';
   });
 
   readonly filteredCommands = computed(() => {
@@ -619,6 +707,9 @@ export class AcpChatInputComponent {
     }
     if (!target.closest('.model-selector')) {
       this.showModelDropdown.set(false);
+    }
+    if (!target.closest('.project-selector')) {
+      this.showProjectDropdown.set(false);
     }
   }
 
@@ -682,6 +773,58 @@ export class AcpChatInputComponent {
       this.acpService.setConfigOption(config.id, 'id', value);
     }
     this.showModelDropdown.set(false);
+    this.messageInput?.nativeElement?.focus();
+  }
+
+  toggleProjectDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    const opening = !this.showProjectDropdown();
+    this.showProjectDropdown.set(opening);
+    if (opening) {
+      const projects = this.acpService.projects();
+      const currentPath = this.acpService.selectedProjectPath();
+      const idx = projects.findIndex(p => p.path === currentPath);
+      this.projectSelectedIndex.set(idx >= 0 ? idx : 0);
+    }
+  }
+
+  async selectProject(project: ProjectInfo): Promise<void> {
+    await this.acpService.saveSelectedProject(project.path);
+    this.showProjectDropdown.set(false);
+    this.messageInput?.nativeElement?.focus();
+  }
+
+  async clearProject(): Promise<void> {
+    await this.acpService.saveSelectedProject(null);
+    await this.acpService.saveSelectedSession(null);
+    this.showProjectDropdown.set(false);
+    this.messageInput?.nativeElement?.focus();
+  }
+
+  openFolderPicker(): void {
+    const picker = this.filePicker();
+    if (picker) {
+      picker.openFolderPicker('/');
+    }
+  }
+
+  async onFolderSelected(result: { path: string; kind: 'folder' | 'file' }): Promise<void> {
+    if (result.kind !== 'folder') return;
+
+    const path = result.path;
+    const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+    const name = parts[parts.length - 1] || '';
+
+    if (!name) return;
+
+    try {
+      await this.acpService.addProject(name, path);
+      await this.acpService.saveSelectedProject(path);
+    } catch (error: any) {
+      console.error('[ACP Chat] Failed to add project:', error?.message || error);
+      this.errorMessage.set('Failed to add project: ' + (error?.message || 'Unknown error'));
+    }
+    this.showProjectDropdown.set(false);
     this.messageInput?.nativeElement?.focus();
   }
 
@@ -899,46 +1042,25 @@ export class AcpChatInputComponent {
       nonTextBlocks.length > 0 ? nonTextBlocks : undefined
     );
 
+    // Set session title early so onSessionCreated can use it for task/session records
+    if (this.acpService.isNewSession() && !this.acpService.sessionState().title && textBlocks.length > 0) {
+      const firstText = textBlocks[0].text!.trim().replace(/\s+/g, ' ');
+      this.acpService.sessionState.update(s => ({
+        ...s,
+        title: firstText.length > 50 ? firstText.slice(0, 50) + '…' : firstText,
+      }));
+    }
+
     try {
-      const isNewSession = !this.acpService.hasOpenedSession();
+      const isNewSession = this.acpService.isNewSession();
       if (isNewSession) {
-        const cwd = this.acpService.pendingTaskCreation()
-          ? undefined
-          : (this.acpService.selectedProjectPath() || this.acpService.workingDirHint() || undefined);
+        const cwd = this.acpService.selectedProjectPath()
+          || this.acpService.workingDirHint()
+          || undefined;
         await this.acpService.ensureChatSession(cwd);
-        this.acpService.hasOpenedSession.set(true);
       }
       await this.acpService.sendPrompt(content);
       this.attachments.set([]);
-
-      if (isNewSession) {
-        const sessionId = this.acpService.sessionState().sessionId;
-        if (sessionId) {
-          const cwd = this.acpService.sessionState().cwd || this.acpService.workingDirHint() || '';
-          const agentId = this.acpService.selectedAgent()?.id || 'opencode';
-          
-          const newSession: SessionInfo = {
-            cwd,
-            sessionId,
-            title: this.acpService.sessionState().title,
-            updatedAt: new Date().toISOString(),
-          };
-          this.acpService.sessions.update(list => [
-            newSession,
-            ...list.filter(s => s.sessionId !== sessionId),
-          ]);
-          
-          const project = this.acpService.projects().find(p => p.path === cwd);
-          if (project) {
-            await this.acpService.saveSessionToProject(cwd, {
-              sessionId,
-              agentId,
-              title: this.acpService.sessionState().title || 'New session',
-              updatedAt: new Date().toISOString(),
-            });
-          }
-        }
-      }
     } catch (error) {
       console.error('[ACP Chat] Failed to send message:', error);
       this.errorMessage.set(error instanceof Error ? error.message : String(error));
@@ -970,6 +1092,7 @@ export class AcpChatInputComponent {
     const agentMenuVisible = this.showAgentDropdown();
     const modeMenuVisible = this.showModeDropdown();
     const modelMenuVisible = this.showModelDropdown();
+    const projectMenuVisible = this.showProjectDropdown();
 
     if (slashMenuVisible) {
       if (event.key === 'ArrowDown') {
@@ -1086,6 +1209,38 @@ export class AcpChatInputComponent {
       if (event.key === 'Escape') {
         event.preventDefault();
         this.showModelDropdown.set(false);
+        return;
+      }
+    }
+
+    if (projectMenuVisible) {
+      const projects = this.acpService.projects();
+      const projectCount = projects.length;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const next = (this.projectSelectedIndex() + 1) % projectCount;
+        this.projectSelectedIndex.set(next);
+        this.scrollToActive(next, '.project-dropdown', '.project-option');
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const prev = (this.projectSelectedIndex() - 1 + projectCount) % projectCount;
+        this.projectSelectedIndex.set(prev);
+        this.scrollToActive(prev, '.project-dropdown', '.project-option');
+        return;
+      }
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        const project = projects[this.projectSelectedIndex()];
+        if (project) {
+          this.selectProject(project);
+        }
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.showProjectDropdown.set(false);
         return;
       }
     }
