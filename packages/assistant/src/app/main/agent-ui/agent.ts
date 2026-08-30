@@ -37,13 +37,17 @@ export class AgentComponent {
   readonly filePicker = viewChild(FilePickerDialogComponent);
 
   searchQuery = signal('');
-  selectedProject = signal<ProjectInfo | null>(null);
-  showAcpPanel = signal<boolean>(true);
+  selectedProject = computed(() => {
+    const savedPath = this.acpService.selectedProjectPath();
+    if (!savedPath) return null;
+    const projects = this.acpService.projects();
+    const tasks = this.acpService.tasks();
+    return projects.find(p => p.path === savedPath)
+      || tasks.find(t => t.path === savedPath)
+      || null;
+  });
   acpPanelMaximized = signal<boolean>(false);
   acpPanelDockPosition = signal<'left' | 'right'>('right');
-
-  /** Sidebar view state: which section is active */
-  activeView = signal<'tasks' | 'projects' | 'new-task'>('new-task');
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -130,32 +134,11 @@ export class AgentComponent {
     // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
     this.acpService.isNewSession.set(true);
 
-    // 核心 effect：依赖 projects()、tasks()、selectedProjectPath()、selectedProject()
-    // 当任一依赖变化时重跑，依次执行：清理失效选中 → 恢复持久化选中 → 加载 sessions
+    // 核心 effect：依赖 selectedProject()（computed from selectedProjectPath + projects + tasks）
+    // 当 selectedProject 变化时加载 sessions
     // 注意：listSessionsFromAllAgents 末尾会调用 listProjects() 更新 projects()，
     // 导致本 effect 重跑。通过 lastLoadedProjectPath 避免对同一 project 重复加载 sessions。
     effect(() => {
-      const projects = this.acpService.projects();
-      const tasks = this.acpService.tasks();
-      const savedPath = this.acpService.selectedProjectPath();
-      const selected = this.selectedProject();
-
-      // 1. 清理：selected 已不在 projects/tasks 中（被删除或刷新丢失），清除选中
-      if (selected && !projects.find(p => p.name === selected.name) && !tasks.find(t => t.name === selected.name)) {
-        this.selectedProject.set(null);
-      }
-
-      // 2. 恢复：页面刷新后从持久化路径恢复选中（projects/tasks 加载完成后才生效）
-      if (!this.selectedProject() && savedPath) {
-        const match = projects.find(p => p.path === savedPath)
-          || tasks.find(t => t.path === savedPath);
-        if (match) {
-          this.selectedProject.set(match);
-          this.activeView.set(match.type === 'task' ? 'tasks' : 'projects');
-        }
-      }
-
-      // 3. 切换时加载 sessions
       const cur = this.selectedProject();
       if (cur && !this.isLoadingSessions && !this.sessionLoadingId()) {
         if (cur.type === 'project') {
@@ -166,7 +149,7 @@ export class AgentComponent {
             this.loadSessionsForProject(cur.path);
           }
 
-          // 4. 自动恢复上次选中的 session（sessions 加载完成后）
+          // 自动恢复上次选中的 session（sessions 加载完成后）
           const savedSessionId = this.acpService.selectedSessionId();
           if (savedSessionId && !this.acpService.acpSessionId() && this.restoredSessionId !== savedSessionId) {
             this.restoredSessionId = savedSessionId;
@@ -190,8 +173,6 @@ export class AgentComponent {
   }
 
   switchToTasksView(): void {
-    this.activeView.set('tasks');
-    this.selectedProject.set(null);
     this.lastLoadedProjectPath = null;
     this.restoredSessionId = null;
     this.acpService.saveSelectedProject(null);
@@ -199,10 +180,8 @@ export class AgentComponent {
   }
 
   selectProject(name: string): void {
-    this.activeView.set('projects');
     const projectInfo = this.acpService.projects().find(p => p.name === name);
     if (projectInfo) {
-      this.selectedProject.set(projectInfo);
       this.acpService.saveSelectedProject(projectInfo.path);
     }
   }
@@ -227,7 +206,6 @@ export class AgentComponent {
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.isNewSession.set(false);
-    this.showAcpPanel.set(true);
     this.panelLoading.set(true);
 
     try {
@@ -250,7 +228,6 @@ export class AgentComponent {
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.isNewSession.set(false);
-    this.showAcpPanel.set(true);
     this.panelLoading.set(true);
 
     try {
@@ -285,21 +262,13 @@ export class AgentComponent {
   }
 
   async createNewTask(): Promise<void> {
-    const hasProject = !!this.selectedProject();
-
     this.panelError.set(null);
+    // 先清空 selectedProject，再设 isNewSession，
+    // 防止 effect 在 selectedProject 仍指向 Task 时触发 loadTaskSession
+    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedProject(null);
     await this.acpService.disconnect();
     this.acpService.isNewSession.set(true);
-    this.showAcpPanel.set(true);
-
-    if (!hasProject) {
-      // Standalone task: clear project, switch to new-task view
-      this.selectedProject.set(null);
-      await this.acpService.saveSelectedProject(null);
-      await this.acpService.saveSelectedSession(null);
-      this.activeView.set('new-task');
-    }
-    // If project selected: keep it, stay in projects view (project highlighted, not "New Task")
   }
 
   async deleteTask(event: MouseEvent, taskId: string): Promise<void> {
@@ -308,7 +277,6 @@ export class AgentComponent {
       const wasSelected = this.selectedProject()?.id === taskId;
       await this.acpService.deleteTask(taskId);
       if (wasSelected) {
-        this.selectedProject.set(null);
         this.acpService.saveSelectedProject(null);
         this.acpService.saveSelectedSession(null);
       }
@@ -320,13 +288,9 @@ export class AgentComponent {
     if (!task) return;
     if (this.sessionLoadingId()) return;
 
-    // 任务视图与项目/新建任务互斥
-    this.activeView.set('tasks');
-    this.selectedProject.set(task);
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.saveSelectedProject(task.path || null);
-    this.showAcpPanel.set(true);
 
     // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
     if (this.acpService.acpSessionId() === sessionId && this.acpService.sessionState().isConnected) {
@@ -420,10 +384,6 @@ export class AgentComponent {
     return `${diffDay}d`;
   }
 
-  closeAcpPanel(): void {
-    this.showAcpPanel.set(false);
-  }
-
   onAcpPanelMaximize(): void {
     this.acpPanelMaximized.set(true);
   }
@@ -476,7 +436,6 @@ export class AgentComponent {
       // 先删除（deleteProject 内部会刷新 projects 列表），再清除选中状态，保证编辑器能感知项目已删除
       await this.acpService.deleteProject(name);
       if (wasSelected) {
-        this.selectedProject.set(null);
         await this.acpService.saveSelectedProject(null);
         await this.acpService.saveSelectedSession(null);
       }

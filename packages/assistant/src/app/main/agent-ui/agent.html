@@ -13,7 +13,7 @@
 
     <!-- New Task nav -->
     <div class="sidebar-nav">
-      <div class="nav-item" [class.active]="activeView() === 'new-task' && showAcpPanel()"
+      <div class="nav-item" [class.active]="selectedProject() === null && !activeSessionId()"
         (click)="createNewTask()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -93,7 +93,7 @@
 
       <div class="project-list custom-scroll">
       @for (project of projects(); track project.name) {
-        <div class="project-item" [class.active]="activeView() === 'projects' && selectedProject()?.name === project.name"
+        <div class="project-item" [class.active]="selectedProject()?.name === project.name && selectedProject()?.type === 'project' && !activeSessionId()"
           (click)="selectProject(project.name)">
           <span class="project-icon" [style.background]="project.color">{{ getInitial(project.name) }}</span>
           <span class="project-name">{{ project.name }}</span>
@@ -106,7 +106,7 @@
         </div>
 
         <!-- Accordion: sessions nested under the selected project -->
-        @if (activeView() === 'projects' && selectedProject()?.name === project.name) {
+        @if (selectedProject()?.name === project.name && selectedProject()?.type === 'project') {
           <div class="project-sessions">
             @for (session of sessionsOf(project); track session.sessionId) {
               <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
@@ -181,7 +181,6 @@
         [isMaximized]="acpPanelMaximized()"
         [dockPosition]="acpPanelDockPosition()"
         [editorToggleActive]="layoutService.astContentPanelOpen()"
-        (closePanel)="closeAcpPanel()"
         (maximizePanel)="onAcpPanelMaximize()"
         (restorePanel)="onAcpPanelRestore()"
         (dockPositionChange)="onAcpPanelDockChange($event)"
