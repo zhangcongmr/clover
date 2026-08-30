@@ -911,7 +911,8 @@ Always use the welcome_greeting tool.`;
   async onFilePickerSelected(result: { path: string; kind: 'folder' | 'file' }) {
     this.acpService.workingDirHint.set(result.path);
     if (result.kind === 'folder') {
-      await this.openFolderViaNodeApi(result.path);
+      // saveSelectedProject triggers setupProjectSyncEffect → loadAgentProject
+      await this.acpService.saveSelectedProject(result.path);
     } else {
       await this.openFileViaNodeApi(result.path);
     }
@@ -996,21 +997,12 @@ Always use the welcome_greeting tool.`;
   }
   // 编辑器打开状态下，agent 切换选中项目时实时联动
   private setupProjectSyncEffect(): void {
-    let prevPath: string | null = null;
     effect(() => {
       const path = this.acpService.selectedProjectPath();
       if (path) {
-        prevPath = path;
         void this.loadAgentProject(path);
-      }
-      else if (prevPath !== null) {
-        const clearedPath = prevPath;
-        prevPath = null;
-        // 微任务中检查项目是否仍存在：仅当选中的项目被删除时才清空编辑器（取消选中不清空）
-        queueMicrotask(() => {
-          const stillExists = this.acpService.projects().some(p => p.path === clearedPath);
-          if (!stillExists) this.clearAgentProject();
-        });
+      } else {
+        this.clearAgentProject();
       }
     });
   }
