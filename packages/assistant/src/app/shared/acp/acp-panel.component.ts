@@ -40,6 +40,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       flex-direction: column;
       flex: 1;
       min-height: 0;
+      container-type: inline-size;
     }
     .acp-panel-container {
       display: flex;
@@ -48,9 +49,10 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       align-self: center;
       width: 100%;
     }
-
-    .acp-panel-container.is-wide {
-      width: 70%;
+    @container (min-width: 800px) {
+      .acp-panel-container {
+        width: 70%;
+      }
     }
 
     .acp-panel-container .acp-chat-container {
