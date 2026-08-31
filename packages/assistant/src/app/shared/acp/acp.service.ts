@@ -344,7 +344,7 @@ export class AcpService {
     };
 
     // Watch for state changes
-    setInterval(syncState, 100);
+    setInterval(syncState, 10000);
   }
 
   // ============================================================================
