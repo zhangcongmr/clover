@@ -215,9 +215,4 @@ export class AcpChatComponent implements OnDestroy {
   onQuestionIgnore(toolCallId: string): void {
     this.acpService.ignoreQuestions(toolCallId);
   }
-
-  goBackToSessionList(): void {
-    this.acpService.showSessionHistory.set(true);
-    this.acpService.isNewSession.set(true);
-  }
 }
