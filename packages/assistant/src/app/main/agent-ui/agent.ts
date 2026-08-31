@@ -256,11 +256,6 @@ export class AgentComponent {
     }
   }
 
-  async createNewSession(): Promise<void> {
-    await this.acpService.disconnect();
-    this.acpService.isNewSession.set(true);
-  }
-
   async createNewTask(): Promise<void> {
     this.panelError.set(null);
     // 先清空 selectedProject，再设 isNewSession，
