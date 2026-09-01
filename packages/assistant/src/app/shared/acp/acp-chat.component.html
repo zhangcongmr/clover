@@ -15,139 +15,113 @@
         </div>
       }
     } @else {
-      @if (hasMoreMessages) {
+      @if (hasMoreMessages()) {
         <div class="load-more-hint">Scroll up to load older messages</div>
       }
-      @for (message of visibleMessages; track trackByMessageId($index, message)) {
-        @if (message.role === 'tool_call') {
-          @if (acpService.isQuestionToolCall(message)) {
-            <!-- Question in messages: show as small indicator when active, or as completed badge -->
-            @if (acpService.submittedQuestions().has(message.toolCallId!)) {
-              <div class="acp-message tool-call">
-                <div class="message-avatar tool-call-avatar">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </div>
-                <div class="message-content">
-                  <div class="message-header">
-                    <span class="message-role">Question</span>
-                    <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-                  </div>
-                  <div class="tool-call-card status-completed">
-                    <div class="tool-call-title-row">
-                      <span class="tool-call-status-icon">✅</span>
-                      <span class="tool-call-title-text">{{ message.toolTitle || 'Questions answered' }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-            <!-- Active questions are rendered in the pinned section below -->
-          } @else {
-            <!-- Regular tool call card -->
-            <div class="acp-message tool-call">
-              <div class="message-avatar tool-call-avatar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path
-                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-              </div>
-              <div class="message-content">
-                <div class="message-header">
-                  <span class="message-role">Tool Call</span>
-                  <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-                </div>
-                <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
-                  <div class="tool-call-title-row">
-                    <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
-                    <span class="tool-call-title-text">{{ message.toolTitle }}</span>
-                    @if (message.toolKind) {
-                      <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
+      @for (group of groupedMessages(); track trackByGroupIndex($index, group)) {
+        @if (group.type === 'intermediate') {
+          @let sectionId = group.messages[0].id;
+          <div class="intermediate-section" [class.collapsed]="isIntermediateSectionCollapsed(sectionId)">
+            <div class="intermediate-header" (click)="toggleIntermediateSection(sectionId)">
+              <span class="intermediate-toggle">{{ isIntermediateSectionCollapsed(sectionId) ? '▶' : '▼' }}</span>
+              <span class="intermediate-label">{{ isIntermediateSectionCollapsed(sectionId) ? '已收起所有步骤' : '已展开所有步骤' }}</span>
+            </div>
+            @if (!isIntermediateSectionCollapsed(sectionId)) {
+              <div class="intermediate-content">
+                @for (message of group.messages; track trackByMessageId($index, message)) {
+                  @if (message.role === 'tool_call') {
+                    @if (acpService.isQuestionToolCall(message)) {
+                      @if (acpService.submittedQuestions().has(message.toolCallId!)) {
+                        <div class="acp-message tool-call">
+                          <div class="message-content">
+                            <div class="tool-call-card status-completed">
+                              <div class="tool-call-title-row">
+                                <span class="tool-call-status-icon">✅</span>
+                                <span class="tool-call-title-text">{{ message.toolTitle || 'Questions answered' }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    } @else {
+                      <div class="acp-message tool-call">
+                        <div class="message-content">
+                          <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
+                            <div class="tool-call-title-row">
+                              <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
+                              <span class="tool-call-title-text">{{ message.toolTitle }}</span>
+                              @if (message.toolKind) {
+                                <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
+                              }
+                            </div>
+                            @if (message.toolLocations && message.toolLocations.length > 0) {
+                              <div class="tool-call-location">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                                  <polyline points="13 2 13 9 20 9" />
+                                </svg>
+                                <span>{{ message.toolLocations[0].path }}</span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
                     }
-                  </div>
-                  @if (message.toolLocations && message.toolLocations.length > 0) {
-                    <div class="tool-call-location">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-                        <polyline points="13 2 13 9 20 9" />
-                      </svg>
-                      <span>{{ message.toolLocations[0].path }}</span>
+                  } @else if (message.role === 'thought') {
+                    <div class="acp-message thought">
+                      <div class="message-content">
+                        <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+                      </div>
                     </div>
                   }
-                </div>
+                }
               </div>
-            </div>
-          }
+            }
+          </div>
         } @else {
-          <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'"
-            [class.thought]="message.role === 'thought'">
-            <div class="message-avatar">
-              @if (message.role === 'user') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              } @else if (message.role === 'thought') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4m0-4h.01" />
-              </svg>
-              } @else {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path
-                  d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-              </svg>
-              }
-            </div>
-            <div class="message-content">
-              <div class="message-header">
-                <span class="message-role">
-                  {{message.role === 'user' ? 'You' : message.role === 'thought' ? 'Thought' : 'Agent'}}
-                </span>
-                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
-              </div>
-              <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
-              @if (message.contentBlocks && message.contentBlocks.length > 0) {
-                @for (block of message.contentBlocks; track $index) {
-                  @switch (block.type) {
-                    @case ('image') {
-                      <div class="content-block content-image">
-                        <img [src]="blockDataUrl(block)" alt="Image" />
-                      </div>
-                    }
-                    @case ('audio') {
-                      <div class="content-block content-audio">
-                        <audio controls [src]="blockDataUrl(block)"></audio>
-                      </div>
-                    }
-                    @case ('resource') {
-                      <div class="content-block content-resource">
-                        <span class="resource-icon">📎</span>
-                        <span class="resource-name">{{ resourceName(block) }}</span>
-                        @if (block.resource.text) {
-                          <pre class="resource-text">{{ resourcePreview(block) }}</pre>
-                        } @else if (block.resource.blob) {
-                          <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="resourceName(block)">Download</a>
-                        }
-                      </div>
-                    }
-                    @case ('resource_link') {
-                      <div class="content-block content-link">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                        <a [href]="block.uri" target="_blank" rel="noopener noreferrer">{{ block.name || block.uri }}</a>
-                      </div>
+          @for (message of group.messages; track trackByMessageId($index, message)) {
+            <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+              <div class="message-content">
+                <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+                @if (message.contentBlocks && message.contentBlocks.length > 0) {
+                  @for (block of message.contentBlocks; track $index) {
+                    @switch (block.type) {
+                      @case ('image') {
+                        <div class="content-block content-image">
+                          <img [src]="blockDataUrl(block)" alt="Image" />
+                        </div>
+                      }
+                      @case ('audio') {
+                        <div class="content-block content-audio">
+                          <audio controls [src]="blockDataUrl(block)"></audio>
+                        </div>
+                      }
+                      @case ('resource') {
+                        <div class="content-block content-resource">
+                          <span class="resource-icon">📎</span>
+                          <span class="resource-name">{{ resourceName(block) }}</span>
+                          @if (block.resource.text) {
+                            <pre class="resource-text">{{ resourcePreview(block) }}</pre>
+                          } @else if (block.resource.blob) {
+                            <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="resourceName(block)">Download</a>
+                          }
+                        </div>
+                      }
+                      @case ('resource_link') {
+                        <div class="content-block content-link">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                          </svg>
+                          <a [href]="block.uri" target="_blank" rel="noopener noreferrer">{{ block.name || block.uri }}</a>
+                        </div>
+                      }
                     }
                   }
                 }
-              }
+              </div>
             </div>
-          </div>
+          }
         }
       }
     }
@@ -210,20 +184,10 @@
   }
 
   @if (acpService.isProcessing()) {
-    <div class="acp-message assistant">
-      <div class="message-avatar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path
-            d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-        </svg>
-      </div>
-      <div class="message-content">
-        <div class="typing-indicator">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
+    <div class="typing-indicator">
+      <span></span>
+      <span></span>
+      <span></span>
     </div>
   }
 </div>
