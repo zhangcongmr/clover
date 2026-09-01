@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
@@ -6,7 +6,12 @@ import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
 
 const INITIAL_LOAD = 30;
-const LOAD_MORE = 20;
+const LOAD_MORE = 50;
+
+export interface MessageGroup {
+  type: 'user' | 'assistant' | 'intermediate';
+  messages: AcpMessage[];
+}
 
 @Component({
   selector: 'app-acp-chat',
@@ -24,7 +29,10 @@ export class AcpChatComponent implements OnDestroy {
   private isNearBottom = true;
   private rafId: number | null = null;
 
-  visibleCount = INITIAL_LOAD;
+  visibleCount = signal(INITIAL_LOAD);
+
+  /** Tracks which intermediate sections are collapsed (keyed by first message id). */
+  private collapsedSections = new Set<string>();
 
   readonly activeTodosMessage = computed(() => {
     const id = this.acpService.activeTodosId();
@@ -36,6 +44,47 @@ export class AcpChatComponent implements OnDestroy {
 
   todosCollapsed = false;
 
+  readonly visibleMessages = computed<AcpMessage[]>(() => {
+    const all = this.acpService.messages();
+    const activeId = this.acpService.activeTodosId();
+    const filtered = activeId ? all.filter(m => m.id !== activeId) : all;
+    return filtered.slice(-this.visibleCount());
+  });
+
+  readonly hasMoreMessages = computed(() => {
+    return this.acpService.messages().length > this.visibleCount();
+  });
+
+  /** Grouped messages for rendering - recomputes only when messages or processing state changes. */
+  readonly groupedMessages = computed<MessageGroup[]>(() => {
+    const messages = this.visibleMessages();
+
+    if (this.acpService.isProcessing()) {
+      return messages.map(msg => ({ type: msg.role as 'user' | 'assistant' | 'intermediate', messages: [msg] }));
+    }
+
+    const groups: MessageGroup[] = [];
+    let currentRound: AcpMessage[] = [];
+
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        if (currentRound.length > 0) {
+          this.flushRound(groups, currentRound);
+          currentRound = [];
+        }
+        groups.push({ type: 'user', messages: [msg] });
+      } else {
+        currentRound.push(msg);
+      }
+    }
+
+    if (currentRound.length > 0) {
+      this.flushRound(groups, currentRound);
+    }
+
+    return groups;
+  });
+
   constructor() {
     afterNextRender(() => {
       this.scrollToBottom();
@@ -45,6 +94,13 @@ export class AcpChatComponent implements OnDestroy {
       const msgs = this.acpService.messages();
       if (msgs.length > 0 && this.isNearBottom) {
         this.scheduleScrollToBottom();
+      }
+    });
+
+    effect(() => {
+      const processing = this.acpService.isProcessing();
+      if (!processing) {
+        this.collapsedSections.clear();
       }
     });
   }
@@ -59,15 +115,35 @@ export class AcpChatComponent implements OnDestroy {
     this.todosCollapsed = !this.todosCollapsed;
   }
 
-  get visibleMessages(): AcpMessage[] {
-    const all = this.acpService.messages();
-    const activeId = this.acpService.activeTodosId();
-    const filtered = activeId ? all.filter(m => m.id !== activeId) : all;
-    return filtered.slice(-this.visibleCount);
+  isIntermediateSectionCollapsed(sectionId: string): boolean {
+    return !this.collapsedSections.has(sectionId);
   }
 
-  get hasMoreMessages(): boolean {
-    return this.acpService.messages().length > this.visibleCount;
+  toggleIntermediateSection(sectionId: string): void {
+    if (this.collapsedSections.has(sectionId)) {
+      this.collapsedSections.delete(sectionId);
+    } else {
+      this.collapsedSections.add(sectionId);
+    }
+  }
+
+  private flushRound(groups: MessageGroup[], round: AcpMessage[]): void {
+    let lastAssistantIdx = -1;
+    for (let i = round.length - 1; i >= 0; i--) {
+      if (round[i].role === 'assistant') {
+        lastAssistantIdx = i;
+        break;
+      }
+    }
+
+    if (lastAssistantIdx === -1) {
+      groups.push({ type: 'intermediate', messages: round });
+    } else {
+      if (lastAssistantIdx > 0) {
+        groups.push({ type: 'intermediate', messages: round.slice(0, lastAssistantIdx) });
+      }
+      groups.push({ type: 'assistant', messages: [round[lastAssistantIdx]] });
+    }
   }
 
   get hasPlans(): boolean {
@@ -82,16 +158,18 @@ export class AcpChatComponent implements OnDestroy {
     this.isNearBottom =
       element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
 
-    if (this.isLoadingMore || !this.hasMoreMessages) return;
+    if (this.isLoadingMore || !this.hasMoreMessages()) return;
 
     if (element.scrollTop < 50) {
       this.isLoadingMore = true;
-      const prevHeight = element.scrollHeight;
-      this.visibleCount = Math.min(this.visibleCount + LOAD_MORE, this.acpService.messages().length);
-      setTimeout(() => {
-        element.scrollTop = element.scrollHeight - prevHeight;
-        this.isLoadingMore = false;
-      }, 0);
+      const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+      this.visibleCount.set(Math.min(this.visibleCount() + LOAD_MORE, this.acpService.messages().length));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          element.scrollTop = element.scrollHeight - element.clientHeight - distanceFromBottom;
+          this.isLoadingMore = false;
+        });
+      });
     }
   }
 
@@ -117,6 +195,10 @@ export class AcpChatComponent implements OnDestroy {
     return message.id;
   }
 
+  trackByGroupIndex(index: number, group: MessageGroup): string {
+    return group.messages[0]?.id ?? `group-${index}`;
+  }
+
   formatMessage(content: string): string {
     return content
       .replace(/&/g, '&amp;')
@@ -131,10 +213,6 @@ export class AcpChatComponent implements OnDestroy {
   formatTime(date: Date): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-
-  // ============================================================================
-  // Content block rendering
-  // ============================================================================
 
   blockDataUrl(block: ImageContent | AudioContent): string {
     return `data:${block.mimeType};base64,${block.data}`;
@@ -195,10 +273,6 @@ export class AcpChatComponent implements OnDestroy {
   totalCount(message: AcpMessage): number {
     return this.getTodos(message)?.length ?? 0;
   }
-
-  // ============================================================================
-  // Question methods
-  // ============================================================================
 
   getQuestions(message: AcpMessage): QuestionItem[] {
     const rawInput = message.toolRawInput as any;
