@@ -1,5 +1,5 @@
 <div class="acp-chat-container">
-  <div class="acp-chat-messages custom-scroll" #messagesContainer (scroll)="onScroll()">
+  <div class="acp-chat-messages custom-scroll" [class.replaying]="acpService.isReplayingHistory()" #messagesContainer (scroll)="onScroll()">
     @if (acpService.messages().length === 0) {
       @if (acpService.isSwitchingSession()) {
         <div class="acp-loading-screen">
@@ -34,10 +34,10 @@
                       @if (acpService.submittedQuestions().has(message.toolCallId!)) {
                         <div class="acp-message tool-call">
                           <div class="message-content">
-                            <div class="tool-call-card status-completed">
+                            <div class="tool-call-card" [class]="message.toolStatus === 'failed' ? 'status-failed' : 'status-completed'">
                               <div class="tool-call-title-row">
-                                <span class="tool-call-status-icon">✅</span>
-                                <span class="tool-call-title-text">{{ message.toolTitle || 'Questions answered' }}</span>
+                                <span class="tool-call-status-icon">{{ message.toolStatus === 'failed' ? '❌' : '✅' }}</span>
+                                <span class="tool-call-title-text">{{ message.toolTitle || (message.toolStatus === 'failed' ? 'Questions cancelled' : 'Questions answered') }}</span>
                               </div>
                             </div>
                           </div>
@@ -127,30 +127,30 @@
     }
   </div>
 
-  @if (activeQuestionMessage(); as questionMsg) {
+  @if (activeQuestionsMessages().length > 0; as hasQuestions) {
     <div class="acp-question-pinned">
       <app-acp-question
-        [questions]="getQuestions(questionMsg)"
-        [toolCallId]="questionMsg.toolCallId!"
+        [questions]="getQuestions(activeQuestionsMessages()[0])"
+        [toolCallId]="activeQuestionsMessages()[0].toolCallId!"
         [submitted]="false"
-        (onSubmit)="onQuestionSubmit(questionMsg.toolCallId!, $event)"
-        (onIgnore)="onQuestionIgnore(questionMsg.toolCallId!)"
+        (onSubmit)="onQuestionSubmit(activeQuestionsMessages()[0].toolCallId!, $event)"
+        (onIgnore)="onQuestionIgnore(activeQuestionsMessages()[0].toolCallId!)"
       />
     </div>
   }
 
-  @if (activeTodosMessage(); as todoMsg) {
+  @if (activeTodosMessages().length > 0; as hasTodos) {
     <div class="acp-todos-pinned">
       <div class="todos-card">
         <div class="todos-header" (click)="toggleTodosCollapse()">
-          <span class="todos-progress">已完成 {{ completedCount(todoMsg) }} 个任务 (共 {{ totalCount(todoMsg) }} 个)</span>
+          <span class="todos-progress">已完成 {{ completedCount(activeTodosMessages()[0]) }} 个任务 (共 {{ totalCount(activeTodosMessages()[0]) }} 个)</span>
           <span class="todos-toggle-icon" [class.collapsed]="todosCollapsed">
             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
           </span>
         </div>
         @if (!todosCollapsed) {
         <div class="todos-list">
-          @for (todo of getTodos(todoMsg); track todo.content) {
+          @for (todo of getTodos(activeTodosMessages()[0]); track todo.content) {
           <div class="todo-item" [class]="'todo-status-' + todo.status">
             <span class="todo-checkbox">
               @if (todo.status === 'completed') {

@@ -34,29 +34,26 @@ export class AcpChatComponent implements OnDestroy {
   /** Tracks which intermediate sections are collapsed (keyed by first message id). */
   private collapsedSections = new Set<string>();
 
-  readonly activeTodosMessage = computed(() => {
-    const id = this.acpService.activeTodosId();
-    if (!id) return null;
-    return this.acpService.messages().find(m => m.id === id) ?? null;
-  });
+  readonly activeTodosMessages = computed(() => this.acpService.activeTodosMessages());
 
-  readonly activeQuestionMessage = computed(() => this.acpService.activeQuestionMessage());
+  readonly activeQuestionsMessages = computed(() => this.acpService.activeQuestionsMessages());
 
   todosCollapsed = false;
 
   readonly visibleMessages = computed<AcpMessage[]>(() => {
+    if (this.acpService.isReplayingHistory()) return [];
     const all = this.acpService.messages();
-    const activeId = this.acpService.activeTodosId();
-    const filtered = activeId ? all.filter(m => m.id !== activeId) : all;
-    return filtered.slice(-this.visibleCount());
+    return all.slice(-this.visibleCount());
   });
 
   readonly hasMoreMessages = computed(() => {
+    if (this.acpService.isReplayingHistory()) return false;
     return this.acpService.messages().length > this.visibleCount();
   });
 
   /** Grouped messages for rendering - recomputes only when messages or processing state changes. */
   readonly groupedMessages = computed<MessageGroup[]>(() => {
+    if (this.acpService.isReplayingHistory()) return [];
     const messages = this.visibleMessages();
 
     if (this.acpService.isProcessing()) {
@@ -92,8 +89,16 @@ export class AcpChatComponent implements OnDestroy {
 
     effect(() => {
       const msgs = this.acpService.messages();
-      if (msgs.length > 0 && this.isNearBottom) {
+      if (msgs.length > 0 && this.isNearBottom && !this.acpService.isReplayingHistory()) {
         this.scheduleScrollToBottom();
+      }
+    });
+
+    // After replay ends, scroll to bottom once (ensures DOM is painted)
+    effect(() => {
+      const replaying = this.acpService.isReplayingHistory();
+      if (!replaying && this.acpService.messages().length > 0) {
+        setTimeout(() => this.scrollToBottom(), 50);
       }
     });
 
@@ -185,10 +190,15 @@ export class AcpChatComponent implements OnDestroy {
     });
   }
 
-  scrollToBottom(): void {
+  scrollToBottom(smooth = true): void {
     const element = this.messagesContainer?.nativeElement;
     if (!element) return;
-    element.scrollTop = element.scrollHeight - element.clientHeight;
+    const top = element.scrollHeight - element.clientHeight;
+    if (smooth) {
+      element.scrollTo({ top, behavior: 'smooth' });
+    } else {
+      element.scrollTop = top;
+    }
   }
 
   trackByMessageId(index: number, message: AcpMessage): string {
