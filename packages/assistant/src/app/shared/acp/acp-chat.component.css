@@ -289,6 +289,134 @@
   flex-shrink: 0;
 }
 
+/* Diff view for edit tool calls */
+.tool-call-diff-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.diff-stats {
+  display: flex;
+  gap: 8px;
+  font-size: var(--vscode-small-font-size);
+  font-family: var(--vscode-font-mono);
+}
+
+.diff-additions {
+  color: #28a745;
+}
+
+.diff-deletions {
+  color: #dc3545;
+}
+
+/* Diff toggle button */
+.diff-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: var(--vscode-small-font-size);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+.diff-toggle-btn:hover {
+  opacity: 1;
+  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+.diff-toggle-icon {
+  font-size: 10px;
+  transition: transform 0.15s;
+}
+
+.diff-toggle-icon.collapsed {
+  transform: rotate(90deg);
+}
+
+.diff-toggle-text {
+  font-size: 12px;
+}
+
+.tool-call-diff {
+  overflow-x: auto;
+  border-radius: 4px;
+  background-color: var(--vscode-editor-background, #1e1e1e);
+  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.diff-line {
+  display: flex;
+  font-family: var(--vscode-font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.diff-line-add {
+  background-color: rgba(40, 167, 69, 0.15);
+}
+
+.diff-line-del {
+  background-color: rgba(220, 53, 69, 0.15);
+}
+
+.diff-line-num {
+  display: inline-block;
+  width: 32px;
+  padding: 0 4px;
+  text-align: right;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  flex-shrink: 0;
+  user-select: none;
+  border-right: 1px solid var(--vscode-input-border, #3c3c3c);
+}
+
+.diff-line-num.add {
+  color: #28a745;
+  opacity: 0.8;
+}
+
+.diff-line-num.del {
+  color: #dc3545;
+  opacity: 0.8;
+}
+
+.diff-line-content {
+  padding-left: 8px;
+  color: var(--vscode-foreground);
+}
+
+/* Read tool call info */
+.tool-call-read-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  font-size: var(--vscode-small-font-size);
+  color: var(--vscode-foreground);
+}
+
+.read-explored {
+  opacity: 0.7;
+}
+
+.read-params {
+  font-family: var(--vscode-font-mono);
+  opacity: 0.8;
+}
+
 .todos-card {
   display: flex;
   flex-direction: column;

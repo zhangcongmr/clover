@@ -63,6 +63,52 @@
                                 <span>{{ message.toolLocations[0].path }}</span>
                               </div>
                             }
+                            @if (message.toolKind === 'edit' && message.toolStatus === 'completed') {
+                              @if (message | editDiff; as editDiff) {
+                                <div class="tool-call-diff-header">
+                                  <span class="diff-stats">
+                                    <span class="diff-additions">+{{ editDiff.additions }}</span>
+                                    <span class="diff-deletions">-{{ editDiff.deletions }}</span>
+                                  </span>
+                                  <button class="diff-toggle-btn" (click)="toggleDiffCollapse(message.toolCallId!)">
+                                    <span class="diff-toggle-icon" [class.collapsed]="isDiffCollapsed(message.toolCallId!)">▶</span>
+                                    <span class="diff-toggle-text">{{ isDiffCollapsed(message.toolCallId!) ? '展开' : '收起' }}</span>
+                                  </button>
+                                </div>
+                                @if (!isDiffCollapsed(message.toolCallId!)) {
+                                  <div class="tool-call-diff">
+                                    @for (diffLine of editDiff.diff | parseDiff; track $index) {
+                                      <div class="diff-line" [class.diff-line-add]="diffLine.type === 'add'" [class.diff-line-del]="diffLine.type === 'del'">
+                                        @if (diffLine.type === 'add') {
+                                          <span class="diff-line-num add">+</span>
+                                        } @else if (diffLine.type === 'del') {
+                                          <span class="diff-line-num del">-</span>
+                                        } @else {
+                                          <span class="diff-line-num context">{{ diffLine.lineNum }}</span>
+                                        }
+                                        <span class="diff-line-content">{{ diffLine.content }}</span>
+                                      </div>
+                                    }
+                                  </div>
+                                }
+                              }
+                            }
+                            @if (message.toolKind === 'read' && message.toolStatus === 'completed') {
+                              @if (message | readInfo; as readInfo) {
+                                <div class="tool-call-read-info">
+                                  <span class="read-explored">已探索 1 次读取</span>
+                                  <span class="read-params">
+                                    读取 {{ message.toolLocations?.[0]?.path || 'file' }}
+                                    @if (readInfo.offset !== undefined) {
+                                      offset={{ readInfo.offset }}
+                                    }
+                                    @if (readInfo.limit !== undefined) {
+                                      limit={{ readInfo.limit }}
+                                    }
+                                  </span>
+                                </div>
+                              }
+                            }
                           </div>
                         </div>
                       </div>
