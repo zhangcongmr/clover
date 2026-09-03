@@ -93,3 +93,18 @@ export class ParseDiffPipe implements PipeTransform {
     return lines;
   }
 }
+
+@Pipe({ name: 'formatMessage', standalone: true, pure: true })
+export class FormatMessagePipe implements PipeTransform {
+  transform(content: string): string {
+    if (!content) return '';
+    return content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+}
