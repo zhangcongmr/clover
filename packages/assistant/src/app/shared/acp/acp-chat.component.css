@@ -127,9 +127,7 @@
 }
 
 .acp-message.thought .message-text {
-  background-color: var(--vscode-textCodeBlock-background, #f5f5f5);
   font-style: italic;
-  border-left: 3px solid var(--vscode-terminal-ansiYellow, #ffc107);
 }
 
 /* Intermediate section (grouped thought + tool_call messages) */
@@ -137,8 +135,6 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
-  border-radius: var(--borderless-item-radius, 8px);
   overflow: visible;
 }
 
@@ -176,7 +172,6 @@
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  border-top: 1px solid var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -224,34 +219,28 @@
 
 .tool-call-card {
   padding: 10px 14px;
-  border-radius: var(--borderless-item-radius, 8px);
-  background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
-  border: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .tool-call-card.status-pending {
-  border-left: 3px solid var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
 }
 
 .tool-call-card.status-in_progress {
-  border-left: 3px solid var(--borderless-accent, #3794ff);
 }
 
 .tool-call-card.status-completed {
-  border-left: 3px solid #28a745;
 }
 
 .tool-call-card.status-failed {
-  border-left: 3px solid #dc3545;
 }
 
 .tool-call-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
 }
 
 .tool-call-status-icon {
@@ -269,7 +258,6 @@
   font-size: var(--vscode-small-font-size);
   padding: 1px 6px;
   border-radius: var(--vscode-radius-sm);
-  background-color: var(--vscode-editor-background);
   color: var(--vscode-foreground);
   opacity: 0.7;
 }
@@ -290,13 +278,6 @@
 }
 
 /* Diff view for edit tool calls */
-.tool-call-diff-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-top: 4px;
-}
-
 .diff-stats {
   display: flex;
   gap: 8px;
@@ -312,27 +293,6 @@
   color: #dc3545;
 }
 
-/* Diff toggle button */
-.diff-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--vscode-foreground);
-  font-size: var(--vscode-small-font-size);
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.15s, background-color 0.15s;
-}
-
-.diff-toggle-btn:hover {
-  opacity: 1;
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
-}
-
 .diff-toggle-icon {
   font-size: 10px;
   transition: transform 0.15s;
@@ -340,10 +300,6 @@
 
 .diff-toggle-icon.collapsed {
   transform: rotate(90deg);
-}
-
-.diff-toggle-text {
-  font-size: 12px;
 }
 
 .tool-call-diff {
