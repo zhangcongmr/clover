@@ -116,7 +116,7 @@
                   } @else if (message.role === 'thought') {
                     <div class="acp-message thought">
                       <div class="message-content">
-                        <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+                        <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
                       </div>
                     </div>
                   }
@@ -128,7 +128,7 @@
           @for (message of group.messages; track trackByMessageId($index, message)) {
             <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
               <div class="message-content">
-                <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+                <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
                 @if (message.contentBlocks && message.contentBlocks.length > 0) {
                   @for (block of message.contentBlocks; track $index) {
                     @switch (block.type) {

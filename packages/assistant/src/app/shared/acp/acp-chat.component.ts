@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
-import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe } from './tool-call-info.pipe';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe } from './tool-call-info.pipe';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
 
 const INITIAL_LOAD = 30;
@@ -17,7 +17,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe],
+  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -221,17 +221,6 @@ export class AcpChatComponent implements OnDestroy {
 
   trackByGroupIndex(index: number, group: MessageGroup): string {
     return group.messages[0]?.id ?? `group-${index}`;
-  }
-
-  formatMessage(content: string): string {
-    return content
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
   }
 
   formatTime(date: Date): string {
