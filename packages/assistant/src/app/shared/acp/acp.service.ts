@@ -100,6 +100,7 @@ export class AcpService {
   readonly isProcessing = signal<boolean>(false);
   readonly isSwitchingSession = signal<boolean>(false);
   readonly loadingText = signal<string | null>(null);
+  readonly processingStartTime = signal<number | null>(null);
 
   readonly activeTodosId = signal<string | null>(null);
   readonly activeTodosMessages = signal<AcpMessage[]>([]);
@@ -201,6 +202,7 @@ export class AcpService {
 
     this.sseService.onPromptComplete((stopReason) => {
       this.isProcessing.set(false);
+      this.processingStartTime.set(null);
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
       }
@@ -457,6 +459,7 @@ export class AcpService {
       throw new Error('No active session');
     }
 
+    this.processingStartTime.set(Date.now());
     this.isProcessing.set(true);
 
     // Split text blocks for session title generation
@@ -1010,8 +1013,42 @@ export class AcpService {
       return;
     }
     
+    const toolCallId = update.toolCallId;
+    
+    if (update.sessionUpdate === 'tool_call_update' && toolCallId) {
+      if (this.mergeToolCallUpdate(update, toolCallId)) return;
+    }
+    
     const toolCallMsg = this.createToolCallMessage(update);
     this.messages.update(msgs => [...msgs, toolCallMsg]);
+  }
+
+  /** 合并 update 字段到现有消息（保留原始 toolKind、toolRawOutput 等） */
+  private mergeUpdateToExisting(existing: AcpMessage, update: any, toolCallId?: string): AcpMessage {
+    return {
+      ...existing,
+      ...(toolCallId ? { id: toolCallId, toolCallId } : {}),
+      toolTitle: update.title ?? existing.toolTitle,
+      toolKind: update.kind ?? existing.toolKind,
+      toolStatus: update.status ?? existing.toolStatus,
+      toolLocations: update.locations ?? existing.toolLocations,
+      toolRawInput: update.rawInput ?? existing.toolRawInput,
+      toolRawOutput: update.rawOutput ?? existing.toolRawOutput,
+    };
+  }
+
+  /** 合并 tool_call_update 到现有 tool_call 消息 */
+  private mergeToolCallUpdate(update: any, toolCallId: string): boolean {
+    const existingIdx = this.messages().findIndex(m => m.toolCallId === toolCallId);
+    if (existingIdx === -1) return false;
+    
+    const updated = this.mergeUpdateToExisting(this.messages()[existingIdx], update);
+    this.messages.update(msgs => {
+      const newMsgs = [...msgs];
+      newMsgs[existingIdx] = updated;
+      return newMsgs;
+    });
+    return true;
   }
 
   private handleReplayMode(update: any): void {
@@ -1021,17 +1058,9 @@ export class AcpService {
         m => m.toolCallId === toolCallId || m.id === toolCallId
       );
       if (existingIdx !== -1) {
-        this.replayBuffer[existingIdx] = {
-          ...this.replayBuffer[existingIdx],
-          id: toolCallId || this.replayBuffer[existingIdx].id,
-          toolCallId,
-          toolTitle: update.title ?? this.replayBuffer[existingIdx].toolTitle,
-          toolKind: update.kind ?? this.replayBuffer[existingIdx].toolKind,
-          toolStatus: update.status ?? this.replayBuffer[existingIdx].toolStatus,
-          toolLocations: update.locations ?? this.replayBuffer[existingIdx].toolLocations,
-          toolRawInput: update.rawInput ?? this.replayBuffer[existingIdx].toolRawInput,
-          toolRawOutput: update.rawOutput ?? this.replayBuffer[existingIdx].toolRawOutput,
-        };
+        this.replayBuffer[existingIdx] = this.mergeUpdateToExisting(
+          this.replayBuffer[existingIdx], update, toolCallId
+        );
         return;
       }
     }
@@ -1055,8 +1084,9 @@ export class AcpService {
 
   private createToolCallMessage(update: any): AcpMessage {
     const toolCallId = update.toolCallId;
+    const isUpdate = update.sessionUpdate === 'tool_call_update';
     return {
-      id: toolCallId || crypto.randomUUID(),
+      id: isUpdate ? `${toolCallId}-update-${crypto.randomUUID().slice(0, 8)}` : (toolCallId || crypto.randomUUID()),
       role: update.sessionUpdate,
       content: '',
       timestamp: new Date(),

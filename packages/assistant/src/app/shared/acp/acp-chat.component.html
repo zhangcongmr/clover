@@ -22,106 +22,16 @@
         @if (group.type === 'intermediate') {
           @let sectionId = group.messages[0].id;
           <div class="intermediate-section" [class.collapsed]="isIntermediateSectionCollapsed(sectionId)">
-            <div class="intermediate-header" (click)="toggleIntermediateSection(sectionId)">
-              <span class="intermediate-toggle">{{ isIntermediateSectionCollapsed(sectionId) ? '▶' : '▼' }}</span>
-              <span class="intermediate-label">{{ isIntermediateSectionCollapsed(sectionId) ? '已收起所有步骤' : '已展开所有步骤' }}</span>
-            </div>
-            @if (!isIntermediateSectionCollapsed(sectionId)) {
-              <div class="intermediate-content">
-                @for (message of group.messages; track trackByMessageId($index, message)) {
-                  @if (message.role === 'tool_call') {
-                    @if (acpService.isQuestionToolCall(message)) {
-                      @if (acpService.submittedQuestions().has(message.toolCallId!)) {
-                        <div class="acp-message tool-call">
-                          <div class="message-content">
-                            <div class="tool-call-card" [class]="message.toolStatus === 'failed' ? 'status-failed' : 'status-completed'">
-                              <div class="tool-call-title-row">
-                                <span class="tool-call-status-icon">{{ message.toolStatus === 'failed' ? '❌' : '✅' }}</span>
-                                <span class="tool-call-title-text">{{ message.toolTitle || (message.toolStatus === 'failed' ? 'Questions cancelled' : 'Questions answered') }}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      }
-                    } @else {
-                      <div class="acp-message tool-call">
-                        <div class="message-content">
-                          <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
-                            <div class="tool-call-title-row">
-                              <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
-                              <span class="tool-call-title-text">{{ message.toolTitle }}</span>
-                              @if (message.toolKind) {
-                                <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
-                              }
-                            </div>
-                            @if (message.toolLocations && message.toolLocations.length > 0) {
-                              <div class="tool-call-location">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
-                                  <polyline points="13 2 13 9 20 9" />
-                                </svg>
-                                <span>{{ message.toolLocations[0].path }}</span>
-                              </div>
-                            }
-                            @if (message.toolKind === 'edit' && message.toolStatus === 'completed') {
-                              @if (message | editDiff; as editDiff) {
-                                <div class="tool-call-diff-header">
-                                  <span class="diff-stats">
-                                    <span class="diff-additions">+{{ editDiff.additions }}</span>
-                                    <span class="diff-deletions">-{{ editDiff.deletions }}</span>
-                                  </span>
-                                  <button class="diff-toggle-btn" (click)="toggleDiffCollapse(message.toolCallId!)">
-                                    <span class="diff-toggle-icon" [class.collapsed]="isDiffCollapsed(message.toolCallId!)">▶</span>
-                                    <span class="diff-toggle-text">{{ isDiffCollapsed(message.toolCallId!) ? '展开' : '收起' }}</span>
-                                  </button>
-                                </div>
-                                @if (!isDiffCollapsed(message.toolCallId!)) {
-                                  <div class="tool-call-diff">
-                                    @for (diffLine of editDiff.diff | parseDiff; track $index) {
-                                      <div class="diff-line" [class.diff-line-add]="diffLine.type === 'add'" [class.diff-line-del]="diffLine.type === 'del'">
-                                        @if (diffLine.type === 'add') {
-                                          <span class="diff-line-num add">+</span>
-                                        } @else if (diffLine.type === 'del') {
-                                          <span class="diff-line-num del">-</span>
-                                        } @else {
-                                          <span class="diff-line-num context">{{ diffLine.lineNum }}</span>
-                                        }
-                                        <span class="diff-line-content">{{ diffLine.content }}</span>
-                                      </div>
-                                    }
-                                  </div>
-                                }
-                              }
-                            }
-                            @if (message.toolKind === 'read' && message.toolStatus === 'completed') {
-                              @if (message | readInfo; as readInfo) {
-                                <div class="tool-call-read-info">
-                                  <span class="read-explored">已探索 1 次读取</span>
-                                  <span class="read-params">
-                                    读取 {{ message.toolLocations?.[0]?.path || 'file' }}
-                                    @if (readInfo.offset !== undefined) {
-                                      offset={{ readInfo.offset }}
-                                    }
-                                    @if (readInfo.limit !== undefined) {
-                                      limit={{ readInfo.limit }}
-                                    }
-                                  </span>
-                                </div>
-                              }
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  } @else if (message.role === 'thought') {
-                    <div class="acp-message thought">
-                      <div class="message-content">
-                        <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
-                      </div>
-                    </div>
-                  }
-                }
+            @if (!group.isNew) {
+              <div class="intermediate-header" (click)="toggleIntermediateSection(sectionId)">
+                <span class="intermediate-toggle">{{ isIntermediateSectionCollapsed(sectionId) ? '▶' : '▼' }}</span>
+                <span class="intermediate-label">{{ isIntermediateSectionCollapsed(sectionId) ? '已收起所有步骤' : '已展开所有步骤' }}</span>
               </div>
+            }
+            @if (group.isNew || !isIntermediateSectionCollapsed(sectionId)) {
+              @for (message of group.messages; track trackByMessageId($index, message)) {
+                <ng-container *ngTemplateOutlet="toolCallOrThought; context: { $implicit: message }"></ng-container>
+              }
             }
           </div>
         } @else {
@@ -237,3 +147,91 @@
     </div>
   }
 </div>
+
+<ng-template #toolCallOrThought let-message>
+  @if (message.role === 'tool_call' || message.role === 'tool_call_update') {
+    @if (acpService.isQuestionToolCall(message) && acpService.submittedQuestions().has(message.toolCallId!)) {
+      <div class="acp-message tool-call">
+        <div class="message-content">
+          <div class="tool-call-card" [class]="message.toolStatus === 'failed' ? 'status-failed' : 'status-completed'">
+            <div class="tool-call-title-row">
+              <span class="tool-call-status-icon">{{ message.toolStatus === 'failed' ? '❌' : '✅' }}</span>
+              <span class="tool-call-title-text">{{ message.toolTitle || (message.toolStatus === 'failed' ? 'Questions cancelled' : 'Questions answered') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="acp-message tool-call">
+        <div class="message-content">
+          <div class="tool-call-card" [class]="'status-' + (message.toolStatus || 'pending')">
+            <div class="tool-call-title-row">
+              <span class="tool-call-status-icon">{{ getToolStatusIcon(message.toolStatus) }}</span>
+              <span class="tool-call-title-text">{{ message.toolTitle }}</span>
+              @if (message.toolKind) {
+                <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
+              }
+            </div>
+            @if (message.toolLocations && message.toolLocations.length > 0) {
+              <div class="tool-call-location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                  <polyline points="13 2 13 9 20 9" />
+                </svg>
+                <span>{{ message.toolLocations[0].path }}</span>
+              </div>
+            }
+            @if (message.toolKind === 'edit' && message.toolStatus === 'completed' && (message | editDiff); as editDiff) {
+              <div class="tool-call-diff-header">
+                <span class="diff-stats">
+                  <span class="diff-additions">+{{ editDiff.additions }}</span>
+                  <span class="diff-deletions">-{{ editDiff.deletions }}</span>
+                </span>
+                <button class="diff-toggle-btn" (click)="toggleDiffCollapse(message.toolCallId!)">
+                  <span class="diff-toggle-icon" [class.collapsed]="isDiffCollapsed(message.toolCallId!)">▶</span>
+                  <span class="diff-toggle-text">{{ isDiffCollapsed(message.toolCallId!) ? '展开' : '收起' }}</span>
+                </button>
+              </div>
+              @if (!isDiffCollapsed(message.toolCallId!)) {
+                <div class="tool-call-diff">
+                  @for (diffLine of editDiff.diff | parseDiff; track $index) {
+                    <div class="diff-line" [class.diff-line-add]="diffLine.type === 'add'" [class.diff-line-del]="diffLine.type === 'del'">
+                      @if (diffLine.type === 'add') {
+                        <span class="diff-line-num add">+</span>
+                      } @else if (diffLine.type === 'del') {
+                        <span class="diff-line-num del">-</span>
+                      } @else {
+                        <span class="diff-line-num context">{{ diffLine.lineNum }}</span>
+                      }
+                      <span class="diff-line-content">{{ diffLine.content }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            }
+            @if (message.toolKind === 'read' && message.toolStatus === 'completed' && (message | readInfo); as readInfo) {
+              <div class="tool-call-read-info">
+                <span class="read-explored">已探索 1 次读取</span>
+                <span class="read-params">
+                  读取 {{ message.toolLocations?.[0]?.path || 'file' }}
+                  @if (readInfo.offset !== undefined) {
+                    offset={{ readInfo.offset }}
+                  }
+                  @if (readInfo.limit !== undefined) {
+                    limit={{ readInfo.limit }}
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  } @else if (message.role === 'thought') {
+    <div class="acp-message thought">
+      <div class="message-content">
+        <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
+      </div>
+    </div>
+  }
+</ng-template>
