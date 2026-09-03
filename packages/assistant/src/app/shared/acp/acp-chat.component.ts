@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe } from './tool-call-info.pipe';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
 
 const INITIAL_LOAD = 30;
@@ -16,7 +17,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent],
+  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -129,6 +130,19 @@ export class AcpChatComponent implements OnDestroy {
       this.collapsedSections.delete(sectionId);
     } else {
       this.collapsedSections.add(sectionId);
+    }
+  }
+
+  isDiffCollapsed(toolCallId: string): boolean {
+    return this.collapsedSections.has(`diff-${toolCallId}`);
+  }
+
+  toggleDiffCollapse(toolCallId: string): void {
+    const key = `diff-${toolCallId}`;
+    if (this.collapsedSections.has(key)) {
+      this.collapsedSections.delete(key);
+    } else {
+      this.collapsedSections.add(key);
     }
   }
 
