@@ -12,6 +12,7 @@ const LOAD_MORE = 50;
 export interface MessageGroup {
   type: 'user' | 'assistant' | 'intermediate';
   messages: AcpMessage[];
+  isNew?: boolean;
 }
 
 @Component({
@@ -56,31 +57,33 @@ export class AcpChatComponent implements OnDestroy {
   readonly groupedMessages = computed<MessageGroup[]>(() => {
     if (this.acpService.isReplayingHistory()) return [];
     const messages = this.visibleMessages();
+    const processingStartTime = this.acpService.processingStartTime();
 
-    if (this.acpService.isProcessing()) {
-      return messages.map(msg => ({ type: msg.role as 'user' | 'assistant' | 'intermediate', messages: [msg] }));
-    }
+    if (this.acpService.isProcessing() && processingStartTime !== null) {
+      const preMessages: AcpMessage[] = [];
+      const postMessages: AcpMessage[] = [];
 
-    const groups: MessageGroup[] = [];
-    let currentRound: AcpMessage[] = [];
-
-    for (const msg of messages) {
-      if (msg.role === 'user') {
-        if (currentRound.length > 0) {
-          this.flushRound(groups, currentRound);
-          currentRound = [];
+      for (const msg of messages) {
+        if (msg.timestamp.getTime() < processingStartTime) {
+          preMessages.push(msg);
+        } else {
+          postMessages.push(msg);
         }
-        groups.push({ type: 'user', messages: [msg] });
-      } else {
-        currentRound.push(msg);
       }
+
+      const groups = this.groupMessages(preMessages);
+
+      for (const msg of postMessages) {
+        const groupType = (msg.role === 'tool_call' || msg.role === 'tool_call_update' || msg.role === 'thought')
+          ? 'intermediate'
+          : msg.role as 'user' | 'assistant' | 'intermediate';
+        groups.push({ type: groupType, messages: [msg], isNew: true });
+      }
+
+      return groups;
     }
 
-    if (currentRound.length > 0) {
-      this.flushRound(groups, currentRound);
-    }
-
-    return groups;
+    return this.groupMessages(messages);
   });
 
   constructor() {
@@ -122,6 +125,15 @@ export class AcpChatComponent implements OnDestroy {
   }
 
   isIntermediateSectionCollapsed(sectionId: string): boolean {
+    // 对于新消息（processing开始后），默认展开
+    if (this.acpService.isProcessing() && this.acpService.processingStartTime() !== null) {
+      // 检查 sectionId 对应的消息是否是新消息
+      const messages = this.acpService.messages();
+      const msg = messages.find(m => m.id === sectionId);
+      if (msg && msg.timestamp.getTime() >= this.acpService.processingStartTime()!) {
+        return false; // 新消息默认展开
+      }
+    }
     return !this.collapsedSections.has(sectionId);
   }
 
@@ -144,6 +156,29 @@ export class AcpChatComponent implements OnDestroy {
     } else {
       this.collapsedSections.add(key);
     }
+  }
+
+  private groupMessages(messages: AcpMessage[]): MessageGroup[] {
+    const groups: MessageGroup[] = [];
+    let currentRound: AcpMessage[] = [];
+
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        if (currentRound.length > 0) {
+          this.flushRound(groups, currentRound);
+          currentRound = [];
+        }
+        groups.push({ type: 'user', messages: [msg] });
+      } else {
+        currentRound.push(msg);
+      }
+    }
+
+    if (currentRound.length > 0) {
+      this.flushRound(groups, currentRound);
+    }
+
+    return groups;
   }
 
   private flushRound(groups: MessageGroup[], round: AcpMessage[]): void {
