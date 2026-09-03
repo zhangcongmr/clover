@@ -23,7 +23,7 @@ import type { AgentConfig } from './acp-agent.types';
 
 export interface AcpMessage {
   id: string;
-  role: 'user' | 'assistant' | 'thought' | 'tool_call';
+  role: 'user' | 'assistant' | 'thought' | 'tool_call' | 'tool_call_update';
   content: string;
   timestamp: Date;
   // Non-text content blocks (images, audio, resources) attached to this message
@@ -102,6 +102,8 @@ export class AcpService {
   readonly loadingText = signal<string | null>(null);
 
   readonly activeTodosId = signal<string | null>(null);
+  readonly activeTodosMessages = signal<AcpMessage[]>([]);
+  readonly activeQuestionsMessages = signal<AcpMessage[]>([]);
 
   // Session history
   readonly sessions = signal<SessionInfo[]>([]);
@@ -152,7 +154,15 @@ export class AcpService {
   // Whether we are replaying session history (session/load or session/resume).
   // During replay, user_message_chunk notifications are the only source of user
   // messages (unlike live prompts where the user message is added locally first).
-  private isReplayingHistory = false;
+  readonly isReplayingHistory = signal(false);
+
+  /** Buffer for messages during history replay. Flushed to `messages` signal in one shot
+   *  when replay completes, avoiding N re-renders (one per SSE event). */
+  private replayBuffer: AcpMessage[] = [];
+
+  /** Track last todos round during replay to determine final state */
+  private lastTodosMessage: AcpMessage | null = null;
+  private lastTodosAllCompleted: boolean = false;
 
   /** Agent id the current wrapper session was created with, used to detect
    *  agent changes so a stale wrapper is not reused. */
@@ -166,26 +176,7 @@ export class AcpService {
     return true;
   });
 
-  // Active question: the latest unanswered question tool call
-  readonly activeQuestionMessage = computed(() => {
-    const msgs = this.messages();
-    const submitted = this.submittedQuestions();
-    // Find the latest tool_call with questions that hasn't been answered
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      const m = msgs[i];
-      if (m.role === 'tool_call' && m.toolCallId) {
-        const rawInput = m.toolRawInput as any;
-        if (rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0) {
-          if (!submitted.has(m.toolCallId)) {
-            return m;
-          }
-        }
-      }
-    }
-    return null;
-  });
-
-  readonly hasActiveQuestions = computed(() => this.activeQuestionMessage() !== null);
+  readonly hasActiveQuestions = computed(() => this.activeQuestionsMessages().length > 0);
 
   constructor() {
     this.setupSseCallbacks();
@@ -519,6 +510,7 @@ export class AcpService {
       error: null
     });
     this.messages.set([]);
+    this.replayBuffer = [];
     this.plans.set(new Map());
     this.sessions.set([]);
     this.usage.set(null);
@@ -728,10 +720,13 @@ export class AcpService {
     // Phase 2: Reset state
     this.loadingText.set('Preparing session...');
     this.messages.set([]);
+    this.replayBuffer = [];
     this.plans.set(new Map());
     this.activeTodosId.set(null);
+    this.activeTodosMessages.set([]);
+    this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
-    // 重置标题，避免加载新会话时沿用上一个会话/任务的标题
+    // 重置标题，避免恢复新会话时沿用上一个会话/任务的标题
     this.sessionState.update(s => ({ ...s, title: undefined }));
 
     let currentSessionId = this.sessionState().sessionId;
@@ -746,7 +741,7 @@ export class AcpService {
 
     // Phase 4: Load session history
     this.loadingText.set('Loading session history...');
-    this.isReplayingHistory = true;
+    this.isReplayingHistory.set(true);
     try {
       const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd);
 
@@ -764,7 +759,20 @@ export class AcpService {
         this.sessionState.update(s => ({ ...s, title: loaded.title }));
       }
     } finally {
-      this.isReplayingHistory = false;
+      this.isReplayingHistory.set(false);
+      
+      // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
+      if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
+        this.activeTodosMessages.set([this.lastTodosMessage]);
+        this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
+      }
+      
+      // 清理临时变量
+      this.lastTodosMessage = null;
+      this.lastTodosAllCompleted = false;
+      
+      this.flushReplayBuffer();
+      this.isSwitchingSession.set(false);
       this.loadingText.set(null);
     }
   }
@@ -783,6 +791,8 @@ export class AcpService {
     this.messages.set([]);
     this.plans.set(new Map());
     this.activeTodosId.set(null);
+    this.activeTodosMessages.set([]);
+    this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     // 重置标题，避免恢复新会话时沿用上一个会话/任务的标题
     this.sessionState.update(s => ({ ...s, title: undefined }));
@@ -799,7 +809,7 @@ export class AcpService {
 
     // Phase 4: Resume session
     this.loadingText.set('Loading session history...');
-    this.isReplayingHistory = true;
+    this.isReplayingHistory.set(true);
     try {
       await this.sseService.resumeSession(currentSessionId, sessionId, cwd);
 
@@ -816,7 +826,20 @@ export class AcpService {
         this.sessionState.update(s => ({ ...s, title: resumed.title }));
       }
     } finally {
-      this.isReplayingHistory = false;
+      this.isReplayingHistory.set(false);
+      
+      // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
+      if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
+        this.activeTodosMessages.set([this.lastTodosMessage]);
+        this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
+      }
+      
+      // 清理临时变量
+      this.lastTodosMessage = null;
+      this.lastTodosAllCompleted = false;
+      
+      this.flushReplayBuffer();
+      this.isSwitchingSession.set(false);
       this.loadingText.set(null);
     }
   }
@@ -902,7 +925,7 @@ export class AcpService {
         break;
 
       case 'user_message_chunk':
-        if (this.isReplayingHistory) {
+        if (this.isReplayingHistory()) {
           this.appendReplayedUserChunk(update.content, update.messageId);
         }
         // Live prompt: user message chunks are echoed back, we already added the user message
@@ -910,7 +933,7 @@ export class AcpService {
 
       case 'tool_call':
       case 'tool_call_update':
-        this.handleToolCall(update);
+        this.handleToolCallNew(update);
         break;
 
       case 'plan_update':
@@ -953,14 +976,6 @@ export class AcpService {
     }
   }
 
-  private static hasTodosPayload(update: any): boolean {
-    const rawInput = update.rawInput;
-    if (rawInput && Array.isArray(rawInput.todos) && rawInput.todos.length > 0) return true;
-    const rawOutput = update.rawOutput;
-    if (rawOutput?.metadata && Array.isArray(rawOutput.metadata.todos) && rawOutput.metadata.todos.length > 0) return true;
-    return false;
-  }
-
   private static extractTodosFromMessage(msg: AcpMessage): Array<{ content: string; status: string; priority: string }> | null {
     const rawOutput = msg.toolRawOutput as any;
     const fromOutput = rawOutput?.metadata?.todos;
@@ -971,109 +986,78 @@ export class AcpService {
     return null;
   }
 
-  private handleToolCall(update: any): void {
-    this.maybeClearSwitchingSession();
-    const isTodo = AcpService.hasTodosPayload(update);
-
+  private handleToolCallNew(update: any): void {
+    const isTodo = this.isTodosPayload(update);
+    const isQuestion = this.isQuestionsPayload(update);
+    
     if (isTodo) {
-      const existingId = this.activeTodosId();
-      if (existingId) {
-        const existingMsg = this.messages().find(m => m.id === existingId);
-        if (existingMsg) {
-          const todos = AcpService.extractTodosFromMessage(existingMsg);
-          // If all todos are completed, clear the activeTodosId
-          if (todos && todos.every(t => t.status === 'completed')) {
-            this.activeTodosId.set(null);
-          }
-        }
-      }
+      this.handleTodosMessage(update);
+      return;
     }
+    
+    if (this.isQuestionAnswer(update)) {
+      this.handleQuestionAnswer(update);
+      return;
+    }
+    
+    if (isQuestion) {
+      this.handleQuestionsMessage(update);
+      return;
+    }
+    
+    if (this.isReplayingHistory()) {
+      this.handleReplayMode(update);
+      return;
+    }
+    
+    const toolCallMsg = this.createToolCallMessage(update);
+    this.messages.update(msgs => [...msgs, toolCallMsg]);
+  }
 
-    if (isTodo) {
-      const existingId = this.activeTodosId();
-      if (existingId) {
-        // Update the existing todo message with the new tool call update
-        this.messages.update(msgs =>
-          msgs.map(m => {
-            if (m.id === existingId) {
-              return {
-                ...m,
-                id: update.toolCallId || existingId,
-                toolCallId: update.toolCallId,
-                toolTitle: update.title ?? m.toolTitle,
-                toolKind: update.kind ?? m.toolKind,
-                toolStatus: update.status || 'pending',
-                toolLocations: update.locations ?? m.toolLocations,
-                toolRawInput: update.rawInput ?? m.toolRawInput,
-                toolRawOutput: update.rawOutput ?? m.toolRawOutput
-              };
-            }
-            return m;
-          })
-        );
-        // 同步更新 activeTodosId，因为消息的 id 已被更新为新的 toolCallId
-        this.activeTodosId.set(update.toolCallId || existingId);
-
-        // 处理最后一轮 todos：如果所有任务都完成，清除 activeTodosId
-        const updatedMsg = this.messages().find(m => m.id === update.toolCallId);
-        if (updatedMsg) {
-          const todos = AcpService.extractTodosFromMessage(updatedMsg);
-          if (todos && todos.every(t => t.status === 'completed')) {
-            this.activeTodosId.set(null);
-          }
-        }
+  private handleReplayMode(update: any): void {
+    const toolCallId = update.toolCallId;
+    if (toolCallId) {
+      const existingIdx = this.replayBuffer.findIndex(
+        m => m.toolCallId === toolCallId || m.id === toolCallId
+      );
+      if (existingIdx !== -1) {
+        this.replayBuffer[existingIdx] = {
+          ...this.replayBuffer[existingIdx],
+          id: toolCallId || this.replayBuffer[existingIdx].id,
+          toolCallId,
+          toolTitle: update.title ?? this.replayBuffer[existingIdx].toolTitle,
+          toolKind: update.kind ?? this.replayBuffer[existingIdx].toolKind,
+          toolStatus: update.status ?? this.replayBuffer[existingIdx].toolStatus,
+          toolLocations: update.locations ?? this.replayBuffer[existingIdx].toolLocations,
+          toolRawInput: update.rawInput ?? this.replayBuffer[existingIdx].toolRawInput,
+          toolRawOutput: update.rawOutput ?? this.replayBuffer[existingIdx].toolRawOutput,
+        };
         return;
       }
     }
+    
+    const toolCallMsg = this.createToolCallMessage(update);
+    this.replayBuffer.push(toolCallMsg);
+  }
 
+  private isTodosPayload(update: any): boolean {
+    const rawInput = update.rawInput;
+    if (rawInput && Array.isArray(rawInput.todos) && rawInput.todos.length > 0) return true;
+    const rawOutput = update.rawOutput;
+    if (rawOutput?.metadata && Array.isArray(rawOutput.metadata.todos) && rawOutput.metadata.todos.length > 0) return true;
+    return false;
+  }
+
+  private isQuestionsPayload(update: any): boolean {
+    const rawInput = update.rawInput;
+    return rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0;
+  }
+
+  private createToolCallMessage(update: any): AcpMessage {
     const toolCallId = update.toolCallId;
-
-    // Upsert: if a message for this toolCallId already exists, update it in
-    // place instead of appending a duplicate (ACP sends both a `tool_call` and
-    // one or more `tool_call_update` events for the same tool call).
-    const existingIndex = toolCallId
-      ? this.messages().findIndex(m => m.toolCallId === toolCallId || m.id === toolCallId)
-      : -1;
-
-    if (existingIndex !== -1) {
-      this.messages.update(msgs =>
-        msgs.map((m, i) =>
-          i === existingIndex
-            ? {
-                ...m,
-                id: toolCallId || m.id,
-                toolCallId,
-                toolTitle: update.title ?? m.toolTitle,
-                toolKind: update.kind ?? m.toolKind,
-                toolStatus: update.status ?? m.toolStatus,
-                toolLocations: update.locations ?? m.toolLocations,
-                toolRawInput: update.rawInput ?? m.toolRawInput,
-                toolRawOutput: update.rawOutput ?? m.toolRawOutput,
-              }
-            : m
-        )
-      );
-      // Track already-answered questions when loading session history
-      if (update.status === 'completed' && toolCallId) {
-        const existingMsg = this.messages().find(m => m.toolCallId === toolCallId || m.id === toolCallId);
-        const rawInput = existingMsg?.toolRawInput as any;
-        if (rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0) {
-          this.submittedQuestions.update(s => {
-            const next = new Set(s);
-            next.add(toolCallId);
-            return next;
-          });
-        }
-      }
-      if (isTodo && toolCallId) {
-        this.activeTodosId.set(toolCallId);
-      }
-      return;
-    }
-
-    const toolCallMsg: AcpMessage = {
+    return {
       id: toolCallId || crypto.randomUUID(),
-      role: 'tool_call',
+      role: update.sessionUpdate,
       content: '',
       timestamp: new Date(),
       toolCallId,
@@ -1084,27 +1068,121 @@ export class AcpService {
       toolRawInput: update.rawInput,
       toolRawOutput: update.rawOutput
     };
+  }
 
-    if (isTodo) {
-      // 为新创建的 todo 消息设置 activeTodosId（与 line 499 互斥，不会重复执行）
-      this.activeTodosId.set(toolCallMsg.id);
-    }
-
-    // Track already-answered questions when loading session history
-    if (update.status === 'completed' && toolCallId) {
-      const existingMsg = this.messages().find(m => m.toolCallId === toolCallId || m.id === toolCallId);
-      const rawInput = existingMsg?.toolRawInput as any;
-      if (rawInput && Array.isArray(rawInput.questions) && rawInput.questions.length > 0) {
-        this.submittedQuestions.update(s => {
-          const next = new Set(s);
-          next.add(toolCallId);
-          return next;
-        });
+  private handleTodosMessage(update: any): void {
+    const message = this.createToolCallMessage(update);
+    
+    // 回放模式下：不加入replayBuffer，不立即更新activeTodosMessages
+    if (this.isReplayingHistory()) {
+      // 只在tool_call类型时记录信息
+      if (update.sessionUpdate === 'tool_call') {
+        this.lastTodosMessage = message;
+        this.lastTodosAllCompleted = false;
       }
+      // 在tool_call_update时检查是否全部完成
+      if (update.sessionUpdate === 'tool_call_update') {
+        const todos = AcpService.extractTodosFromMessage(message);
+        this.lastTodosAllCompleted = todos ? todos.every(t => t.status === 'completed') : false;
+      }
+      return;
     }
+    
+    // 非回放模式：原有逻辑
+    if (update.sessionUpdate === 'tool_call') {
+      this.activeTodosMessages.set([message]);
+      this.activeTodosId.set(message.toolCallId ?? null);
+    } else {
+      // tool_call_update：更新现有消息
+      this.activeTodosMessages.update(messages => {
+        const existingIndex = messages.findIndex(m => m.toolCallId === message.toolCallId);
+        if (existingIndex !== -1) {
+          return messages.map((m, i) => 
+            i === existingIndex ? { ...m, ...message } : m
+          );
+        } else {
+          return [...messages, message];
+        }
+      });
+    }
+    
+    // 检查是否所有todos都已完成
+    const todos = AcpService.extractTodosFromMessage(message);
+    if (todos && todos.every(t => t.status === 'completed')) {
+      this.activeTodosMessages.set([]);
+      this.activeTodosId.set(null);
+    }
+  }
 
-    // Append the new tool call message to the messages list
-    this.messages.update(msgs => [...msgs, toolCallMsg]);
+  private handleQuestionsMessage(update: any): void {
+    const message = this.createToolCallMessage(update);
+    
+    // 回放模式下：不加入replayBuffer
+    if (this.isReplayingHistory()) {
+      const toolCallId = message.toolCallId;
+      
+      // 检查是否已有答案（通过submittedQuestions判断）
+      if (toolCallId && this.submittedQuestions().has(toolCallId)) {
+        // 已有答案，不保存到activeQuestionsMessages
+        return;
+      }
+      
+      // 未有答案，保存到activeQuestionsMessages
+      this.activeQuestionsMessages.update(messages => {
+        const existingIndex = messages.findIndex(m => m.toolCallId === message.toolCallId);
+        if (existingIndex !== -1) {
+          return messages.map((m, i) => 
+            i === existingIndex ? { ...m, ...message } : m
+          );
+        } else {
+          return [...messages, message];
+        }
+      });
+      return;
+    }
+    
+    // 非回放模式：原有逻辑
+    this.activeQuestionsMessages.update(messages => {
+      const existingIndex = messages.findIndex(m => m.toolCallId === message.toolCallId);
+      if (existingIndex !== -1) {
+        return messages.map((m, i) => 
+          i === existingIndex ? { ...m, ...message } : m
+        );
+      } else {
+        return [...messages, message];
+      }
+    });
+  }
+
+  private isQuestionAnswer(update: any): boolean {
+    if (update.sessionUpdate !== 'tool_call_update') return false;
+    if (update.status !== 'completed' && update.status !== 'failed') return false;
+    
+    const toolCallId = update.toolCallId;
+    if (!toolCallId) return false;
+    
+    return this.activeQuestionsMessages().some(m => m.toolCallId === toolCallId);
+  }
+
+  private handleQuestionAnswer(update: any): void {
+    const toolCallId = update.toolCallId;
+    const answerMsg = this.createToolCallMessage(update);
+    
+    // 无论回放还是非回放模式，答案消息都加入replayBuffer
+    // 这样答案会出现在messages中
+    this.replayBuffer.push(answerMsg);
+    
+    // 从activeQuestionsMessages中移除对应的question
+    this.activeQuestionsMessages.update(messages => 
+      messages.filter(m => m.toolCallId !== toolCallId)
+    );
+    
+    // 标记为已提交
+    this.submittedQuestions.update(s => {
+      const next = new Set(s);
+      next.add(toolCallId);
+      return next;
+    });
   }
 
   private handlePlanUpdate(update: any): void {
@@ -1140,8 +1218,16 @@ export class AcpService {
   }
 
   private maybeClearSwitchingSession(): void {
-    if (this.isSwitchingSession()) {
+    if (this.isSwitchingSession() && !this.isReplayingHistory()) {
       this.isSwitchingSession.set(false);
+    }
+  }
+
+  /** Flush all buffered replay messages into the `messages` signal in one shot. */
+  private flushReplayBuffer(): void {
+    if (this.replayBuffer.length > 0) {
+      this.messages.set(this.replayBuffer);
+      this.replayBuffer = [];
     }
   }
 
@@ -1179,6 +1265,21 @@ export class AcpService {
   }
 
   private appendAssistantBlock(content: ContentBlock): void {
+    if (this.isReplayingHistory()) {
+      const last = this.replayBuffer[this.replayBuffer.length - 1];
+      if (last && last.role === 'assistant') {
+        last.contentBlocks = [...(last.contentBlocks ?? []), content];
+      } else {
+        this.replayBuffer.push({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: '',
+          contentBlocks: [content],
+          timestamp: new Date()
+        });
+      }
+      return;
+    }
     this.messages.update(msgs => {
       const lastMsg = msgs[msgs.length - 1];
       if (lastMsg && lastMsg.role === 'assistant') {
@@ -1196,6 +1297,21 @@ export class AcpService {
   }
 
   private appendThoughtBlock(content: ContentBlock): void {
+    if (this.isReplayingHistory()) {
+      const last = this.replayBuffer[this.replayBuffer.length - 1];
+      if (last && last.role === 'thought') {
+        last.contentBlocks = [...(last.contentBlocks ?? []), content];
+      } else {
+        this.replayBuffer.push({
+          id: crypto.randomUUID(),
+          role: 'thought',
+          content: '',
+          contentBlocks: [content],
+          timestamp: new Date()
+        });
+      }
+      return;
+    }
     this.messages.update(msgs => {
       const lastMsg = msgs[msgs.length - 1];
       if (lastMsg && lastMsg.role === 'thought') {
@@ -1213,6 +1329,21 @@ export class AcpService {
   }
 
   private appendReplayedUserBlock(content: ContentBlock, messageId?: string): void {
+    if (this.isReplayingHistory()) {
+      const last = this.replayBuffer[this.replayBuffer.length - 1];
+      if (last && last.role === 'user' && messageId && last.id === messageId) {
+        last.contentBlocks = [...(last.contentBlocks ?? []), content];
+      } else {
+        this.replayBuffer.push({
+          id: messageId || crypto.randomUUID(),
+          role: 'user',
+          content: '',
+          contentBlocks: [content],
+          timestamp: new Date()
+        });
+      }
+      return;
+    }
     this.messages.update(msgs => {
       const lastMsg = msgs[msgs.length - 1];
       if (lastMsg && lastMsg.role === 'user' && messageId && lastMsg.id === messageId) {
@@ -1230,6 +1361,20 @@ export class AcpService {
   }
 
   private appendAssistantMessage(text: string): void {
+    if (this.isReplayingHistory()) {
+      const last = this.replayBuffer[this.replayBuffer.length - 1];
+      if (last && last.role === 'assistant') {
+        last.content += text;
+      } else {
+        this.replayBuffer.push({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: text,
+          timestamp: new Date()
+        });
+      }
+      return;
+    }
     this.messages.update(msgs => {
       const lastMsg = msgs[msgs.length - 1];
       if (lastMsg && lastMsg.role === 'assistant') {
@@ -1246,6 +1391,20 @@ export class AcpService {
   }
 
   private appendThoughtMessage(text: string): void {
+    if (this.isReplayingHistory()) {
+      const last = this.replayBuffer[this.replayBuffer.length - 1];
+      if (last && last.role === 'thought') {
+        last.content += text;
+      } else {
+        this.replayBuffer.push({
+          id: crypto.randomUUID(),
+          role: 'thought',
+          content: text,
+          timestamp: new Date()
+        });
+      }
+      return;
+    }
     this.messages.update(msgs => {
       const lastMsg = msgs[msgs.length - 1];
       if (lastMsg && lastMsg.role === 'thought') {
@@ -1262,6 +1421,20 @@ export class AcpService {
   }
 
   private appendReplayedUserMessage(text: string, messageId?: string): void {
+    if (this.isReplayingHistory()) {
+      const last = this.replayBuffer[this.replayBuffer.length - 1];
+      if (last && last.role === 'user' && messageId && last.id === messageId) {
+        last.content += text;
+      } else {
+        this.replayBuffer.push({
+          id: messageId || crypto.randomUUID(),
+          role: 'user',
+          content: text,
+          timestamp: new Date()
+        });
+      }
+      return;
+    }
     this.messages.update(msgs => {
       const lastMsg = msgs[msgs.length - 1];
       if (lastMsg && lastMsg.role === 'user' && messageId && lastMsg.id === messageId) {
@@ -1340,14 +1513,10 @@ export class AcpService {
 
   clearMessages(): void {
     this.messages.set([]);
+    this.replayBuffer = [];
     this.plans.set(new Map());
     this.usage.set(null);
     this.activeTodosId.set(null);
     this.submittedQuestions.set(new Set());
-  }
-
-  printRecordProxyRes() {
-    // SSE mode doesn't record proxy responses
-    console.log('Proxy response recording not available in SSE mode');
   }
 }

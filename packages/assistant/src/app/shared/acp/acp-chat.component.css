@@ -68,6 +68,10 @@
   gap: 16px;
 }
 
+.acp-chat-messages.replaying {
+  overflow-y: hidden !important;
+}
+
 .load-more-hint {
   text-align: center;
   color: var(--vscode-foreground);
