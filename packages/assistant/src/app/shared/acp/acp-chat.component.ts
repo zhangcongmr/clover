@@ -145,12 +145,20 @@ export class AcpChatComponent implements OnDestroy {
     }
   }
 
-  isDiffCollapsed(toolCallId: string): boolean {
-    return this.collapsedSections.has(`diff-${toolCallId}`);
+  isExpanded(message: AcpMessage): boolean {
+    const key = `expand-${message.toolCallId}`;
+    if (this.collapsedSections.has(key)) {
+      return false;
+    }
+    if (this.acpService.isProcessing() && this.acpService.processingStartTime() !== null) {
+      return message.timestamp.getTime() < this.acpService.processingStartTime()!;
+    }
+    return true;
   }
 
-  toggleDiffCollapse(toolCallId: string): void {
-    const key = `diff-${toolCallId}`;
+  toggleExpand(message: AcpMessage): void {
+    if (message.toolKind !== 'edit' && message.toolKind !== 'read') return;
+    const key = `expand-${message.toolCallId}`;
     if (this.collapsedSections.has(key)) {
       this.collapsedSections.delete(key);
     } else {
