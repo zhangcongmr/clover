@@ -71,6 +71,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   previousViewId: number = 1;
   get astContentPanelOpen() { return this.layoutService.astContentPanelOpen(); }
   set astContentPanelOpen(value: boolean) { this.layoutService.astContentPanelOpen.set(value); }
+  /** astContentPanel open state before the ACP panel was maximized, restored on restore. */
+  private previousAstContentPanelOpen = true;
   agentPanelOpen = true;
   dockPosition: 'left' | 'right' = 'left';
   terminalPanelShow = false;
@@ -1456,6 +1458,19 @@ For each fileIcons entry:
     this.leftPct = this.previousLeftPct;
     this.saveLeftPct();
     this.refreshAgentPanelWidth();
+  }
+
+  onAgentPanelMaximize(): void {
+    this.previousAstContentPanelOpen = this.astContentPanelOpen;
+    if (this.astContentPanelOpen) {
+      this.toggleAstContentPanel();
+    }
+  }
+
+  onAgentPanelRestore(): void {
+    if (this.astContentPanelOpen !== this.previousAstContentPanelOpen) {
+      this.toggleAstContentPanel();
+    }
   }
 
   override dragEnd(evt: any) {

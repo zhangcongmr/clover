@@ -98,7 +98,7 @@ export class AcpService {
   readonly messages = signal<AcpMessage[]>([]);
   readonly plans = signal<Map<string, AcpPlan>>(new Map());
   readonly isProcessing = signal<boolean>(false);
-  readonly isSwitchingSession = signal<boolean>(false);
+  readonly isSwitchingSession = signal<boolean>(true);
   readonly loadingText = signal<string | null>(null);
   readonly processingStartTime = signal<number | null>(null);
 
