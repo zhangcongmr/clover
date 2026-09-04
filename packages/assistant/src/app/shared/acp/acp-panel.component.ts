@@ -1,4 +1,4 @@
-import { Component, computed, ElementRef, inject, input, OnInit, OnDestroy, output, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, OnInit, OnDestroy, output, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService } from './acp.service';
 import { AcpChatComponent } from './acp-chat.component';
@@ -408,6 +408,7 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   protected hasMessages = computed(() => this.acpService.messages().length > 0);
   private hostRef = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
+  @ViewChild(AcpChatComponent) private acpChat?: AcpChatComponent;
 
   ngOnInit(): void {
     this.resizeObserver = new ResizeObserver(entries => {
@@ -440,6 +441,26 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   onDocumentClick(): void {
     if (this.showDockMenu()) {
       this.showDockMenu.set(false);
+    }
+  }
+
+  /**
+   * Handle wheel events on the panel area.
+   * Forward scroll to the chat message list when not over scrollable inner elements.
+   */
+  onWheel(event: WheelEvent): void {
+    const target = event.target as HTMLElement;
+
+    // Check if the event target is inside a scrollable inner element
+    const scrollableParent = target.closest('.custom-scroll, pre, .tool-call-diff, textarea');
+    if (scrollableParent) {
+      return;
+    }
+
+    // Forward scroll to the message list
+    if (this.acpChat) {
+      event.preventDefault();
+      this.acpChat.scrollByDelta(event.deltaY);
     }
   }
 }
