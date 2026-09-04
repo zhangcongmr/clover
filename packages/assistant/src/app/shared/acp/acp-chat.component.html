@@ -55,11 +55,11 @@
                       @case ('resource') {
                         <div class="content-block content-resource">
                           <span class="resource-icon">📎</span>
-                          <span class="resource-name">{{ resourceName(block) }}</span>
+                          <span class="resource-name">{{ block | resourceName }}</span>
                           @if (block.resource.text) {
                             <pre class="resource-text">{{ resourcePreview(block) }}</pre>
                           } @else if (block.resource.blob) {
-                            <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="resourceName(block)">Download</a>
+                            <a class="resource-download" [href]="resourceDownloadUrl(block)" [download]="block | resourceName">Download</a>
                           }
                         </div>
                       }
@@ -99,7 +99,7 @@
     <div class="acp-todos-pinned">
       <div class="todos-card">
         <div class="todos-header" (click)="toggleTodosCollapse()">
-          <span class="todos-progress">已完成 {{ completedCount(activeTodosMessages()[0]) }} 个任务 (共 {{ totalCount(activeTodosMessages()[0]) }} 个)</span>
+          <span class="todos-progress">已完成 {{ activeTodosMessages()[0] | completedCount }} 个任务 (共 {{ totalCount(activeTodosMessages()[0]) }} 个)</span>
           <span class="todos-toggle-icon" [class.collapsed]="todosCollapsed">
             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
           </span>

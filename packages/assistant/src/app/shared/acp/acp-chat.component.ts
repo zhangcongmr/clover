@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
-import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe } from './tool-call-info.pipe';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe } from './tool-call-info.pipe';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
 
 const INITIAL_LOAD = 30;
@@ -18,7 +18,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe],
+  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -274,11 +274,6 @@ export class AcpChatComponent implements OnDestroy {
     return `data:${block.mimeType};base64,${block.data}`;
   }
 
-  resourceName(block: EmbeddedResource): string {
-    const uri = block.resource.uri;
-    return uri.split(/[\\/]/).pop() || uri;
-  }
-
   resourcePreview(block: EmbeddedResource): string {
     const text = block.resource.text ?? '';
     return text.length > 200 ? text.slice(0, 200) + '…' : text;
@@ -320,10 +315,6 @@ export class AcpChatComponent implements OnDestroy {
     const fromInput = rawInput?.todos;
     if (Array.isArray(fromInput) && fromInput.length > 0) return fromInput;
     return null;
-  }
-
-  completedCount(message: AcpMessage): number {
-    return this.getTodos(message)?.filter((t: any) => t.status === 'completed').length ?? 0;
   }
 
   totalCount(message: AcpMessage): number {

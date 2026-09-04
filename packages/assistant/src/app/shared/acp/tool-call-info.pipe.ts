@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { AcpMessage } from './acp.service';
+import type { EmbeddedResource } from './acp-websocket.service';
 
 export interface EditDiffInfo {
   additions: number;
@@ -106,5 +107,30 @@ export class FormatMessagePipe implements PipeTransform {
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code>$1</code>')
       .replace(/\n/g, '<br>');
+  }
+}
+
+@Pipe({ name: 'resourceName', standalone: true, pure: true })
+export class ResourceNamePipe implements PipeTransform {
+  transform(block: EmbeddedResource): string {
+    const uri = block.resource.uri;
+    return uri.split(/[\\/]/).pop() || uri;
+  }
+}
+
+@Pipe({ name: 'completedCount', standalone: true, pure: true })
+export class CompletedCountPipe implements PipeTransform {
+  transform(message: AcpMessage): number {
+    const rawOutput = message.toolRawOutput as any;
+    const fromOutput = rawOutput?.metadata?.todos;
+    if (Array.isArray(fromOutput) && fromOutput.length > 0) {
+      return fromOutput.filter((t: any) => t.status === 'completed').length;
+    }
+    const rawInput = message.toolRawInput as any;
+    const fromInput = rawInput?.todos;
+    if (Array.isArray(fromInput) && fromInput.length > 0) {
+      return fromInput.filter((t: any) => t.status === 'completed').length;
+    }
+    return 0;
   }
 }
