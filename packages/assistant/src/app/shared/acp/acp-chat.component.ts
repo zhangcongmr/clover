@@ -4,6 +4,7 @@ import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
 import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe } from './tool-call-info.pipe';
+import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
 
 const INITIAL_LOAD = 30;
@@ -18,7 +19,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe],
+  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, CopyCodeButtonDirective],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })

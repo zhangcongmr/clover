@@ -424,7 +424,7 @@
   border-radius: 4px;
   background-color: var(--vscode-editor-background, #1e1e1e);
   border: 1px solid var(--vscode-input-border, #3c3c3c);
-  max-height: 200px;
+  max-height: 600px;
   overflow-y: auto;
 }
 
