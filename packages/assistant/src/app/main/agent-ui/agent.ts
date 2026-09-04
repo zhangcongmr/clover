@@ -48,6 +48,8 @@ export class AgentComponent {
   });
   acpPanelMaximized = signal<boolean>(false);
   acpPanelDockPosition = signal<'left' | 'right'>('right');
+  /** Left sidebar collapsed state before the panel was maximized, restored on restore. */
+  private previousSidebarCollapsed = false;
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -58,6 +60,10 @@ export class AgentComponent {
 
   /** Re-emitted upward so app.component can toggle the AST content (editor) panel. */
   editorToggle = output<void>();
+  /** Re-emitted upward when the ACP panel is maximized. */
+  maximizePanel = output<void>();
+  /** Re-emitted upward when the ACP panel is restored. */
+  restorePanel = output<void>();
 
   protected projects = computed(() => {
     return this.acpService.projects()
@@ -380,11 +386,16 @@ export class AgentComponent {
   }
 
   onAcpPanelMaximize(): void {
+    this.previousSidebarCollapsed = this.layoutService.sidebarCollapsed();
     this.acpPanelMaximized.set(true);
+    this.layoutService.collapseSidebar();
+    this.maximizePanel.emit();
   }
 
   onAcpPanelRestore(): void {
     this.acpPanelMaximized.set(false);
+    this.layoutService.setSidebarCollapsed(this.previousSidebarCollapsed);
+    this.restorePanel.emit();
   }
 
   onAcpPanelDockChange(position: 'left' | 'right'): void {

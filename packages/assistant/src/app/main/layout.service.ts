@@ -20,6 +20,10 @@ export class LayoutService {
     this.sidebarCollapsed.set(false);
   }
 
+  setSidebarCollapsed(collapsed: boolean): void {
+    this.sidebarCollapsed.set(collapsed);
+  }
+
   /** Tasks 区域是否折叠 */
   readonly tasksSectionCollapsed = signal(false);
 
