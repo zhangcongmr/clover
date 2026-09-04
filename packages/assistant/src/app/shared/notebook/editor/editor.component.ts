@@ -13,7 +13,7 @@ import {python} from "@codemirror/lang-python"
 import {sql} from "@codemirror/lang-sql"
 import {yaml} from "@codemirror/lang-yaml"
 import { rust } from "@codemirror/lang-rust"
-import { marked } from 'marked';
+import { renderMarkdown } from '../../utils/markdown.util';
 import { AstTreeNode } from '../../model';
 
 @Component({
@@ -322,7 +322,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   async updatePreviewContent() {
     try {
       const content = this.getEditorContent();
-      const parsedContent = await marked.parse(content || '');
+      const parsedContent = await renderMarkdown(content || '');
       this.previewContent.set(parsedContent || '');
       
       // 如果当前处于预览模式，更新shadow dom

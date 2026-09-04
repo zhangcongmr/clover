@@ -1,5 +1,5 @@
 <div class="acp-chat-container">
-  <div class="acp-chat-messages custom-scroll" [class.replaying]="acpService.isReplayingHistory()" #messagesContainer (scroll)="onScroll()">
+  <div class="acp-chat-messages custom-scroll" [class.replaying]="acpService.isReplayingHistory()" #messagesContainer (scroll)="onScroll()" appCopyCodeButton>
     @if (acpService.messages().length === 0) {
       @if (acpService.isSwitchingSession()) {
         <div class="acp-loading-screen">
@@ -28,7 +28,7 @@
                 <span class="intermediate-label">{{ isIntermediateSectionCollapsed(sectionId) ? '已收起所有步骤' : '已展开所有步骤' }}</span>
               </div>
             }
-            @if (group.isNew || !isIntermediateSectionCollapsed(sectionId)) {
+            @if (!isIntermediateSectionCollapsed(sectionId)) {
               @for (message of group.messages; track trackByMessageId($index, message)) {
                 <ng-container *ngTemplateOutlet="toolCallOrThought; context: { $implicit: message }"></ng-container>
               }

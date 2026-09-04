@@ -1,6 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { AcpMessage } from './acp.service';
 import type { EmbeddedResource } from './acp-websocket.service';
+import { renderMarkdownSync } from '../utils/markdown.util';
 
 export interface EditDiffInfo {
   additions: number;
@@ -98,15 +99,7 @@ export class ParseDiffPipe implements PipeTransform {
 @Pipe({ name: 'formatMessage', standalone: true, pure: true })
 export class FormatMessagePipe implements PipeTransform {
   transform(content: string): string {
-    if (!content) return '';
-    return content
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
+    return renderMarkdownSync(content);
   }
 }
 

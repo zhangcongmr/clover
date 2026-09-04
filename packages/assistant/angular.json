@@ -50,7 +50,6 @@
               "src/styles.css"
             ],
             "scripts": [
-              "node_modules/marked/marked.min.js"
             ],
             "server": "src/main.server.ts",
             "outputMode": "server",
@@ -130,7 +129,6 @@
                 "src/styles.css"
               ],
               "scripts": [
-                "node_modules/marked/marked.min.js"
               ],
               "polyfills": [],
               "fileReplacements": [
