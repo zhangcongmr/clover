@@ -259,6 +259,16 @@ export class AcpChatComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Scroll the message list by delta Y (pixels).
+   * Called by parent panel to enable area-wide scroll.
+   */
+  scrollByDelta(deltaY: number): void {
+    const element = this.messagesContainer?.nativeElement;
+    if (!element) return;
+    element.scrollTop += deltaY;
+  }
+
   trackByMessageId(index: number, message: AcpMessage): string {
     return message.id;
   }
