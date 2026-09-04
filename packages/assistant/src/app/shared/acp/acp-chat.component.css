@@ -201,8 +201,8 @@
 }
 
 .acp-message.user .message-text {
-  background-color: var(--vscode-statusBar-background);
-  color: var(--vscode-statusBar-foreground);
+  background-color: rgba(0, 122, 204, 0.1);
+  color: var(--vscode-foreground);
 }
 
 .message-text :deep(code) {
