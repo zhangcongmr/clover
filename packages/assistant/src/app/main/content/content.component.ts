@@ -107,8 +107,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   selectedParentNodeId: string | null = null;
 
   nodeDef: NodeDef | null = null;
-  /** file type of the currently selected node, displayed in the overview strip */
-  readonly fileType = signal<string>('');
   /** emitted when the user clicks an indicator (1 - notification, 2 - saving, 3 - progress) */
   readonly indicatorDetail = output<number>();
   dataListChangeOutput = output<Array<AstTreeNode>>();
@@ -1096,7 +1094,6 @@ Always use the welcome_greeting tool.`;
     } else {
       type = item.nodeType || '';
     }
-    this.fileType.set(type);
 
     if (item.nodeType == 'file' && item.label.endsWith('.ospec')) {
       // parse spec file and display APIs in tree view under the spec file node

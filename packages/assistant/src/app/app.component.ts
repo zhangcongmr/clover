@@ -76,7 +76,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   agentPanelOpen = true;
   dockPosition: 'left' | 'right' = 'left';
   terminalPanelShow = false;
-  readonly fileType = signal<string>('');
   themePromptOpen = false;
   themePromptText = '';
   themePromptLoading = false;

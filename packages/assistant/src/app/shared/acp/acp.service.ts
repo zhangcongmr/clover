@@ -729,8 +729,11 @@ export class AcpService {
     this.activeTodosMessages.set([]);
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
-    // 重置标题，避免恢复新会话时沿用上一个会话/任务的标题
-    this.sessionState.update(s => ({ ...s, title: undefined }));
+    // 会话标题：从已加载的会话列表取回
+    const loaded = this.sessions().find(s => s.sessionId === sessionId);
+    if (loaded?.title) {
+      this.sessionState.update(s => ({ ...s, title: loaded.title }));
+    }
 
     let currentSessionId = this.sessionState().sessionId;
 
@@ -755,12 +758,6 @@ export class AcpService {
         isConnecting: false,
         configOptions: result?.configOptions ?? s.configOptions,
       }));
-
-      // 会话标题：从已加载的会话列表取回
-      const loaded = this.sessions().find(s => s.sessionId === sessionId);
-      if (loaded?.title) {
-        this.sessionState.update(s => ({ ...s, title: loaded.title }));
-      }
     } finally {
       this.isReplayingHistory.set(false);
       
@@ -797,8 +794,11 @@ export class AcpService {
     this.activeTodosMessages.set([]);
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
-    // 重置标题，避免恢复新会话时沿用上一个会话/任务的标题
-    this.sessionState.update(s => ({ ...s, title: undefined }));
+    // 会话标题：从已加载的会话列表取回
+    const resumed = this.sessions().find(s => s.sessionId === sessionId);
+    if (resumed?.title) {
+      this.sessionState.update(s => ({ ...s, title: resumed.title }));
+    }
 
     let currentSessionId = this.sessionState().sessionId;
 
@@ -822,12 +822,6 @@ export class AcpService {
         isConnected: true,
         isConnecting: false,
       }));
-
-      // 会话标题：从已加载的会话列表取回
-      const resumed = this.sessions().find(s => s.sessionId === sessionId);
-      if (resumed?.title) {
-        this.sessionState.update(s => ({ ...s, title: resumed.title }));
-      }
     } finally {
       this.isReplayingHistory.set(false);
       

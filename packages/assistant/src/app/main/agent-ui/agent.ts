@@ -157,7 +157,8 @@ export class AgentComponent {
 
           // 自动恢复上次选中的 session（sessions 加载完成后）
           const savedSessionId = this.acpService.selectedSessionId();
-          if (savedSessionId && !this.acpService.acpSessionId() && this.restoredSessionId !== savedSessionId) {
+          const sessions = this.acpService.sessions()
+          if (sessions.length > 0 &&savedSessionId && !this.acpService.acpSessionId() && this.restoredSessionId !== savedSessionId) {
             this.restoredSessionId = savedSessionId;
             this.loadSession(savedSessionId);
           }
@@ -301,14 +302,15 @@ export class AgentComponent {
 
     this.acpService.isNewSession.set(false);
     this.panelLoading.set(true);
+    // 用任务记录的标题填充会话标题（任务会话通常不在 sessions 列表，无法回填）
+    if (task.name) {
+      this.acpService.sessionState.update(s => ({ ...s, title: task.name }));
+    }
 
     const agentId = task.sessions?.find(s => s.sessionId === sessionId)?.agentId;
     try {
       await this.acpService.loadSession(sessionId, task.path, agentId);
-      // 用任务记录的标题填充会话标题（任务会话通常不在 sessions 列表，无法回填）
-      if (task.name) {
-        this.acpService.sessionState.update(s => ({ ...s, title: task.name }));
-      }
+
     } catch (error: any) {
       console.error('[Agent] Failed to load task session:', error);
       this.panelError.set(error?.message || 'Failed to load session');

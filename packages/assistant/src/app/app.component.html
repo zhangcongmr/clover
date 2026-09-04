@@ -219,10 +219,12 @@
             </div>
           }
           <div data-layer="overview-longstrip" class="OverviewLongstrip ast-overview-longstrip">
-            <div data-layer="filetype-cnr" class="FiletypeCnr ast-methodtype">
-              <div data-layer="File type" class="FileType ast-projectname">
-                {{ fileType() || 'File type' }}
-              </div>
+            <div data-svg-wrapper="" data-layer="terminal-btn" class="btn-svg terminalBtn" title="Terminal" (click)="toggleTerminal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
             </div>
             <div data-layer="just-fill-cnr" class="JustFillCnr ast-justfill-place"></div>
             @if (coreService.uploadTasks() && coreService.uploadTasks().length > 0) {
@@ -256,15 +258,6 @@
                 </svg>
               </div>
               <div data-layer="0" class="ast-projectname">{{ notificationService.notificationCount() }}</div>
-            </div>
-          </div>
-          <div class="terminal-btn-float">
-            <div data-svg-wrapper="" data-layer="terminal-btn" class="btn-svg terminalBtn" title="Terminal" (click)="toggleTerminal()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="4 17 10 11 4 5"></polyline>
-                <line x1="12" y1="19" x2="20" y2="19"></line>
-              </svg>
             </div>
           </div>
         </div>
