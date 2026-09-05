@@ -37,15 +37,7 @@ export class AgentComponent {
   readonly filePicker = viewChild(FilePickerDialogComponent);
 
   searchQuery = signal('');
-  selectedProject = computed(() => {
-    const savedPath = this.acpService.selectedProjectPath();
-    if (!savedPath) return null;
-    const projects = this.acpService.projects();
-    const tasks = this.acpService.tasks();
-    return projects.find(p => p.path === savedPath)
-      || tasks.find(t => t.path === savedPath)
-      || null;
-  });
+  selectedProject = computed(() => this.acpService.getSelectedProjectInfo(this.acpService.selectedProjectPath()));
   acpPanelMaximized = signal<boolean>(false);
   acpPanelDockPosition = signal<'left' | 'right'>('right');
   /** Left sidebar collapsed state before the panel was maximized, restored on restore. */
@@ -128,51 +120,47 @@ export class AgentComponent {
     return sessions;
   }
 
-  protected activeSessionId = computed(() => this.acpService.acpSessionId());
+  protected activeSessionId = computed(() => this.acpService.selectedSessionId());
   
   private isLoadingSessions = false;
-  /** 上次加载 sessions 的 project path，防止 listProjects() 更新后 effect 重复触发加载 */
-  private lastLoadedProjectPath: string | null = null;
-  /** 已恢复的 sessionId，防止 effect 重复触发自动加载 */
-  private restoredSessionId: string | null = null;
 
   constructor() {
     // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
     this.acpService.isNewSession.set(true);
+    if (typeof window !== 'undefined') {
+      this.acpService.listAll().then(() => {
+        // Hydrate the persisted selected project path and session id
+        this.acpService.getSelectedProject().then(p => {
+          if (p.selectedProject) this.acpService.selectedProjectPath.set(p.selectedProject);
+          if (p.selectedSessionId) this.acpService.selectedSessionId.set(p.selectedSessionId);
 
-    // 核心 effect：依赖 selectedProject()（computed from selectedProjectPath + projects + tasks）
-    // 当 selectedProject 变化时加载 sessions
-    // 注意：listSessionsFromAllAgents 末尾会调用 listProjects() 更新 projects()，
-    // 导致本 effect 重跑。通过 lastLoadedProjectPath 避免对同一 project 重复加载 sessions。
-    effect(() => {
-      const cur = this.selectedProject();
-      if (cur && !this.isLoadingSessions && !this.sessionLoadingId()) {
-        if (cur.type === 'project') {
-          // project: 加载 sessions 列表
-          if (cur.path !== this.lastLoadedProjectPath) {
-            this.lastLoadedProjectPath = cur.path;
-            this.restoredSessionId = null;
-            this.loadSessionsForProject(cur.path);
+          if (!p.selectedSessionId) {
+            this.acpService.isSwitchingSession.set(false);
           }
 
-          // 自动恢复上次选中的 session（sessions 加载完成后）
-          const savedSessionId = this.acpService.selectedSessionId();
-          const sessions = this.acpService.sessions()
-          if (sessions.length > 0 &&savedSessionId && !this.acpService.acpSessionId() && this.restoredSessionId !== savedSessionId) {
-            this.restoredSessionId = savedSessionId;
-            this.loadSession(savedSessionId);
+          const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
+          if (cur) {
+            if (cur.type === 'project') {
+              this.loadSessionsForProject(cur.path).then(() => {
+                const selectedSessionId = this.acpService.selectedSessionId();
+                if (selectedSessionId) {
+                  this.loadSession(selectedSessionId);
+                }
+              });
+            } else if (cur.type === 'task' && cur.sessions?.length > 0) {
+              // task: 页面刷新时加载 session 消息
+              const sessionId = cur.sessions[0]?.sessionId;
+              if (sessionId) {
+                this.loadTaskSession(cur.id!, sessionId);
+              }
+            }
           }
-        } else if (cur.type === 'task' && cur.sessions?.length > 0) {
-          // task: 页面刷新时加载 session 消息
-          const sessionId = cur.sessions[0]?.sessionId;
-          if (sessionId && this.acpService.acpSessionId() !== sessionId && this.acpService.isNewSession()) {
-            this.loadTaskSession(cur.id!, sessionId);
-          }
-        }
-      } else if (!cur) {
-        this.lastLoadedProjectPath = null;
-      }
-    });
+        });
+      }).catch(err => {
+        console.error('[Agent] Failed to list projects and tasks:', err);
+        this.panelError.set(err?.message || 'Failed to list projects and tasks');
+      });
+    }
   }
 
   getInitial(name: string): string {
@@ -180,8 +168,6 @@ export class AgentComponent {
   }
 
   switchToTasksView(): void {
-    this.lastLoadedProjectPath = null;
-    this.restoredSessionId = null;
     this.acpService.saveSelectedProject(null);
     this.acpService.saveSelectedSession(null);
   }
@@ -190,6 +176,17 @@ export class AgentComponent {
     const projectInfo = this.acpService.projects().find(p => p.name === name);
     if (projectInfo) {
       this.acpService.saveSelectedProject(projectInfo.path);
+      if(projectInfo.sessions?.length > 0) {
+        this.acpService.sessions.set(projectInfo.sessions.map(s => ({
+          sessionId: s.sessionId,
+          cwd: projectInfo.path,
+          title: s.title,
+          updatedAt: s.updatedAt,
+          agentId: s.agentId,
+        })));
+      } else {
+        this.loadSessionsForProject(projectInfo.path);
+      }
     }
   }
 
@@ -209,7 +206,7 @@ export class AgentComponent {
   async loadSession(sessionId: string): Promise<void> {
     if (this.sessionLoadingId()) return;
 
-    const { cwd, agentId } = this.findSessionInfo(sessionId);
+    const { cwd, agentId } = this.acpService.findSessionInfo(sessionId, this.selectedProject());
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.isNewSession.set(false);
@@ -231,7 +228,7 @@ export class AgentComponent {
   async resumeSession(sessionId: string): Promise<void> {
     if (this.sessionLoadingId()) return;
 
-    const { cwd, agentId } = this.findSessionInfo(sessionId);
+    const { cwd, agentId } = this.acpService.findSessionInfo(sessionId, this.selectedProject());
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.isNewSession.set(false);
@@ -295,7 +292,7 @@ export class AgentComponent {
     this.acpService.saveSelectedProject(task.path || null);
 
     // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
-    if (this.acpService.acpSessionId() === sessionId && this.acpService.sessionState().isConnected) {
+    if (this.acpService.selectedSessionId() === sessionId && this.acpService.sessionState().isConnected) {
       this.sessionLoadingId.set(null);
       return;
     }
@@ -318,25 +315,6 @@ export class AgentComponent {
       this.panelLoading.set(false);
       this.sessionLoadingId.set(null);
     }
-  }
-
-  private findSessionInfo(sessionId: string): { cwd?: string; agentId?: string } {
-    const selected = this.selectedProject();
-    if (selected) {
-      const session = selected.sessions?.find(s => s.sessionId === sessionId);
-      if (session) {
-        return { cwd: selected.path, agentId: session.agentId };
-      }
-    }
-    
-    for (const project of this.acpService.projects()) {
-      const session = project.sessions?.find(s => s.sessionId === sessionId);
-      if (session) {
-        return { cwd: project.path, agentId: session.agentId };
-      }
-    }
-    
-    return { cwd: this.acpService.workingDirHint() || undefined };
   }
 
   private async ensureSessionInProject(sessionId: string): Promise<void> {

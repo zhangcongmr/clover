@@ -6,12 +6,15 @@
                     <svg class="icon" width="20" height="20"><use href="#icon-shrink-close"></use></svg>
                 </button>
             }
-            <svg class="acp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 16v-4m0-4h.01"/>
-            </svg>
-            <span class="acp-chat-title">{{ acpService.sessionState().title || '' }}</span>
-            <span class ="status-dot" [class]="acpService.sessionState().isConnected ? 'connected' : (acpService.sessionState().isConnecting ? 'connecting' : 'disconnected')"></span>
+            @if(hasMessages() || acpService.sessionState().title) {
+                <svg class="acp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4m0-4h.01" />
+                </svg>
+                <span class="acp-chat-title">{{ acpService.sessionState().title || '' }}</span>
+                <span class="status-dot"
+                    [class]="acpService.sessionState().isConnected ? 'connected' : (acpService.sessionState().isConnecting ? 'connecting' : 'disconnected')"></span>
+            }
         </div>
         <div class="acp-actions">
             <button class="editor-toggle-btn" [class.active]="editorToggleActive()"
