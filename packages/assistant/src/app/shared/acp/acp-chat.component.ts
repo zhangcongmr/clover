@@ -29,7 +29,7 @@ export class AcpChatComponent implements OnDestroy {
   protected acpService = inject(AcpService);
 
   private isLoadingMore = false;
-  private isNearBottom = true;
+  isNearBottom = signal(true);
   private rafId: number | null = null;
 
   visibleCount = signal(INITIAL_LOAD);
@@ -94,7 +94,7 @@ export class AcpChatComponent implements OnDestroy {
 
     effect(() => {
       const msgs = this.acpService.messages();
-      if (msgs.length > 0 && this.isNearBottom && !this.acpService.isReplayingHistory()) {
+      if (msgs.length > 0 && this.isNearBottom() && !this.acpService.isReplayingHistory()) {
         this.scheduleScrollToBottom();
       }
     });
@@ -218,8 +218,9 @@ export class AcpChatComponent implements OnDestroy {
     if (!element) return;
 
     const threshold = 100;
-    this.isNearBottom =
-      element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+    this.isNearBottom.set(
+      element.scrollHeight - element.scrollTop - element.clientHeight < threshold
+    );
 
     if (this.isLoadingMore || !this.hasMoreMessages()) return;
 
@@ -257,6 +258,7 @@ export class AcpChatComponent implements OnDestroy {
     } else {
       element.scrollTop = top;
     }
+    this.isNearBottom.set(true);
   }
 
   /**
