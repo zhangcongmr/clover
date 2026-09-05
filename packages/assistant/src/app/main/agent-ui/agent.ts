@@ -42,6 +42,8 @@ export class AgentComponent {
   acpPanelDockPosition = signal<'left' | 'right'>('right');
   /** Left sidebar collapsed state before the panel was maximized, restored on restore. */
   private previousSidebarCollapsed = false;
+  /** Projects whose session list is collapsed (keyed by project name). */
+  collapsedProjects = signal<Set<string>>(new Set());
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -174,20 +176,54 @@ export class AgentComponent {
 
   selectProject(name: string): void {
     const projectInfo = this.acpService.projects().find(p => p.name === name);
-    if (projectInfo) {
-      this.acpService.saveSelectedProject(projectInfo.path);
-      if(projectInfo.sessions?.length > 0) {
-        this.acpService.sessions.set(projectInfo.sessions.map(s => ({
-          sessionId: s.sessionId,
-          cwd: projectInfo.path,
-          title: s.title,
-          updatedAt: s.updatedAt,
-          agentId: s.agentId,
-        })));
-      } else {
-        this.loadSessionsForProject(projectInfo.path);
-      }
+    if (!projectInfo) return;
+
+    // If already selected, toggle collapse instead of re-selecting
+    if (this.selectedProject()?.name === name && this.selectedProject()?.type === 'project') {
+      this.toggleProjectCollapse(name);
+      return;
     }
+
+    // Expand if it was collapsed
+    this.expandProject(name);
+
+    this.acpService.saveSelectedProject(projectInfo.path);
+    if(projectInfo.sessions?.length > 0) {
+      this.acpService.sessions.set(projectInfo.sessions.map(s => ({
+        sessionId: s.sessionId,
+        cwd: projectInfo.path,
+        title: s.title,
+        updatedAt: s.updatedAt,
+        agentId: s.agentId,
+      })));
+    } else {
+      this.loadSessionsForProject(projectInfo.path);
+    }
+  }
+
+  toggleProjectCollapse(name: string): void {
+    this.collapsedProjects.update(set => {
+      const next = new Set(set);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  }
+
+  expandProject(name: string): void {
+    this.collapsedProjects.update(set => {
+      if (!set.has(name)) return set;
+      const next = new Set(set);
+      next.delete(name);
+      return next;
+    });
+  }
+
+  isProjectCollapsed(name: string): boolean {
+    return this.collapsedProjects().has(name);
   }
 
   private async loadSessionsForProject(cwd: string): Promise<void> {
