@@ -131,9 +131,8 @@ export class AcpService {
 
   /** Real ACP/OpenCode session id of the current wrapper's active session.
    *  Distinct from the wrapper session id (`sessionState.sessionId`), which is
-   *  an internal transport id. Required to load sessions/tasks on the agent. */
-  readonly acpSessionId = signal<string | null>(null);
-
+   *  an internal transport id. Required to load sessions/tasks on the agent.
+   *
   /** Persisted selected session id for the current project (restored on page load). */
   readonly selectedSessionId = signal<string | null>(null);
 
@@ -181,14 +180,33 @@ export class AcpService {
 
   constructor() {
     this.setupSseCallbacks();
-    if (typeof window !== 'undefined') {
-      this.listAll();
-      // Hydrate the persisted selected project path and session id
-      this.getSelectedProject().then(p => {
-        if (p.selectedProject) this.selectedProjectPath.set(p.selectedProject);
-        if (p.selectedSessionId) this.selectedSessionId.set(p.selectedSessionId);
-      });
+  }
+
+  public getSelectedProjectInfo(selectedProjectPath: string | null): ProjectInfo | null {
+    if (!selectedProjectPath) return null;
+    const projects = this.projects();
+    const tasks = this.tasks();
+    return projects.find(p => p.path === selectedProjectPath)
+      || tasks.find(t => t.path === selectedProjectPath)
+      || null;
+  }
+
+  public findSessionInfo(sessionId: string, project: ProjectInfo | null): { cwd?: string; agentId?: string } {
+    if (project) {
+      const session = project.sessions?.find(s => s.sessionId === sessionId);
+      if (session) {
+        return { cwd: project.path, agentId: session.agentId };
+      }
     }
+
+    for (const project of this.projects()) {
+      const session = project.sessions?.find(s => s.sessionId === sessionId);
+      if (session) {
+        return { cwd: project.path, agentId: session.agentId };
+      }
+    }
+
+    return { cwd: this.workingDirHint() || undefined };
   }
 
   private setupSseCallbacks(): void {
@@ -210,7 +228,8 @@ export class AcpService {
 
     this.sseService.onSessionCreated(async (sessionId, payload) => {
       // payload.sessionId 是 OpenCode 返回的真实 ACP 会话 id（wrapper session id 保持不变）
-      this.acpSessionId.set(payload?.sessionId ?? sessionId ?? null);
+      const acpSessionId = payload?.sessionId ?? sessionId;
+      this.selectedSessionId.set(acpSessionId);
       this.sessionState.update(s => ({
         ...s,
         // 保持 wrapper session id，不覆盖为 agent 返回的 ACP session id
@@ -219,24 +238,29 @@ export class AcpService {
 
       // Create task (task creation = isNewSession && no selected project)
       if (this.isNewSession() && !this.selectedProjectPath()) {
-        const acpSessionId = this.acpSessionId();
         const title = this.sessionState().title || 'New Task';
         const agentId = this.selectedAgent()?.id || 'opencode';
         const cwd = this.sessionState().cwd || '';
-        if (acpSessionId && cwd) {
+        if (cwd) {
           const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
+          const newTask: ProjectInfo = {
+            name: title,
+            path: cwd,
+            type: 'task',
+            sessions: [{ sessionId: acpSessionId, agentId, title }],
+            id: taskId,
+            createdAt: new Date().toISOString(),
+          }
+          this.tasks.update(list => [
+            newTask,
+            ...list.filter(t => t.id !== taskId),
+          ]);
+
           if (taskId) {
             try {
-              await this.sseService.addProject({
-                name: title,
-                path: cwd,
-                type: 'task',
-                sessions: [{ sessionId: acpSessionId, agentId, title }],
-                id: taskId,
-                createdAt: new Date().toISOString(),
-              });
-              await this.listTasks();
+              await this.sseService.addProject(newTask);
               await this.saveSelectedProject(cwd);
+              await this.saveSelectedSession(acpSessionId);
             } catch (err) {
               console.error('[ACP] Failed to create task:', err);
             }
@@ -246,31 +270,29 @@ export class AcpService {
 
       // Create session record (moved from acp-chat-input sendMessage)
       if (this.isNewSession()) {
-        const acpSessionId = this.acpSessionId();
-        if (acpSessionId) {
-          const cwd = this.sessionState().cwd || this.workingDirHint() || '';
-          const agentId = this.selectedAgent()?.id || 'opencode';
+        const cwd = this.sessionState().cwd || this.workingDirHint() || '';
+        const agentId = this.selectedAgent()?.id || 'opencode';
 
-          const newSession: SessionInfo = {
-            cwd,
+        const newSession: SessionInfo = {
+          cwd,
+          sessionId: acpSessionId,
+          title: this.sessionState().title,
+          updatedAt: new Date().toISOString(),
+        };
+        this.sessions.update(list => [
+          newSession,
+          ...list.filter(s => s.sessionId !== acpSessionId),
+        ]);
+
+        const project = this.projects().find(p => p.path === cwd);
+        if (project) {
+          await this.saveSessionToProject(cwd, {
             sessionId: acpSessionId,
-            title: this.sessionState().title,
+            agentId,
+            title: this.sessionState().title || 'New session',
             updatedAt: new Date().toISOString(),
-          };
-          this.sessions.update(list => [
-            newSession,
-            ...list.filter(s => s.sessionId !== acpSessionId),
-          ]);
-
-          const project = this.projects().find(p => p.path === cwd);
-          if (project) {
-            await this.saveSessionToProject(cwd, {
-              sessionId: acpSessionId,
-              agentId,
-              title: this.sessionState().title || 'New session',
-              updatedAt: new Date().toISOString(),
-            });
-          }
+          });
+          await this.saveSelectedSession(acpSessionId);
         }
       }
 
@@ -427,7 +449,7 @@ export class AcpService {
 
     // Create the underlying ACP session so prompt requests have an active session
     const acpResult = await this.sseService.createAcpSession(sessionId, actualCwd);
-    this.acpSessionId.set(acpResult?.sessionId ?? this.acpSessionId());
+    this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
 
     return sessionId;
   }
@@ -444,7 +466,7 @@ export class AcpService {
     const agentChanged = this.wrapperAgentId !== (this.selectedAgent()?.id ?? null);
     if (existing && this.sessionState().isConnected && !agentChanged) {
       const acpResult = await this.sseService.createAcpSession(existing, cwd);
-      this.acpSessionId.set(acpResult?.sessionId ?? this.acpSessionId());
+      this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
       if (cwd) {
         this.sessionState.update(s => ({ ...s, cwd }));
       }
@@ -504,7 +526,7 @@ export class AcpService {
   async disconnect(): Promise<void> {
     this.sseService.disconnect();
     this.wrapperAgentId = null;
-    this.acpSessionId.set(null);
+    this.selectedSessionId.set(null);
     this.sessionState.set({
       sessionId: null,
       isConnected: false,
@@ -751,7 +773,7 @@ export class AcpService {
     try {
       const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd);
 
-      this.acpSessionId.set(sessionId);
+      this.selectedSessionId.set(sessionId);
       this.sessionState.update(s => ({
         ...s,
         isConnected: true,
@@ -816,7 +838,7 @@ export class AcpService {
     try {
       await this.sseService.resumeSession(currentSessionId, sessionId, cwd);
 
-      this.acpSessionId.set(sessionId);
+      this.selectedSessionId.set(sessionId);
       this.sessionState.update(s => ({
         ...s,
         isConnected: true,
@@ -854,7 +876,7 @@ export class AcpService {
       // 重置一次性 wrapper 的连接状态（不清空 sessions 列表）
       this.sseService.disconnect();
       this.wrapperAgentId = null;
-      this.acpSessionId.set(null);
+      this.selectedSessionId.set(null);
       this.sessionState.set({
         sessionId: null,
         isConnected: false,
