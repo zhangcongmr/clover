@@ -109,7 +109,7 @@
             </button>
           </div>
 
-          @if (!isProjectCollapsed(project.name)) {
+          @if (selectedProject()?.name === project.name && selectedProject()?.type === 'project' && !isProjectCollapsed(project.name)) {
           <div class="project-sessions">
             @for (session of sessionsOf(project); track session.sessionId) {
               <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
