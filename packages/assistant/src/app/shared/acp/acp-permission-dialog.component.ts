@@ -45,10 +45,8 @@ export class AcpPermissionDialogComponent implements OnInit, OnDestroy {
     const request = this.currentRequest();
     if (request) {
       request.resolve({
-        outcome: {
-          outcome: 'selected',
-          optionId
-        }
+        outcome: 'selected',
+        optionId
       });
     }
     this.close();
@@ -58,10 +56,7 @@ export class AcpPermissionDialogComponent implements OnInit, OnDestroy {
     const request = this.currentRequest();
     if (request) {
       request.resolve({
-        outcome: {
-          outcome: 'cancelled',
-          reason: 'User cancelled'
-        }
+        outcome: 'cancelled'
       });
     }
     this.close();
