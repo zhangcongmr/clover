@@ -24,7 +24,7 @@
 }
 
 .preview-toggle-btn:hover {
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: var(--ui-hover-bg);
 }
 
 .editor-preview-container {

@@ -145,7 +145,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .acp-dock-item:hover {
-      background: var(--vscode-list-hoverBackground, #e8e8e8);
+      background: var(--ui-hover-bg);
     }
 
     .acp-dock-item.active {
@@ -175,7 +175,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .acp-panel-close:hover {
       opacity: 1;
-      background-color: var(--vscode-list-hoverBackground);
+      background-color: var(--ui-hover-bg);
     }
 
     .acp-panel-close svg {
@@ -198,7 +198,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .acp-icon-button:hover {
-      background: var(--vscode-toolbar-hoverBackground, #e0e0e0);
+      background: var(--ui-hover-bg);
     }
 
     .acp-icon-button svg {
@@ -225,7 +225,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .editor-toggle-btn:hover {
       opacity: 1;
-      background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+      background: var(--ui-hover-bg);
     }
 
     .editor-toggle-btn.active {
@@ -259,7 +259,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .sidebar-toggle-btn:hover {
       opacity: 1;
-      background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+      background: var(--ui-hover-bg);
     }
 
     .sidebar-toggle-btn svg {
@@ -338,7 +338,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .welcome-tab:hover {
-      background-color: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+      background-color: var(--ui-hover-bg);
     }
 
     .welcome-tab.active {
@@ -369,7 +369,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .quick-action-tag:hover {
-      background-color: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+      background-color: var(--ui-hover-bg);
     }
 
     .quick-action-tag svg {

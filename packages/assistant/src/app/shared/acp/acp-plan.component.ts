@@ -94,7 +94,7 @@ import { AcpService, AcpPlan } from './acp.service';
     }
 
     .plan-header:hover {
-      background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+      background-color: var(--ui-hover-bg);
     }
 
     .plan-header-left {
@@ -173,7 +173,7 @@ import { AcpService, AcpPlan } from './acp.service';
     }
 
     .plan-entry:hover {
-      background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+      background-color: var(--ui-hover-bg);
     }
 
     .entry-status {

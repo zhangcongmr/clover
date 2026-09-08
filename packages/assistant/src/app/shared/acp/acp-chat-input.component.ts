@@ -141,7 +141,7 @@ export interface AttachmentEntry {
     }
     .attach-remove:hover {
       opacity: 1;
-      background-color: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+      background-color: var(--ui-hover-bg);
     }
     .acp-chat-link-input {
       display: flex;
@@ -280,7 +280,7 @@ export interface AttachmentEntry {
     }
     .toolbar-icon-btn:hover {
       opacity: 1;
-      background-color: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+      background-color: var(--ui-hover-bg);
     }
     .toolbar-tag-btn {
       display: flex;
@@ -299,7 +299,7 @@ export interface AttachmentEntry {
     }
     .toolbar-tag-btn:hover {
       opacity: 1;
-      background-color: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+      background-color: var(--ui-hover-bg);
     }
     .send-button {
       display: flex;
@@ -362,7 +362,7 @@ export interface AttachmentEntry {
       transition: background-color 0.15s;
     }
     .agent-option:hover {
-      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+      background-color: var(--ui-hover-bg);
     }
     .agent-option.active {
       background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
@@ -408,12 +408,10 @@ export interface AttachmentEntry {
       transition: background-color 0.15s;
     }
     .mode-option:hover {
-      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
-      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      background-color: var(--ui-hover-bg);
     }
     .mode-option.active {
       background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
-      color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground, #333333));
     }
     .mode-info {
       display: flex;
@@ -459,12 +457,10 @@ export interface AttachmentEntry {
       transition: background-color 0.15s;
     }
     .model-option:hover {
-      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
-      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      background-color: var(--ui-hover-bg);
     }
     .model-option.active {
       background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
-      color: var(--vscode-list-activeSelectionForeground, var(--vscode-foreground, #333333));
     }
     .model-info {
       display: flex;
@@ -510,7 +506,7 @@ export interface AttachmentEntry {
       transition: background-color 0.15s;
     }
     .project-option:hover {
-      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+      background-color: var(--ui-hover-bg);
     }
     .project-option.active {
       background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
@@ -554,7 +550,7 @@ export interface AttachmentEntry {
       transition: background-color 0.15s;
     }
     .project-action:hover {
-      background-color: var(--vscode-list-hoverBackground, #f0f0f0);
+      background-color: var(--ui-hover-bg);
     }
     .slash-command-menu {
       position: absolute;
@@ -583,7 +579,7 @@ export interface AttachmentEntry {
       transition: background-color 0.1s;
     }
     .slash-command-item:hover {
-      background-color: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+      background-color: var(--ui-hover-bg);
     }
     .slash-command-item.active {
       background-color: var(--vscode-list-activeSelectionBackground, rgba(255, 255, 255, 0.12));

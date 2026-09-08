@@ -37,7 +37,7 @@
 
 .split-line:hover {
     cursor: ns-resize;
-    background-color: var(--vscode-statusBar-background);
+    background-color: var(--ui-hover-bg);
 }
 
 .sendRequestBtn {
@@ -118,7 +118,7 @@
 
 .parameter-button:hover {
     cursor: pointer;
-    background-color: lightgrey;
+    background-color: var(--ui-hover-bg);
 }
 
 
@@ -193,7 +193,7 @@ input[type="password"]:focus {
 }
 
 #addItemBtn:hover {
-    background-color: grey;
+    background-color: var(--ui-hover-bg);
 }
 
 #deleteItemBtn {
@@ -204,7 +204,7 @@ input[type="password"]:focus {
 }
 
 #deleteItemBtn:hover {
-    background-color: grey;
+    background-color: var(--ui-hover-bg);
 }
 
 .ast-add-content-panel {
@@ -256,7 +256,7 @@ input[type="password"]:focus {
     cursor: pointer;
 }
 .ast-add-new-content-btn:hover {
-    background: var(--Grays-Gray-5, #E5E5EA);
+    background: var(--ui-hover-bg);
 }
 
 .ast-add-new {
@@ -321,7 +321,7 @@ table tr:hover {
 /* 如果有需要，可以添加其他样式，如字体大小、行高、圆角等 */
 
 .request-cancel-btn:hover {
-    background-color: #ccc;
+    background-color: var(--ui-hover-bg);
 }
 
 .ast-app-header {

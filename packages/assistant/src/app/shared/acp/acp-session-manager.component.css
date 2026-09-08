@@ -28,7 +28,7 @@
 }
 
 .acp-disconnect-button:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .acp-session-settings {
@@ -254,7 +254,7 @@
 }
 
 .session-item:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .session-item + .session-item {
@@ -307,7 +307,7 @@
 }
 
 .session-action-btn:hover {
-  background: var(--vscode-toolbar-hoverBackground, #e0e0e0);
+  background: var(--ui-hover-bg);
   color: var(--vscode-foreground, #333);
 }
 
@@ -347,7 +347,7 @@
 }
 
 .file-item:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .file-icon {

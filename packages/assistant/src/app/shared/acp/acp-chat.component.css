@@ -38,7 +38,7 @@
 }
 
 .scroll-to-bottom-btn:hover {
-  background-color: var(--vscode-toolbar-hoverBackground, #e0e0e0);
+  background-color: var(--ui-hover-bg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
@@ -74,7 +74,7 @@
 }
 
 .acp-back-button:hover {
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background-color: var(--ui-hover-bg);
 }
 
 .acp-back-button svg {
@@ -299,7 +299,7 @@
 }
 
 :host ::ng-deep .message-text pre .copy-code-btn:hover {
-  background-color: var(--vscode-button-secondaryHoverBackground, #4a4a4a);
+  background-color: var(--ui-hover-bg);
 }
 
 :host ::ng-deep .message-text pre .copy-code-btn svg {
@@ -543,7 +543,7 @@
 }
 
 .todos-header:hover {
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.04));
+  background-color: var(--ui-hover-bg);
 }
 
 .todos-progress {

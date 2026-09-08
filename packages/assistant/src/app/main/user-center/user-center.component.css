@@ -32,7 +32,7 @@
 }
 
 .profile-back-btn:hover {
-  background: var(--vscode-list-hoverBackground, #2a2a2a);
+  background: var(--ui-hover-bg);
 }
 
 .profile-back-btn svg {
@@ -97,12 +97,11 @@
 }
 
 .profile-nav-item:hover {
-  background: var(--vscode-list-hoverBackground, #2a2a2a);
+  background: var(--ui-hover-bg);
 }
 
 .profile-nav-item.active {
   background: var(--vscode-list-activeSelectionBackground, #094771);
-  color: var(--vscode-list-activeSelectionForeground, #ffffff);
 }
 
 .profile-content {

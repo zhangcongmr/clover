@@ -43,7 +43,7 @@ table {
 
   /* 表格行悬停效果 */
   table tr:hover {
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.06));
+    background-color: var(--ui-hover-bg);
     border-radius: var(--borderless-item-radius, 8px);
   }
 

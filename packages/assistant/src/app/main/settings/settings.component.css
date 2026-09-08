@@ -27,7 +27,7 @@
 }
 
 .settings-back-btn:hover {
-  background: var(--vscode-list-hoverBackground, #2a2a2a);
+  background: var(--ui-hover-bg);
 }
 
 .settings-back-btn svg {
@@ -47,12 +47,11 @@
 }
 
 .settings-category-item:hover {
-  background: var(--vscode-list-hoverBackground, #2a2a2a);
+  background: var(--ui-hover-bg);
 }
 
 .settings-category-item.active {
   background: var(--vscode-list-activeSelectionBackground, #094771);
-  color: var(--vscode-list-activeSelectionForeground, #ffffff);
 }
 
 .cat-icon {

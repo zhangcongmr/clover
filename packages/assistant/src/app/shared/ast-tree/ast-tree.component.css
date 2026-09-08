@@ -14,7 +14,7 @@
 }
 
 .input_filter:hover {
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+    background-color: var(--ui-hover-bg);
 }
 
 .input_filter:focus {
@@ -32,7 +32,7 @@
 
 .child-item:hover {
     cursor: pointer;
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+    background-color: var(--ui-hover-bg);
 }
 
 .child-item.active {
@@ -46,7 +46,7 @@
 }
 
 .child-item:focus {
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+    background-color: var(--ui-hover-bg);
 }
 
 .btn-item {
@@ -59,7 +59,7 @@
 }
 
 .btn-item:hover {
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background-color: var(--ui-hover-bg);
 }
 
 .lyout-item {
