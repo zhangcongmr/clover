@@ -84,7 +84,7 @@
 
 .acp-dialog-close:hover {
   opacity: 1;
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: var(--ui-hover-bg);
 }
 
 .acp-dialog-close svg {
@@ -145,7 +145,7 @@
 }
 
 .acp-option-button:hover {
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background-color: var(--ui-hover-bg);
 }
 
 .acp-option-button.primary {
@@ -188,5 +188,5 @@
 }
 
 .acp-cancel-button:hover {
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background-color: var(--ui-hover-bg);
 }

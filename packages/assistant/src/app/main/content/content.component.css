@@ -8,7 +8,7 @@
 }
 
 .split-line:hover {
-    background-color: var(--vscode-statusBar-background);
+    background-color: var(--ui-hover-bg);
     cursor: ew-resize;
 }
 
@@ -371,7 +371,7 @@ textarea:focus {
   display: flex;
 }
 .ast-notification-cnr:hover {
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: var(--ui-hover-bg);
   color: var(--vscode-foreground);
 }
 

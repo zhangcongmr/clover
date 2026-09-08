@@ -226,7 +226,7 @@
 
 .btn-ignore:hover {
   opacity: 1;
-  background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.06));
+  background-color: var(--ui-hover-bg);
 }
 
 .btn-next,

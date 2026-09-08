@@ -25,7 +25,7 @@
 }
 
 :host(.ast-right-menu) .ast-menu-every-item:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 :host(.ast-right-menu) .ast-menu-every-item.active {

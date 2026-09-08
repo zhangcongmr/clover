@@ -36,7 +36,7 @@
 }
 
 .nav-btn:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .path-input {
@@ -51,7 +51,7 @@
 }
 
 .path-input:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .path-input:focus {
@@ -85,7 +85,7 @@
 }
 
 .view-btn:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .view-btn.active {
@@ -135,7 +135,7 @@
 }
 
 .icon-item:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .icon-item.selected {
@@ -229,7 +229,7 @@
 }
 
 .btn-cancel:hover {
-  background: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+  background: var(--ui-hover-bg);
 }
 
 .btn-confirm {

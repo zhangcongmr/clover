@@ -40,7 +40,7 @@
 
 .menu-list-group-item:hover {
     cursor: pointer;
-    background-color: lightgray;
+    background-color: var(--ui-hover-bg);
 }
 
 .combo-box {

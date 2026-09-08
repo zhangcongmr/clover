@@ -59,7 +59,7 @@ li[data-layer="tab"]:active {
 }
 
 li[data-layer="tab"]:not(.lightcolorselection-tab):hover {
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+    background-color: var(--ui-hover-bg);
 }
 
 li[data-layer="tab"].borderless-tab {
@@ -102,11 +102,11 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 .tab-close:hover {
-    background-color: var(--vscode-list-hoverBackground);
+    background-color: var(--ui-hover-bg);
 }
 
 .tab-dot-or-close:hover {
-    background-color: var(--vscode-list-hoverBackground);
+    background-color: var(--ui-hover-bg);
 }
 
 .padding_left_crumb {
@@ -125,7 +125,7 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 #addTabBtn:hover {
-    background-color: var(--vscode-list-hoverBackground);
+    background-color: var(--ui-hover-bg);
 }
 
 .tab-label-area {
@@ -208,7 +208,7 @@ li[data-layer="tab"].active-tab .tab-close {
 
 /* 当鼠标悬停在 .lightcolorselection-tab 上时，改变 ::after 的背景色 */
 .lightcolorselection-tab:hover::after {
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+    background-color: var(--ui-hover-bg);
 }
 
 .lightcolorselection-tab::after {

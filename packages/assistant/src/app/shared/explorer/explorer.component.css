@@ -10,7 +10,7 @@
 }
 
 .split-line:hover {
-    background-color: lightgrey;
+    background-color: var(--ui-hover-bg);
     cursor: ew-resize;
 }
 
@@ -218,7 +218,7 @@
 .back:hover,
 .preview:hover,
 .ViewSource:hover {
-    background-color: #ccc;
+    background-color: var(--ui-hover-bg);
 }
 
 /* 内联样式提取 */

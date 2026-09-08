@@ -68,7 +68,7 @@
   --vscode-input-background: #ffffff;
   --vscode-input-border: #ddd;
   --vscode-list-hoverBackground: #e8e8e8;
-  --vscode-list-activeSelectionBackground: #0060c0;
+  --vscode-list-activeSelectionBackground: #e8f0fe;
   --vscode-list-activeSelectionForeground: #ffffff;
   --vscode-list-inactiveSelectionBackground: #e4e6f1;
   --vscode-editorGroup-border: #e7e7e7;
@@ -89,6 +89,9 @@
   --vscode-tabborder-background: rgb(204, 204, 204);
   --vscode-cursor-foreground: #616161;
   --vscode-text-selectionBackground: #cce0ff;
+
+  /* Unified interactive hover background (neutral) */
+  --ui-hover-bg: #e8e8e8;
 
   /* Terminal ANSI colors (light theme) */
   --terminal-ansi-black: #000000;
@@ -241,6 +244,9 @@
   --vscode-cursor-foreground: #ffffff;
   --vscode-text-selectionBackground: #264f78;
 
+  /* Unified interactive hover background (neutral) */
+  --ui-hover-bg: rgba(255, 255, 255, 0.10);
+
   /* Terminal ANSI colors (dark theme) */
   --terminal-ansi-black: #000000;
   --terminal-ansi-red: #cd3131;
@@ -310,7 +316,7 @@ img, svg {
 
 
 .btn-svg:hover {
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: var(--ui-hover-bg);
   color: var(--vscode-activityBar-foreground);
   cursor: pointer;
 }
@@ -347,7 +353,7 @@ img, svg {
 }
 
 .ast-menu-every-item:hover {
-    background-color: var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.08));
+    background-color: var(--ui-hover-bg);
 }
 
 .ast-menu-every-item.active {
