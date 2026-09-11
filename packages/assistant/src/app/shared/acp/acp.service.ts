@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import {
   AcpSseService,
   ConnectionState as SseConnectionState,
@@ -20,6 +20,17 @@ import {
 } from './acp-websocket.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
+
+const AGENT_STORAGE_KEY = 'clover_selected_agent';
+
+function getInitialAgent(): AgentConfig {
+  if (typeof localStorage !== 'undefined') {
+    const id = localStorage.getItem(AGENT_STORAGE_KEY);
+    const saved = AVAILABLE_AGENTS.find(a => a.id === id);
+    if (saved) return saved;
+  }
+  return AVAILABLE_AGENTS[0];
+}
 
 export interface AcpMessage {
   id: string;
@@ -146,7 +157,7 @@ export class AcpService {
   readonly availableCommands = signal<Array<{ name: string; description: string; input?: unknown }>>([]);
 
   // Agent selection
-  readonly selectedAgent = signal<AgentConfig | null>(AVAILABLE_AGENTS[0]);
+  readonly selectedAgent = signal<AgentConfig | null>(getInitialAgent());
 
   // Question answers tracking: toolCallId -> Set of submitted toolCallIds
   readonly submittedQuestions = signal<Set<string>>(new Set());
@@ -179,6 +190,13 @@ export class AcpService {
   readonly hasActiveQuestions = computed(() => this.activeQuestionsMessages().length > 0);
 
   constructor() {
+    effect(() => {
+      const agent = this.selectedAgent();
+      if (typeof localStorage !== 'undefined') {
+        if (agent) localStorage.setItem(AGENT_STORAGE_KEY, agent.id);
+        else localStorage.removeItem(AGENT_STORAGE_KEY);
+      }
+    });
     this.setupSseCallbacks();
   }
 
