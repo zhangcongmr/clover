@@ -558,7 +558,7 @@ export interface AttachmentEntry {
       left: 0;
       right: 0;
       margin-bottom: 4px;
-      max-height: 400px;
+      max-height: 350px;
       overflow-y: auto;
       background-color: var(--vscode-dropdown-background, #ffffff);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
