@@ -21,6 +21,10 @@ import {
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 
+/** Fixed working directory for internal prefetch sessions, so they don't
+ *  accumulate timestamped directories under ~/.clover. Expanded server-side. */
+const INTERNAL_SESSION_CWD = '~/.clover/.internal';
+
 const AGENT_STORAGE_KEY = 'clover_selected_agent';
 
 function getInitialAgent(): AgentConfig {
@@ -179,6 +183,11 @@ export class AcpService {
    *  agent changes so a stale wrapper is not reused. */
   private wrapperAgentId: string | null = null;
 
+  /** Whether the current wrapper session is an internal prefetch session used
+   *  only to obtain configOptions before a real chat session is created. When
+   *  true, onSessionCreated skips task/session record creation. */
+  private isInternalSession = false;
+
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
   readonly isConnected = computed(() => this.sessionState().isConnected);
@@ -252,7 +261,14 @@ export class AcpService {
         ...s,
         // 保持 wrapper session id，不覆盖为 agent 返回的 ACP session id
         configOptions: payload?.configOptions,
+        cwd: payload?.cwd ?? s.cwd,
       }));
+
+      // 内部 session：只取 configOptions，不创建 task/session 记录
+      if (this.isInternalSession) {
+        this.isInternalSession = false;
+        return;
+      }
 
       // Create task (task creation = isNewSession && no selected project)
       if (this.isNewSession() && !this.selectedProjectPath()) {
@@ -384,27 +400,6 @@ export class AcpService {
   // Connection management
   // ============================================================================
 
-  /**
-   * Sends ACP agent config (command + args) to the server.
-   * This triggers the server to set up the ACP WebSocket endpoint.
-   */
-  async setAcpConfig(agent: { command: string; args?: string[]; env?: Record<string, string> }): Promise<void> {
-    try {
-      const response = await fetch('/api/local/acp/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: agent.command, args: agent.args, env: agent.env }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to set ACP config');
-      }
-    } catch (error) {
-      console.error('[ACP] Failed to set config:', error);
-      throw error;
-    }
-  }
-
   async connect(url: string): Promise<void> {
     this.sessionState.update(s => ({ ...s, isConnecting: true, error: null }));
 
@@ -473,6 +468,20 @@ export class AcpService {
   }
 
   /**
+   * Create an internal session to prefetch configOptions from the agent before
+   * the user sends a message. The created wrapper is reused by ensureChatSession
+   * when the user chats. onSessionCreated skips task/session record creation
+   * while isInternalSession is true.
+   */
+  async createInternalSession(cwd?: string): Promise<void> {
+    const { sessionId, cwd: actualCwd } = await this.createWrapperSession(cwd?.trim() ? cwd : INTERNAL_SESSION_CWD);
+    this.isInternalSession = true;
+    await this.sseService.createAcpSession(sessionId, actualCwd);
+    // onSessionCreated 回调触发，isInternalSession=true 会跳过 task/session 创建
+    // configOptions 已写入 sessionState
+  }
+
+  /**
    * Ensures there is an active wrapper with an underlying ACP session before
    * chatting. Reuses the existing wrapper (created by connect() or history
    * load/resume) when possible; only falls back to creating a new wrapper when
@@ -485,8 +494,9 @@ export class AcpService {
     if (existing && this.sessionState().isConnected && !agentChanged) {
       const acpResult = await this.sseService.createAcpSession(existing, cwd);
       this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
-      if (cwd) {
-        this.sessionState.update(s => ({ ...s, cwd }));
+      const resolvedCwd = acpResult?.cwd || cwd;
+      if (resolvedCwd) {
+        this.sessionState.update(s => ({ ...s, cwd: resolvedCwd }));
       }
       return;
     }

@@ -147,6 +147,8 @@ export class AgentComponent {
                 const selectedSessionId = this.acpService.selectedSessionId();
                 if (selectedSessionId) {
                   this.loadSession(selectedSessionId);
+                } else {
+                  this.createInternalSessionIfNeeded();
                 }
               });
             } else if (cur.type === 'task' && cur.sessions?.length > 0) {
@@ -154,14 +156,30 @@ export class AgentComponent {
               const sessionId = cur.sessions[0]?.sessionId;
               if (sessionId) {
                 this.loadTaskSession(cur.id!, sessionId);
+              } else {
+                this.createInternalSessionIfNeeded();
               }
+            } else {
+              this.createInternalSessionIfNeeded();
             }
+          } else {
+            this.createInternalSessionIfNeeded();
           }
         });
       }).catch(err => {
         console.error('[Agent] Failed to list projects and tasks:', err);
         this.panelError.set(err?.message || 'Failed to list projects and tasks');
       });
+    }
+  }
+
+  /**
+   * 无已选 session 时创建内部 session，预取 configOptions（mode/model 选择器）。
+   * 有 session 时会通过 loadSession/loadTaskSession 加载，无需内部 session。
+   */
+  private createInternalSessionIfNeeded(): void {
+    if (!this.acpService.selectedSessionId()) {
+      this.acpService.createInternalSession().catch(() => {});
     }
   }
 
@@ -304,6 +322,8 @@ export class AgentComponent {
     await this.acpService.saveSelectedProject(null);
     await this.acpService.disconnect();
     this.acpService.isNewSession.set(true);
+    // 无已选 session：创建内部 session 预取 configOptions，供 mode/model 选择器渲染
+    this.createInternalSessionIfNeeded();
   }
 
   async deleteTask(event: MouseEvent, taskId: string): Promise<void> {

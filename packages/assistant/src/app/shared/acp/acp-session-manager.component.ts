@@ -47,12 +47,6 @@ export class AcpSessionManagerComponent {
         this.acpService.setError('Working Directory is required');
         return;
       }
-      
-      // Set ACP config with the selected agent
-      const agent = this.acpService.selectedAgent();
-      if (agent) {
-        await this.acpService.setAcpConfig({ command: agent.command, args: agent.args, env: agent.env });
-      }
 
       // Connect via SSE (creates session and connects to SSE)
       await this.acpService.connect(this.serverUrl());

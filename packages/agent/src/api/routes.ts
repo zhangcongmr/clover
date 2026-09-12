@@ -28,7 +28,9 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
   });
 
   // ACP config endpoint
-  app.post('/api/local/acp/config', (req, res) => {
+  // WS-only: This endpoint feeds the legacy WebSocket ACP bridge (/ws/acp).
+  // The HTTP+SSE flow passes agent config per-session via POST /api/acp/session.
+  app.post('/api/local/acp/config', requireAuth, (req, res) => {
     const { command, args, env } = req.body;
     if (!command) {
       res.status(400).json({ success: false, message: 'command is required' });

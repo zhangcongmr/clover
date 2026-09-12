@@ -684,13 +684,7 @@ export class AcpChatInputComponent {
     return s.isConnected && !s.agentConnected;
   });
 
-  constructor() {
-    // Set ACP config on init with the default agent
-    const agent = this.acpService.selectedAgent();
-    if (agent) {
-      this.acpService.setAcpConfig({ command: agent.command, args: agent.args, env: agent.env }).catch(() => {});
-    }
-  }
+  constructor() {}
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -722,7 +716,10 @@ export class AcpChatInputComponent {
   selectAgent(agent: AgentConfig): void {
     this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
-    this.acpService.setAcpConfig({ command: agent.command, args: agent.args, env: agent.env }).catch(() => {});
+    // agent 变了，重建内部 session 以获取新 agent 的 configOptions
+    if (this.acpService.isNewSession()) {
+      this.acpService.createInternalSession().catch(() => {});
+    }
     this.messageInput?.nativeElement?.focus();
   }
 
