@@ -585,11 +585,11 @@ export interface AttachmentEntry {
       background-color: var(--vscode-list-activeSelectionBackground, rgba(255, 255, 255, 0.12));
     }
     .slash-command-item.active .slash-command-name {
-      color: var(--vscode-list-activeSelectionForeground, #ffffff);
+      color: var(--n-10);
     }
     .slash-command-item.active .slash-command-desc {
-      color: var(--vscode-list-activeSelectionForeground, #ffffff);
-      opacity: 0.7;
+      color: var(--n-20);
+      opacity: 1;
     }
     .slash-command-name {
       font-size: 13px;
