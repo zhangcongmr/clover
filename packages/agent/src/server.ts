@@ -14,9 +14,11 @@ import { setupAgentRoutes } from './api/routes.js';
 import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
 import { setupAcpRoutes } from './api/acp-routes.js';
+import { createMcpRoutes } from './api/mcp-routes.js';
 import { RedisClient } from './redis/client.js';
 import { SseManager } from './acp/sse-manager.js';
 import { AcpSessionManager } from './acp/session-manager.js';
+import { McpServerRegistry } from './mcp/index.js';
 
 export interface StaticOptions {
   maxAge?: string | number;
@@ -47,6 +49,7 @@ export interface ServerInstance {
   tokenManager: TokenManager;
   fileService: FileService;
   ptyManager: PtyManager;
+  mcpRegistry: McpServerRegistry;
 }
 
 export interface AgentMiddlewareOptions {
@@ -61,7 +64,7 @@ export interface AgentMiddlewareOptions {
 export function setupAgentMiddleware(
   app: express.Express,
   options: AgentMiddlewareOptions,
-): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager } {
+): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry } {
   const {
     corsPorts,
     corsOrigins = [],
@@ -85,13 +88,19 @@ export function setupAgentMiddleware(
   setupAgentRoutes(app, { fileService, tokenManager });
   setupA2ARoute(app);
 
+  // Setup MCP Registry and routes
+  const mcpRegistry = new McpServerRegistry();
+
   // Setup ACP SSE routes
   const redis = RedisClient.getInstance();
   const sseManager = new SseManager(redis);
   const sessionManager = new AcpSessionManager(redis);
-  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService });
+  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry });
 
-  return { tokenManager, fileService, ptyManager };
+  // MCP routes
+  app.use('/api/mcp', createMcpRoutes(mcpRegistry));
+
+  return { tokenManager, fileService, ptyManager, mcpRegistry };
 }
 
 export function createServer(config: ServerConfig): ServerInstance {

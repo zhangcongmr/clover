@@ -35,8 +35,6 @@ export const Clover = (domId: string, doc?: DocModelType, fileName?: string) => 
   createAppRoot(domId);
 
   // @ts-ignore: js is generated in dist/
-  import('./browser/scripts.js');
-  // @ts-ignore: js is generated in dist/
   return import('./browser/main.js')
     .then(m => {
       return m.startAngularApp(doc, fileName);

@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Golden Dragon",
+    "cuisine": "chinese",
+    "location": "new york",
+    "rating": 4.5,
+    "address": "123 Main St, New York, NY 10001"
+  },
+  {
+    "id": 2,
+    "name": "Pizza Paradise",
+    "cuisine": "italian",
+    "location": "new york",
+    "rating": 4.3,
+    "address": "456 Oak Ave, New York, NY 10002"
+  },
+  {
+    "id": 3,
+    "name": "Sushi Master",
+    "cuisine": "japanese",
+    "location": "new york",
+    "rating": 4.7,
+    "address": "789 Elm Blvd, New York, NY 10003"
+  },
+  {
+    "id": 4,
+    "name": "Taco Fiesta",
+    "cuisine": "mexican",
+    "location": "new york",
+    "rating": 4.2,
+    "address": "321 Pine Rd, New York, NY 10004"
+  },
+  {
+    "id": 5,
+    "name": "Curry House",
+    "cuisine": "indian",
+    "location": "new york",
+    "rating": 4.4,
+    "address": "654 Maple Dr, New York, NY 10005"
+  },
+  {
+    "id": 6,
+    "name": "Burger Barn",
+    "cuisine": "american",
+    "location": "los angeles",
+    "rating": 4.1,
+    "address": "111 Sunset Blvd, Los Angeles, CA 90001"
+  },
+  {
+    "id": 7,
+    "name": "Pad Thai Palace",
+    "cuisine": "thai",
+    "location": "los angeles",
+    "rating": 4.6,
+    "address": "222 Hollywood Ave, Los Angeles, CA 90002"
+  },
+  {
+    "id": 8,
+    "name": "Le Petit Bistro",
+    "cuisine": "french",
+    "location": "los angeles",
+    "rating": 4.8,
+    "address": "333 Vine St, Los Angeles, CA 90003"
+  },
+  {
+    "id": 9,
+    "name": "Gyro Garden",
+    "cuisine": "greek",
+    "location": "chicago",
+    "rating": 4.3,
+    "address": "444 Michigan Ave, Chicago, IL 60601"
+  },
+  {
+    "id": 10,
+    "name": "Kimchi Kitchen",
+    "cuisine": "korean",
+    "location": "chicago",
+    "rating": 4.5,
+    "address": "555 State St, Chicago, IL 60602"
+  }
+]
