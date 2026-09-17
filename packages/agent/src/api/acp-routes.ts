@@ -411,7 +411,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 加载会话（同步等待 agent 返回）
    */
   app.post('/api/acp/session/load', async (req: Request, res: Response) => {
-    const { sessionId, loadSessionId, cwd } = req.body;
+    const { sessionId, loadSessionId, cwd, mcpServers } = req.body;
 
     if (!sessionId || !loadSessionId) {
       res.status(400).json({ error: 'sessionId and loadSessionId are required' });
@@ -419,7 +419,17 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
-      const result = await sessionManager.loadAcpSession(sessionId, loadSessionId, cwd);
+      // Resolve MCP server names to full config objects via registry
+      let resolvedMcpServers: acp.McpServer[] | undefined;
+      if (Array.isArray(mcpServers) && mcpServers.length > 0 && mcpRegistry) {
+        if (typeof mcpServers[0] === 'string') {
+          resolvedMcpServers = mcpRegistry.resolveAll(mcpServers);
+        } else {
+          resolvedMcpServers = mcpServers as acp.McpServer[];
+        }
+      }
+
+      const result = await sessionManager.loadAcpSession(sessionId, loadSessionId, cwd, resolvedMcpServers);
       res.json({ success: true, ...result });
     } catch (error) {
       console.error('[ACP Routes] Load session error:', error);
@@ -432,7 +442,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 恢复会话（同步等待 agent 返回）
    */
   app.post('/api/acp/session/resume', async (req: Request, res: Response) => {
-    const { sessionId, resumeSessionId, cwd } = req.body;
+    const { sessionId, resumeSessionId, cwd, mcpServers } = req.body;
 
     if (!sessionId || !resumeSessionId) {
       res.status(400).json({ error: 'sessionId and resumeSessionId are required' });
@@ -440,7 +450,17 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
-      const result = await sessionManager.resumeAcpSession(sessionId, resumeSessionId, cwd);
+      // Resolve MCP server names to full config objects via registry
+      let resolvedMcpServers: acp.McpServer[] | undefined;
+      if (Array.isArray(mcpServers) && mcpServers.length > 0 && mcpRegistry) {
+        if (typeof mcpServers[0] === 'string') {
+          resolvedMcpServers = mcpRegistry.resolveAll(mcpServers);
+        } else {
+          resolvedMcpServers = mcpServers as acp.McpServer[];
+        }
+      }
+
+      const result = await sessionManager.resumeAcpSession(sessionId, resumeSessionId, cwd, resolvedMcpServers);
       res.json({ success: true, ...result });
     } catch (error) {
       console.error('[ACP Routes] Resume session error:', error);

@@ -425,7 +425,7 @@ export class SseAcpClient {
   /**
    * Load a session from agent
    */
-  async handleLoadSession(params: { sessionId: string; cwd?: string }): Promise<any> {
+  async handleLoadSession(params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
@@ -442,7 +442,7 @@ export class SseAcpClient {
       const result = await this.clientConnection.agent.request('session/load', {
         sessionId: params.sessionId,
         cwd,
-        mcpServers: [],
+        mcpServers: params.mcpServers || [],
       });
 
       this.loadedSessionId = params.sessionId;
@@ -460,7 +460,7 @@ export class SseAcpClient {
   /**
    * Resume a session from agent
    */
-  async handleResumeSession(params: { sessionId: string; cwd?: string }): Promise<any> {
+  async handleResumeSession(params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
@@ -477,7 +477,7 @@ export class SseAcpClient {
       const result = await this.clientConnection.agent.request('session/resume', {
         sessionId: params.sessionId,
         cwd,
-        mcpServers: [],
+        mcpServers: params.mcpServers || [],
       });
 
       this.loadedSessionId = params.sessionId;

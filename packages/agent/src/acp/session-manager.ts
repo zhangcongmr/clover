@@ -296,14 +296,14 @@ export class AcpSessionManager {
     }
   }
 
-  async loadAcpSession(sessionId: string, loadSessionId: string, cwd?: string): Promise<any> {
+  async loadAcpSession(sessionId: string, loadSessionId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
     }
 
     try {
-      const result = await session.client.handleLoadSession({ sessionId: loadSessionId, cwd });
+      const result = await session.client.handleLoadSession({ sessionId: loadSessionId, cwd, mcpServers });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
@@ -312,14 +312,14 @@ export class AcpSessionManager {
     }
   }
 
-  async resumeAcpSession(sessionId: string, resumeSessionId: string, cwd?: string): Promise<any> {
+  async resumeAcpSession(sessionId: string, resumeSessionId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
     }
 
     try {
-      const result = await session.client.handleResumeSession({ sessionId: resumeSessionId, cwd });
+      const result = await session.client.handleResumeSession({ sessionId: resumeSessionId, cwd, mcpServers });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {

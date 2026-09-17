@@ -383,15 +383,15 @@ export class AcpSseService {
   /**
    * 加载会话（同步返回结果）
    */
-  async loadSession(sessionId: string, loadSessionId: string, cwd?: string): Promise<any> {
-    return this.post('/api/acp/session/load', { sessionId, loadSessionId, cwd });
+  async loadSession(sessionId: string, loadSessionId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
+    return this.post('/api/acp/session/load', { sessionId, loadSessionId, cwd, mcpServers });
   }
 
   /**
    * 恢复会话（同步返回结果）
    */
-  async resumeSession(sessionId: string, resumeSessionId: string, cwd?: string): Promise<any> {
-    return this.post('/api/acp/session/resume', { sessionId, resumeSessionId, cwd });
+  async resumeSession(sessionId: string, resumeSessionId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
+    return this.post('/api/acp/session/resume', { sessionId, resumeSessionId, cwd, mcpServers });
   }
 
   /**

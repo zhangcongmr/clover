@@ -171,6 +171,9 @@ export class AcpService {
   // messages (unlike live prompts where the user message is added locally first).
   readonly isReplayingHistory = signal(false);
 
+  /** Currently selected MCP server names from the chat input toolbar */
+  readonly selectedMcpServers = signal<string[]>([]);
+
   /** Buffer for messages during history replay. Flushed to `messages` signal in one shot
    *  when replay completes, avoiding N re-renders (one per SSE event). */
   private replayBuffer: AcpMessage[] = [];
@@ -761,7 +764,7 @@ export class AcpService {
     this.selectedAgent.set(agent);
   }
 
-  async loadSession(sessionId: string, cwd?: string, agentId?: string): Promise<void> {
+  async loadSession(sessionId: string, cwd?: string, agentId?: string, mcpServers?: string[]): Promise<void> {
     this.isSwitchingSession.set(true);
 
     // Phase 1: Switch agent if needed
@@ -799,7 +802,7 @@ export class AcpService {
     this.loadingText.set('Loading session history...');
     this.isReplayingHistory.set(true);
     try {
-      const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd);
+      const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd, mcpServers);
 
       this.selectedSessionId.set(sessionId);
       this.sessionState.update(s => ({
@@ -827,7 +830,7 @@ export class AcpService {
     }
   }
 
-  async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }): Promise<void> {
+  async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }, mcpServers?: string[]): Promise<void> {
     this.isSwitchingSession.set(true);
 
     // Phase 1: Switch agent if needed
@@ -864,7 +867,7 @@ export class AcpService {
     this.loadingText.set('Loading session history...');
     this.isReplayingHistory.set(true);
     try {
-      await this.sseService.resumeSession(currentSessionId, sessionId, cwd);
+      await this.sseService.resumeSession(currentSessionId, sessionId, cwd, mcpServers);
 
       this.selectedSessionId.set(sessionId);
       this.sessionState.update(s => ({

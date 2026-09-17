@@ -858,6 +858,8 @@ export class AcpChatInputComponent {
       } else {
         next.add(name);
       }
+      // Sync to AcpService for load/resume sessions
+      this.acpService.selectedMcpServers.set(Array.from(next));
       return next;
     });
   }
