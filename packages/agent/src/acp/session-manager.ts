@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { SseAcpClient } from './sse-client.js';
 import { RedisClient } from '../redis/client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
+import type * as acp from '@agentclientprotocol/sdk';
 
 export interface AcpSession {
   sessionId: string;
@@ -251,7 +252,7 @@ export class AcpSessionManager {
     }
   }
 
-  async createAcpSession(sessionId: string, cwd?: string): Promise<any> {
+  async createAcpSession(sessionId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -263,7 +264,7 @@ export class AcpSessionManager {
         await this.connectSession(sessionId);
       }
 
-      const result = await session.client.handleNewSession({ cwd });
+      const result = await session.client.handleNewSession({ cwd, mcpServers });
       session.lastActivity = Date.now();
 
       await this.publishEvent(sessionId, {

@@ -362,8 +362,8 @@ export class AcpSseService {
   /**
    * 创建 ACP 会话（在已连接的客户端中）
    */
-  async createAcpSession(sessionId: string, cwd?: string): Promise<any> {
-    return this.post('/api/acp/session/create', { sessionId, cwd });
+  async createAcpSession(sessionId: string, cwd?: string, mcpServers?: any[]): Promise<any> {
+    return this.post('/api/acp/session/create', { sessionId, cwd, mcpServers });
   }
 
   /**

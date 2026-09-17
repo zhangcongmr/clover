@@ -10,6 +10,7 @@ import { createRequireAuth } from './middleware.js';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import type * as acp from '@agentclientprotocol/sdk';
 
 const PROJECTS_DIR = join(homedir(), '.clover');
 const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
@@ -295,7 +296,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 创建新的 ACP 会话（在已连接的客户端中）
    */
   app.post('/api/acp/session/create', async (req: Request, res: Response) => {
-    const { sessionId, cwd } = req.body;
+    const { sessionId, cwd, mcpServers } = req.body;
 
     if (!sessionId) {
       res.status(400).json({ error: 'sessionId is required' });
@@ -303,7 +304,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
-      const result = await sessionManager.createAcpSession(sessionId, cwd);
+      const result = await sessionManager.createAcpSession(sessionId, cwd, mcpServers as acp.McpServer[] | undefined);
       res.json({ success: true, ...result });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
