@@ -457,11 +457,11 @@ export class AcpService {
     return result;
   }
 
-  async createSession(cwd?: string): Promise<string> {
+  async createSession(cwd?: string, mcpServers?: any[]): Promise<string> {
     const { sessionId, cwd: actualCwd } = await this.createWrapperSession(cwd);
 
     // Create the underlying ACP session so prompt requests have an active session
-    const acpResult = await this.sseService.createAcpSession(sessionId, actualCwd);
+    const acpResult = await this.sseService.createAcpSession(sessionId, actualCwd, mcpServers);
     this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
 
     return sessionId;
@@ -488,11 +488,11 @@ export class AcpService {
    * there is no usable wrapper, SSE is disconnected, or the selected agent
    * differs from the one the wrapper was created with.
    */
-  async ensureChatSession(cwd?: string): Promise<void> {
+  async ensureChatSession(cwd?: string, mcpServers?: any[]): Promise<void> {
     const existing = this.sessionState().sessionId;
     const agentChanged = this.wrapperAgentId !== (this.selectedAgent()?.id ?? null);
     if (existing && this.sessionState().isConnected && !agentChanged) {
-      const acpResult = await this.sseService.createAcpSession(existing, cwd);
+      const acpResult = await this.sseService.createAcpSession(existing, cwd, mcpServers);
       this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
       const resolvedCwd = acpResult?.cwd || cwd;
       if (resolvedCwd) {
@@ -500,7 +500,7 @@ export class AcpService {
       }
       return;
     }
-    await this.createSession(cwd);
+    await this.createSession(cwd, mcpServers);
   }
 
   async sendPrompt(content: ContentBlock[]): Promise<void> {

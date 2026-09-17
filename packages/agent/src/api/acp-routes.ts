@@ -6,6 +6,7 @@ import { SseManager } from '../acp/sse-manager.js';
 import { RedisClient } from '../redis/client.js';
 import type { TokenManager } from '../agent/auth.js';
 import type { FileService } from '../agent/file-service.js';
+import type { McpServerRegistry } from '../mcp/registry.js';
 import { createRequireAuth } from './middleware.js';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -91,10 +92,11 @@ export interface AcpRouteOptions {
   sseManager: SseManager;
   redis: RedisClient;
   fileService: FileService;
+  mcpRegistry?: McpServerRegistry;
 }
 
 export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
-  const { tokenManager, sessionManager, sseManager, redis, fileService } = options;
+  const { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry } = options;
   const requireAuth = createRequireAuth(tokenManager);
 
   // Parse JSON bodies for ACP routes. Generous enough for base64 media
@@ -304,7 +306,19 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
-      const result = await sessionManager.createAcpSession(sessionId, cwd, mcpServers as acp.McpServer[] | undefined);
+      // Resolve MCP server names to full config objects via registry
+      let resolvedMcpServers: acp.McpServer[] | undefined;
+      if (Array.isArray(mcpServers) && mcpServers.length > 0 && mcpRegistry) {
+        if (typeof mcpServers[0] === 'string') {
+          // Array of names → resolve via registry
+          resolvedMcpServers = mcpRegistry.resolveAll(mcpServers);
+        } else {
+          // Already full objects
+          resolvedMcpServers = mcpServers as acp.McpServer[];
+        }
+      }
+
+      const result = await sessionManager.createAcpSession(sessionId, cwd, resolvedMcpServers);
       res.json({ success: true, ...result });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });

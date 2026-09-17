@@ -184,6 +184,40 @@
 		  }
 		</div>
 		}
+		@if (acpService.isNewSession()) {
+		<div class="mcp-selector">
+		  <button class="toolbar-tag-btn" (click)="toggleMcpDropdown($event)" title="MCP Servers">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+			</svg>
+			<span>{{ mcpServerLabel() }}</span>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+			  <polyline points="6 9 12 15 18 9"/>
+			</svg>
+		  </button>
+		  @if (showMcpDropdown()) {
+			<div class="mcp-dropdown custom-scroll">
+			  @if (mcpServers().length === 0) {
+				<div class="mcp-empty">No MCP servers configured</div>
+			  } @else {
+				@for (server of mcpServers(); track server.name) {
+				  <button class="mcp-option" [class.selected]="isMcpServerSelected(server.name)"
+					(click)="toggleMcpServer(server.name)">
+					<input type="checkbox" class="mcp-checkbox" [checked]="isMcpServerSelected(server.name)" (click)="$event.stopPropagation(); toggleMcpServer(server.name)" />
+					<div class="mcp-info">
+					  <span class="mcp-name">{{ server.name }}</span>
+					  @if (server.description) {
+						<span class="mcp-desc">{{ server.description }}</span>
+					  }
+					</div>
+					<span class="mcp-type">{{ server.type }}</span>
+				  </button>
+				}
+			  }
+			</div>
+		  }
+		</div>
+		}
 	  </div>
 	  <div class="acp-chat-toolbar-right">
 		<button class="toolbar-icon-btn" title="Settings">

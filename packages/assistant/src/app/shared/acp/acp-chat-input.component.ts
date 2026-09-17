@@ -33,6 +33,12 @@ export interface AttachmentEntry {
   block: ContentBlock;
 }
 
+interface McpServerOption {
+  name: string;
+  type: string;
+  description: string;
+}
+
 @Component({
   selector: 'app-acp-chat-input',
   standalone: true,
@@ -476,6 +482,104 @@ export interface AttachmentEntry {
       margin-top: 1px;
       color: var(--vscode-descriptionForeground, #666666);
     }
+    .mcp-selector {
+      position: relative;
+    }
+    .mcp-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 4px;
+      min-width: 260px;
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: var(--vscode-dropdown-background, #ffffff);
+      border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+    }
+    .mcp-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.15s;
+    }
+    .mcp-option:hover {
+      background-color: var(--ui-hover-bg);
+    }
+    .mcp-option.selected {
+      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+    }
+    .mcp-checkbox {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      accent-color: var(--vscode-button-background, #0e639c);
+    }
+    .mcp-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .mcp-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .mcp-desc {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 1px;
+      color: var(--vscode-descriptionForeground, #666666);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mcp-type {
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background-color: var(--vscode-badge-background, #4d4d4d);
+      color: var(--vscode-badge-foreground, #ffffff);
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .mcp-empty {
+      padding: 12px 14px;
+      font-size: 12px;
+      opacity: 0.5;
+      text-align: center;
+      color: var(--vscode-descriptionForeground);
+    }
+    .mcp-divider {
+      height: 1px;
+      margin: 4px 0;
+      background-color: var(--vscode-dropdown-border, #e0e0e0);
+    }
+    .mcp-action {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 14px;
+      border: none;
+      background: transparent;
+      color: var(--vscode-foreground, #333333);
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      transition: background-color 0.15s;
+    }
+    .mcp-action:hover {
+      background-color: var(--ui-hover-bg);
+    }
     .project-selector {
       position: relative;
     }
@@ -628,11 +732,14 @@ export class AcpChatInputComponent {
   showModeDropdown = signal<boolean>(false);
   showModelDropdown = signal<boolean>(false);
   showProjectDropdown = signal<boolean>(false);
+  showMcpDropdown = signal<boolean>(false);
   selectedIndex = signal<number>(0);
   agentSelectedIndex = signal<number>(0);
   modeSelectedIndex = signal<number>(0);
   modelSelectedIndex = signal<number>(0);
   projectSelectedIndex = signal<number>(0);
+  mcpServers = signal<McpServerOption[]>([]);
+  selectedMcpServers = signal<Set<string>>(new Set());
   protected agents = AVAILABLE_AGENTS;
 
   readonly modeConfig = computed(() => {
@@ -684,7 +791,19 @@ export class AcpChatInputComponent {
     return s.isConnected && !s.agentConnected;
   });
 
-  constructor() {}
+  readonly mcpServerLabel = computed(() => {
+    const selected = this.selectedMcpServers();
+    if (selected.size === 0) return 'MCP Servers';
+    if (selected.size === 1) {
+      const name = Array.from(selected)[0];
+      return name.length > 16 ? name.slice(0, 14) + '…' : name;
+    }
+    return `${selected.size} servers`;
+  });
+
+  constructor() {
+    this.loadMcpServers();
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -701,6 +820,50 @@ export class AcpChatInputComponent {
     if (!target.closest('.project-selector')) {
       this.showProjectDropdown.set(false);
     }
+    if (!target.closest('.mcp-selector')) {
+      this.showMcpDropdown.set(false);
+    }
+  }
+
+  loadMcpServers(): void {
+    fetch('/api/mcp/servers')
+      .then(res => res.json())
+      .then(data => {
+        const servers = (data.servers || []).map((s: any) => ({
+          name: s.name,
+          type: s.type,
+          description: s.description || '',
+        }));
+        this.mcpServers.set(servers);
+      })
+      .catch(err => {
+        console.error('[ACP Chat] Failed to load MCP servers:', err);
+      });
+  }
+
+  toggleMcpDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    const opening = !this.showMcpDropdown();
+    this.showMcpDropdown.set(opening);
+    if (opening) {
+      this.loadMcpServers();
+    }
+  }
+
+  toggleMcpServer(name: string): void {
+    this.selectedMcpServers.update(set => {
+      const next = new Set(set);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  }
+
+  isMcpServerSelected(name: string): boolean {
+    return this.selectedMcpServers().has(name);
   }
 
   toggleAgentDropdown(event: MouseEvent): void {
@@ -1050,7 +1213,9 @@ export class AcpChatInputComponent {
         const cwd = this.acpService.selectedProjectPath()
           || this.acpService.workingDirHint()
           || undefined;
-        await this.acpService.ensureChatSession(cwd);
+        const selectedNames = Array.from(this.selectedMcpServers());
+        const mcpServersPayload = selectedNames.length > 0 ? selectedNames : undefined;
+        await this.acpService.ensureChatSession(cwd, mcpServersPayload);
       }
       await this.acpService.sendPrompt(content);
       this.attachments.set([]);
@@ -1086,6 +1251,7 @@ export class AcpChatInputComponent {
     const modeMenuVisible = this.showModeDropdown();
     const modelMenuVisible = this.showModelDropdown();
     const projectMenuVisible = this.showProjectDropdown();
+    const mcpMenuVisible = this.showMcpDropdown();
 
     if (slashMenuVisible) {
       if (event.key === 'ArrowDown') {
@@ -1234,6 +1400,15 @@ export class AcpChatInputComponent {
       if (event.key === 'Escape') {
         event.preventDefault();
         this.showProjectDropdown.set(false);
+        return;
+      }
+    }
+
+    if (mcpMenuVisible) {
+      const servers = this.mcpServers();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.showMcpDropdown.set(false);
         return;
       }
     }

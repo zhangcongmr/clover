@@ -1,0 +1,94 @@
+<div class="mcp-manager">
+  <div class="header">
+    <h2>MCP Server Manager</h2>
+    <button class="btn btn-primary" (click)="openAddForm()">Add Server</button>
+  </div>
+
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+      <button (click)="error = null">×</button>
+    </div>
+  }
+
+  @if (loading) {
+    <div class="loading">Loading servers...</div>
+  } @else if (servers.length === 0) {
+    <div class="empty-state">
+      <p>No MCP servers configured.</p>
+      <p>Click "Add Server" to configure your first MCP server.</p>
+    </div>
+  } @else {
+    <div class="server-list">
+      @for (server of servers; track server.name) {
+        <div class="server-card">
+          <div class="server-info">
+            <div class="server-name">{{ server.name }}</div>
+            <div class="server-type">{{ server.type | uppercase }}</div>
+            <div class="server-description">{{ server.description || 'No description' }}</div>
+            @if (server.type === 'stdio') {
+              <div class="server-detail">Command: {{ server.command }}</div>
+            } @else if (server.type === 'http') {
+              <div class="server-detail">URL: {{ server.url }}</div>
+            }
+          </div>
+          <div class="server-actions">
+            <button class="btn btn-secondary" (click)="openEditForm(server)">Edit</button>
+            <button class="btn btn-danger" (click)="deleteServer(server.name)">Delete</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (showForm) {
+    <div class="modal-overlay" (click)="closeForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editingServer ? 'Edit Server' : 'Add Server' }}</h3>
+          <button class="btn-close" (click)="closeForm()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Type</label>
+            <select [(ngModel)]="formData.type" [disabled]="!!editingServer">
+              <option value="stdio">stdio</option>
+              <option value="http">http</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" [(ngModel)]="formData.name" [disabled]="!!editingServer" placeholder="my-mcp-server" />
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" [(ngModel)]="formData.description" placeholder="Description of the MCP server" />
+          </div>
+
+          @if (formData.type === 'stdio') {
+            <div class="form-group">
+              <label>Command *</label>
+              <input type="text" [(ngModel)]="formData.command" placeholder="/path/to/mcp-server" />
+            </div>
+
+            <div class="form-group">
+              <label>Arguments (comma-separated)</label>
+              <input type="text" [ngModel]="formData.args?.join(', ')" (ngModelChange)="formData.args = $event ? $event.split(',').map(s => s.trim()) : []" placeholder="--stdio, --verbose" />
+            </div>
+          } @else if (formData.type === 'http') {
+            <div class="form-group">
+              <label>URL *</label>
+              <input type="text" [(ngModel)]="formData.url" placeholder="https://api.example.com/mcp" />
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+          <button class="btn btn-primary" (click)="saveServer()">Save</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
