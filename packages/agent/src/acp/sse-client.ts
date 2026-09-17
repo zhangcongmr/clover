@@ -358,7 +358,7 @@ export class SseAcpClient {
   /**
    * Create a new session
    */
-  async handleNewSession(params: { cwd?: string }): Promise<acp.NewSessionResponse> {
+  async handleNewSession(params: { cwd?: string; mcpServers?: acp.McpServer[] }): Promise<acp.NewSessionResponse> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
@@ -378,10 +378,10 @@ export class SseAcpClient {
     this.activeSession?.dispose();
     this.loadedSessionId = null;
 
-    // Create and start a new session
-    this.activeSession = await this.clientConnection.agent
-      .buildSession(cwd)
-      .start();
+    // Create and start a new session with mcpServers support
+    const sessionBuilder = this.clientConnection.agent.buildSession(cwd);
+    params.mcpServers?.forEach(mcpServer => sessionBuilder.withMcpServer(mcpServer));
+    this.activeSession = await sessionBuilder.start();
 
     const sessionResponse = this.activeSession.newSessionResponse;
 
