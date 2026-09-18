@@ -72,6 +72,10 @@ export class A2uiJsonRendererComponent {
       
       this.surfaces.set(Array.from(surfaceIds));
       this.remainingContent.set(content.replace(regex, '').trim());
+    } else {
+      // No a2ui-json blocks found, render entire content as markdown
+      this.processed = true;
+      this.remainingContent.set(content);
     }
   }
 }
