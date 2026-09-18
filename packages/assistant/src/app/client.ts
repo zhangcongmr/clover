@@ -64,7 +64,6 @@ export class Client {
       }
 
       const contentType = response.headers.get('content-type');
-      console.log(`[client] Received response with content-type: ${contentType}`);
       if (contentType?.includes('text/event-stream')) {
         await this.handleStreamingResponse(response, messages);
       } else {
@@ -107,7 +106,6 @@ export class Client {
           const jsonStr = line.slice(6);
           try {
             const responseData = JSON.parse(jsonStr);
-            console.log(`[client] [${now.toFixed(2)}ms] Received SSE data:`, responseData);
 
             if (responseData.error) {
               throw new Error(responseData.error);
@@ -116,9 +114,6 @@ export class Client {
                 this.contextId = responseData.contextId;
               }
               const parts = responseData.parts || (Array.isArray(responseData) ? responseData : []);
-              console.log(
-                `[client] [${performance.now().toFixed(2)}ms] Scheduling processing for ${parts.length} parts`,
-              );
               // Use a microtask to ensure we don't block the stream reader
               await Promise.resolve();
               const newMessages = this.processParts(parts);
@@ -137,7 +132,6 @@ export class Client {
     messages: Types.ServerToClientMessage[],
   ): Promise<void> {
     const responseData = await response.json();
-    console.log('[client] Received JSON response:', responseData);
 
     if (responseData.contextId) {
       this.contextId = responseData.contextId;
@@ -160,7 +154,7 @@ export class Client {
       }
     }
     if (messages.length > 0) {
-      this.renderer.processMessages(messages as unknown as A2uiMessage[]);
+        this.renderer.processMessages(messages as unknown as A2uiMessage[]);
     }
     return messages;
   }
