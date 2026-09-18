@@ -38,7 +38,11 @@
           @for (message of group.messages; track trackByMessageId($index, message)) {
             <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
               <div class="message-content">
-                <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
+                @if (message.role === 'assistant') {
+                  <app-a2ui-json-renderer [content]="message.content"></app-a2ui-json-renderer>
+                } @else {
+                  <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
+                }
                 @if (message.contentBlocks && message.contentBlocks.length > 0) {
                   @for (block of message.contentBlocks; track $index) {
                     @switch (block.type) {

@@ -1,0 +1,10 @@
+.a2ui-json-renderer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.a2ui-surfaces-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
