@@ -1,0 +1,12 @@
+<div class="a2ui-json-renderer">
+  @if (surfaces().length > 0) {
+    <div class="a2ui-surfaces-container">
+      @for (surfaceId of surfaces(); track surfaceId) {
+        <a2ui-v09-surface [surfaceId]="surfaceId" />
+      }
+    </div>
+  }
+  @if (remainingContent()) {
+    <div class="message-text" [innerHTML]="remainingContent() | formatMessage"></div>
+  }
+</div>
