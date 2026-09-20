@@ -270,8 +270,8 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // 获取 CSS 变量值
     const background = computedStyle.getPropertyValue('--vscode-background')?.trim() || '#0000';
     const foreground = computedStyle.getPropertyValue('--vscode-foreground')?.trim() || '#616161';
-    const cursor = computedStyle.getPropertyValue('--vscode-cursor-foreground')?.trim() || '#616161';
-    const selectionBackground = computedStyle.getPropertyValue('--vscode-text-selectionBackground')?.trim() || '#cce0ff';
+    const cursor = computedStyle.getPropertyValue('--vscode-foreground')?.trim() || '#616161';
+    const selectionBackground = computedStyle.getPropertyValue('--vscode-accent-color')?.trim() || '#cce0ff';
 
     const getVar = (name: string, fallback: string) =>
       computedStyle.getPropertyValue(`--${name}`)?.trim() || fallback;

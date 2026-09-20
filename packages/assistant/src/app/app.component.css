@@ -1,7 +1,7 @@
 :host {
   --left-side-area-width: 42px;
   align-items: flex-start;
-  background: var(--vscode-editor-background);
+  background: var(--vscode-background);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -25,11 +25,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--vscode-activityBar-background);
+  background: var(--vscode-accent-color);
 }
 
 .app-menu:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
   color: var(--vscode-foreground);
 }
 
@@ -42,14 +42,14 @@
   cursor: pointer;
   color: var(--vscode-foreground);
   font-size: var(--vscode-menu-font-size, 13px);
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-background);
   width: 100%;
   box-sizing: border-box;
   transition: background 0.15s ease, box-shadow 0.2s ease;
 }
 
 .app-menu-dropdown .app-menu-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
@@ -107,7 +107,7 @@
   flex: 1 1 0;
   min-height: 0;
   justify-content: flex-start;
-  background-color: var(--vscode-editor-background);
+  background-color: var(--vscode-background);
 }
 
 .ast-left-side-area {
@@ -122,7 +122,7 @@
   padding-bottom: 10px;
   padding-top: 10px;
   width: var(--left-side-area-width, 42px);
-  color: var(--vscode-activityBar-foreground);
+  color: var(--vscode-foreground);
 }
 
 .ast-up-btnlist {
@@ -141,7 +141,7 @@
   min-height: 0;
   overflow: hidden;
   flex-direction: row-reverse;
-  background-color: var(--vscode-sideBar-background, var(--vscode-editorGroupHeader-tabsBackground, rgba(0, 0, 0, 0.05)));
+  background-color: var(--vscode-accent-color);
 }
 
 .ast-panel-container.dock-left {
@@ -149,7 +149,7 @@
 }
 
 .card-base {
-  background-color: var(--vscode-editor-background);
+  background-color: var(--vscode-background);
   border-radius: 0;
   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1); */
   border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
@@ -172,7 +172,7 @@
     right: 2px;
     z-index: 9999;
   width: min(400px, 100%);
-  background: var(--vscode-panel-background);
+  background: var(--vscode-background);
   border: none;
   border-radius: var(--vscode-radius-lg, 16px);
   box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
@@ -230,7 +230,7 @@
 .CommunityManage:hover,
 .CleanUp:hover,
 .ThemePromptBtn:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
   color: var(--vscode-foreground);
 }
 
@@ -247,7 +247,7 @@
 
 .theme-prompt-panel {
   width: min(540px, 100%);
-  background: var(--vscode-panel-background);
+  background: var(--vscode-background);
   border: none;
   border-radius: var(--vscode-radius-lg, 16px);
   box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
@@ -279,7 +279,7 @@
   min-height: 120px;
   border: none;
   border-radius: var(--vscode-radius-md, 12px);
-  background: var(--vscode-input-background, rgba(255,255,255,0.08));
+  background: var(--vscode-background);
   color: var(--vscode-foreground);
   padding: 0.85rem 1rem;
   resize: vertical;
@@ -305,13 +305,13 @@
 }
 
 .theme-prompt-cancel {
-  background: var(--vscode-input-background);
+  background: var(--vscode-background);
   color: var(--vscode-foreground);
 }
 
 .theme-prompt-submit {
-  background: var(--vscode-button-background);
-  color: var(--vscode-button-foreground, var(--vscode-foreground));
+  background: var(--vscode-primary-background);
+  color: var(--vscode-foreground);
 }
 
 .theme-prompt-submit:disabled {
@@ -351,7 +351,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--vscode-editor-background);
+  background: var(--vscode-background);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -384,7 +384,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--vscode-panel-background);
+  background: var(--vscode-background);
   border: none;
   border-radius: var(--vscode-radius-lg, 16px);
   box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
@@ -473,12 +473,12 @@ form {
 
 .split-line-ew:hover {
   cursor: ew-resize;
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .split-line-ns:hover {
   cursor: ns-resize;
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 /* 内联样式提取 */
@@ -535,7 +535,7 @@ form {
 }
 
 .ast-notification-cnr:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
   color: var(--vscode-foreground);
 }
 

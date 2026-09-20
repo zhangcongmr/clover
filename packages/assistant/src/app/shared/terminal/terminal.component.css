@@ -4,7 +4,7 @@
   flex-direction: column;
   flex: 1 1 0;
   align-self: stretch;
-  background-color: var(--vscode-editor-background);
+  background-color: var(--vscode-background);
 }
 
 .terminal-header {
@@ -12,8 +12,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background-color: var(--vscode-tab-border);
-  border-top: 1px solid var(--vscode-editorGroup-border);
+  background-color: var(--vscode-border-color);
+  border-top: 1px solid var(--vscode-border-color);
 }
 
 .terminal-header h3 {
@@ -29,8 +29,8 @@
 
 .btn {
   padding: 4px 8px;
-  border: 1px solid var(--vscode-editorGroup-border);
-  background-color: var(--vscode-button-background);
+  border: 1px solid var(--vscode-border-color);
+  background-color: var(--vscode-primary-background);
   color: var(--vscode-foreground);
   border-radius: var(--vscode-radius-sm, 4px);
   cursor: pointer;

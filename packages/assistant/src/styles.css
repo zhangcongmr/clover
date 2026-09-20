@@ -55,43 +55,42 @@
   /* Background and UI colors */
   --vscode-background: #ffffff;
   --vscode-foreground: #616161;
-  --vscode-editor-background: #ffffff;
-  --vscode-sideBar-background: #f8f8f8;
-  --vscode-tab-inactiveBackground: #eef0f2;
-  --vscode-tab-activeBackground: #ffffff;
-  --vscode-tab-border: #f0f0f0;
-  --vscode-panel-background: #f3f3f3;
-  --vscode-statusBar-background: #007acc;
-  --vscode-statusBar-foreground: #ffffff;
-  --vscode-button-background: rgb(213, 203, 203);
-  --vscode-button-foreground: #ffffff;
-  --vscode-input-background: #ffffff;
-  --vscode-input-border: #ddd;
-  --vscode-list-hoverBackground: #e8e8e8;
-  --vscode-list-activeSelectionBackground: #e8f0fe;
-  --vscode-list-activeSelectionForeground: #ffffff;
-  --vscode-list-inactiveSelectionBackground: #e4e6f1;
-  --vscode-editorGroup-border: #e7e7e7;
-  --vscode-editorWidget-background: #f3f3f3;
-  --vscode-titleBar-activeBackground: #dddddd;
-  --vscode-titleBar-inactiveBackground: #dddddd;
-  --vscode-activityBar-background: #f8f8f8;
-  --vscode-activityBar-foreground: #616161;
-  --vscode-activityBar-inactiveForeground: #616161;
-  --vscode-activityBarBadge-background: #007acc;
-  --vscode-activityBarBadge-foreground: #ffffff;
-  --vscode-icon-foreground: #616161;
-  --vscode-focusBorder: #0078d4;
-  --vscode-textLink-foreground: #006ab1;
-  --vscode-textLink-activeForeground: #006ab1;
-  --vscode-textSeparator-foreground: #0000002e;
-  --vscode-scrollbar-background: #ccc;
-  --vscode-tabborder-background: rgb(204, 204, 204);
-  --vscode-cursor-foreground: #616161;
-  --vscode-text-selectionBackground: #cce0ff;
+  --vscode-surface-background: #f8f8f8;
+  --vscode-accent-color: #f8f8f8;
+  --vscode-border-color: #e2e2e2;
+  --vscode-primary-background: #007acc;
 
   /* Unified interactive hover background (neutral) */
-  --ui-hover-bg: #e8e8e8;
+  --vscode-hover-background: #e8e8e8;
+
+  /* Dropdown */
+  --vscode-dropdown-background: #ffffff;
+  --vscode-dropdown-foreground: var(--vscode-foreground);
+  --vscode-dropdown-border: #e0e0e0;
+
+  /* Description / secondary text */
+  --vscode-descriptionForeground: #666666;
+
+  /* Error / warning foreground */
+  --vscode-errorForeground: #f48771;
+  --vscode-editorWarning-foreground: #cca700;
+
+  /* Input validation */
+  --vscode-inputValidation-warningBackground: rgba(204, 167, 0, 0.15);
+  --vscode-inputValidation-errorBackground: rgba(241, 76, 76, 0.15);
+  --vscode-inputValidation-errorBorder: #f44336;
+  --vscode-input-placeholderForeground: #767676;
+
+  /* Badge */
+  --vscode-badge-background: #c4c4c4;
+  --vscode-badge-foreground: #ffffff;
+
+  /* Button secondary */
+  --vscode-button-secondaryBackground: #5f6a79;
+  --vscode-button-secondaryForeground: #ffffff;
+
+  /* Code block background */
+  --vscode-textCodeBlock-background: #f5f5f5;
 
   /* Terminal ANSI colors (light theme) */
   --terminal-ansi-black: #000000;
@@ -110,6 +109,24 @@
   --terminal-ansi-bright-magenta: #bc05bc;
   --terminal-ansi-bright-cyan: #0598bc;
   --terminal-ansi-bright-white: #a5a5a5;
+
+  /* Terminal ANSI colors with --vscode- prefix */
+  --vscode-terminal-ansiBlack: #000000;
+  --vscode-terminal-ansiRed: #cd3131;
+  --vscode-terminal-ansiGreen: #00bc00;
+  --vscode-terminal-ansiYellow: #949800;
+  --vscode-terminal-ansiBlue: #0451a5;
+  --vscode-terminal-ansiMagenta: #bc05bc;
+  --vscode-terminal-ansiCyan: #0598bc;
+  --vscode-terminal-ansiWhite: #555555;
+  --vscode-terminal-ansiBrightBlack: #666666;
+  --vscode-terminal-ansiBrightRed: #cd3131;
+  --vscode-terminal-ansiBrightGreen: #14ce14;
+  --vscode-terminal-ansiBrightYellow: #b5ba00;
+  --vscode-terminal-ansiBrightBlue: #0451a5;
+  --vscode-terminal-ansiBrightMagenta: #bc05bc;
+  --vscode-terminal-ansiBrightCyan: #0598bc;
+  --vscode-terminal-ansiBrightWhite: #a5a5a5;
 
   --n-100: #ffffff;
   --n-95: #f1f1f1;
@@ -209,43 +226,42 @@
   /* Background and UI colors */
   --vscode-background: #1f1f1f;
   --vscode-foreground: #cccccc;
-  --vscode-editor-background: #1e1e1e;
-  --vscode-sideBar-background: #181818;
-  --vscode-tab-inactiveBackground: #252526;
-  --vscode-tab-activeBackground: #1e1e1e;
-  --vscode-tab-border: #252526;
-  --vscode-panel-background: #181818;
-  --vscode-statusBar-background: #0078d4;
-  --vscode-statusBar-foreground: #ffffff;
-  --vscode-button-background: #0078d4;
-  --vscode-button-foreground: #ffffff;
-  --vscode-input-background: #3c3c3c;
-  --vscode-input-border: #3c3c3c;
-  --vscode-list-hoverBackground: #2a2d2e;
-  --vscode-list-activeSelectionBackground: #2f3337;
-  --vscode-list-activeSelectionForeground: #d7dae0;
-  --vscode-list-inactiveSelectionBackground: #3a3d41;
-  --vscode-editorGroup-border: #454545;
-  --vscode-editorWidget-background: #252526;
-  --vscode-titleBar-activeBackground: #3c3c3c;
-  --vscode-titleBar-inactiveBackground: #3c3c3c;
-  --vscode-activityBar-background: #333333;
-  --vscode-activityBar-foreground: #ffffff;
-  --vscode-activityBar-inactiveForeground: #ffffff66;
-  --vscode-activityBarBadge-background: #0078d4;
-  --vscode-activityBarBadge-foreground: #ffffff;
-  --vscode-icon-foreground: #cccccc;
-  --vscode-focusBorder: #0078d4;
-  --vscode-textLink-foreground: #4daafc;
-  --vscode-textLink-activeForeground: #4daafc;
-  --vscode-textSeparator-foreground: #ffffff2e;
-  --vscode-scrollbar-background: #1f1f1f;
-  --vscode-tabborder-background: rgba(0, 0, 0, 0);
-  --vscode-cursor-foreground: #ffffff;
-  --vscode-text-selectionBackground: #264f78;
+  --vscode-surface-background: #181818;
+  --vscode-accent-color: #181818;
+  --vscode-border-color: #252526;
+  --vscode-primary-background: #0078d4;
 
   /* Unified interactive hover background (neutral) */
-  --ui-hover-bg: rgba(255, 255, 255, 0.10);
+  --vscode-hover-background: #FFFFFF1A;
+
+  /* Dropdown */
+  --vscode-dropdown-background: #252526;
+  --vscode-dropdown-foreground: var(--vscode-foreground);
+  --vscode-dropdown-border: #454545;
+
+  /* Description / secondary text */
+  --vscode-descriptionForeground: #999999;
+
+  /* Error / warning foreground */
+  --vscode-errorForeground: #f48771;
+  --vscode-editorWarning-foreground: #cca700;
+
+  /* Input validation */
+  --vscode-inputValidation-warningBackground: rgba(204, 167, 0, 0.15);
+  --vscode-inputValidation-errorBackground: rgba(241, 76, 76, 0.15);
+  --vscode-inputValidation-errorBorder: #f44747;
+  --vscode-input-placeholderForeground: #999999;
+
+  /* Badge */
+  --vscode-badge-background: #4d4d4d;
+  --vscode-badge-foreground: #ffffff;
+
+  /* Button secondary */
+  --vscode-button-secondaryBackground: #3c3c3c;
+  --vscode-button-secondaryForeground: #ffffff;
+
+  /* Code block background */
+  --vscode-textCodeBlock-background: rgba(255, 255, 255, 0.04);
 
   /* Terminal ANSI colors (dark theme) */
   --terminal-ansi-black: #000000;
@@ -264,6 +280,24 @@
   --terminal-ansi-bright-magenta: #c586c0;
   --terminal-ansi-bright-cyan: #9cdcfe;
   --terminal-ansi-bright-white: #ffffff;
+
+  /* Terminal ANSI colors with --vscode- prefix */
+  --vscode-terminal-ansiBlack: #000000;
+  --vscode-terminal-ansiRed: #cd3131;
+  --vscode-terminal-ansiGreen: #00bc00;
+  --vscode-terminal-ansiYellow: #949800;
+  --vscode-terminal-ansiBlue: #0451a5;
+  --vscode-terminal-ansiMagenta: #bc05bc;
+  --vscode-terminal-ansiCyan: #0598bc;
+  --vscode-terminal-ansiWhite: #555555;
+  --vscode-terminal-ansiBrightBlack: #666666;
+  --vscode-terminal-ansiBrightRed: #f44747;
+  --vscode-terminal-ansiBrightGreen: #b5cea8;
+  --vscode-terminal-ansiBrightYellow: #dcdcaa;
+  --vscode-terminal-ansiBrightBlue: #569cd6;
+  --vscode-terminal-ansiBrightMagenta: #c586c0;
+  --vscode-terminal-ansiBrightCyan: #9cdcfe;
+  --vscode-terminal-ansiBrightWhite: #ffffff;
 
   /* 无边框风格变量 - 暗色模式 */
   --borderless-gap: 4px;
@@ -316,8 +350,8 @@ img, svg {
 
 
 .btn-svg:hover {
-  background-color: var(--ui-hover-bg);
-  color: var(--vscode-activityBar-foreground);
+  background-color: var(--vscode-hover-background);
+  color: var(--vscode-foreground);
   cursor: pointer;
 }
 
@@ -353,7 +387,7 @@ img, svg {
 }
 
 .ast-menu-every-item:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .ast-menu-every-item.active {
@@ -363,14 +397,14 @@ img, svg {
 
 .ast-menu-every-item svg, .ast-menu-every-item img {
     margin-right: 16px; /* 调整图标与文本间的距离 */
-    color: var(--vscode-icon-foreground);
+    color: var(--vscode-foreground);
 }
 
 /* 自定义滚动条样式 */
 .custom-scroll {
   /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: var(--vscode-scrollbar-background) transparent;
+  scrollbar-color: var(--vscode-background) transparent;
 
   /* WebKit */
   overflow-y: scroll; /* 确保出现滚动条 */

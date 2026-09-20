@@ -8,23 +8,23 @@
 .toolbar {
   display: flex;
   padding: 8px;
-  background-color: var(--vscode-tab-inactiveBackground);
-  border-bottom: 1px solid var(--vscode-editorGroup-border);
+  background-color: var(--vscode-accent-color);
+  border-bottom: 1px solid var(--vscode-border-color);
   gap: 8px;
 }
 
 .preview-toggle-btn {
   padding: 4px 12px;
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border: 1px solid var(--vscode-input-border);
+  background-color: var(--vscode-primary-background);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-border-color);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
 }
 
 .preview-toggle-btn:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .editor-preview-container {
@@ -40,7 +40,7 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background: var(--vscode-editor-bg-gradient, none) var(--vscode-editor-background);
+  background: var(--vscode-editor-bg-gradient, none) var(--vscode-background);
   color: var(--vscode-foreground);
   line-height: 1.6;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;

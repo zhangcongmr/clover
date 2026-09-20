@@ -28,7 +28,7 @@ table {
   /* 为表头添加背景色 */
   th {
     background-color: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
-    color: var(--vscode-foreground, #333);
+    color: var(--vscode-foreground);
     font-weight: 600;
   }
 
@@ -43,7 +43,7 @@ table {
 
   /* 表格行悬停效果 */
   table tr:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
     border-radius: var(--borderless-item-radius, 8px);
   }
 

@@ -1,10 +1,10 @@
 .input_filter {
     width: 100%;
-    background-color: var(--vscode-input-background, #fff);
+    background-color: var(--vscode-background);
     border-radius: var(--vscode-radius-md, 8px);
     border: none;
     box-sizing: border-box;
-    color: var(--vscode-foreground, #606266);
+    color: var(--vscode-foreground);
     display: inline-block;
     height: 2rem;
     line-height: 2rem;
@@ -14,7 +14,7 @@
 }
 
 .input_filter:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .input_filter:focus {
@@ -32,7 +32,7 @@
 
 .child-item:hover {
     cursor: pointer;
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .child-item.active {
@@ -46,7 +46,7 @@
 }
 
 .child-item:focus {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .btn-item {
@@ -59,7 +59,7 @@
 }
 
 .btn-item:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .lyout-item {
@@ -118,7 +118,7 @@
 .textrenameclass {
     width: 100%;
     border: none;
-    background-color: var(--vscode-input-background, white);
+    background-color: var(--vscode-background);
     color: var(--vscode-foreground);
     outline: none;
     padding: 4px 8px;
@@ -137,5 +137,5 @@
 }
 
 .ast-tree-folder-icon {
-    color: var(--vscode-icon-foreground, #6b7280);
+    color: var(--vscode-foreground);
 }

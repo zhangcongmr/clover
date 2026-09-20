@@ -553,7 +553,7 @@ For bgGradient: generate a CSS background-image value (gradient) that adds a sub
 If the user's mood does not suggest a gradient (e.g., "minimal", "clean", "professional"), set this to an empty string to omit.
 Mood mapping: calm/peaceful → warm-toned subtle gradients; cold/tech-focused → blue-purple tones; playful/creative → multi-color diagonal gradients; intense/dark → very dark subtle radial gradients; minimal → no gradient (empty string).
 
-For editorBgGradient: same rules as bgGradient, but applied specifically to the code editor background (CodeMirror editor view, markdown preview panel, and shadow DOM preview). This allows the editor area to have a distinct gradient from the body background. If omitted, the editor uses the solid --vscode-editor-background. Recommended alpha ≤ 0.08 for editor since it is a reading/editing surface.
+For editorBgGradient: same rules as bgGradient, but applied specifically to the code editor background (CodeMirror editor view, markdown preview panel, and shadow DOM preview). This allows the editor area to have a distinct gradient from the body background. If omitted, the editor uses the solid --vscode-background. Recommended alpha ≤ 0.08 for editor since it is a reading/editing surface.
 
 For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
 
@@ -780,57 +780,23 @@ For each fileIcons entry:
 
   private mapThemeKeysToCss(themeVars: Record<string, string>): Record<string, string> {
     const keyMap: Record<string, string[]> = {
-      background: [
-        '--vscode-background',
-        '--vscode-editor-background',
-        '--vscode-panel-background',
-        '--vscode-input-background',
-        '--vscode-titleBar-activeBackground',
-        '--vscode-titleBar-inactiveBackground',
-        '--vscode-scrollbar-track',
-        '--vscode-editorWidget-background',
-        '--vscode-tabborder-background',
+      background: [// 组件背景色
+        '--vscode-background'
       ],
-      surface: [
-        '--vscode-sideBar-background',
-        '--vscode-activityBar-background',
-        '--vscode-tab-inactiveBackground',
-        '--vscode-tab-activeBackground',
-        '--vscode-list-inactiveSelectionBackground',
-        '--vscode-list-hoverBackground',
-        '--vscode-panel-background',
-        '--vscode-editorWidget-background',
-        '--vscode-input-background',
+      surface: [// 组件表面色
+        '--vscode-surface-background'
       ],
-      primary: [
-        '--vscode-button-background',
-        '--vscode-statusBar-background',
-        '--vscode-activityBarBadge-background',
-        '--vscode-list-activeSelectionBackground',
-        '--vscode-tab-activeBackground',
+      primary: [// 组件主色
+        '--vscode-primary-background'
       ],
-      text: [
-        '--vscode-foreground',
-        '--vscode-button-foreground',
-        '--vscode-activityBar-foreground',
-        '--vscode-activityBarBadge-foreground',
-        '--vscode-list-activeSelectionForeground',
-        '--vscode-icon-foreground',
-        '--vscode-statusBar-foreground',
+      text: [// 组件文字色
+        '--vscode-foreground'
       ],
-      accent: [
-        '--vscode-focusBorder',
-        '--vscode-textLink-foreground',
-        '--vscode-textLink-activeForeground',
-        '--vscode-list-hoverBackground',
-        '--vscode-text-selectionBackground',
+      accent: [// 组件强调色
+        '--vscode-accent-color'
       ],
-      border: [
-        '--vscode-editorGroup-border',
-        '--vscode-input-border',
-        '--vscode-tab-border',
-        '--vscode-textSeparator-foreground',
-        '--vscode-tabborder-background',
+      border: [// 组件边框色
+        '--vscode-border-color'
       ],
     };
 

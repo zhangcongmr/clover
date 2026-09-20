@@ -5,7 +5,7 @@
 }
 :host(.ast-right-menu) {
   align-items: flex-start;
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-background);
   border: none;
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
   border-radius: var(--borderless-item-radius, 8px);
@@ -25,7 +25,7 @@
 }
 
 :host(.ast-right-menu) .ast-menu-every-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 :host(.ast-right-menu) .ast-menu-every-item.active {
@@ -59,7 +59,7 @@
 }
 
 :host(.ast-right-menu) .submenu-container {
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-background);
   border: none;
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
   border-radius: var(--borderless-item-radius, 8px);

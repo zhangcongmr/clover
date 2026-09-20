@@ -11,7 +11,7 @@
 div[data-layer="tab-header"] {
     position: relative;
     display: flex;
-    background-color: var(--vscode-sideBar-background, var(--vscode-editorGroupHeader-tabsBackground, rgba(0, 0, 0, 0.05)));
+    background-color: var(--vscode-accent-color);
 }
 
 ul[data-layer="tablist"] {
@@ -32,7 +32,7 @@ div[data-layer="tab_presentation"] {
     height: 3px;
     left: 0px;
     bottom: -1px;
-    background-color: var(--vscode-tab-activeBackground);
+    background-color: var(--vscode-accent-color);
     z-index: 10;
 }
 
@@ -59,7 +59,7 @@ li[data-layer="tab"]:active {
 }
 
 li[data-layer="tab"]:not(.lightcolorselection-tab):hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 li[data-layer="tab"].borderless-tab {
@@ -67,7 +67,7 @@ li[data-layer="tab"].borderless-tab {
 }
 
 li[data-layer="tab"].borderless-active-tab {
-    background-color: var(--vscode-tab-activeBackground, rgba(0, 0, 0, 0.05));
+    background-color: var(--vscode-accent-color);
 }
 
 li[data-layer="tab"].bilateral-inactive-tab {
@@ -81,7 +81,7 @@ li[data-layer="tab"].bilateral-inactive-tab::after {
     right: 0;
     bottom: 0;
     height: 0.5px;
-    background-color: var(--vscode-tabborder-background, rgba(0, 0, 0, 0.1));
+    background-color: var(--vscode-background);
 }
 
 li[data-layer="tab"]:hover .tab-close {
@@ -102,11 +102,11 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 .tab-close:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .tab-dot-or-close:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .padding_left_crumb {
@@ -125,7 +125,7 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 #addTabBtn:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .tab-label-area {
@@ -190,11 +190,11 @@ li[data-layer="tab"].active-tab .tab-close {
 }
 
 .bilateral-border-tab .padding_left_crumb {
-    border-left: 1px var(--vscode-tabborder-background) solid;
+    border-left: 1px var(--vscode-background) solid;
 }
 
 .bilateral-border-tab .padding_right_crumb {
-    border-right: 1px var(--vscode-tabborder-background) solid;
+    border-right: 1px var(--vscode-background) solid;
 }
 
 /**
@@ -202,13 +202,13 @@ li[data-layer="tab"].active-tab .tab-close {
  */
 .lightcolorselection-tab {
     z-index: 1;
-    border-bottom: 1px var(--vscode-titleBar-activeBackground) solid
+    border-bottom: 1px var(--vscode-background) solid
 }
 
 
 /* 当鼠标悬停在 .lightcolorselection-tab 上时，改变 ::after 的背景色 */
 .lightcolorselection-tab:hover::after {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
 }
 
 .lightcolorselection-tab::after {
@@ -227,7 +227,7 @@ li[data-layer="tab"].active-tab .tab-close {
  * when tabType is 'filled' (VS Code风格背景填充)
  */
 .filled-active-tab {
-    background-color: var(--vscode-editor-background, #ffffff) !important;
+    background-color: var(--vscode-background) !important;
     border-bottom: none;
     z-index: 1;
 }

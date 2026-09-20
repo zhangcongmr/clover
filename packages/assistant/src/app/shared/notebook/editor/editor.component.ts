@@ -82,7 +82,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
             border: 'none', // 移除边框
             outline: 'none', // 可选：移除聚焦时的 outline
             boxShadow: 'none',
-            background: 'var(--vscode-editor-bg-gradient, none) var(--vscode-editor-background)',
+            background: 'var(--vscode-editor-bg-gradient, none) var(--vscode-background)',
           },
           '.cm-scroller': {
             height: '100%',
@@ -91,16 +91,16 @@ export class EditorComponent implements OnInit, AfterViewInit {
             scrollbarColor: '#ccc transparent',
           },
           ".cm-gutters": {
-            backgroundColor: "var(--vscode-editor-background)",
+            backgroundColor: "var(--vscode-background)",
             color: "var(--vscode-foreground)",
             border: "none"
           },  
           ".cm-selectionBackground": {
-            backgroundColor: "var(--vscode-text-selectionBackground) !important",
+            backgroundColor: "var(--vscode-accent-color) !important",
           },
           ".cm-activeLineGutter": { // 当前行在 gutter 上的高亮样式
-            backgroundColor: "var(--vscode-sideBar-background)", // 当前行号所在 gutter 的背景色
-            color: "var(--vscode-textLink-activeForeground)", // 当前行号的颜色
+            backgroundColor: "var(--vscode-accent-color)", // 当前行号所在 gutter 的背景色
+            color: "var(--vscode-accent-color)", // 当前行号的颜色
           },
           '.cm-cursor': {
             caretColor: "#ff0000",
@@ -191,8 +191,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
         display: block;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
         line-height: 1.6;
-        color: var(--vscode-foreground, #616161);
-        background: var(--vscode-editor-bg-gradient, none) var(--vscode-editor-background, #ffffff);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editor-bg-gradient, none) var(--vscode-background);
       }
       
       h1, h2, h3, h4, h5, h6 {
@@ -244,56 +244,56 @@ export class EditorComponent implements OnInit, AfterViewInit {
       }
       
       pre {
-        background-color: var(--vscode-sideBar-background, #f8f8f8);
-        border: 1px solid var(--vscode-editorGroup-border, #e7e7e7);
+        background-color: var(--vscode-accent-color);
+        border: 1px solid var(--vscode-border-color);
         padding: 12px 15px;
         border-radius: 4px;
         overflow-x: auto;
-        color: var(--vscode-foreground, #616161);
+        color: var(--vscode-foreground);
         font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
       }
       
       code {
         font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-        background-color: var(--vscode-sideBar-background, #f8f8f8);
-        color: var(--vscode-foreground, #616161);
+        background-color: var(--vscode-accent-color);
+        color: var(--vscode-foreground);
         padding: 2px 4px;
         border-radius: 3px;
         font-size: 0.875em;
       }
       
       blockquote {
-        border-left: 4px solid var(--vscode-editorGroup-border, #e7e7e7);
+        border-left: 4px solid var(--vscode-border-color);
         padding-left: 16px;
         margin-left: 0;
-        color: var(--vscode-foreground, #616161);
-        background-color: var(--vscode-tab-inactiveBackground, #eef0f2);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-accent-color);
       }
       
       a {
-        color: var(--vscode-textLink-foreground, #006ab1);
+        color: var(--vscode-accent-color);
         text-decoration: underline;
       }
       
       a:hover {
-        color: var(--vscode-textLink-activeForeground, #006ab1);
+        color: var(--vscode-accent-color);
       }
       
       table {
         border-collapse: collapse;
         width: 100%;
         margin: 1em 0;
-        background-color: var(--vscode-editor-background, #ffffff);
+        background-color: var(--vscode-background);
       }
       
       th, td {
-        border: 1px solid var(--vscode-editorGroup-border, #e7e7e7);
+        border: 1px solid var(--vscode-border-color);
         padding: 8px 12px;
-        color: var(--vscode-foreground, #616161);
+        color: var(--vscode-foreground);
       }
       
       th {
-        background-color: var(--vscode-tab-inactiveBackground, #eef0f2);
+        background-color: var(--vscode-accent-color);
         font-weight: bold;
       }
       
@@ -305,7 +305,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
       hr {
         height: 1px;
         border: 0;
-        background-color: var(--vscode-editorGroup-border, #e7e7e7);
+        background-color: var(--vscode-border-color);
         margin: 20px 0;
       }
     `;
