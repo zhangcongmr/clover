@@ -74,3 +74,7 @@ export { AcpSessionManagerComponent } from './acp-session-manager.component';
 export { AcpPermissionDialogComponent } from './acp-permission-dialog.component';
 export { AcpQuestionComponent } from './acp-question.component';
 export type { QuestionItem, QuestionOption } from './acp-question.component';
+export { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
+export { A2uiThemeBridgeService } from './a2ui-theme-bridge.service';
+export type { A2uiThemeFields } from './a2ui-theme-mapping';
+export { A2UI_THEME_CSS_MAP } from './a2ui-theme-mapping';

@@ -61,6 +61,8 @@ export class AgentComponent {
   maximizePanel = output<void>();
   /** Re-emitted upward when the ACP panel is restored. */
   restorePanel = output<void>();
+  /** Re-emitted upward when user clicks "应用到项目UI" in A2UI theme preview. */
+  themeApply = output<Record<string, any>>();
 
   protected projects = computed(() => {
     return this.acpService.projects()

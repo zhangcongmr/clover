@@ -39,7 +39,7 @@
             <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
               <div class="message-content">
                 @if (message.role === 'assistant') {
-                  <app-a2ui-json-renderer [content]="message.content"></app-a2ui-json-renderer>
+                  <app-a2ui-json-renderer [content]="message.content" (themeApply)="themeApply.emit($event)"></app-a2ui-json-renderer>
                 } @else {
                   <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
                 }

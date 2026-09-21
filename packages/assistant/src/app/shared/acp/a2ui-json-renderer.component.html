@@ -1,6 +1,6 @@
 <div class="a2ui-json-renderer">
   @if (surfaces().length > 0) {
-    <div class="a2ui-surfaces-container">
+    <div class="a2ui-surfaces-container" #surfacesContainer>
       @for (surfaceId of surfaces(); track surfaceId) {
         <a2ui-v09-surface [surfaceId]="surfaceId" />
       }
