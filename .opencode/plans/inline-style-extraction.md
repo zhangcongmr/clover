@@ -384,7 +384,7 @@
 }
 
 .ast-content-empty-card {
-  border: 1px solid var(--vscode-statusBar-background);
+  border: 1px solid var(--vscode-primary-background);
   padding: 1.25rem;
   border-radius: 4px;
   background: var(--vscode-background);
@@ -398,7 +398,7 @@
 
 .ast-content-empty-desc {
   margin-bottom: 1rem;
-  color: var(--vscode-textSeparator-foreground);
+  color: var(--vscode-border-color);
 }
 
 .ast-content-empty-actions {
@@ -429,7 +429,7 @@
 
 .ast-content-empty-hint {
   margin-top: 0.2rem;
-  color: var(--vscode-textSeparator-foreground);
+  color: var(--vscode-border-color);
   font-size: 0.9rem;
 }
 
@@ -458,13 +458,13 @@
 | 9 | `style="width: 20%;;height: 3rem;position: absolute;z-index: 100;..."` | `ast-content-new-file-popup` |
 | 15 | `style="position: relative;display: flex;flex: 1;height: 100%;"` | `ast-content-main` |
 | 20 | `style="text-align:center; color: var(--vscode-foreground);"` | `ast-content-empty-state` |
-| 21 | `style="border:1px solid var(--vscode-statusBar-background); padding:1.25rem;..."` | `ast-content-empty-card` |
+| 21 | `style="border:1px solid var(--vscode-primary-background); padding:1.25rem;..."` | `ast-content-empty-card` |
 | 22 | `style="font-weight:600; margin-bottom:0.5rem;"` | `ast-content-empty-title` |
-| 23 | `style="margin-bottom:1rem; color:var(--vscode-textSeparator-foreground);"` | `ast-content-empty-desc` |
+| 23 | `style="margin-bottom:1rem; color:var(--vscode-border-color);"` | `ast-content-empty-desc` |
 | 24 | `style="display:flex;gap:0.5rem;justify-content:center;align-items:center;margin-bottom:0.6rem;"` | `ast-content-empty-actions` |
 | 25 | `style="background:var(--primary-color, rgb(103, 137, 186));color:#fff;border:none;..."` | `ast-content-empty-primary-btn` |
 | 26 | `style="background:#e1e1e1;color:#222;border:none;padding:0.6rem 1.25rem;..."` | `ast-content-empty-secondary-btn` |
-| 28 | `style="margin-top:0.2rem; color:var(--vscode-textSeparator-foreground); font-size:0.9rem;"` | `ast-content-empty-hint` |
+| 28 | `style="margin-top:0.2rem; color:var(--vscode-border-color); font-size:0.9rem;"` | `ast-content-empty-hint` |
 | 63 | `style="margin-left: 0.5rem; color: var(--vscode-foreground);"` | `ast-content-forking-text` |
 | 100 | `style="flex: 1 1 0;overflow: auto;"` | `ast-content-tree` |
 | 154 | `style="display: flex; flex: 1;"` | `ast-content-tabs-wrapper` |
@@ -808,7 +808,7 @@
 - `[style]="ulStyle"` - 动态内联样式字符串
 - `[style.min-width]="tab.minWidth"` - 动态最小宽度
 - `[style.cursor]="addTabEnable()?'pointer': ''"` - 条件光标
-- `[style.border-bottom]="tabType() && (tabType()['type']=='bilateral')?'1px var(--vscode-tabborder-background) solid':''"` - 条件边框
+- `[style.border-bottom]="tabType() && (tabType()['type']=='bilateral')?'1px var(--vscode-background) solid':''"` - 条件边框
 - `[style.width]="computedScrollBarLength"` - 动态滚动条宽度
 - `[style.left]="scrollBarLeft + 'px'"` - 动态滚动条位置
 
