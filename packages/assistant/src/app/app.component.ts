@@ -641,38 +641,18 @@ For each fileIcons entry:
       }
 
       console.log('生成主题成功', assistantText);
-      const result = this.parseUnifiedThemeContent(assistantText);
+      const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
+      const match = jsonBlockRegex.exec(assistantText);
+      if (!match) return;
+      try {
+        const parsed = JSON.parse(match[1]);
+        const cssVars = this.applyToUI(parsed);
 
-      if (!result) {
-        throw new Error('未能从响应中解析出主题变量');
+        this.themePromptResult = cssVars;
+        this.themePromptOpen = false;
+      } catch {
+        return;
       }
-
-      const { cssVars: rawVars, googleFonts } = result;
-      const cssVars = this.mapThemeKeysToCss(rawVars);
-
-      if (!cssVars || Object.keys(cssVars).length === 0) {
-        throw new Error('未能从响应中解析出主题变量');
-      }
-
-      this.themeService.setTheme('custom');
-      this.themeService.setThemeVariables(cssVars);
-
-      // Load Google Fonts if needed
-      if (googleFonts.length > 0) {
-        this.themeService.loadGoogleFonts(googleFonts);
-      }
-
-      if (Object.keys(customFileIcons).length > 0) {
-        const content = this.contentComp();
-        if (content) {
-          const data = content.dataList();
-          computeFileIcons(data);
-          content.dataList.set([...data]);
-        }
-      }
-
-      this.themePromptResult = cssVars;
-      this.themePromptOpen = false;
     } catch (err: any) {
       console.error('生成主题失败', err);
       this.themePromptError = err?.message || '生成主题失败，请重试';
@@ -681,18 +661,49 @@ For each fileIcons entry:
     }
   }
 
-  private parseUnifiedThemeContent(text: string): { cssVars: Record<string, string>; googleFonts: string[] } | null {
-    const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
-    const match = jsonBlockRegex.exec(text);
-    if (!match) return null;
-
-    let parsed: any;
+  onA2uiThemeApply(data: Record<string, any>) {
     try {
-      parsed = JSON.parse(match[1]);
-    } catch {
-      return null;
+      const cssVars = this.applyToUI(data);
+      this.themePromptResult = cssVars;
+    } catch (err: any) {
+      console.error('应用A2UI主题失败', err);
+    }
+  }
+
+  private applyToUI(parsed: any) {
+    const result = this.parseUnifiedThemeContent(parsed);
+
+    if (!result) {
+      throw new Error('未能从响应中解析出主题变量');
     }
 
+    const { cssVars: rawVars, googleFonts } = result;
+    const cssVars = this.mapThemeKeysToCss(rawVars);
+
+    if (!cssVars || Object.keys(cssVars).length === 0) {
+      throw new Error('未能从响应中解析出主题变量');
+    }
+
+    this.themeService.setTheme('custom');
+    this.themeService.setThemeVariables(cssVars);
+
+    // Load Google Fonts if needed
+    if (googleFonts.length > 0) {
+      this.themeService.loadGoogleFonts(googleFonts);
+    }
+
+    if (Object.keys(customFileIcons).length > 0) {
+      const content = this.contentComp();
+      if (content) {
+        const data = content.dataList();
+        computeFileIcons(data);
+        content.dataList.set([...data]);
+      }
+    }
+    return cssVars;
+  }
+
+  private parseUnifiedThemeContent(parsed: any): { cssVars: Record<string, string>; googleFonts: string[] } | null {
     // Process file icons
     const icons = parsed.fileIcons;
     if (Array.isArray(icons)) {

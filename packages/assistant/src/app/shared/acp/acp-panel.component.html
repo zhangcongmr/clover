@@ -139,7 +139,7 @@
                     </div>
                 </div>
             } @else {
-                <app-acp-chat />
+                <app-acp-chat (themeApply)="themeApply.emit($event)" />
                 <app-acp-chat-input />
             }
         </div>

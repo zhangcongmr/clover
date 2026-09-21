@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
@@ -26,6 +26,8 @@ export interface MessageGroup {
 })
 export class AcpChatComponent implements OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+
+  themeApply = output<Record<string, any>>();
 
   protected acpService = inject(AcpService);
 

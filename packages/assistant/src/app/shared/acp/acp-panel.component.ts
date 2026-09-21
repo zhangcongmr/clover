@@ -385,6 +385,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
   `]
 })
 export class AcpPanelComponent implements OnInit, OnDestroy {
+  themeApply = output<Record<string, any>>();
   private static readonly PANEL_WIDE_THRESHOLD = 600;
   closePanel = output<void>();
   maximizePanel = output<void>();

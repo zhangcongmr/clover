@@ -196,6 +196,7 @@
         (dockPositionChange)="onAcpPanelDockChange($event)"
         (editorToggle)="editorToggle.emit()"
         (sidebarExpand)="layoutService.expandSidebar()"
+        (themeApply)="themeApply.emit($event)"
         [sidebarCollapsed]="layoutService.sidebarCollapsed()"
       />
     }
