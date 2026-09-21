@@ -24,7 +24,7 @@
 .acp-dialog {
   width: 420px;
   max-width: 90vw;
-  background-color: var(--vscode-editorWidget-background);
+  background-color: var(--vscode-background);
   border-radius: var(--borderless-item-radius, 8px);
   box-shadow: var(--vscode-shadow-lg);
   border: none;
@@ -63,7 +63,7 @@
 .acp-dialog-icon {
   width: 20px;
   height: 20px;
-  color: var(--vscode-focusBorder);
+  color: var(--vscode-accent-color);
 }
 
 .acp-dialog-close {
@@ -84,7 +84,7 @@
 
 .acp-dialog-close:hover {
   opacity: 1;
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .acp-dialog-close svg {
@@ -145,7 +145,7 @@
 }
 
 .acp-option-button:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .acp-option-button.primary {
@@ -188,5 +188,5 @@
 }
 
 .acp-cancel-button:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }

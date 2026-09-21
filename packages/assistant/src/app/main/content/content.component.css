@@ -2,13 +2,13 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    /* background-color: var(--vscode-editor-background); */
-    background-color: var(--vscode-sideBar-background, var(--vscode-editorGroupHeader-tabsBackground, rgba(0, 0, 0, 0.05)));
+    /* background-color: var(--vscode-background); */
+    background-color: var(--vscode-accent-color);
     color: var(--vscode-foreground);
 }
 
 .split-line:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
     cursor: ew-resize;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .ast-content-empty-card {
-    border: 1px solid var(--vscode-statusBar-background);
+    border: 1px solid var(--vscode-primary-background);
     padding: 1.25rem;
     border-radius: 4px;
     background: var(--vscode-background);
@@ -69,7 +69,7 @@
 
 .ast-content-empty-desc {
     margin-bottom: 1rem;
-    color: var(--vscode-textSeparator-foreground);
+    color: var(--vscode-border-color);
 }
 
 .ast-content-empty-actions {
@@ -100,7 +100,7 @@
 
 .ast-content-empty-hint {
     margin-top: 0.2rem;
-    color: var(--vscode-textSeparator-foreground);
+    color: var(--vscode-border-color);
     font-size: 0.9rem;
 }
 
@@ -127,13 +127,13 @@
     left: 0;
     align-items: center;
     justify-content: center;
-    color: var(--vscode-textSeparator-foreground, #0000002e);
+    color: var(--vscode-border-color);
 }
 .left-side-section {
     width: 25%;
     display: flex;
     flex-direction: column;
-    background-color: var(--vscode-editor-background);
+    background-color: var(--vscode-background);
     margin-right: 5px;
 }
 
@@ -183,10 +183,10 @@
     max-width: 100%;
     margin-left: 10px;
     margin-right: 10px;
-    background-color: var(--vscode-editor-background);
+    background-color: var(--vscode-background);
     padding: 10px;
     border-radius: 5px;
-    border: 1px solid var(--vscode-editorGroup-border);
+    border: 1px solid var(--vscode-border-color);
 }
 
 .form-group {
@@ -199,8 +199,8 @@ input[type="email"],
 input[type="password"] {
     width: 100%;
     padding: 10px;
-    border: 1px solid var(--vscode-input-border);
-    background-color: var(--vscode-input-background);
+    border: 1px solid var(--vscode-border-color);
+    background-color: var(--vscode-background);
     color: var(--vscode-foreground);
     border-radius: 5px;
     box-sizing: border-box;
@@ -209,16 +209,16 @@ input[type="password"] {
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus {
-    border-color: var(--vscode-focusBorder);
+    border-color: var(--vscode-accent-color);
     outline: none;
     /* 当输入字段获得焦点时改变边框颜色 */
 }
 
 textarea:focus {
-    border-color: var(--vscode-focusBorder);
+    border-color: var(--vscode-accent-color);
     outline: none;
     /* 移除默认的焦点轮廓 */
-    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-accent-color);
 }
 
 .ast-modal-body {
@@ -371,7 +371,7 @@ textarea:focus {
   display: flex;
 }
 .ast-notification-cnr:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
   color: var(--vscode-foreground);
 }
 

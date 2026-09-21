@@ -377,11 +377,11 @@ export function addDynamicFileIconSymbol(extension: string, svgPath: string): st
     existing.innerHTML = `<path d="${svgPath}" fill="currentColor"/>`;
     return symbolId;
   }
-  const symbol = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
-  symbol.setAttribute('id', symbolId);
-  symbol.setAttribute('viewBox', '0 0 24 24');
-  symbol.setAttribute('fill', 'currentColor');
-  symbol.innerHTML = `<path d="${svgPath}" fill="currentColor"/>`;
-  dynamicSvgContainer.appendChild(symbol);
+  const symbolHTML = `
+    <symbol id="${symbolId}" viewBox="0 0 24 24" fill="currentColor">
+      <path d="${svgPath}" fill="currentColor"/>
+    </symbol>
+  `;
+  dynamicSvgContainer.insertAdjacentHTML('beforeend', symbolHTML);
   return symbolId;
 }

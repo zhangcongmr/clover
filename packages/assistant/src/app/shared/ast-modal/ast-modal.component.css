@@ -48,7 +48,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    background-color: var(--vscode-panel-background, #fefefe);
+    background-color: var(--vscode-background);
     pointer-events: auto;
     /* 关键：对话框内部可以响应鼠标事件 */
     max-height: 100%;
@@ -72,7 +72,7 @@
 }
 
 .ast-title {
-    color: var(--vscode-foreground, black);
+    color: var(--vscode-foreground);
     font-size: 20px;
     font-weight: 400;
     word-wrap: break-word;
@@ -151,7 +151,7 @@ ast-modal .ast-describe-btns {
 }
 
 .ast-cancel {
-    color: var(--vscode-foreground, black);
+    color: var(--vscode-foreground);
     font-weight: 400;
     word-wrap: break-word
 }
@@ -167,7 +167,7 @@ button[type="submit"] {
 }
 
 .ast-cancel-btn:hover {
-    background-color: var(--ui-hover-bg);
+    background-color: var(--vscode-hover-background);
     /* 鼠标悬停时改变背景颜色 */
 }
 

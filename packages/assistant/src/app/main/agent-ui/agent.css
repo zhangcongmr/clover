@@ -12,7 +12,7 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  background-color: var(--vscode-editor-background);
+  background-color: var(--vscode-background);
   border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
   overflow: hidden;
 }
@@ -24,7 +24,7 @@
   width: 240px;
   min-width: 240px;
   border-right: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
-  background-color: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  background-color: var(--vscode-accent-color);
   transition: width 0.2s, min-width 0.2s;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .sidebar-header:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 
@@ -102,7 +102,7 @@
 
 .icon-btn:hover {
   opacity: 1;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .icon-btn svg {
@@ -143,12 +143,11 @@
 }
 
 .nav-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .nav-item.active {
   background: rgba(0, 120, 212, 0.12);
-  color: var(--vscode-textLink-foreground, #0078d4);
 }
 
 .nav-item svg:not(.sidebar-chevron) {
@@ -178,7 +177,7 @@
 }
 
 .task-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .task-item.active {
@@ -231,7 +230,7 @@
 
 .task-delete-btn:hover {
   opacity: 1 !important;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .task-delete-btn svg {
@@ -264,7 +263,7 @@
 
 .task-session:hover {
   opacity: 0.8;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .task-session.active {
@@ -314,7 +313,7 @@
 }
 
 .project-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .project-item.active {
@@ -364,7 +363,7 @@
 
 .project-delete-btn:hover {
   opacity: 1 !important;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .project-delete-btn svg {
@@ -409,7 +408,7 @@
 }
 
 .sidebar-footer-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
   opacity: 1;
 }
 
@@ -451,7 +450,7 @@
 }
 
 .search-input::placeholder {
-  color: var(--vscode-input-placeholderForeground, rgba(128, 128, 128, 0.5));
+  color: var(--vscode-foreground);
 }
 
 .session-list {
@@ -497,7 +496,7 @@
 
 .new-session-btn:hover {
   opacity: 1;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .new-session-btn svg {
@@ -521,11 +520,11 @@
 }
 
 .session-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .session-item.active {
-  background: var(--vscode-list-inactiveSelectionBackground, rgba(0, 120, 212, 0.08));
+  background: var(--vscode-accent-color);
 }
 
 .session-title {
@@ -553,8 +552,8 @@
   height: 18px;
   min-width: 24px;
   border-radius: 3px;
-  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.3));
-  color: var(--vscode-badge-foreground, var(--vscode-foreground));
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -589,14 +588,14 @@
   gap: 8px;
   margin: 6px 10px;
   padding: 6px 10px;
-  background: var(--vscode-input-background, rgba(128, 128, 128, 0.08));
-  border: 1px solid var(--vscode-input-border, rgba(128, 128, 128, 0.2));
+  background: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
   border-radius: 6px;
   transition: border-color 0.15s;
 }
 
 .sidebar-search:focus-within {
-  border-color: var(--vscode-focusBorder, #0078d4);
+  border-color: var(--vscode-accent-color);
 }
 
 .sidebar-search .search-icon {
@@ -620,7 +619,7 @@
 }
 
 .sidebar-search .search-input::placeholder {
-  color: var(--vscode-input-placeholderForeground, rgba(128, 128, 128, 0.5));
+  color: var(--vscode-foreground);
 }
 
 /* ===== Nested sessions under a project (accordion) ===== */
@@ -670,7 +669,7 @@
   height: 14px;
   min-width: 14px;
   border: 2px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.25));
-  border-top-color: var(--vscode-textLink-foreground, #0078d4);
+  border-top-color: var(--vscode-accent-color);
   border-radius: 50%;
   opacity: 0;
   transform: scale(0.6);
@@ -688,7 +687,7 @@
 }
 
 .session-item.loading {
-  background: var(--vscode-text-selectionBackground, rgba(0, 120, 212, 0.15));
+  background: var(--vscode-accent-color);
 }
 
 .session-item.loading .session-title {
@@ -738,7 +737,7 @@
 
 .session-action-btn:hover {
   opacity: 1;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .session-action-btn svg {
@@ -747,7 +746,7 @@
 }
 
 .session-action-btn--delete:hover {
-  color: var(--vscode-errorForeground, #d32f2f);
+  color: var(--vscode-foreground);
 }
 
 /* ===== MCP Manager Modal ===== */
@@ -765,7 +764,7 @@
 }
 
 .modal {
-  background: var(--vscode-editor-background);
+  background: var(--vscode-background);
   border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
   border-radius: 8px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
@@ -814,7 +813,7 @@
 
 .btn-close:hover {
   opacity: 1;
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .modal-body {

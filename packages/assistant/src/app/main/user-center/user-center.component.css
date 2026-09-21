@@ -8,14 +8,14 @@
 .profile-container {
   display: flex;
   height: 100%;
-  background: var(--vscode-editor-background, #1e1e1e);
-  color: var(--vscode-foreground, #cccccc);
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
 }
 
 .profile-sidebar {
   width: 200px;
   min-width: 200px;
-  border-right: 1px solid var(--vscode-tab-border, #333);
+  border-right: 1px solid var(--vscode-border-color);
   padding: 24px 0;
   overflow-y: auto;
 }
@@ -27,12 +27,12 @@
   padding: 8px 16px;
   cursor: pointer;
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   transition: background 0.15s;
 }
 
 .profile-back-btn:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .profile-back-btn svg {
@@ -45,7 +45,7 @@
   flex-direction: column;
   align-items: center;
   padding: 0 16px 24px;
-  border-bottom: 1px solid var(--vscode-tab-border, #333);
+  border-bottom: 1px solid var(--vscode-border-color);
   margin-bottom: 8px;
 }
 
@@ -61,20 +61,20 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--vscode-input-background, #3c3c3c);
+  background: var(--vscode-background);
   margin-bottom: 12px;
 }
 
 .username {
   font-size: 16px;
   font-weight: 600;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   margin-bottom: 4px;
 }
 
 .email {
   font-size: 12px;
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
 }
 
 .profile-nav {
@@ -91,17 +91,17 @@
   padding: 8px 12px;
   cursor: pointer;
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   border-radius: var(--vscode-radius-sm, 3px);
   transition: background 0.15s;
 }
 
 .profile-nav-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .profile-nav-item.active {
-  background: var(--vscode-list-activeSelectionBackground, #094771);
+  background: var(--vscode-primary-background);
 }
 
 .profile-content {
@@ -118,9 +118,9 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0 0 24px 0;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--vscode-tab-border, #333);
+  border-bottom: 1px solid var(--vscode-border-color);
 }
 
 .detail-list {
@@ -133,17 +133,17 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid var(--vscode-tab-border, #333);
+  border-bottom: 1px solid var(--vscode-border-color);
 }
 
 .detail-label {
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
 }
 
 .detail-value {
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   font-weight: 500;
 }
 
@@ -158,20 +158,20 @@
   flex-direction: column;
   gap: 8px;
   padding: 20px;
-  background: var(--vscode-sideBar-background, #252526);
+  background: var(--vscode-accent-color);
   border-radius: var(--vscode-radius-md, 6px);
-  border: 1px solid var(--vscode-tab-border, #333);
+  border: 1px solid var(--vscode-border-color);
 }
 
 .stat-value {
   font-size: 28px;
   font-weight: 700;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .stat-label {
   font-size: 12px;
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
 }
 
 .placeholder-area {
@@ -191,13 +191,13 @@
 .placeholder-text {
   font-size: 16px;
   font-weight: 500;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   margin-bottom: 8px;
 }
 
 .placeholder-desc {
   font-size: 13px;
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
 }
 
 .status-card {
@@ -224,7 +224,7 @@
 
 .status-label-text {
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .action-area {
@@ -251,6 +251,6 @@
 
 .empty-text {
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
   padding: 24px 0;
 }

@@ -27,7 +27,7 @@
   height: 32px;
   border: none;
   border-radius: 50%;
-  background-color: var(--vscode-editorWidget-background, #ffffff);
+  background-color: var(--vscode-background);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   color: var(--vscode-foreground);
   cursor: pointer;
@@ -38,7 +38,7 @@
 }
 
 .scroll-to-bottom-btn:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
@@ -74,7 +74,7 @@
 }
 
 .acp-back-button:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .acp-back-button svg {
@@ -227,7 +227,7 @@
 .message-text {
   padding: 10px 14px;
   border-radius: var(--vscode-radius-md);
-  /* background-color: var(--vscode-sideBar-background); */
+  /* background-color: var(--vscode-accent-color); */
   color: var(--vscode-foreground);
   line-height: 1.5;
   word-break: break-word;
@@ -267,8 +267,8 @@
 
 :host ::ng-deep .message-text pre {
   position: relative;
-  background-color: var(--vscode-editor-background, #1e1e1e);
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  background-color: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
   padding: 12px 15px;
   border-radius: 4px;
   overflow-x: auto;
@@ -281,8 +281,8 @@
   top: 8px;
   right: 8px;
   padding: 4px 8px;
-  background-color: var(--vscode-button-secondaryBackground, #3c3c3c);
-  color: var(--vscode-button-secondaryForeground, #ffffff);
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -299,7 +299,7 @@
 }
 
 :host ::ng-deep .message-text pre .copy-code-btn:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 :host ::ng-deep .message-text pre .copy-code-btn svg {
@@ -309,7 +309,7 @@
 
 :host ::ng-deep .message-text code {
   font-family: var(--vscode-editor-font-family, monospace);
-  background-color: var(--vscode-editor-background, #1e1e1e);
+  background-color: var(--vscode-background);
   padding: 2px 4px;
   border-radius: 3px;
   font-size: 0.9em;
@@ -321,7 +321,7 @@
 }
 
 :host ::ng-deep .message-text blockquote {
-  border-left: 4px solid var(--vscode-input-border, #3c3c3c);
+  border-left: 4px solid var(--vscode-border-color);
   padding-left: 16px;
   margin-left: 0;
   color: var(--vscode-foreground);
@@ -329,7 +329,7 @@
 }
 
 :host ::ng-deep .message-text a {
-  color: var(--vscode-textLink-foreground, #3794ff);
+  color: var(--vscode-accent-color);
   text-decoration: none;
 }
 
@@ -344,12 +344,12 @@
 }
 
 :host ::ng-deep .message-text th, :host ::ng-deep .message-text td {
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border: 1px solid var(--vscode-border-color);
   padding: 8px 12px;
 }
 
 :host ::ng-deep .message-text th {
-  background-color: var(--vscode-editor-background, #1e1e1e);
+  background-color: var(--vscode-background);
   font-weight: bold;
 }
 
@@ -361,7 +361,7 @@
 :host ::ng-deep .message-text hr {
   height: 1px;
   border: 0;
-  background-color: var(--vscode-input-border, #3c3c3c);
+  background-color: var(--vscode-border-color);
   margin: 20px 0;
 }
 
@@ -453,8 +453,8 @@
 .tool-call-diff {
   overflow-x: auto;
   border-radius: 4px;
-  background-color: var(--vscode-editor-background, #1e1e1e);
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  background-color: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
   max-height: 600px;
   overflow-y: auto;
 }
@@ -485,7 +485,7 @@
   opacity: 0.5;
   flex-shrink: 0;
   user-select: none;
-  border-right: 1px solid var(--vscode-input-border, #3c3c3c);
+  border-right: 1px solid var(--vscode-border-color);
 }
 
 .diff-line-num.add {
@@ -543,7 +543,7 @@
 }
 
 .todos-header:hover {
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .todos-progress {
@@ -697,7 +697,7 @@
   max-width: 100%;
   max-height: 300px;
   border-radius: 8px;
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border: 1px solid var(--vscode-border-color);
 }
 
 .content-audio audio {
@@ -711,8 +711,8 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 8px 10px;
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
-  background-color: var(--vscode-editor-background, #1e1e1e);
+  border: 1px solid var(--vscode-border-color);
+  background-color: var(--vscode-background);
   font-size: 12px;
 }
 
@@ -733,7 +733,7 @@
   padding: 6px 8px;
   max-height: 120px;
   overflow: auto;
-  background-color: var(--vscode-textCodeBlock-background, rgba(255, 255, 255, 0.04));
+  background-color: var(--vscode-textCodeBlock-background);
   border-radius: 6px;
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
@@ -744,7 +744,7 @@
 }
 
 .content-resource .resource-download {
-  color: var(--vscode-textLink-foreground, #3794ff);
+  color: var(--vscode-accent-color);
   text-decoration: none;
 }
 
@@ -757,9 +757,9 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border: 1px solid var(--vscode-border-color);
   border-radius: 8px;
-  background-color: var(--vscode-editor-background, #1e1e1e);
+  background-color: var(--vscode-background);
   font-size: 12px;
 }
 
@@ -767,11 +767,11 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  color: var(--vscode-textLink-foreground, #3794ff);
+  color: var(--vscode-accent-color);
 }
 
 .content-link a {
-  color: var(--vscode-textLink-foreground, #3794ff);
+  color: var(--vscode-accent-color);
   text-decoration: none;
   word-break: break-all;
 }
@@ -794,8 +794,8 @@
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--vscode-input-border, #3c3c3c);
-  border-top-color: var(--vscode-textLink-foreground, #3794ff);
+  border: 3px solid var(--vscode-border-color);
+  border-top-color: var(--vscode-accent-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

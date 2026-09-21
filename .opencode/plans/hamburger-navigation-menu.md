@@ -71,8 +71,8 @@ Sign In / Sign Out
 }
 
 :host(.ast-right-menu) .submenu-container {
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorGroup-border);
+  background: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
   box-shadow: var(--vscode-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
   border-radius: var(--vscode-radius-sm, 4px);
   min-width: 160px;
@@ -128,7 +128,7 @@ get settingsSubmenuEl(): HTMLElement | undefined {
   cursor: pointer;
   color: var(--vscode-foreground);
   font-size: var(--vscode-menu-font-size, 13px);
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-background);
   width: 100%;
   box-sizing: border-box;
 }

@@ -94,7 +94,7 @@ import { AcpService, AcpPlan } from './acp.service';
     }
 
     .plan-header:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
 
     .plan-header-left {
@@ -106,7 +106,7 @@ import { AcpService, AcpPlan } from './acp.service';
     .plan-icon {
       width: 16px;
       height: 16px;
-      color: var(--vscode-terminal-ansiGreen, #4ec9b0);
+      color: var(--vscode-terminal-ansiGreen);
       flex-shrink: 0;
     }
 
@@ -140,7 +140,7 @@ import { AcpService, AcpPlan } from './acp.service';
     .plan-progress-fill {
       height: 100%;
       border-radius: 2px;
-      background-color: var(--vscode-terminal-ansiGreen, #4ec9b0);
+      background-color: var(--vscode-terminal-ansiGreen);
       transition: width 0.3s ease;
     }
 
@@ -173,7 +173,7 @@ import { AcpService, AcpPlan } from './acp.service';
     }
 
     .plan-entry:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
 
     .entry-status {
@@ -192,11 +192,11 @@ import { AcpService, AcpPlan } from './acp.service';
     }
 
     .status-icon.completed {
-      color: var(--vscode-terminal-ansiGreen, #4ec9b0);
+      color: var(--vscode-terminal-ansiGreen);
     }
 
     .status-icon.in-progress {
-      color: var(--vscode-terminal-ansiBlue, #3794ff);
+      color: var(--vscode-terminal-ansiBlue);
       animation: spin 1.2s linear infinite;
     }
 
@@ -206,7 +206,7 @@ import { AcpService, AcpPlan } from './acp.service';
     }
 
     .status-icon.cancelled {
-      color: var(--vscode-terminal-ansiRed, #f44747);
+      color: var(--vscode-terminal-ansiRed);
       opacity: 0.6;
     }
 
@@ -253,12 +253,12 @@ import { AcpService, AcpPlan } from './acp.service';
 
     .priority-high {
       background-color: rgba(244, 71, 71, 0.15);
-      color: var(--vscode-terminal-ansiRed, #f44747);
+      color: var(--vscode-terminal-ansiRed);
     }
 
     .priority-medium {
       background-color: rgba(255, 193, 7, 0.15);
-      color: var(--vscode-terminal-ansiYellow, #ffcc02);
+      color: var(--vscode-terminal-ansiYellow);
     }
 
     .priority-low {

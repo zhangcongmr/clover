@@ -110,7 +110,7 @@
   padding: 8px 10px;
   border-radius: var(--borderless-item-radius, 8px);
   border: 1px solid transparent;
-  background-color: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
+  background-color: var(--vscode-background);
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s;
 }
@@ -185,7 +185,7 @@
   padding: 6px 10px;
   border: 1px solid var(--borderless-item-bg-hover, rgba(0, 0, 0, 0.12));
   border-radius: var(--vscode-radius-sm, 4px);
-  background-color: var(--vscode-input-background);
+  background-color: var(--vscode-background);
   color: var(--vscode-input-foreground);
   font-size: var(--vscode-font-size);
   font-family: var(--vscode-font-family);
@@ -226,7 +226,7 @@
 
 .btn-ignore:hover {
   opacity: 1;
-  background-color: var(--ui-hover-bg);
+  background-color: var(--vscode-hover-background);
 }
 
 .btn-next,

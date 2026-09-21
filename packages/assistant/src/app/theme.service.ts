@@ -67,7 +67,6 @@ export class ThemeService {
         ...vars,
       };
       this.applyTheme();
-      this.applyThemeVariables();
       this.saveThemeVariables();
     }
   }

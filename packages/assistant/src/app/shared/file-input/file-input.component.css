@@ -9,7 +9,7 @@
 
 .file-upload-section:hover {
     border-color: #3498db;
-    background: var(--ui-hover-bg);
+    background: var(--vscode-hover-background);
 }
 
 .file-upload-section.drag-over {
@@ -63,7 +63,7 @@
 }
 
 .clear-button:hover {
-    background: var(--ui-hover-bg);
+    background: var(--vscode-hover-background);
 }
 
 /* 内联样式提取 */

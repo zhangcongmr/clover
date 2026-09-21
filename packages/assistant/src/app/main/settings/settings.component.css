@@ -1,14 +1,14 @@
 .settings-container {
   display: flex;
   height: 100%;
-  background: var(--vscode-editor-background, #1e1e1e);
-  color: var(--vscode-foreground, #cccccc);
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
 }
 
 .settings-sidebar {
   width: 200px;
   min-width: 200px;
-  border-right: 1px solid var(--vscode-tab-border, #333);
+  border-right: 1px solid var(--vscode-border-color);
   padding: 8px 0;
   overflow-y: auto;
 }
@@ -20,14 +20,14 @@
   padding: 8px 16px;
   cursor: pointer;
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   transition: background 0.15s;
-  border-bottom: 1px solid var(--vscode-tab-border, #333);
+  border-bottom: 1px solid var(--vscode-border-color);
   margin-bottom: 4px;
 }
 
 .settings-back-btn:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .settings-back-btn svg {
@@ -42,16 +42,16 @@
   padding: 8px 16px;
   cursor: pointer;
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   transition: background 0.15s;
 }
 
 .settings-category-item:hover {
-  background: var(--ui-hover-bg);
+  background: var(--vscode-hover-background);
 }
 
 .settings-category-item.active {
-  background: var(--vscode-list-activeSelectionBackground, #094771);
+  background: var(--vscode-primary-background);
 }
 
 .cat-icon {
@@ -73,9 +73,9 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0 0 24px 0;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--vscode-tab-border, #333);
+  border-bottom: 1px solid var(--vscode-border-color);
 }
 
 .setting-item {
@@ -83,7 +83,7 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 16px 0;
-  border-bottom: 1px solid var(--vscode-tab-border, #333);
+  border-bottom: 1px solid var(--vscode-border-color);
   gap: 24px;
 }
 
@@ -97,13 +97,13 @@
   font-size: var(--vscode-font-size, 13px);
   font-weight: 500;
   margin-bottom: 4px;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .setting-desc {
   margin: 0;
   font-size: 12px;
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
   line-height: 1.4;
 }
 
@@ -122,24 +122,24 @@
 .setting-input {
   flex: 1;
   padding: 6px 10px;
-  background: var(--vscode-input-background, #3c3c3c);
-  border: 1px solid var(--vscode-input-border, #555);
-  color: var(--vscode-foreground, #cccccc);
+  background: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
+  color: var(--vscode-foreground);
   font-size: var(--vscode-font-size, 13px);
   border-radius: var(--vscode-radius-sm, 3px);
   outline: none;
 }
 
 .setting-input:focus {
-  border-color: var(--vscode-focusBorder, #007acc);
+  border-color: var(--vscode-accent-color);
 }
 
 .setting-select {
   width: 100%;
   padding: 6px 10px;
-  background: var(--vscode-input-background, #3c3c3c);
-  border: 1px solid var(--vscode-input-border, #555);
-  color: var(--vscode-foreground, #cccccc);
+  background: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
+  color: var(--vscode-foreground);
   font-size: var(--vscode-font-size, 13px);
   border-radius: var(--vscode-radius-sm, 3px);
   outline: none;
@@ -147,7 +147,7 @@
 }
 
 .setting-select:focus {
-  border-color: var(--vscode-focusBorder, #007acc);
+  border-color: var(--vscode-accent-color);
 }
 
 .btn {
@@ -160,8 +160,8 @@
 }
 
 .btn-primary {
-  background: var(--vscode-button-background, #007acc);
-  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--vscode-primary-background);
+  color: var(--vscode-foreground);
 }
 
 .btn-primary:hover {
@@ -169,8 +169,8 @@
 }
 
 .btn-secondary {
-  background: var(--vscode-button-background, #007acc);
-  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--vscode-primary-background);
+  color: var(--vscode-foreground);
 }
 
 .btn-secondary:disabled {
@@ -232,11 +232,11 @@
 }
 
 .radio-item input[type="radio"] {
-  accent-color: var(--vscode-button-background, #007acc);
+  accent-color: var(--vscode-primary-background);
 }
 
 .radio-label {
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .toggle-switch {
@@ -256,10 +256,10 @@
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background: var(--vscode-input-background, #3c3c3c);
+  background: var(--vscode-background);
   border-radius: 22px;
   transition: 0.2s;
-  border: 1px solid var(--vscode-input-border, #555);
+  border: 1px solid var(--vscode-border-color);
 }
 
 .toggle-slider::before {
@@ -269,14 +269,14 @@
   height: 16px;
   left: 2px;
   bottom: 2px;
-  background: var(--vscode-foreground, #cccccc);
+  background: var(--vscode-foreground);
   border-radius: 50%;
   transition: 0.2s;
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background: var(--vscode-button-background, #007acc);
-  border-color: var(--vscode-button-background, #007acc);
+  background: var(--vscode-primary-background);
+  border-color: var(--vscode-primary-background);
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
@@ -306,18 +306,18 @@
 }
 
 .theme-card.active {
-  border-color: var(--vscode-focusBorder, #007acc);
+  border-color: var(--vscode-accent-color);
 }
 
 .theme-card:hover {
-  border-color: var(--vscode-textLink-foreground, #3794ff);
+  border-color: var(--vscode-accent-color);
 }
 
 .theme-preview {
   width: 72px;
   height: 48px;
   border-radius: var(--vscode-radius-sm, 3px);
-  border: 1px solid var(--vscode-tab-border, #333);
+  border: 1px solid var(--vscode-border-color);
 }
 
 .theme-preview-light {
@@ -330,7 +330,7 @@
 
 .theme-name {
   font-size: 12px;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .btn-danger {
@@ -361,13 +361,13 @@
 
 .opfs-label {
   font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .opfs-value {
   font-size: var(--vscode-font-size, 13px);
   font-weight: 500;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--vscode-foreground);
 }
 
 .opfs-files {
@@ -399,5 +399,5 @@
 
 .opfs-fname {
   font-size: 12px;
-  color: var(--vscode-textSeparator-foreground, #888);
+  color: var(--vscode-border-color);
 }

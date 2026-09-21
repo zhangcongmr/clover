@@ -54,18 +54,18 @@ interface McpServerOption {
     }
     .acp-chat-input-box {
       position: relative;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       border-radius: 12px;
-      background-color: var(--vscode-input-background, #1e1e1e);
+      background-color: var(--vscode-background);
       overflow: visible;
       transition: border-color var(--vscode-motion-duration) var(--vscode-motion-easing);
     }
     .acp-chat-input-box:focus-within {
-      border-color: var(--vscode-focusBorder, #007acc);
+      border-color: var(--vscode-border-color);
     }
     .acp-chat-input-box.drag-over {
-      border-color: var(--vscode-focusBorder, #007acc);
-      box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007acc) inset;
+      border-color: var(--vscode-border-color);
+      box-shadow: 0 0 0 1px var(--vscode-accent-color) inset;
     }
     .acp-chat-attachments {
       display: flex;
@@ -81,8 +81,8 @@ interface McpServerOption {
       padding: 6px 8px;
       border: 1px solid var(--vscode-editorWarning-border, #cca700);
       border-radius: 8px;
-      background-color: var(--vscode-inputValidation-warningBackground, rgba(204, 167, 0, 0.15));
-      color: var(--vscode-editorWarning-foreground, #cca700);
+      background-color: var(--vscode-inputValidation-warningBackground);
+      color: var(--vscode-editorWarning-foreground);
       font-size: 12px;
       line-height: 1.4;
     }
@@ -95,9 +95,9 @@ interface McpServerOption {
       gap: 6px;
       max-width: 220px;
       padding: 3px 6px 3px 4px;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       border-radius: 8px;
-      background-color: var(--vscode-editor-background, #1e1e1e);
+      background-color: var(--vscode-background);
       font-size: 11px;
       line-height: 1.3;
     }
@@ -115,7 +115,7 @@ interface McpServerOption {
       width: 24px;
       height: 24px;
       flex-shrink: 0;
-      color: var(--vscode-textLink-foreground, #3794ff);
+      color: var(--vscode-accent-color);
     }
     .attach-icon svg {
       width: 14px;
@@ -147,7 +147,7 @@ interface McpServerOption {
     }
     .attach-remove:hover {
       opacity: 1;
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .acp-chat-link-input {
       display: flex;
@@ -159,20 +159,20 @@ interface McpServerOption {
       flex: 1;
       min-width: 0;
       padding: 4px 8px;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       border-radius: 6px;
-      background-color: var(--vscode-input-background, #1e1e1e);
+      background-color: var(--vscode-background);
       color: var(--vscode-foreground);
       font-size: 12px;
       outline: none;
     }
     .acp-chat-link-input input:focus {
-      border-color: var(--vscode-focusBorder, #007acc);
+      border-color: var(--vscode-accent-color);
     }
     .link-add-btn,
     .link-cancel-btn {
       padding: 4px 10px;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       border-radius: 6px;
       background: transparent;
       color: var(--vscode-foreground);
@@ -181,8 +181,8 @@ interface McpServerOption {
       flex-shrink: 0;
     }
     .link-add-btn {
-      background-color: var(--vscode-button-background, #0e639c);
-      color: var(--vscode-button-foreground, #ffffff);
+      background-color: var(--vscode-primary-background);
+      color: var(--vscode-foreground);
       border-color: transparent;
     }
     .link-add-btn:disabled {
@@ -204,8 +204,8 @@ interface McpServerOption {
       padding: 6px 8px;
       border: 1px solid var(--vscode-inputValidation-errorBorder, #f14c4c);
       border-radius: 8px;
-      background-color: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.15));
-      color: var(--vscode-errorForeground, #f48771);
+      background-color: var(--vscode-inputValidation-errorBackground);
+      color: var(--vscode-errorForeground);
       font-size: 12px;
       line-height: 1.4;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -286,7 +286,7 @@ interface McpServerOption {
     }
     .toolbar-icon-btn:hover {
       opacity: 1;
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .toolbar-tag-btn {
       display: flex;
@@ -294,7 +294,7 @@ interface McpServerOption {
       gap: 4px;
       height: 26px;
       padding: 0 8px;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       border-radius: 6px;
       background: transparent;
       color: var(--vscode-foreground);
@@ -305,7 +305,7 @@ interface McpServerOption {
     }
     .toolbar-tag-btn:hover {
       opacity: 1;
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .send-button {
       display: flex;
@@ -315,8 +315,8 @@ interface McpServerOption {
       height: 28px;
       border: none;
       border-radius: 6px;
-      background-color: var(--vscode-button-background, #0e639c);
-      color: var(--vscode-button-foreground, #ffffff);
+      background-color: var(--vscode-primary-background);
+      color: var(--vscode-background);
       cursor: pointer;
       transition: opacity 0.15s;
     }
@@ -348,7 +348,7 @@ interface McpServerOption {
       left: 0;
       margin-bottom: 4px;
       min-width: 200px;
-      background-color: var(--vscode-dropdown-background, #ffffff);
+      background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -362,27 +362,27 @@ interface McpServerOption {
       padding: 10px 14px;
       border: none;
       background: transparent;
-      color: var(--vscode-foreground, #333333);
+      color: var(--vscode-foreground);
       cursor: pointer;
       text-align: left;
       transition: background-color 0.15s;
     }
     .agent-option:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .agent-option.active {
-      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      background-color: var(--vscode-hover-background);
     }
     .agent-name {
       font-size: 13px;
       font-weight: 500;
-      color: var(--vscode-foreground, #333333);
+      color: var(--vscode-foreground);
     }
     .agent-desc {
       font-size: 11px;
       opacity: 0.6;
       margin-top: 2px;
-      color: var(--vscode-descriptionForeground, #666666);
+      color: var(--vscode-descriptionForeground);
     }
     .mode-selector {
       position: relative;
@@ -393,7 +393,7 @@ interface McpServerOption {
       left: 0;
       margin-bottom: 4px;
       min-width: 200px;
-      background-color: var(--vscode-dropdown-background, #ffffff);
+      background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -408,16 +408,16 @@ interface McpServerOption {
       padding: 8px 12px;
       border: none;
       background: transparent;
-      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      color: var(--vscode-dropdown-foreground);
       cursor: pointer;
       text-align: left;
       transition: background-color 0.15s;
     }
     .mode-option:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .mode-option.active {
-      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      background-color: var(--vscode-hover-background);
     }
     .mode-info {
       display: flex;
@@ -431,7 +431,7 @@ interface McpServerOption {
       font-size: 11px;
       opacity: 0.6;
       margin-top: 1px;
-      color: var(--vscode-descriptionForeground, #666666);
+      color: var(--vscode-descriptionForeground);
     }
     .model-selector {
       position: relative;
@@ -443,7 +443,7 @@ interface McpServerOption {
       margin-bottom: 4px;
       max-height: 400px;
       min-width: 200px;
-      background-color: var(--vscode-dropdown-background, #ffffff);
+      background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -457,16 +457,16 @@ interface McpServerOption {
       padding: 8px 12px;
       border: none;
       background: transparent;
-      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      color: var(--vscode-dropdown-foreground);
       cursor: pointer;
       text-align: left;
       transition: background-color 0.15s;
     }
     .model-option:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .model-option.active {
-      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      background-color: var(--vscode-hover-background);
     }
     .model-info {
       display: flex;
@@ -480,7 +480,7 @@ interface McpServerOption {
       font-size: 11px;
       opacity: 0.6;
       margin-top: 1px;
-      color: var(--vscode-descriptionForeground, #666666);
+      color: var(--vscode-descriptionForeground);
     }
     .mcp-selector {
       position: relative;
@@ -493,7 +493,7 @@ interface McpServerOption {
       min-width: 260px;
       max-height: 300px;
       overflow-y: auto;
-      background-color: var(--vscode-dropdown-background, #ffffff);
+      background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -507,22 +507,22 @@ interface McpServerOption {
       padding: 8px 12px;
       border: none;
       background: transparent;
-      color: var(--vscode-dropdown-foreground, var(--vscode-foreground, #333333));
+      color: var(--vscode-dropdown-foreground);
       cursor: pointer;
       text-align: left;
       transition: background-color 0.15s;
     }
     .mcp-option:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .mcp-option.selected {
-      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      background-color: var(--vscode-hover-background);
     }
     .mcp-checkbox {
       width: 14px;
       height: 14px;
       flex-shrink: 0;
-      accent-color: var(--vscode-button-background, #0e639c);
+      accent-color: var(--vscode-primary-background);
     }
     .mcp-info {
       display: flex;
@@ -537,7 +537,7 @@ interface McpServerOption {
       font-size: 11px;
       opacity: 0.6;
       margin-top: 1px;
-      color: var(--vscode-descriptionForeground, #666666);
+      color: var(--vscode-descriptionForeground);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -546,8 +546,8 @@ interface McpServerOption {
       font-size: 10px;
       padding: 1px 4px;
       border-radius: 3px;
-      background-color: var(--vscode-badge-background, #4d4d4d);
-      color: var(--vscode-badge-foreground, #ffffff);
+      background-color: var(--vscode-badge-background);
+      color: var(--vscode-badge-foreground);
       margin-left: auto;
       flex-shrink: 0;
     }
@@ -561,7 +561,7 @@ interface McpServerOption {
     .mcp-divider {
       height: 1px;
       margin: 4px 0;
-      background-color: var(--vscode-dropdown-border, #e0e0e0);
+      background-color: var(--vscode-dropdown-border);
     }
     .mcp-action {
       display: flex;
@@ -571,14 +571,14 @@ interface McpServerOption {
       padding: 8px 14px;
       border: none;
       background: transparent;
-      color: var(--vscode-foreground, #333333);
+      color: var(--vscode-foreground);
       cursor: pointer;
       text-align: left;
       font-size: 13px;
       transition: background-color 0.15s;
     }
     .mcp-action:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .project-selector {
       position: relative;
@@ -591,7 +591,7 @@ interface McpServerOption {
       min-width: 250px;
       max-height: 300px;
       overflow-y: auto;
-      background-color: var(--vscode-dropdown-background, #ffffff);
+      background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -604,27 +604,27 @@ interface McpServerOption {
       padding: 10px 14px;
       border: none;
       background: transparent;
-      color: var(--vscode-foreground, #333333);
+      color: var(--vscode-foreground);
       cursor: pointer;
       text-align: left;
       transition: background-color 0.15s;
     }
     .project-option:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .project-option.active {
-      background-color: var(--vscode-list-activeSelectionBackground, #e8f4fc);
+      background-color: var(--vscode-primary-background);
     }
     .project-option .project-name {
       font-size: 13px;
       font-weight: 500;
-      color: var(--vscode-foreground, #333333);
+      color: var(--vscode-foreground);
     }
     .project-option .project-path {
       font-size: 11px;
       opacity: 0.6;
       margin-top: 2px;
-      color: var(--vscode-descriptionForeground, #666666);
+      color: var(--vscode-descriptionForeground);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -632,12 +632,12 @@ interface McpServerOption {
     .project-check {
       margin-left: auto;
       flex-shrink: 0;
-      color: var(--vscode-terminal-ansiGreen, #4ec9b0);
+      color: var(--vscode-terminal-ansiGreen);
     }
     .project-divider {
       height: 1px;
       margin: 4px 0;
-      background-color: var(--vscode-dropdown-border, #e0e0e0);
+      background-color: var(--vscode-dropdown-border);
     }
     .project-action {
       display: flex;
@@ -647,14 +647,14 @@ interface McpServerOption {
       padding: 8px 14px;
       border: none;
       background: transparent;
-      color: var(--vscode-foreground, #333333);
+      color: var(--vscode-foreground);
       cursor: pointer;
       text-align: left;
       font-size: 13px;
       transition: background-color 0.15s;
     }
     .project-action:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .slash-command-menu {
       position: absolute;
@@ -664,7 +664,7 @@ interface McpServerOption {
       margin-bottom: 4px;
       max-height: 350px;
       overflow-y: auto;
-      background-color: var(--vscode-dropdown-background, #ffffff);
+      background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -683,10 +683,10 @@ interface McpServerOption {
       transition: background-color 0.1s;
     }
     .slash-command-item:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
     .slash-command-item.active {
-      background-color: var(--vscode-list-activeSelectionBackground, rgba(255, 255, 255, 0.12));
+      background-color: var(--vscode-primary-background);
     }
     .slash-command-item.active .slash-command-name {
       color: var(--n-10);
@@ -698,7 +698,7 @@ interface McpServerOption {
     .slash-command-name {
       font-size: 13px;
       font-weight: 500;
-      color: var(--vscode-textLink-foreground);
+      color: var(--vscode-accent-color);
     }
     .slash-command-desc {
       font-size: 11px;

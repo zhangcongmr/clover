@@ -2,7 +2,7 @@
   position: fixed;
   z-index: 1001;
   display: none;
-  background: var(--vscode-editorWidget-background);
+  background: var(--vscode-background);
   border: none;
   box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
   border-radius: var(--borderless-item-radius, 8px);

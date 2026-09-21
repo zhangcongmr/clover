@@ -27,14 +27,14 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       overflow: auto;
       position: relative;
       z-index: 10;
-      background-color: var(--vscode-editor-background);
+      background-color: var(--vscode-background);
       margin: 5px 5px 5px 0;
     }
     :host(.dock-left) {
       margin: 5px 0 5px 5px;
     }
     .card-base {
-      background-color: var(--vscode-editor-background);
+      background-color: var(--vscode-background);
       border-radius: 0;
       display: flex;
       flex-direction: column;
@@ -74,13 +74,13 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       align-items: center;
       gap: 8px;
       font-weight: 600;
-      color: var(--vscode-foreground, #333);
+      color: var(--vscode-foreground);
     }
 
     .acp-icon {
       width: 16px;
       height: 16px;
-      color: var(--vscode-textLink-foreground, #0066cc);
+      color: var(--vscode-accent-color);
     }
 
     .acp-actions {
@@ -99,7 +99,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       right: 0;
       z-index: 1000;
       min-width: 160px;
-      background: var(--vscode-editorWidget-background, #ffffff);
+      background: var(--vscode-background);
       border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
       border-radius: 6px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -109,7 +109,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     .acp-dock-menu-title {
       font-size: 12px;
       font-weight: 600;
-      color: var(--vscode-foreground, #333);
+      color: var(--vscode-foreground);
       padding: 4px 8px;
       margin-bottom: 4px;
     }
@@ -126,7 +126,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       width: 100%;
       height: 28px;
       justify-content: center;
-      color: var(--vscode-errorForeground, #d32f2f);
+      color: var(--vscode-errorForeground);
     }
 
     .acp-dock-item {
@@ -140,17 +140,17 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       border-radius: 4px;
       background: transparent;
       cursor: pointer;
-      color: var(--vscode-foreground, #666);
+      color: var(--vscode-foreground);
       transition: background-color 0.15s, border-color 0.15s;
     }
 
     .acp-dock-item:hover {
-      background: var(--ui-hover-bg);
+      background: var(--vscode-hover-background);
     }
 
     .acp-dock-item.active {
-      border-color: var(--vscode-focusBorder, #0066cc);
-      background: var(--vscode-list-activeSelectionBackground, #e0e0e0);
+      border-color: var(--vscode-accent-color);
+      background: var(--vscode-primary-background);
     }
 
     .acp-dock-item svg {
@@ -175,7 +175,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .acp-panel-close:hover {
       opacity: 1;
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
 
     .acp-panel-close svg {
@@ -194,11 +194,11 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       background: transparent;
       border-radius: 4px;
       cursor: pointer;
-      color: var(--vscode-foreground, #333);
+      color: var(--vscode-foreground);
     }
 
     .acp-icon-button:hover {
-      background: var(--ui-hover-bg);
+      background: var(--vscode-hover-background);
     }
 
     .acp-icon-button svg {
@@ -225,12 +225,12 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .editor-toggle-btn:hover {
       opacity: 1;
-      background: var(--ui-hover-bg);
+      background: var(--vscode-hover-background);
     }
 
     .editor-toggle-btn.active {
       opacity: 1;
-      color: var(--vscode-textLink-foreground, #3794ff);
+      color: var(--vscode-accent-color);
       background: var(--vscode-toolbar-activeBackground, rgba(128, 128, 128, 0.3));
     }
 
@@ -259,7 +259,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .sidebar-toggle-btn:hover {
       opacity: 1;
-      background: var(--ui-hover-bg);
+      background: var(--vscode-hover-background);
     }
 
     .sidebar-toggle-btn svg {
@@ -329,7 +329,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     .welcome-tab {
       padding: 6px 16px;
       border-radius: 20px;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       background: transparent;
       color: var(--vscode-foreground);
       font-size: 13px;
@@ -338,12 +338,12 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .welcome-tab:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
 
     .welcome-tab.active {
-      background-color: var(--vscode-button-background, #0e639c);
-      color: var(--vscode-button-foreground, #ffffff);
+      background-color: rgba(0, 120, 212, 0.12);
+      color: var(--vscode-foreground);
       border-color: transparent;
     }
 
@@ -360,7 +360,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
       gap: 6px;
       padding: 6px 14px;
       border-radius: 8px;
-      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      border: 1px solid var(--vscode-border-color);
       background: transparent;
       color: var(--vscode-foreground);
       font-size: 12px;
@@ -369,7 +369,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .quick-action-tag:hover {
-      background-color: var(--ui-hover-bg);
+      background-color: var(--vscode-hover-background);
     }
 
     .quick-action-tag svg {
