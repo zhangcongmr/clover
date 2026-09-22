@@ -1,14 +1,13 @@
 import type express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { A2AClient } from '@a2a-js/sdk/client';
-import type { MessageSendParams, Part, SendMessageSuccessResponse, Task } from '@a2a-js/sdk';
+import { Client, ClientFactory } from '@a2a-js/sdk/client';
+import { Role } from '@a2a-js/sdk';
+import type { Message, Part, SendMessageRequest, Task } from '@a2a-js/sdk';
 
 export interface A2AOptions {
   enableStreaming?: boolean;
   agentCardUrl?: string;
 }
-
-let client: A2AClient | null = null;
 
 export function setupA2ARoute(app: express.Application, options: A2AOptions = {}): void {
   const enableStreaming = options.enableStreaming !== false;
@@ -22,7 +21,7 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
     });
 
     req.on('end', async () => {
-      let sendParams: MessageSendParams;
+      let sendParams: SendMessageRequest;
 
       if (isJson(originalBody)) {
         const requestData = JSON.parse(originalBody);
@@ -30,60 +29,54 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
 
         if (requestData.event) {
           console.log('[a2a-middleware] Received JSON UI event:', requestData.event);
-          sendParams = {
-            message: {
-              messageId: uuidv4(),
-              contextId,
-              role: 'user',
-              parts: [
-                {
-                  kind: 'data',
-                  data: requestData.event,
-                  metadata: { mimeType: 'application/a2ui+json' },
-                } as Part,
-              ],
-              kind: 'message',
-            },
-          };
+          sendParams = createSendMessageRequest(
+            [
+              {
+                content: { $case: 'data', value: requestData.event },
+                metadata: { mimeType: 'application/a2ui+json' },
+                filename: '',
+                mediaType: 'application/a2ui+json',
+              },
+            ],
+            contextId,
+          );
         } else if (requestData.query) {
           console.log('[a2a-middleware] Received text query:', requestData.query);
-          sendParams = {
-            message: {
-              messageId: uuidv4(),
-              contextId,
-              role: 'user',
-              parts: [{ kind: 'text', text: requestData.query }],
-              kind: 'message',
-            },
-          };
+          sendParams = createSendMessageRequest(
+            [
+              {
+                content: { $case: 'text', value: requestData.query },
+                metadata: undefined,
+                filename: '',
+                mediaType: 'text/plain',
+              },
+            ],
+            contextId,
+          );
         } else {
           console.log('[a2a-middleware] Received legacy JSON event:', originalBody);
-          sendParams = {
-            message: {
-              messageId: uuidv4(),
-              contextId,
-              role: 'user',
-              parts: [
-                {
-                  kind: 'data',
-                  data: requestData,
-                  metadata: { mimeType: 'application/a2ui+json' },
-                } as Part,
-              ],
-              kind: 'message',
-            },
-          };
+          sendParams = createSendMessageRequest(
+            [
+              {
+                content: { $case: 'data', value: requestData },
+                metadata: { mimeType: 'application/a2ui+json' },
+                filename: '',
+                mediaType: 'application/a2ui+json',
+              },
+            ],
+            contextId,
+          );
         }
       } else {
         console.log('[a2a-middleware] Received plain text query:', originalBody);
-        sendParams = {
-          message: {
-            messageId: uuidv4(),
-            role: 'user',
-            parts: [{ kind: 'text', text: originalBody }],
-            kind: 'message',
+        sendParams = createSendMessageRequest([
+          {
+            content: { $case: 'text', value: originalBody },
+            metadata: undefined,
+            filename: '',
+            mediaType: 'text/plain',
           },
-        };
+        ]);
       }
 
       try {
@@ -106,9 +99,28 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
   });
 }
 
+function createSendMessageRequest(parts: Part[], contextId?: string): SendMessageRequest {
+  const message: Message = {
+    messageId: uuidv4(),
+    contextId: contextId ?? '',
+    taskId: '',
+    role: Role.ROLE_USER,
+    parts,
+    metadata: undefined,
+    extensions: [],
+    referenceTaskIds: [],
+  };
+  return {
+    tenant: '',
+    message,
+    configuration: undefined,
+    metadata: undefined,
+  };
+}
+
 async function handleStreamingResponse(
-  client: A2AClient,
-  sendParams: MessageSendParams,
+  client: Client,
+  sendParams: SendMessageRequest,
   res: express.Response,
 ) {
   process.stdout.write('[server] Streaming mode enabled\n');
@@ -121,12 +133,32 @@ async function handleStreamingResponse(
   res.status(200);
 
   for await (const event of stream) {
-    console.log(`[server] Received event from agent: ${event.kind}`);
+    const payload = event.payload;
+    console.log(`[server] Received event from agent: ${payload?.$case}`);
     let parts: Part[] = [];
-    if (event.kind === 'task' || event.kind === 'status-update') {
-      parts = event.status.message?.parts || [];
-    } else if (event.kind === 'artifact-update') {
-      parts = event.artifact.parts || [];
+    let contextId: string | undefined;
+
+    switch (payload?.$case) {
+      case 'task': {
+        parts = payload.value.status?.message?.parts || [];
+        contextId = payload.value.contextId;
+        break;
+      }
+      case 'message': {
+        parts = payload.value.parts || [];
+        contextId = payload.value.contextId;
+        break;
+      }
+      case 'statusUpdate': {
+        parts = payload.value.status?.message?.parts || [];
+        contextId = payload.value.contextId;
+        break;
+      }
+      case 'artifactUpdate': {
+        parts = payload.value.artifact?.parts || [];
+        contextId = payload.value.contextId;
+        break;
+      }
     }
 
     if (parts.length > 0) {
@@ -134,7 +166,7 @@ async function handleStreamingResponse(
       console.log(`[server] Streaming parts: ${JSON.stringify(parts)}`);
       const responseData = {
         parts,
-        contextId: (event as any).contextId || (event as any).status?.message?.contextId,
+        contextId,
       };
       res.write(`data: ${JSON.stringify(responseData)}\n\n`);
     }
@@ -144,39 +176,33 @@ async function handleStreamingResponse(
 }
 
 async function handleNonStreamingResponse(
-  client: A2AClient,
-  sendParams: MessageSendParams,
+  client: Client,
+  sendParams: SendMessageRequest,
   res: express.Response,
 ) {
   process.stdout.write('[server] Streaming mode disabled\n');
-  const response = await client.sendMessage(sendParams);
+  const result = await client.sendMessage(sendParams);
   res.set('Cache-Control', 'no-store');
 
-  if ('error' in response) {
-    console.error('Error:', response.error.message);
-    res.status(500).json({ error: response.error.message });
+  if ('status' in result) {
+    const task = result as Task;
+    res.json({
+      parts: task.status?.message?.parts || [],
+      contextId: task.contextId,
+    });
     return;
   }
 
-  const result = (response as SendMessageSuccessResponse).result as Task;
+  const message = result as Message;
   res.json({
-    parts: result.kind === 'task' ? result.status.message?.parts || [] : [],
-    contextId: result.contextId,
+    parts: message.parts || [],
+    contextId: message.contextId,
   });
-}
-
-async function fetchWithCustomHeader(url: string | URL | Request, init?: RequestInit) {
-  const headers = new Headers(init?.headers);
-  headers.set('X-A2A-Extensions', 'https://a2ui.org/a2a-extension/a2ui/v0.9');
-  const newInit = { ...init, headers };
-  return fetch(url, newInit);
 }
 
 async function createOrGetClient(agentCardUrl: string) {
-  client ??= await A2AClient.fromCardUrl(agentCardUrl, {
-    fetchImpl: fetchWithCustomHeader,
-  });
-  return client;
+  const factory = new ClientFactory();
+  return factory.createFromUrl(agentCardUrl, '');
 }
 
 function isJson(str: string): boolean {
