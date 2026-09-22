@@ -26,7 +26,8 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   private themeBridge = inject(A2uiThemeBridgeService);
   private themeService = inject(ThemeService);
 
-  private processed = false;
+  private processedBlockCount = 0;
+  private knownSurfaceIds = new Set<string>();
   private pendingCssVars: Record<string, string> = {};
   private themeDataFromModel: Record<string, any> | null = null;
   private actionSubscription: any;
@@ -37,7 +38,7 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const content = this.content();
-      if (content && !this.processed) {
+      if (content) {
         this.tryProcessContent(content);
       }
     });
@@ -68,21 +69,21 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
       completeBlocks.push(match[1]);
     }
 
-    if (completeBlocks.length > 0) {
-      this.processed = true;
+    const newBlocks = completeBlocks.slice(this.processedBlockCount);
 
+    if (newBlocks.length > 0) {
       const allMessages: any[] = [];
-      const surfaceIds = new Set<string>();
+      const newSurfaceIds = new Set<string>();
       let mergedCssVars: Record<string, string> = {};
       let allGoogleFonts: string[] = [];
 
-      for (const block of completeBlocks) {
+      for (const block of newBlocks) {
         try {
           const jsonArray = JSON.parse(block);
           for (const item of jsonArray) {
             allMessages.push(item);
             if (item.createSurface?.surfaceId) {
-              surfaceIds.add(item.createSurface.surfaceId);
+              newSurfaceIds.add(item.createSurface.surfaceId);
 
               // Extract theme CSS vars from createSurface
               if (item.createSurface?.theme) {
@@ -104,10 +105,11 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
 
       // Delete existing surfaces with same IDs to avoid conflicts
       const surfaceGroup = this.renderer.surfaceGroup;
-      for (const surfaceId of surfaceIds) {
+      for (const surfaceId of newSurfaceIds) {
         if (surfaceGroup.surfacesMap.has(surfaceId)) {
           surfaceGroup.deleteSurface(surfaceId);
         }
+        this.knownSurfaceIds.add(surfaceId);
       }
 
       if (allMessages.length > 0) {
@@ -130,13 +132,39 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
         }
       }
 
-      this.surfaces.set(Array.from(surfaceIds));
-      this.remainingContent.set(content.replace(regex, '').trim());
-    } else {
-      // No a2ui-json blocks found, render entire content as markdown
-      this.processed = true;
-      this.remainingContent.set(content);
+      this.processedBlockCount = completeBlocks.length;
+      this.surfaces.set([...this.knownSurfaceIds]);
     }
+
+    this.remainingContent.set(this.computeRemainingContent(content));
+  }
+
+  /**
+   * Computes the non-a2ui markdown text to display, handling streamed fragments:
+   * - strips fully complete <a2ui-json>…</a2ui-json> blocks
+   * - cuts everything from a complete opening tag name onward (covers body +
+   *   fragmented closing tags that follow the opening tag)
+   * - cuts trailing partial opening/closing tag prefixes (e.g. "<a", "</a2ui-jso")
+   *   so half-streamed tags are never rendered as markdown
+   */
+  private computeRemainingContent(content: string): string {
+    let s = content.replace(/<a2ui-json>[\s\S]*?<\/a2ui-json>/g, '');
+
+    const openIdx = s.search(/<a2ui-json/);
+    if (openIdx !== -1) {
+      return s.slice(0, openIdx).trim();
+    }
+
+    const TAGS = ['<a2ui-json', '</a2ui-json'];
+    for (const tag of TAGS) {
+      const maxLen = Math.min(tag.length, s.length);
+      for (let len = maxLen; len >= 1; len--) {
+        if (tag.startsWith(s.slice(-len))) {
+          return s.slice(0, s.length - len).trim();
+        }
+      }
+    }
+    return s.trim();
   }
 
   ngOnDestroy(): void {
