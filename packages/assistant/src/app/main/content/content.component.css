@@ -3,7 +3,7 @@
     flex-direction: column;
     position: relative;
     /* background-color: var(--vscode-background); */
-    background-color: var(--vscode-accent-color);
+    background-color: var(--vscode-background);
     color: var(--vscode-foreground);
 }
 

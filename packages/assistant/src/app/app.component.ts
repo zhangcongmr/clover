@@ -800,6 +800,9 @@ For each fileIcons entry:
       primary: [// 组件主色
         '--vscode-primary-background'
       ],
+      secondary: [// 组件次要色
+        '--vscode-secondary-background'
+      ],
       text: [// 组件文字色
         '--vscode-foreground'
       ],
@@ -809,6 +812,8 @@ For each fileIcons entry:
       border: [// 组件边框色
         '--vscode-border-color'
       ],
+      selectionBackground: ['--vscode-editor-selectionBackground'],
+      selectionForeground: ['--vscode-editor-selectionForeground'],
     };
 
     const cssVars: Record<string, string> = {};
@@ -826,10 +831,13 @@ For each fileIcons entry:
 
       if (['uibackground', 'background'].includes(normalizedKey)) canonical = 'background';
       else if (['uiprimarycolor', 'primarycolor', 'primary'].includes(normalizedKey)) canonical = 'primary';
+      else if (['uisecondarycolor', 'secondarycolor', 'secondary'].includes(normalizedKey)) canonical = 'secondary';
       else if (['uitextcolor', 'textcolor', 'text'].includes(normalizedKey)) canonical = 'text';
       else if (['uisurface', 'surface'].includes(normalizedKey)) canonical = 'surface';
       else if (['uiaccent', 'accent'].includes(normalizedKey)) canonical = 'accent';
       else if (['uiborder', 'border'].includes(normalizedKey)) canonical = 'border';
+      else if (['uiselectionbackground', 'selectionbackground', 'selection'].includes(normalizedKey)) canonical = 'selectionBackground';
+      else if (['uiselectionforeground', 'selectionforeground'].includes(normalizedKey)) canonical = 'selectionForeground';
 
       if (canonical && keyMap[canonical]) {
         for (const cssVar of keyMap[canonical]) {

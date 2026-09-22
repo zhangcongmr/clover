@@ -96,11 +96,11 @@ export class EditorComponent implements OnInit, AfterViewInit {
             border: "none"
           },  
           ".cm-selectionBackground": {
-            backgroundColor: "var(--vscode-accent-color) !important",
+            backgroundColor: "var(--vscode-editor-selectionBackground, #add6ff) !important",
           },
           ".cm-activeLineGutter": { // 当前行在 gutter 上的高亮样式
-            backgroundColor: "var(--vscode-accent-color)", // 当前行号所在 gutter 的背景色
-            color: "var(--vscode-accent-color)", // 当前行号的颜色
+            backgroundColor: "var(--vscode-surface-background)", // 当前行号所在 gutter 的背景色
+            color: "var(--vscode-foreground)", // 当前行号的颜色
           },
           '.cm-cursor': {
             caretColor: "#ff0000",
@@ -244,7 +244,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
       }
       
       pre {
-        background-color: var(--vscode-accent-color);
+        background-color: var(--vscode-textCodeBlock-background);
         border: 1px solid var(--vscode-border-color);
         padding: 12px 15px;
         border-radius: 4px;
@@ -255,7 +255,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
       
       code {
         font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-        background-color: var(--vscode-accent-color);
+        background-color: var(--vscode-textCodeBlock-background);
         color: var(--vscode-foreground);
         padding: 2px 4px;
         border-radius: 3px;
@@ -267,16 +267,16 @@ export class EditorComponent implements OnInit, AfterViewInit {
         padding-left: 16px;
         margin-left: 0;
         color: var(--vscode-foreground);
-        background-color: var(--vscode-accent-color);
+        background-color: var(--vscode-surface-background);
       }
       
       a {
-        color: var(--vscode-accent-color);
+        color: var(--vscode-primary-background);
         text-decoration: underline;
       }
       
       a:hover {
-        color: var(--vscode-accent-color);
+        color: var(--vscode-primary-background);
       }
       
       table {
@@ -293,7 +293,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
       }
       
       th {
-        background-color: var(--vscode-accent-color);
+        background-color: var(--vscode-surface-background);
         font-weight: bold;
       }
       
