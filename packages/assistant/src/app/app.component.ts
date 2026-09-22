@@ -17,9 +17,6 @@ import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import { AcpService } from './shared/acp/acp.service';
-import * as Types from '@a2ui/web_core/types/types';
-import { A2uiRendererService, SurfaceComponent } from '@a2ui/angular/v0_9';
-import { Client } from './client';
 import { NotificationService } from './shared/notification/notification.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
@@ -33,7 +30,7 @@ import { LayoutService } from './main/layout.service';
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
-       SurfaceComponent, AgentComponent], // Add TerminalComponent to imports
+        AgentComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
@@ -99,11 +96,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
    * This property indicates the type of detail panel to show in the indicator panel. It can be one of the following values:
    */
   indicatorDetailType: number | 'none' = 'none'; // 1 - notification, 2 - saving, 3 - progress, 'none' - close the detail panel
-
-  testSurfaceComponent = false
-  protected client = inject(Client);
-  protected renderer = inject(A2uiRendererService);
-
 
   blurSwitch = true;
   isOpen = false;
@@ -295,12 +287,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       this.refreshAgentPanelWidth();
     }
 
-    if (this.fileSubmenuRef) {
-      this.fileSubmenuRef.parentItem = this.fileSubmenuRef.nativeElement.parentElement ?? undefined;
-    }
-    if (this.viewSubmenuRef) {
-      this.viewSubmenuRef.parentItem = this.viewSubmenuRef.nativeElement.parentElement ?? undefined;
-    }
     const rt = this.addTexts()
     var sequence = new Sequence({name: "block1"});
 
@@ -1504,28 +1490,5 @@ For each fileIcons entry:
    */
   toggleIndicatorDetailPanel(indicatorDetailType: number | 'none') {
     this.indicatorDetailType = indicatorDetailType;
-  }
-
-  testSurface() {
-    this.testSurfaceComponent = !this.testSurfaceComponent;
-  }
-
-  protected async handleSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    if (!(event.target instanceof HTMLFormElement)) {
-      return;
-    }
-
-    const data = new FormData(event.target);
-    const body = data.get('body') ?? null;
-
-    if (body) {
-      // this.startLoadingAnimation();
-      const message = body as Types.A2UIClientEventMessage | string;
-      // this.hasData.set(true);
-      await this.client.makeRequest(message);
-      // this.stopLoadingAnimation();
-    }
   }
 }

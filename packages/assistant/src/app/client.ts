@@ -31,7 +31,7 @@ export class Client {
       const messages = await this.makeRequest({userAction});
       this.renderer.processMessages(messages as unknown as A2uiMessage[]);
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     }
   }
 
