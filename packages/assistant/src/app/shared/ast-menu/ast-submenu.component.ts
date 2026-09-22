@@ -21,8 +21,9 @@ export class AstSubmenuComponent implements OnDestroy {
     effect(() => {
       const open = this.isOpen();
       if (open) {
-        this.computePosition();
         this.display = 'block';
+        this.nativeElement.style.display = 'block';
+        this.computePosition();
         this.positionStyle = this.positionStyle.replace(/position:static/g, 'position:fixed');
       } else {
         this.positionStyle = this.positionStyle.replace(/position:fixed/g, 'position:static');
@@ -50,11 +51,12 @@ export class AstSubmenuComponent implements OnDestroy {
   }
 
   private computePosition(): void {
-    if (!this.parentItem) return;
+    const anchor = this.parentItem ?? this.nativeElement.parentElement;
+    if (!anchor) return;
 
-    const rect = this.parentItem.getBoundingClientRect();
+    const rect = anchor.getBoundingClientRect();
     const viewport = { width: window.innerWidth, height: window.innerHeight };
-    const submenuHeight = this.elementRef.nativeElement?.offsetHeight || 200;
+    const submenuHeight = this.nativeElement.offsetHeight || 200;
 
     let left: number;
     if (rect.right + this.submenuWidth <= viewport.width) {
@@ -72,6 +74,10 @@ export class AstSubmenuComponent implements OnDestroy {
     }
 
     this.positionStyle = `position:fixed;left:${left}px;top:${top}px;`;
+    const el = this.nativeElement;
+    el.style.position = 'fixed';
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
   }
 
   get nativeElement(): HTMLElement {
