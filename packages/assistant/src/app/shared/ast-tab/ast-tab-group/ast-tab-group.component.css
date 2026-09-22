@@ -11,7 +11,7 @@
 div[data-layer="tab-header"] {
     position: relative;
     display: flex;
-    background-color: var(--vscode-accent-color);
+    background-color: var(--vscode-background);
 }
 
 ul[data-layer="tablist"] {
@@ -50,7 +50,8 @@ li[data-layer="tab"] {
 }
 
 li[data-layer="tab"].active-tab {
-    background: transparent !important;
+    /* background: transparent !important; */
+    background-color: var(--vscode-secondary-background);
     color: var(--vscode-foreground);
 }
 

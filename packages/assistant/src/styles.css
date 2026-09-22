@@ -57,8 +57,11 @@
   --vscode-foreground: #616161;
   --vscode-surface-background: #f8f8f8;
   --vscode-accent-color: #f8f8f8;
+  --vscode-editor-selectionBackground: #add6ff;
+  --vscode-editor-selectionForeground: #000000;
   --vscode-border-color: #e2e2e2;
   --vscode-primary-background: #007acc;
+  --vscode-secondary-background: #bcddf3;
 
   /* Unified interactive hover background (neutral) */
   --vscode-hover-background: #e8e8e8;
@@ -228,8 +231,11 @@
   --vscode-foreground: #cccccc;
   --vscode-surface-background: #181818;
   --vscode-accent-color: #181818;
+  --vscode-editor-selectionBackground: #264f78;
+  --vscode-editor-selectionForeground: #ffffff;
   --vscode-border-color: #252526;
   --vscode-primary-background: #0078d4;
+  --vscode-secondary-background: #252526;
 
   /* Unified interactive hover background (neutral) */
   --vscode-hover-background: #FFFFFF1A;

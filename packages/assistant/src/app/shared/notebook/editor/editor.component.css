@@ -8,7 +8,7 @@
 .toolbar {
   display: flex;
   padding: 8px;
-  background-color: var(--vscode-accent-color);
+  background-color: var(--vscode-surface-background);
   border-bottom: 1px solid var(--vscode-border-color);
   gap: 8px;
 }
