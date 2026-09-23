@@ -39,7 +39,7 @@
     "@a2ui/angular": "^0.10.1",
     "@a2ui/markdown-it": "^0.0.4",
     "@a2ui/web_core": "^0.10.2",
-    "@agentclientprotocol/sdk": "^1.2.1",
+    "@agentclientprotocol/sdk": "^1.5.0",
     "@angular/animations": "^21.2.4",
     "@angular/cdk": "^20.2.14",
     "@angular/common": "^21.2.4",
