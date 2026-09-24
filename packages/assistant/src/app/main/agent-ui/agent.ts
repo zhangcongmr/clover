@@ -7,7 +7,7 @@ import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { McpManagerComponent } from "../../shared/mcp-manager/mcp-manager.component";
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
-import type { SessionInfo } from "../../shared/acp/acp-websocket.service";
+import type { SessionInfo } from "../../shared/acp/acp.model";
 import { LayoutService } from "../layout.service";
 import { APP_VERSION } from "../../../app-version";
 

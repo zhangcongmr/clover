@@ -17,7 +17,7 @@ import {
   ToolCallStatus,
   ToolKind,
   ConfigOption,
-} from './acp-websocket.service';
+} from './acp.model';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 

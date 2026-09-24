@@ -4,7 +4,7 @@ export type { AcpMessage, AcpPlan, AcpSessionState } from './acp.service';
 export { AVAILABLE_AGENTS } from './acp-agent.types';
 export type { AgentConfig } from './acp-agent.types';
 
-export { AcpWebSocketService } from './acp-websocket.service';
+export { AcpWebSocketService } from './acp.model';
 export { AcpSseService } from './acp-sse.service';
 export type { ConnectionState as SseConnectionState, ServerEvent } from './acp-sse.service';
 export type {
@@ -65,12 +65,11 @@ export type {
   AgentCapabilitiesLike,
   SessionCapabilities,
   SessionDeleteCapabilities,
-} from './acp-websocket.service';
+} from './acp.model';
 
 export { AcpPanelComponent } from './acp-panel.component';
 export { AcpChatComponent } from './acp-chat.component';
 export { AcpPlanComponent } from './acp-plan.component';
-export { AcpSessionManagerComponent } from './acp-session-manager.component';
 export { AcpPermissionDialogComponent } from './acp-permission-dialog.component';
 export { AcpQuestionComponent } from './acp-question.component';
 export type { QuestionItem, QuestionOption } from './acp-question.component';
