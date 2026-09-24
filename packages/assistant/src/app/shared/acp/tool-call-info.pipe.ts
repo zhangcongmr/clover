@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { AcpMessage } from './acp.service';
-import type { EmbeddedResource } from './acp-websocket.service';
+import type { EmbeddedResource } from './acp.model';
 import { renderMarkdownSync } from '../utils/markdown.util';
 
 export interface EditDiffInfo {

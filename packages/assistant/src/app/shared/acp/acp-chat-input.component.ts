@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
-import type { ContentBlock, SessionInfo } from './acp-websocket.service';
+import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 

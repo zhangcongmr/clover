@@ -6,7 +6,7 @@ import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
 import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe } from './tool-call-info.pipe';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
-import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp-websocket.service';
+import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp.model';
 
 const INITIAL_LOAD = 30;
 const LOAD_MORE = 50;
