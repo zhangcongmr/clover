@@ -29,6 +29,7 @@ export class McpManagerComponent {
   showForm = false;
   editingServer: McpServerConfig | null = null;
   formData: McpServerConfig = this.getEmptyForm();
+  nameError: string | null = null;
 
   constructor() {
     this.loadServers();
@@ -55,12 +56,14 @@ export class McpManagerComponent {
   openAddForm(): void {
     this.editingServer = null;
     this.formData = this.getEmptyForm();
+    this.nameError = null;
     this.showForm = true;
   }
 
   openEditForm(server: McpServerConfig): void {
     this.editingServer = server;
     this.formData = { ...server };
+    this.nameError = null;
     this.showForm = true;
   }
 
@@ -68,16 +71,26 @@ export class McpManagerComponent {
     this.showForm = false;
     this.editingServer = null;
     this.formData = this.getEmptyForm();
+    this.nameError = null;
+  }
+
+  onNameChange(): void {
+    this.nameError = null;
   }
 
   saveServer(): void {
-    if (!this.formData.name) {
-      this.error = 'Name is required';
+    const name = this.formData.name?.trim();
+    if (!name) {
+      this.nameError = 'Name is required';
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      this.nameError = 'Name may only contain letters, numbers, hyphens and underscores (no spaces)';
       return;
     }
 
     // 清理输入字段中的不可见字符
-    this.formData.name = this.formData.name.trim();
+    this.formData.name = name;
     this.formData.description = this.formData.description?.trim() || '';
     this.formData.command = this.formData.command?.trim() || '';
 

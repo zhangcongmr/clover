@@ -20,6 +20,7 @@ export class SkillManagerComponent {
   showForm = false;
   editingSkill: SkillInfo | null = null;
   formData = this.getEmptyForm();
+  nameError: string | null = null;
 
   constructor() {
     this.loadSkills();
@@ -44,12 +45,14 @@ export class SkillManagerComponent {
   openAddForm(): void {
     this.editingSkill = null;
     this.formData = this.getEmptyForm();
+    this.nameError = null;
     this.showForm = true;
   }
 
   openEditForm(skill: SkillInfo): void {
     this.editingSkill = skill;
     this.formData = { ...skill };
+    this.nameError = null;
     this.showForm = true;
   }
 
@@ -57,6 +60,11 @@ export class SkillManagerComponent {
     this.showForm = false;
     this.editingSkill = null;
     this.formData = this.getEmptyForm();
+    this.nameError = null;
+  }
+
+  onNameChange(): void {
+    this.nameError = null;
   }
 
   saveSkill(): void {
@@ -64,11 +72,11 @@ export class SkillManagerComponent {
     const content = this.formData.content || '';
 
     if (!name) {
-      this.error = 'Name is required';
+      this.nameError = 'Name is required';
       return;
     }
     if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-      this.error = 'Name may only contain letters, numbers, hyphens and underscores (no spaces)';
+      this.nameError = 'Name may only contain letters, numbers, hyphens and underscores (no spaces)';
       return;
     }
     if (!content.trim()) {
