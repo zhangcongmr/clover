@@ -6,6 +6,7 @@ import type { ProjectInfo } from "../../shared/acp/acp.service";
 import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { McpManagerComponent } from "../../shared/mcp-manager/mcp-manager.component";
+import { SkillManagerComponent } from "../../shared/skill-manager/skill-manager.component";
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { LayoutService } from "../layout.service";
@@ -26,7 +27,7 @@ const PROJECT_COLORS = [
   templateUrl: "./agent.html",
   styleUrls: ["./agent.css"],
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, McpManagerComponent],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, McpManagerComponent, SkillManagerComponent],
 })
 export class AgentComponent {
   readonly version = APP_VERSION;
@@ -54,6 +55,8 @@ export class AgentComponent {
   panelError = signal<string | null>(null);
   /** Whether the MCP Manager dialog is open. */
   showMcpManager = signal<boolean>(false);
+  /** Whether the Skills Manager dialog is open. */
+  showSkillsManager = signal<boolean>(false);
 
   /** Re-emitted upward so app.component can toggle the AST content (editor) panel. */
   editorToggle = output<void>();
@@ -453,6 +456,14 @@ export class AgentComponent {
 
   closeMcpManager(): void {
     this.showMcpManager.set(false);
+  }
+
+  toggleSkillsManager(): void {
+    this.showSkillsManager.update(v => !v);
+  }
+
+  closeSkillsManager(): void {
+    this.showSkillsManager.set(false);
   }
 
   // ============================================================================

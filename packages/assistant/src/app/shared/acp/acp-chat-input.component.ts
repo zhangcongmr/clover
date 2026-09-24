@@ -7,6 +7,7 @@ import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
+import { SkillService } from '../skills/skill.service';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const TEXT_MIME_TYPES = new Set([
@@ -695,10 +696,34 @@ interface McpServerOption {
       color: var(--n-20);
       opacity: 1;
     }
+    .slash-command-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+    }
     .slash-command-name {
       font-size: 13px;
       font-weight: 500;
       color: var(--vscode-accent-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .slash-command-badge {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 400;
+      line-height: 1.4;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background-color: var(--vscode-badge-background);
+      color: var(--vscode-badge-foreground);
+    }
+    .slash-command-item.active .slash-command-badge {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
     }
     .slash-command-desc {
       font-size: 11px;
@@ -716,6 +741,7 @@ interface McpServerOption {
 })
 export class AcpChatInputComponent {
   protected acpService = inject(AcpService);
+  private readonly skillService = inject(SkillService);
 
   @ViewChild('messageInput') private messageInput!: ElementRef;
   @ViewChild('fileInput') private fileInput!: ElementRef<HTMLInputElement>;
@@ -777,9 +803,14 @@ export class AcpChatInputComponent {
     const text = this.inputValue();
     if (!text.startsWith('/')) return [];
     const query = text.slice(1).toLowerCase();
-    return this.acpService.availableCommands().filter(cmd =>
-      cmd.name.toLowerCase().includes(query)
-    );
+    const skillNames = new Set(this.skillService.skills().map(s => s.name.toLowerCase()));
+    const skillCommands = this.skillService.skills()
+      .filter(s => s.name.toLowerCase().includes(query))
+      .map(s => ({ name: s.name, description: s.description || 'Skill', source: 'client' as const }));
+    const agentCommands = this.acpService.availableCommands()
+      .filter(cmd => cmd.name.toLowerCase().includes(query) && !skillNames.has(cmd.name.toLowerCase()))
+      .map(cmd => ({ ...cmd, source: 'command' as const }));
+    return [...skillCommands, ...agentCommands];
   });
 
   readonly showSlashMenu = computed(() => {
@@ -803,6 +834,7 @@ export class AcpChatInputComponent {
 
   constructor() {
     this.loadMcpServers();
+    this.skillService.refresh().catch(() => {});
   }
 
   @HostListener('document:click', ['$event'])
@@ -1167,9 +1199,9 @@ export class AcpChatInputComponent {
   }
 
   async sendMessage(): Promise<void> {
-    const text = this.inputValue().trim();
+    const rawText = this.inputValue().trim();
     const attachments = this.attachments();
-    if ((!text && attachments.length === 0) || this.acpService.isProcessing() || this.acpService.hasActiveQuestions()) {
+    if ((!rawText && attachments.length === 0) || this.acpService.isProcessing() || this.acpService.hasActiveQuestions()) {
       return;
     }
 
@@ -1181,6 +1213,9 @@ export class AcpChatInputComponent {
       textarea.style.height = 'auto';
     }
 
+    // Expand leading local skill (/name ...) into its content for the agent
+    const text = this.expandSkillText(rawText);
+
     // Build content blocks
     const content: ContentBlock[] = [];
     if (text) {
@@ -1190,19 +1225,16 @@ export class AcpChatInputComponent {
       content.push(att.block);
     }
 
-    // Add user message immediately for instant visual feedback
-    const textBlocks = content.filter(
-      (b): b is { type: 'text'; text: string } => b.type === 'text' && !!b.text
-    );
+    // Add user message immediately for instant visual feedback (show raw input, not expanded skill)
     const nonTextBlocks = content.filter(b => b.type !== 'text');
     this.acpService.addUserMessage(
-      textBlocks.map(b => b.text).join('\n'),
+      rawText,
       nonTextBlocks.length > 0 ? nonTextBlocks : undefined
     );
 
     // Set session title early so onSessionCreated can use it for task/session records
-    if (this.acpService.isNewSession() && !this.acpService.sessionState().title && textBlocks.length > 0) {
-      const firstText = textBlocks[0].text!.trim().replace(/\s+/g, ' ');
+    if (this.acpService.isNewSession() && !this.acpService.sessionState().title && rawText) {
+      const firstText = rawText.replace(/\s+/g, ' ');
       this.acpService.sessionState.update(s => ({
         ...s,
         title: firstText.length > 50 ? firstText.slice(0, 50) + '…' : firstText,
@@ -1229,6 +1261,20 @@ export class AcpChatInputComponent {
 
   stopGeneration(): void {
     this.acpService.cancel();
+  }
+
+  /**
+   * If the message starts with a local skill slash (`/name ...`), replace the
+   * leading token with the skill's content. ACP native commands are left as-is.
+   */
+  private expandSkillText(text: string): string {
+    if (!text.startsWith('/')) return text;
+    const match = text.match(/^\/([^\s]+)(?:\s+([\s\S]*))?$/);
+    if (!match) return text;
+    const skill = this.skillService.getByName(match[1]);
+    if (!skill) return text;
+    const rest = (match[2] || '').trim();
+    return rest ? `${skill.content}\n\n${rest}` : skill.content;
   }
 
   onInput(): void {

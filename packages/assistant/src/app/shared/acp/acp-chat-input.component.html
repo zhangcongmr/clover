@@ -33,7 +33,12 @@
 		@for (cmd of filteredCommands(); track cmd.name; let i = $index) {
 		  <button class="slash-command-item" [class.active]="i === selectedIndex()"
 			(mousedown)="selectCommand(cmd)" (mouseenter)="selectedIndex.set(i)">
-			<span class="slash-command-name">/{{ cmd.name }}</span>
+			<div class="slash-command-row">
+			  <span class="slash-command-name">/{{ cmd.name }}</span>
+			  @if (cmd.source === 'client') {
+				<span class="slash-command-badge">client</span>
+			  }
+			</div>
 			<span class="slash-command-desc">{{ cmd.description }}</span>
 		  </button>
 		} @empty {
