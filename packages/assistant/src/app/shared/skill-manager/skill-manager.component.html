@@ -49,14 +49,20 @@
               id="skill-name"
               type="text"
               [(ngModel)]="formData.name"
+              (ngModelChange)="onNameChange()"
               [disabled]="!!editingSkill"
+              [class.invalid]="!!nameError"
               pattern="[a-zA-Z0-9_-]+"
               title="Letters, numbers, hyphens, underscores only"
               autocomplete="off"
               spellcheck="false"
               placeholder="my-skill"
             />
-            <p class="field-hint">Letters, numbers, - and _ only.</p>
+            @if (nameError) {
+              <p class="field-error" role="alert">{{ nameError }}</p>
+            } @else {
+              <p class="field-hint">Letters, numbers, - and _ only.</p>
+            }
           </div>
 
           <div class="field">

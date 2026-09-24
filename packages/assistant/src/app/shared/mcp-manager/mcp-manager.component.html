@@ -63,11 +63,20 @@
               id="mcp-name"
               type="text"
               [(ngModel)]="formData.name"
+              (ngModelChange)="onNameChange()"
               [disabled]="!!editingServer"
+              [class.invalid]="!!nameError"
+              pattern="[a-zA-Z0-9_-]+"
+              title="Letters, numbers, hyphens, underscores only"
               autocomplete="off"
               spellcheck="false"
               placeholder="my-mcp-server"
             />
+            @if (nameError) {
+              <p class="field-error" role="alert">{{ nameError }}</p>
+            } @else {
+              <p class="field-hint">Letters, numbers, - and _ only.</p>
+            }
           </div>
 
           <div class="field">

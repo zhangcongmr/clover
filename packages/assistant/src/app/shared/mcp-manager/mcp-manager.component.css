@@ -291,6 +291,16 @@
   color: var(--vscode-descriptionForeground);
 }
 
+.field-error {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--vscode-errorForeground, #f48771);
+}
+
+.field input.invalid {
+  border-color: var(--vscode-inputValidation-errorBorder, #f44336);
+}
+
 .form-footer {
   display: flex;
   justify-content: flex-end;
