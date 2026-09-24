@@ -34,6 +34,11 @@ export type { A2AOptions } from './api/a2a.js';
 // Middleware
 export { createCORSMiddleware, createRequireAuth } from './api/middleware.js';
 
+// Skills
+export { SkillRegistry } from './skills/index.js';
+export type { Skill, SkillsStore } from './skills/index.js';
+export { createSkillRoutes } from './api/skill-routes.js';
+
 // WebSocket
 export { setupWebSocket } from './ws/index.js';
 export type { WebSocketServices, WebSocketOptions } from './ws/index.js';

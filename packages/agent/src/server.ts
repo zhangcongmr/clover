@@ -15,10 +15,12 @@ import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
 import { setupAcpRoutes } from './api/acp-routes.js';
 import { createMcpRoutes } from './api/mcp-routes.js';
+import { createSkillRoutes } from './api/skill-routes.js';
 import { RedisClient } from './redis/client.js';
 import { SseManager } from './acp/sse-manager.js';
 import { AcpSessionManager } from './acp/session-manager.js';
 import { McpServerRegistry } from './mcp/index.js';
+import { SkillRegistry } from './skills/index.js';
 
 export interface StaticOptions {
   maxAge?: string | number;
@@ -50,6 +52,7 @@ export interface ServerInstance {
   fileService: FileService;
   ptyManager: PtyManager;
   mcpRegistry: McpServerRegistry;
+  skillRegistry: SkillRegistry;
 }
 
 export interface AgentMiddlewareOptions {
@@ -64,7 +67,7 @@ export interface AgentMiddlewareOptions {
 export function setupAgentMiddleware(
   app: express.Express,
   options: AgentMiddlewareOptions,
-): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry } {
+): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry; skillRegistry: SkillRegistry } {
   const {
     corsPorts,
     corsOrigins = [],
@@ -100,7 +103,11 @@ export function setupAgentMiddleware(
   // MCP routes
   app.use('/api/mcp', createMcpRoutes(mcpRegistry));
 
-  return { tokenManager, fileService, ptyManager, mcpRegistry };
+  // Skills routes
+  const skillRegistry = new SkillRegistry();
+  app.use('/api/skills', createSkillRoutes(skillRegistry));
+
+  return { tokenManager, fileService, ptyManager, mcpRegistry, skillRegistry };
 }
 
 export function createServer(config: ServerConfig): ServerInstance {

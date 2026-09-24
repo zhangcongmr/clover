@@ -1,0 +1,91 @@
+<div class="skill-manager">
+  <div class="toolbar">
+    <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Skill</button>
+  </div>
+
+  @if (error) {
+    <div class="error-banner" role="alert">
+      <span>{{ error }}</span>
+      <button type="button" class="error-dismiss" (click)="error = null" aria-label="Dismiss">×</button>
+    </div>
+  }
+
+  @if (loading) {
+    <div class="status-line">Loading…</div>
+  } @else if (skills.length === 0) {
+    <div class="status-line">No skills yet.</div>
+  } @else {
+    <ul class="item-list">
+      @for (skill of skills; track skill.name) {
+        <li class="item-row">
+          <div class="item-main">
+            <div class="item-name">{{ skill.name }}</div>
+            @if (skill.description) {
+              <div class="item-desc">{{ skill.description }}</div>
+            }
+            <div class="item-preview">{{ skill.content }}</div>
+          </div>
+          <div class="item-actions">
+            <button type="button" class="btn btn-ghost" (click)="openEditForm(skill)">Edit</button>
+            <button type="button" class="btn btn-ghost" (click)="copySkill(skill.name)">Copy</button>
+            <button type="button" class="btn btn-ghost btn-danger" (click)="deleteSkill(skill.name)">Delete</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (showForm) {
+    <div class="form-overlay">
+      <div class="form-panel" role="dialog" aria-modal="true">
+        <div class="form-header">
+          <h3>{{ editingSkill ? 'Edit Skill' : 'Add Skill' }}</h3>
+          <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close">×</button>
+        </div>
+        <div class="form-body">
+          <div class="field">
+            <label for="skill-name">Name</label>
+            <input
+              id="skill-name"
+              type="text"
+              [(ngModel)]="formData.name"
+              [disabled]="!!editingSkill"
+              pattern="[a-zA-Z0-9_-]+"
+              title="Letters, numbers, hyphens, underscores only"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="my-skill"
+            />
+            <p class="field-hint">Letters, numbers, - and _ only.</p>
+          </div>
+
+          <div class="field">
+            <label for="skill-desc">Description</label>
+            <input
+              id="skill-desc"
+              type="text"
+              [(ngModel)]="formData.description"
+              autocomplete="off"
+              placeholder="Optional summary"
+            />
+          </div>
+
+          <div class="field">
+            <label for="skill-content">Content</label>
+            <textarea
+              id="skill-content"
+              [(ngModel)]="formData.content"
+              rows="14"
+              spellcheck="false"
+              placeholder="Prompt text…"
+            ></textarea>
+          </div>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="saveSkill()">Save</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,46 +1,44 @@
-<ast-modal [title]="'Add server'"  [visible]="addServerVisible" (close)="close()">
+<ast-modal [title]="'Add server'" [visible]="addServerVisible" (close)="close()">
   <div class="ast-modal-body">
     <form class="flat-form">
-      <label for="Scheme">Scheme:</label>
-      <ast-select [data]="dataList" [inputValue]="data.scheme"></ast-select>
+      <div class="field">
+        <label for="Scheme">Scheme</label>
+        <ast-select [data]="dataList" [inputValue]="data.scheme"></ast-select>
+      </div>
 
-      <label for="IP">IP:</label>
-      <input type="text"  placeholder="IP" name="IP" [(ngModel)]="data.ip"
-        autocomplete="off">
+      <div class="field">
+        <label for="IP">IP</label>
+        <input id="IP" type="text" placeholder="127.0.0.1" name="IP" [(ngModel)]="data.ip" autocomplete="off" />
+      </div>
 
-      <label for="Port">publishPort:</label>
-      <input type="text"  placeholder="Port" name="Port" [(ngModel)]="data.port"
-        autocomplete="off">
+      <div class="field">
+        <label for="Port">Port</label>
+        <input id="Port" type="text" placeholder="4200" name="Port" [(ngModel)]="data.port" autocomplete="off" />
+      </div>
     </form>
   </div>
   <div class="ast-describe-btns">
-    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn ast-confirm-btn" (click)="confirm()">
-      <div data-layer="Confirm" class="Confirm ast-confirm">Confirm</div>
-    </button>
-    <button type="submit" data-layer="cancel-btn" class="CancelBtn ast-cancel-btn" (click)="cancel()">
-      <div data-layer="Cancel" class="Cancel ast-cancel">Cancel</div>
-    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    <button type="button" class="btn btn-primary" (click)="confirm()">Confirm</button>
   </div>
 </ast-modal>
 
-<ast-modal [title]="'Delete server'"  [visible]="deleteServerVisible" (visibleChange)="visibleChangeDeleteDlg($event)"  (close)="close()">
+<ast-modal [title]="'Delete server'" [visible]="deleteServerVisible" (visibleChange)="visibleChangeDeleteDlg($event)" (close)="close()">
   <div class="ast-modal-body">
     <div class="ast-server-manager-delete-body">
-      <div>
+      <ul class="ast-server-manager-list">
         @for (server of servers; track server) {
-          <ul class="ast-server-manager-list">
-            <li><span class="ast-server-manager-name">{{server.text}}</span><button (click)="deleteAction(server)" class="ast-server-manager-delete-btn">Delete</button></li>
-          </ul>
+          <li class="ast-server-manager-row">
+            <span class="ast-server-manager-name">{{ server.text }}</span>
+            <button type="button" class="btn btn-ghost btn-danger" (click)="deleteAction(server)">Delete</button>
+          </li>
+        } @empty {
+          <li class="ast-server-manager-empty">No servers.</li>
         }
-      </div>
+      </ul>
     </div>
   </div>
   <div class="ast-describe-btns">
-    <button type="submit" data-layer="confirm-btn" class="ConfirmBtn ast-confirm-btn" (click)="confirm()">
-      <div data-layer="Confirm" class="Confirm ast-confirm">Confirm</div>
-    </button>
-    <button type="submit" data-layer="cancel-btn" class="CancelBtn ast-cancel-btn" (click)="cancel()">
-      <div data-layer="Cancel" class="Cancel ast-cancel">Cancel</div>
-    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
   </div>
 </ast-modal>
