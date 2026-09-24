@@ -2,7 +2,6 @@ import express from 'express';
 import { TokenManager } from '../agent/auth.js';
 import { FileService } from '../agent/file-service.js';
 import { createRequireAuth } from './middleware.js';
-import { setAcpConfig, getAcpConfig, storeAcpHttpServer, isAcpHttpServerReady } from '../acp/index.js';
 
 export interface AgentServices {
   tokenManager: TokenManager;
@@ -25,29 +24,6 @@ export function setupAgentRoutes(app: express.Application, services: AgentServic
   // Health check
   app.get('/api/local/health', (_req, res) => {
     res.json({ status: 'ok', readonly: process.env['CLOVER_READONLY'] === 'true' });
-  });
-
-  // ACP config endpoint
-  // WS-only: This endpoint feeds the legacy WebSocket ACP bridge (/ws/acp).
-  // The HTTP+SSE flow passes agent config per-session via POST /api/acp/session.
-  app.post('/api/local/acp/config', requireAuth, (req, res) => {
-    const { command, args, env } = req.body;
-    if (!command) {
-      res.status(400).json({ success: false, message: 'command is required' });
-      return;
-    }
-
-    // Register httpServer from the request if not already registered
-    if (!isAcpHttpServerReady()) {
-      const httpServer = (req.socket as any)?.server;
-      if (httpServer) {
-        const isHttps = req.protocol === 'https';
-        storeAcpHttpServer(httpServer, isHttps);  // Store without triggering trySetup
-      }
-    }
-
-    setAcpConfig({ command, args, env });  // This will trigger trySetup once
-    res.json({ success: true, config: getAcpConfig() });
   });
 
   // File operation endpoints

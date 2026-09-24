@@ -47,27 +47,6 @@ export type { WebSocketServices, WebSocketOptions } from './ws/index.js';
 export { RedisClient } from './redis/client.js';
 export type { RedisConfig } from './redis/client.js';
 
-// Helpers
-export { loadSslConfig, isJson } from './helpers/index.js';
-export type { SslConfig } from './helpers/index.js';
-
-// Server
-export { createServer, setupAgentMiddleware } from './server.js';
-export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';
-
-// ACP Client (WebSocket)
-export { setupAcpWebSocket, setAcpConfig, getAcpConfig, setAcpHttpServer, storeAcpHttpServer, isAcpHttpServerReady } from './acp/index.js';
-export type { AcpWebSocketOptions, AcpConfig } from './acp/index.js';
-export { AcpClient } from './acp/client.js';
-export type { AcpClientConfig } from './acp/client.js';
-export { AgentProcess } from './acp/agent-process.js';
-export type { AgentProcessConfig } from './acp/agent-process.js';
-export type {
-  AcpWsMessage,
-  AcpWsResponse,
-  PendingPermission,
-} from './acp/types.js';
-
 // ACP SSE + Redis
 export { SseManager } from './acp/sse-manager.js';
 export type { SseConnection, ServerEvent } from './acp/sse-manager.js';
