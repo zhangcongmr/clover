@@ -226,7 +226,6 @@ export class AcpSessionManager {
       await session.client.connect({
         command: session.config.agentCommand || 'opencode',
         args: session.config.agentArgs || ['acp'],
-        cwd: session.config.defaultCwd,
         env: session.config.agentEnv,
       });
 
