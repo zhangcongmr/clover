@@ -14,48 +14,81 @@ export interface SseAcpClientConfig {
 }
 
 /**
+ * An ACP session bound to one wrapper session on this shared connection.
+ * One connection multiplexes many of these (wrapper 1:N acp session).
+ */
+interface SessionBinding {
+  acpSessionId: string;
+  /** SDK session handle; only present for sessions created via session/new. */
+  activeSession: ActiveSession | null;
+  cwd: string;
+}
+
+const INITIALIZE_TIMEOUT_MS = 30_000;
+
+/**
  * SSE-based ACP Client that bridges Redis pub/sub to an ACP agent process.
  *
- * Architecture:
+ * Architecture (multi-session / multiplexed):
  *   Browser ←→ Redis Pub/Sub ←→ SseAcpClient ←→ stdio ←→ Agent Process
  *
- * Each session gets its own SseAcpClient instance with its own
- * agent process and ACP connection.
+ * One SseAcpClient owns ONE agent process + ONE ACP connection, and serves
+ * MANY wrapper sessions concurrently. Every inbound call is keyed by
+ * wrapperSessionId and every outbound event is routed back to the owning
+ * wrapper's Redis channel (`acp:events:${wrapperId}`).
  */
 export class SseAcpClient {
   private agentProcess: AgentProcess | null = null;
   private clientApp: ClientApp | null = null;
   private clientConnection: ClientConnection | null = null;
-  private activeSession: ActiveSession | null = null;
-  private loadedSessionId: string | null = null;
-  private pendingPermissions: Map<string, { resolve: (outcome: any) => void; timeout: ReturnType<typeof setTimeout> }> = new Map();
   private agentCapabilities: acp.AgentCapabilities | null = null;
+  private agentInfo: unknown = null;
   private configOptionsCache: acp.SessionConfigOption[] | null = null;
-  private sessionId: string;
+  private pendingPermissions: Map<string, { resolve: (outcome: any) => void; timeout: ReturnType<typeof setTimeout>; wrapperId?: string }> = new Map();
+
+  /** wrapperSessionId -> ACP session bound to it. */
+  private sessionBindings: Map<string, SessionBinding> = new Map();
+  /** acpSessionId -> wrapperSessionId (reverse routing for agent pushes). */
+  private reverseAcp: Map<string, string> = new Map();
+  /** All wrapper sessions currently bound to this connection. */
+  private attachedWrappers: Set<string> = new Set();
+
+  private connectionStateListeners: Set<(connected: boolean) => void> = new Set();
+  private agentSessionChangeListeners: Set<(wrapperId: string, acpSessionId: string | null) => void> = new Set();
+  /** Guards duplicate status broadcasts from the close/process-exit double fire. */
+  private notifiedConnected = false;
+
+  private config: SseAcpClientConfig;
   private redis: RedisClient;
   private unsubscribers: (() => void)[] = [];
-  private onDisconnectedCallback: (() => void) | null = null;
-  private onAgentSessionChangeCallback: (() => void) | null = null;
   private connectPromise: Promise<void> | null = null;
 
   constructor(
-    sessionId: string,
-    private config: SseAcpClientConfig,
+    /** Logical id used for log lines only (e.g. wrapper id or `agent:<id>`). */
+    private readonly logId: string,
+    config: SseAcpClientConfig,
     redis?: RedisClient,
   ) {
-    this.sessionId = sessionId;
+    this.config = config;
     this.redis = redis || RedisClient.getInstance();
   }
 
+  // ==========================================================================
+  // Connection lifecycle
+  // ==========================================================================
+
   /**
-   * Connect to the agent process. Serialized so concurrent callers (e.g. the
-   * SSE reconnect path and the prompt lazy-recovery path) cannot spawn two
-   * agent processes for the same wrapper.
+   * Connect to the agent process (spawn + initialize). Serialized so
+   * concurrent callers (warmup, SSE reconnect, prompt lazy-recovery) cannot
+   * spawn two agent processes for the same connection.
    */
-  async connect(params: { command?: string; args?: string[]; env?: Record<string, string> }): Promise<void> {
+  async connect(params: { command?: string; args?: string[]; env?: Record<string, string>; cwd?: string }): Promise<void> {
     if (this.connectPromise) {
       await this.connectPromise;
       return;
+    }
+    if (params.cwd) {
+      this.config.defaultCwd = params.cwd;
     }
     this.connectPromise = this.connectInternal(params);
     try {
@@ -79,9 +112,7 @@ export class SseAcpClient {
       this.agentProcess.kill();
       this.agentProcess = null;
       this.clientConnection = null;
-      this.activeSession = null;
-      this.loadedSessionId = null;
-      this.agentCapabilities = null;
+      this.clearBindings();
     }
 
     // 1. Spawn agent process
@@ -99,90 +130,88 @@ export class SseAcpClient {
 
     // 5. Handle connection close
     this.clientConnection.closed.then(() => {
-      console.log(`[SSE ACP Client] Connection closed for session: ${this.sessionId}`);
+      console.log(`[SSE ACP Client] Connection closed for: ${this.logId}`);
       this.clientConnection = null;
-      this.activeSession = null;
-      this.loadedSessionId = null;
-      this.agentCapabilities = null;
-      this.publishEvent({
-        type: 'status',
-        payload: { connected: false },
-      });
-      this.onDisconnectedCallback?.();
+      this.clearBindings();
+      this.handleConnectionLost();
     });
 
-    // 6. Initialize the connection
-    const initResult = await this.clientConnection.agent.request('initialize', {
-      protocolVersion: PROTOCOL_VERSION,
-      clientInfo: {
-        name: 'clover-agent-sse',
-        version: '1.0.0',
-      },
-      clientCapabilities: {
-        fs: {
-          readTextFile: true,
-          writeTextFile: true,
-        },
-      },
-    });
+    // 6. Initialize the connection (bounded so a hanging agent cannot stall warmup)
+    let initResult: { agentInfo?: unknown; agentCapabilities?: acp.AgentCapabilities };
+    try {
+      initResult = await SseAcpClient.withTimeout(
+        this.clientConnection.agent.request('initialize', {
+          protocolVersion: PROTOCOL_VERSION,
+          clientInfo: {
+            name: 'clover-agent-sse',
+            version: '1.0.0',
+          },
+          clientCapabilities: {
+            fs: {
+              readTextFile: true,
+              writeTextFile: true,
+            },
+          },
+        }),
+        INITIALIZE_TIMEOUT_MS,
+        'initialize',
+      );
+    } catch (error) {
+      console.error(`[SSE ACP Client] Initialize failed for ${this.logId}:`, (error as Error).message);
+      this.clientConnection = null;
+      this.agentProcess?.kill();
+      this.agentProcess = null;
+      this.clearBindings();
+      throw error;
+    }
 
-    console.log(`[SSE ACP Client] Agent initialized for session: ${this.sessionId}`);
+    console.log(`[SSE ACP Client] Agent initialized for: ${this.logId}`);
 
     // 7. Store capabilities
+    this.agentInfo = initResult.agentInfo ?? null;
     this.agentCapabilities = initResult.agentCapabilities ?? null;
 
-    // 8. Notify frontend
-    this.publishEvent({
+    // 8. Notify every wrapper bound to this connection (none during warmup)
+    this.notifiedConnected = true;
+    this.broadcastEvent({
       type: 'status',
       payload: {
         connected: true,
-        agentInfo: initResult.agentInfo,
-        capabilities: initResult.agentCapabilities,
+        agentInfo: this.agentInfo,
+        capabilities: this.agentCapabilities,
       },
     });
+    this.notifyConnectionState(true);
 
     // 9. Handle process exit
     this.agentProcess.onClose(() => {
       this.clientConnection = null;
-      this.activeSession = null;
-      this.loadedSessionId = null;
-      this.agentCapabilities = null;
-      this.publishEvent({
-        type: 'status',
-        payload: { connected: false },
-      });
-      this.onDisconnectedCallback?.();
+      this.clearBindings();
+      this.handleConnectionLost();
     });
   }
 
-  /**
-   * Register a callback fired when the agent process/connection is lost.
-   */
-  onDisconnected(cb: () => void): void {
-    this.onDisconnectedCallback = cb;
+  private handleConnectionLost(): void {
+    this.agentCapabilities = null;
+    this.agentInfo = null;
+    if (this.notifiedConnected) {
+      this.notifiedConnected = false;
+      this.broadcastEvent({
+        type: 'status',
+        payload: { connected: false },
+      });
+      this.notifyConnectionState(false);
+    }
   }
 
-  /**
-   * Register a callback fired when the underlying ACP session id changes
-   * (created / loaded / resumed / deleted). Used to persist the agent session
-   * id so it can be resumed after a crash.
-   */
-  onAgentSessionChange(cb: () => void): void {
-    this.onAgentSessionChangeCallback = cb;
-  }
-
-  /**
-   * Whether the agent connection is live right now.
-   */
-  isConnected(): boolean {
-    return this.clientConnection !== null && (this.agentProcess?.isRunning() ?? false);
-  }
-
-  /**
-   * The current underlying agent session id, if any.
-   */
-  getAgentSessionId(): string | null {
-    return this.activeSession?.sessionId ?? this.loadedSessionId ?? null;
+  private static async withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`ACP ${label} timed out after ${ms}ms`)), ms);
+      promise.then(
+        (value) => { clearTimeout(timer); resolve(value); },
+        (error) => { clearTimeout(timer); reject(error); },
+      );
+    });
   }
 
   /**
@@ -197,63 +226,204 @@ export class SseAcpClient {
   }
 
   /**
-   * Ensure the agent is connected and has an active ACP session.
-   *
-   * - Reconnects the agent process if the connection was lost.
-   * - If a previous agent session id is known, resumes it (context continuity).
-   * - Never creates a fresh session here: new sessions are created explicitly by
-   *   the frontend via `session/create`. If there is nothing to resume it throws,
-   *   so the caller can surface the failure instead of silently losing context.
+   * Whether the agent connection is live right now.
    */
-  async ensureSession(resumeSessionId?: string | null, resumeCwd?: string): Promise<void> {
-    if (!this.isConnected()) {
-      await this.reconnect();
-    }
-    if (this.activeSession || this.loadedSessionId) {
-      return;
-    }
-
-    if (!resumeSessionId) {
-      throw new Error('No previous agent session to resume; create a new session or load one from history');
-    }
-
-    const cwd = resumeCwd ?? this.config.defaultCwd;
-
-    const resumeCapability = this.agentCapabilities?.sessionCapabilities?.resume;
-    if (resumeCapability === undefined || resumeCapability === null) {
-      throw new Error('Agent does not support session resume; load the previous session from history or start a new one');
-    }
-    await this.handleResumeSession({ sessionId: resumeSessionId, cwd });
+  isConnected(): boolean {
+    return this.clientConnection !== null && (this.agentProcess?.isRunning() ?? false);
   }
+
+  getAgentInfo(): unknown {
+    return this.agentInfo;
+  }
+
+  getAgentCapabilities(): acp.AgentCapabilities | null {
+    return this.agentCapabilities;
+  }
+
+  // ==========================================================================
+  // Wrapper binding (multi-session routing tables)
+  // ==========================================================================
+
+  /**
+   * Bind a wrapper session to this connection. If the connection is already
+   * live, the wrapper immediately receives a status snapshot.
+   */
+  attach(wrapperId: string): void {
+    const isNew = !this.attachedWrappers.has(wrapperId);
+    this.attachedWrappers.add(wrapperId);
+    if (isNew && this.isConnected()) {
+      this.publishToWrapper(wrapperId, {
+        type: 'status',
+        payload: {
+          connected: true,
+          agentInfo: this.agentInfo,
+          capabilities: this.agentCapabilities,
+        },
+      });
+    }
+  }
+
+  /**
+   * Unbind a wrapper session. The agent process is NOT killed — it stays
+   * warm for other/future wrapper sessions.
+   */
+  detach(wrapperId: string): void {
+    this.attachedWrappers.delete(wrapperId);
+    this.cancelPendingPermissions(wrapperId);
+    this.unbind(wrapperId);
+  }
+
+  private bind(wrapperId: string, binding: SessionBinding): void {
+    // Drop the previous binding of THIS wrapper only (never touch others).
+    this.unbind(wrapperId);
+    this.sessionBindings.set(wrapperId, binding);
+    this.reverseAcp.set(binding.acpSessionId, wrapperId);
+  }
+
+  private unbind(wrapperId: string): void {
+    const binding = this.sessionBindings.get(wrapperId);
+    if (!binding) return;
+    this.sessionBindings.delete(wrapperId);
+    if (binding.acpSessionId && this.reverseAcp.get(binding.acpSessionId) === wrapperId) {
+      this.reverseAcp.delete(binding.acpSessionId);
+    }
+    if (binding.activeSession) {
+      try {
+        binding.activeSession.dispose();
+      } catch {
+        // ignore: session handle already gone
+      }
+    }
+  }
+
+  /** Called when the connection dies: every binding is stale (agent-side
+   *  session ids survive on disk and are restored via resume). */
+  private clearBindings(): void {
+    for (const [, binding] of this.sessionBindings) {
+      if (binding.activeSession) {
+        try {
+          binding.activeSession.dispose();
+        } catch {
+          // ignore
+        }
+      }
+    }
+    this.sessionBindings.clear();
+    this.reverseAcp.clear();
+    // attachedWrappers intentionally kept: wrappers stay bound to this
+    // connection object so a later reconnect reuses the same routing.
+  }
+
+  /**
+   * The ACP session id bound to a wrapper session, if any.
+   */
+  getAcpSessionId(wrapperId: string): string | null {
+    return this.sessionBindings.get(wrapperId)?.acpSessionId ?? null;
+  }
+
+  // ==========================================================================
+  // Callbacks (multi-listener)
+  // ==========================================================================
+
+  /**
+   * Subscribe to connection state changes (true = spawned+initialized,
+   * false = connection/process lost). Returns an unsubscribe function.
+   */
+  onConnectionState(cb: (connected: boolean) => void): () => void {
+    this.connectionStateListeners.add(cb);
+    return () => this.connectionStateListeners.delete(cb);
+  }
+
+  /**
+   * Subscribe to per-wrapper ACP session id changes (created / loaded /
+   * resumed / deleted). Used to persist the agent session id so it can be
+   * resumed after a crash. Returns an unsubscribe function.
+   */
+  onAgentSessionChange(cb: (wrapperId: string, acpSessionId: string | null) => void): () => void {
+    this.agentSessionChangeListeners.add(cb);
+    return () => this.agentSessionChangeListeners.delete(cb);
+  }
+
+  private notifyConnectionState(connected: boolean): void {
+    for (const cb of this.connectionStateListeners) {
+      try {
+        cb(connected);
+      } catch (error) {
+        console.error('[SSE ACP Client] connection state listener error:', error);
+      }
+    }
+  }
+
+  private notifyAgentSessionChange(wrapperId: string, acpSessionId: string | null): void {
+    for (const cb of this.agentSessionChangeListeners) {
+      try {
+        cb(wrapperId, acpSessionId);
+      } catch (error) {
+        console.error('[SSE ACP Client] agent session change listener error:', error);
+      }
+    }
+  }
+
+  // ==========================================================================
+  // Event routing (agent -> wrapper)
+  // ==========================================================================
+
+  private publishToWrapper(wrapperId: string, event: any): void {
+    const channel = `acp:events:${wrapperId}`;
+    this.redis.publish(channel, JSON.stringify({
+      ...event,
+      timestamp: Date.now(),
+    }));
+  }
+
+  private broadcastEvent(event: any): void {
+    for (const wrapperId of this.attachedWrappers) {
+      this.publishToWrapper(wrapperId, event);
+    }
+  }
+
+  // ==========================================================================
+  // ClientApp handlers (agent pushes)
+  // ==========================================================================
 
   /**
    * Create ClientApp with handlers
    */
   private createClientApp(): ClientApp {
-    const sessionId = this.sessionId;
     const pendingPermissions = this.pendingPermissions;
 
     return client({ name: 'clover-agent-sse' })
       .onNotification('session/update', (ctx) => {
+        const update = ctx.params as { sessionId?: string; sessionUpdate?: string; configOptions?: acp.SessionConfigOption[] };
         // Keep the config cache current when the agent pushes config changes
-        const update = ctx.params as { sessionUpdate?: string; configOptions?: acp.SessionConfigOption[] };
         if (update?.sessionUpdate === 'config_option_update' && update.configOptions) {
           this.configOptionsCache = update.configOptions;
         }
-        // Forward session updates to Redis
-        this.publishEvent({
-          type: 'session_update',
-          payload: ctx.params,
-        });
+        // Route the update to the wrapper session that owns this ACP session
+        const wrapperId = update.sessionId ? this.reverseAcp.get(update.sessionId) : undefined;
+        if (wrapperId) {
+          this.publishToWrapper(wrapperId, {
+            type: 'session_update',
+            payload: ctx.params,
+          });
+        } else {
+          console.warn(`[SSE ACP Client] Dropped session/update for unmapped session: ${update?.sessionId}`);
+        }
       })
       .onRequest('session/request_permission', async (ctx) => {
-        // Forward permission request to Redis and wait for response
+        // Forward permission request to the owning wrapper and wait for its response
         const requestId = `perm_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
         const params = ctx.params;
+        const wrapperId = this.reverseAcp.get(params.sessionId);
 
-        console.log(`[SSE ACP Client] Permission requested: ${requestId}`);
+        if (!wrapperId) {
+          console.warn(`[SSE ACP Client] Permission request for unmapped session ${params.sessionId}; cancelling`);
+          return { outcome: { outcome: 'cancelled' as const } };
+        }
 
-        this.publishEvent({
+        console.log(`[SSE ACP Client] Permission requested: ${requestId} (wrapper: ${wrapperId})`);
+
+        this.publishToWrapper(wrapperId, {
           type: 'permission_request',
           payload: {
             requestId,
@@ -271,7 +441,7 @@ export class SseAcpClient {
             resolve({ outcome: 'cancelled' });
           }, 5 * 60 * 1000);
 
-          pendingPermissions.set(requestId, { resolve, timeout });
+          pendingPermissions.set(requestId, { resolve, timeout, wrapperId });
         });
 
         console.log(`[SSE ACP Client] Permission response: ${requestId}`, outcome);
@@ -287,20 +457,53 @@ export class SseAcpClient {
       });
   }
 
+  // ==========================================================================
+  // Inbound operations (wrapper -> agent), all keyed by wrapperSessionId
+  // ==========================================================================
+
   /**
-   * Handle prompt request
+   * Ensure the wrapper has a live connection and an active ACP session.
+   *
+   * - Reconnects the agent process if the connection was lost.
+   * - If a previous agent session id is known, resumes it (context continuity).
+   * - Never creates a fresh session here: new sessions are created explicitly by
+   *   the frontend via `session/create`.
    */
-  async handlePrompt(content: acp.ContentBlock[]): Promise<{ stopReason: string }> {
+  async ensureSession(wrapperId: string, resumeSessionId?: string | null, resumeCwd?: string): Promise<void> {
+    if (!this.isConnected()) {
+      await this.reconnect();
+    }
+    if (this.sessionBindings.has(wrapperId)) {
+      return;
+    }
+
+    if (!resumeSessionId) {
+      throw new Error('No previous agent session to resume; create a new session or load one from history');
+    }
+
+    const cwd = resumeCwd ?? this.config.defaultCwd;
+
+    const resumeCapability = this.agentCapabilities?.sessionCapabilities?.resume;
+    if (resumeCapability === undefined || resumeCapability === null) {
+      throw new Error('Agent does not support session resume; load the previous session from history or start a new one');
+    }
+    await this.handleResumeSession(wrapperId, { sessionId: resumeSessionId, cwd });
+  }
+
+  /**
+   * Handle prompt request for a specific wrapper session.
+   */
+  async handlePrompt(wrapperId: string, content: acp.ContentBlock[]): Promise<{ stopReason: string }> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
 
-    const sessionId = this.activeSession?.sessionId ?? this.loadedSessionId;
+    const sessionId = this.sessionBindings.get(wrapperId)?.acpSessionId;
     if (!sessionId) {
       throw new Error('No active session');
     }
 
-    console.log(`[SSE ACP Client] Sending prompt to session: ${sessionId}`);
+    console.log(`[SSE ACP Client] Sending prompt to session: ${sessionId} (wrapper: ${wrapperId})`);
 
     try {
       const result = await this.clientConnection.agent.request('session/prompt', {
@@ -318,15 +521,15 @@ export class SseAcpClient {
   }
 
   /**
-   * Handle cancel request
+   * Cancel the in-flight prompt of a specific wrapper session.
    */
-  async handleCancel(): Promise<void> {
-    const sessionId = this.activeSession?.sessionId ?? this.loadedSessionId;
+  async handleCancel(wrapperId: string): Promise<void> {
+    const sessionId = this.sessionBindings.get(wrapperId)?.acpSessionId;
     if (!this.clientConnection || !sessionId) {
       return;
     }
 
-    this.cancelPendingPermissions();
+    this.cancelPendingPermissions(wrapperId);
 
     try {
       await this.clientConnection.agent.notify('session/cancel', {
@@ -354,15 +557,14 @@ export class SseAcpClient {
   }
 
   /**
-   * Create a new session
+   * Create a new ACP session for a wrapper session.
    */
-  async handleNewSession(params: { cwd?: string; mcpServers?: acp.McpServer[] }): Promise<acp.NewSessionResponse> {
+  async handleNewSession(wrapperId: string, params: { cwd?: string; mcpServers?: acp.McpServer[] }): Promise<acp.NewSessionResponse> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
 
     // 前端未传 cwd（New Task）时，按原始规则生成新的时间戳目录，而不是复用内部 session 的默认 cwd。
-    // 内部 session 的 cwd 仅用于获取 configOptions，不应泄漏到真实会话。
     let cwd = params.cwd;
     if (!cwd || !String(cwd).trim()) {
       const now = new Date();
@@ -372,23 +574,28 @@ export class SseAcpClient {
       mkdirSync(cwd, { recursive: true });
     }
 
-    // Dispose previous session if any
-    this.activeSession?.dispose();
-    this.loadedSessionId = null;
+    // Dispose the previous session of THIS wrapper only
+    this.unbind(wrapperId);
 
     // Create and start a new session with mcpServers support
     const sessionBuilder = this.clientConnection.agent.buildSession(cwd);
     params.mcpServers?.forEach(mcpServer => sessionBuilder.withMcpServer(mcpServer));
-    this.activeSession = await sessionBuilder.start();
+    const activeSession = await sessionBuilder.start();
 
-    const sessionResponse = this.activeSession.newSessionResponse;
+    this.bind(wrapperId, {
+      acpSessionId: activeSession.sessionId,
+      activeSession,
+      cwd,
+    });
 
-    console.log(`[SSE ACP Client] Session created: ${this.activeSession.sessionId}`);
+    const sessionResponse = activeSession.newSessionResponse;
+
+    console.log(`[SSE ACP Client] Session created: ${activeSession.sessionId} (wrapper: ${wrapperId})`);
 
     // Start reading session updates in the background
-    this.readSessionUpdates();
+    this.startUpdateLoop(wrapperId, activeSession);
 
-    this.onAgentSessionChangeCallback?.();
+    this.notifyAgentSessionChange(wrapperId, activeSession.sessionId);
     return this.mergeConfigOptions({
       ...sessionResponse,
       // Expose the resolved cwd so the frontend can persist accurate session records.
@@ -397,7 +604,7 @@ export class SseAcpClient {
   }
 
   /**
-   * List sessions from agent
+   * List sessions from agent (connection-level operation).
    */
   async handleListSessions(params: { cwd?: string; cursor?: string }): Promise<any> {
     if (!this.clientConnection) {
@@ -421,21 +628,22 @@ export class SseAcpClient {
   }
 
   /**
-   * Load a session from agent
+   * Load a session from agent for a wrapper session.
    */
-  async handleLoadSession(params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
+  async handleLoadSession(wrapperId: string, params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
 
     const cwd = params.cwd || this.config.defaultCwd;
 
-    console.log(`[SSE ACP Client] Loading session: ${params.sessionId}`);
+    console.log(`[SSE ACP Client] Loading session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
     try {
-      // Dispose previous session if any
-      this.activeSession?.dispose();
-      this.activeSession = null;
+      // Dispose the previous session of THIS wrapper only
+      this.unbind(wrapperId);
+      // Bind before the request so updates emitted during load are routed
+      this.bind(wrapperId, { acpSessionId: params.sessionId, activeSession: null, cwd });
 
       const result = await this.clientConnection.agent.request('session/load', {
         sessionId: params.sessionId,
@@ -443,34 +651,34 @@ export class SseAcpClient {
         mcpServers: params.mcpServers || [],
       });
 
-      this.loadedSessionId = params.sessionId;
-
       console.log(`[SSE ACP Client] Session loaded: ${params.sessionId}`);
 
-      this.onAgentSessionChangeCallback?.();
+      this.notifyAgentSessionChange(wrapperId, params.sessionId);
       return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
+      this.unbind(wrapperId);
       console.error(`[SSE ACP Client] Failed to load session:`, error);
       throw error;
     }
   }
 
   /**
-   * Resume a session from agent
+   * Resume a session from agent for a wrapper session.
    */
-  async handleResumeSession(params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
+  async handleResumeSession(wrapperId: string, params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
 
     const cwd = params.cwd || this.config.defaultCwd;
 
-    console.log(`[SSE ACP Client] Resuming session: ${params.sessionId}`);
+    console.log(`[SSE ACP Client] Resuming session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
     try {
-      // Dispose previous session if any
-      this.activeSession?.dispose();
-      this.activeSession = null;
+      // Dispose the previous session of THIS wrapper only
+      this.unbind(wrapperId);
+      // Bind before the request so updates emitted during resume are routed
+      this.bind(wrapperId, { acpSessionId: params.sessionId, activeSession: null, cwd });
 
       const result = await this.clientConnection.agent.request('session/resume', {
         sessionId: params.sessionId,
@@ -478,22 +686,21 @@ export class SseAcpClient {
         mcpServers: params.mcpServers || [],
       });
 
-      this.loadedSessionId = params.sessionId;
-
       console.log(`[SSE ACP Client] Session resumed: ${params.sessionId}`);
 
-      this.onAgentSessionChangeCallback?.();
+      this.notifyAgentSessionChange(wrapperId, params.sessionId);
       return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
+      this.unbind(wrapperId);
       console.error(`[SSE ACP Client] Failed to resume session:`, error);
       throw error;
     }
   }
 
   /**
-   * Delete a session from agent
+   * Delete a session from agent.
    */
-  async handleDeleteSession(params: { sessionId: string }): Promise<void> {
+  async handleDeleteSession(wrapperId: string, params: { sessionId: string }): Promise<void> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
@@ -511,17 +718,13 @@ export class SseAcpClient {
         sessionId: params.sessionId,
       });
 
-      // Clean up local state if deleted session is the active one
-      if (
-        this.loadedSessionId === params.sessionId ||
-        this.activeSession?.sessionId === params.sessionId
-      ) {
-        this.activeSession?.dispose();
-        this.activeSession = null;
-        this.loadedSessionId = null;
+      // Clean up the local binding only when it belongs to this wrapper
+      const binding = this.sessionBindings.get(wrapperId);
+      if (binding && binding.acpSessionId === params.sessionId) {
+        this.unbind(wrapperId);
       }
 
-      this.onAgentSessionChangeCallback?.();
+      this.notifyAgentSessionChange(wrapperId, this.sessionBindings.get(wrapperId)?.acpSessionId ?? null);
       console.log(`[SSE ACP Client] Session deleted: ${params.sessionId}`);
     } catch (error) {
       console.error(`[SSE ACP Client] Failed to delete session:`, error);
@@ -530,10 +733,9 @@ export class SseAcpClient {
   }
 
   /**
-   * Set config option on agent
+   * Set config option on agent for a wrapper session.
    */
-  async handleSetConfigOption(params: {
-    sessionId: string;
+  async handleSetConfigOption(wrapperId: string, params: {
     configId: string;
     type: 'id' | 'boolean';
     value: string | boolean;
@@ -542,7 +744,7 @@ export class SseAcpClient {
       throw new Error('Not connected to agent');
     }
 
-    const sessionId = this.activeSession?.sessionId ?? this.loadedSessionId;
+    const sessionId = this.sessionBindings.get(wrapperId)?.acpSessionId;
     if (!sessionId) {
       throw new Error('No active session');
     }
@@ -593,64 +795,68 @@ export class SseAcpClient {
   }
 
   /**
-   * Background loop that reads session updates
+   * Background loop that reads updates for one wrapper's session. Routes
+   * `stop` back to that wrapper's channel as `prompt_complete`.
    */
-  private async readSessionUpdates(): Promise<void> {
-    const session = this.activeSession;
-    if (!session) return;
+  private startUpdateLoop(wrapperId: string, session: ActiveSession): void {
+    const acpSessionId = session.sessionId;
+    const isCurrent = () => this.sessionBindings.get(wrapperId)?.acpSessionId === acpSessionId;
 
-    try {
-      while (true) {
-        const message = await session.nextUpdate();
+    void (async () => {
+      try {
+        while (isCurrent()) {
+          const message = await session.nextUpdate();
 
-        if (message.kind === 'stop') {
-          console.log(`[SSE ACP Client] Prompt completed: ${message.stopReason}`);
-          this.publishEvent({
-            type: 'prompt_complete',
-            payload: message.response,
-          });
-          break;
+          if (message.kind === 'stop') {
+            console.log(`[SSE ACP Client] Prompt completed: ${message.stopReason}`);
+            this.publishToWrapper(wrapperId, {
+              type: 'prompt_complete',
+              payload: message.response,
+            });
+            break;
+          }
         }
+      } catch (error) {
+        if (!isCurrent()) {
+          return;
+        }
+        console.error(`[SSE ACP Client] Error reading session updates:`, error);
       }
-    } catch (error) {
-      if (!this.activeSession) {
-        return;
-      }
-      console.error(`[SSE ACP Client] Error reading session updates:`, error);
-    }
+    })();
   }
 
   /**
-   * Publish event to Redis
+   * Cancel pending permissions, optionally scoped to one wrapper session.
    */
-  private publishEvent(event: any): void {
-    const channel = `acp:events:${this.sessionId}`;
-    this.redis.publish(channel, JSON.stringify({
-      ...event,
-      timestamp: Date.now(),
-    }));
-  }
-
-  /**
-   * Cancel all pending permissions
-   */
-  private cancelPendingPermissions(): void {
+  private cancelPendingPermissions(wrapperId?: string): void {
     for (const [requestId, pending] of this.pendingPermissions) {
+      if (wrapperId !== undefined && pending.wrapperId !== wrapperId) {
+        continue;
+      }
       clearTimeout(pending.timeout);
       pending.resolve({ outcome: 'cancelled' });
+      this.pendingPermissions.delete(requestId);
     }
-    this.pendingPermissions.clear();
   }
 
   /**
-   * Disconnect and cleanup
+   * Disconnect and cleanup (full teardown — the process is killed).
    */
   disconnect(): void {
     this.cancelPendingPermissions();
 
-    this.activeSession?.dispose();
-    this.activeSession = null;
-    this.loadedSessionId = null;
+    for (const [, binding] of this.sessionBindings) {
+      if (binding.activeSession) {
+        try {
+          binding.activeSession.dispose();
+        } catch {
+          // ignore
+        }
+      }
+    }
+    this.sessionBindings.clear();
+    this.reverseAcp.clear();
+    this.attachedWrappers.clear();
 
     this.clientConnection?.close();
     this.clientConnection = null;
@@ -661,6 +867,9 @@ export class SseAcpClient {
       this.agentProcess.kill();
       this.agentProcess = null;
     }
+
+    this.clearBindings();
+    this.handleConnectionLost();
 
     // Unsubscribe from Redis
     for (const unsubscribe of this.unsubscribers) {

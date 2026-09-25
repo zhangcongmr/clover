@@ -66,6 +66,8 @@ export class AgentComponent {
   restorePanel = output<void>();
   /** Re-emitted upward when user clicks "应用到项目UI" in A2UI theme preview. */
   themeApply = output<Record<string, any>>();
+  /** Re-emitted upward when the sidebar Settings entry is clicked. */
+  openSettings = output<void>();
 
   protected projects = computed(() => {
     return this.acpService.projects()

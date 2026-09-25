@@ -62,3 +62,5 @@ export { AcpSessionManager } from './acp/session-manager.js';
 export type { AcpSession, SessionCreateOptions, SessionMessage } from './acp/session-manager.js';
 export { SseAcpClient } from './acp/sse-client.js';
 export type { SseAcpClientConfig } from './acp/sse-client.js';
+export { AgentRegistry } from './acp/agent-registry.js';
+export type { AgentStatusInfo, AgentRuntimeStatus } from './acp/agent-registry.js';

@@ -9,6 +9,26 @@ export interface ServerEvent {
   timestamp: number;
 }
 
+/**
+ * Runtime status of an ACP agent as reported by the backend AgentRegistry.
+ * Display precedence: connected > unavailable > offline > available.
+ */
+export type AgentRuntimeStatus = 'unknown' | 'available' | 'unavailable' | 'offline' | 'connected';
+
+export interface AgentStatusInfo {
+  id: string;
+  name: string;
+  command: string;
+  args?: string[];
+  description?: string;
+  installed: boolean | null;
+  status: AgentRuntimeStatus;
+  agentInfo?: unknown;
+  capabilities?: unknown;
+  error?: string;
+  lastChecked: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AcpSseService {
   private eventSource: EventSource | null = null;
@@ -418,6 +438,22 @@ export class AcpSseService {
    */
   async ping(sessionId: string): Promise<void> {
     await this.post('/api/acp/ping', { sessionId });
+  }
+
+  /**
+   * 列出全部 Agent 及其运行状态（Settings → Agents）
+   */
+  async listAgents(): Promise<AgentStatusInfo[]> {
+    const result = await this.get('/api/acp/agents');
+    return (result?.agents ?? []) as AgentStatusInfo[];
+  }
+
+  /**
+   * Check Now：重新检测某个 Agent 的安装状态并尝试拉起到“连接”状态
+   */
+  async checkAgent(agentId: string): Promise<AgentStatusInfo> {
+    const result = await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/check`, {});
+    return result.agent as AgentStatusInfo;
   }
 
   // ============================================================================

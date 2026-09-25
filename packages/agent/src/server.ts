@@ -19,6 +19,8 @@ import { createSkillRoutes } from './api/skill-routes.js';
 import { RedisClient } from './redis/client.js';
 import { SseManager } from './acp/sse-manager.js';
 import { AcpSessionManager } from './acp/session-manager.js';
+import { AgentRegistry } from './acp/agent-registry.js';
+import { AVAILABLE_AGENTS } from './acp/acp-agent.types.js';
 import { McpServerRegistry } from './mcp/index.js';
 import { SkillRegistry } from './skills/index.js';
 
@@ -53,6 +55,7 @@ export interface ServerInstance {
   ptyManager: PtyManager;
   mcpRegistry: McpServerRegistry;
   skillRegistry: SkillRegistry;
+  agentRegistry: AgentRegistry;
 }
 
 export interface AgentMiddlewareOptions {
@@ -67,7 +70,7 @@ export interface AgentMiddlewareOptions {
 export function setupAgentMiddleware(
   app: express.Express,
   options: AgentMiddlewareOptions,
-): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry; skillRegistry: SkillRegistry } {
+): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry; skillRegistry: SkillRegistry; agentRegistry: AgentRegistry } {
   const {
     corsPorts,
     corsOrigins = [],
@@ -97,8 +100,10 @@ export function setupAgentMiddleware(
   // Setup ACP SSE routes
   const redis = RedisClient.getInstance();
   const sseManager = new SseManager(redis);
-  const sessionManager = new AcpSessionManager(redis);
-  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry });
+  // Agent 预热注册表：持有每个 Agent 的共享连接（预热 + 复用 + 状态跟踪）
+  const agentRegistry = new AgentRegistry(AVAILABLE_AGENTS);
+  const sessionManager = new AcpSessionManager(redis, agentRegistry);
+  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry, registry: agentRegistry });
 
   // MCP routes
   app.use('/api/mcp', createMcpRoutes(mcpRegistry));
@@ -107,7 +112,7 @@ export function setupAgentMiddleware(
   const skillRegistry = new SkillRegistry();
   app.use('/api/skills', createSkillRoutes(skillRegistry));
 
-  return { tokenManager, fileService, ptyManager, mcpRegistry, skillRegistry };
+  return { tokenManager, fileService, ptyManager, mcpRegistry, skillRegistry, agentRegistry };
 }
 
 export function createServer(config: ServerConfig): ServerInstance {
@@ -128,6 +133,13 @@ export function createServer(config: ServerConfig): ServerInstance {
   const app = existingApp || express();
 
   const services = setupAgentMiddleware(app, middlewareOptions);
+
+  // 启动阶段：异步并列预热全部 Agent 子进程并 initialize（不创建 wrapper
+  // session、不订阅 Redis、不阻塞 server 启动）。session/create·load·
+  // resume·prompt 仍会在 ensureConnected 中兜底 spawn+initialize。
+  services.agentRegistry.warmupAll().catch((error) => {
+    console.error('[AgentRegistry] Warmup failed:', error);
+  });
 
   const sslConfig = sslDir ? loadSslConfig(sslDir) : null;
 
