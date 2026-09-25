@@ -410,7 +410,7 @@ img, svg {
 .custom-scroll {
   /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: var(--vscode-background) transparent;
+  scrollbar-color: var(--vscode-border-color) transparent;
 
   /* WebKit */
   overflow-y: scroll; /* 确保出现滚动条 */

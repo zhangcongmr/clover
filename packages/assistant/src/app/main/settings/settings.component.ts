@@ -3,6 +3,8 @@ import { FormsModule } from "@angular/forms";
 import { SettingsService } from "./settings.service";
 import { LocalAgentService } from "../../shared/local-agent/local-agent.service";
 import { CoreService } from "../../core.service";
+import { AcpSseService } from "../../shared/acp/acp-sse.service";
+import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
 
 @Component({
   selector: 'app-settings',
@@ -15,6 +17,7 @@ export class SettingsComponent {
   private settingsService = inject(SettingsService);
   protected localAgentService = inject(LocalAgentService);
   private coreService = inject(CoreService);
+  private sseService = inject(AcpSseService);
 
   readonly previousViewId = input<number>(1);
   readonly goBack = output<number>();
@@ -51,18 +54,29 @@ export class SettingsComponent {
   agentStatus = signal<'unknown' | 'connected' | 'disconnected'>('unknown');
   agentTesting = signal(false);
 
+  /** ACP agents reported by the backend AgentRegistry (Settings → Agents). */
+  agents = signal<AgentStatusInfo[]>([]);
+  agentsLoading = signal(false);
+  agentsError = signal<string | null>(null);
+  /** Agent id currently running a Check Now, guards double-click. */
+  checkingAgentId = signal<string | null>(null);
+
   opfsClearing = signal(false);
 
   showSavedToast = signal(false);
 
   constructor() {
     this.checkAgentStatus();
+    this.loadAgents();
   }
 
   setActiveCategory(id: string) {
     this.settingsService.setActiveCategory(id);
     if (id === 'data') {
       this.settingsService.refreshOpfsInfo();
+    }
+    if (id === 'general' && this.agents().length === 0 && !this.agentsLoading()) {
+      this.loadAgents();
     }
   }
 
@@ -161,6 +175,50 @@ export class SettingsComponent {
   private async checkAgentStatus() {
     const ok = await this.localAgentService.checkAgentAvailable();
     this.agentStatus.set(ok ? 'connected' : 'disconnected');
+  }
+
+  // ==========================================================================
+  // Agents management (Settings → General → Agents)
+  // ==========================================================================
+
+  async loadAgents(): Promise<void> {
+    if (this.agentsLoading()) return;
+    this.agentsLoading.set(true);
+    this.agentsError.set(null);
+    try {
+      this.agents.set(await this.sseService.listAgents());
+    } catch (error) {
+      this.agentsError.set((error as Error).message);
+    } finally {
+      this.agentsLoading.set(false);
+    }
+  }
+
+  /**
+   * Check Now：重新检测安装状态，并尝试把 Agent 拉到“连接”状态。
+   */
+  async checkNow(agentId: string): Promise<void> {
+    if (this.checkingAgentId()) return;
+    this.checkingAgentId.set(agentId);
+    this.agentsError.set(null);
+    try {
+      const updated = await this.sseService.checkAgent(agentId);
+      this.agents.update(list => list.map(a => a.id === updated.id ? updated : a));
+    } catch (error) {
+      this.agentsError.set((error as Error).message);
+    } finally {
+      this.checkingAgentId.set(null);
+    }
+  }
+
+  agentStatusLabel(status: AgentRuntimeStatus): string {
+    switch (status) {
+      case 'connected': return 'Connected';
+      case 'unavailable': return 'Unavailable';
+      case 'offline': return 'Offline';
+      case 'available': return 'Available';
+      default: return 'Checking...';
+    }
   }
 
   private showToast() {

@@ -2,6 +2,7 @@ import type { Express, Request, Response } from 'express';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { AcpSessionManager } from '../acp/session-manager.js';
+import type { AgentRegistry } from '../acp/agent-registry.js';
 import { SseManager } from '../acp/sse-manager.js';
 import { RedisClient } from '../redis/client.js';
 import type { TokenManager } from '../agent/auth.js';
@@ -93,10 +94,12 @@ export interface AcpRouteOptions {
   redis: RedisClient;
   fileService: FileService;
   mcpRegistry?: McpServerRegistry;
+  /** Agent 预热注册表（启动预热 + Settings Agents 管理）。 */
+  registry?: AgentRegistry;
 }
 
 export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
-  const { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry } = options;
+  const { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry, registry } = options;
   const requireAuth = createRequireAuth(tokenManager);
 
   // Parse JSON bodies for ACP routes. Generous enough for base64 media
@@ -631,6 +634,46 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       mode: redis.isMemoryMode() ? 'memory' : 'redis',
       isMemoryMode: redis.isMemoryMode(),
     });
+  });
+
+  // ============================================================================
+  // Agent 状态管理（Settings → Agents）
+  // ============================================================================
+
+  /**
+   * GET /api/acp/agents
+   * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接）
+   */
+  app.get('/api/acp/agents', (_req: Request, res: Response) => {
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+    try {
+      res.json({ agents: registry.getStatus() });
+    } catch (error) {
+      console.error('[ACP Routes] List agents error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/acp/agents/:id/check
+   * Check Now：重新检测安装状态并尝试将 Agent 拉起到“连接”状态
+   */
+  app.post('/api/acp/agents/:id/check', async (req: Request, res: Response) => {
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+    try {
+      const agent = await registry.checkNow(String(req.params.id));
+      res.json({ agent });
+    } catch (error) {
+      console.error('[ACP Routes] Check agent error:', error);
+      const message = (error as Error).message;
+      res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
+    }
   });
 
   // ============================================================================

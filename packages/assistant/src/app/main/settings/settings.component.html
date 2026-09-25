@@ -24,7 +24,7 @@
 
   <div class="settings-content">
     @if (activeCategoryId() === 'general') {
-      <div class="settings-section">
+      <div class="settings-section custom-scroll">
         <h2 class="section-title">General Settings</h2>
 
         <!-- Agent URL -->
@@ -83,6 +83,60 @@
                   Test Connection
                 }
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agents -->
+        <div class="setting-item agents-item">
+          <div class="setting-info">
+            <label class="setting-label">Agents</label>
+            <p class="setting-desc">ACP agents pre-warmed by the local server</p>
+          </div>
+          <div class="setting-control agents-control">
+            <div class="agents-list">
+              @for (agent of agents(); track agent.id) {
+                <div class="agent-row">
+                  <div class="agent-meta">
+                    <span class="agent-name">{{ agent.name }}</span>
+                    <span class="agent-desc">{{ agent.description }}</span>
+                    @if (agent.error) {
+                      <span class="agent-error" [title]="agent.error">{{ agent.error }}</span>
+                    }
+                  </div>
+                  <span
+                    class="agent-status-badge"
+                    [class.status-connected]="agent.status === 'connected'"
+                    [class.status-unavailable]="agent.status === 'unavailable'"
+                    [class.status-offline]="agent.status === 'offline'"
+                    [class.status-available]="agent.status === 'available'"
+                    [class.status-unknown]="agent.status === 'unknown'"
+                  >
+                    <span class="agent-status-dot"></span>
+                    {{ agentStatusLabel(agent.status) }}
+                  </span>
+                  <button
+                    class="btn btn-secondary agent-check-btn"
+                    (click)="checkNow(agent.id)"
+                    [disabled]="checkingAgentId() === agent.id || agentsLoading()"
+                  >
+                    @if (checkingAgentId() === agent.id) {
+                      Checking...
+                    } @else {
+                      Check Now
+                    }
+                  </button>
+                </div>
+              }
+              @if (agentsLoading() && agents().length === 0) {
+                <p class="agents-hint">Loading agents...</p>
+              }
+              @if (!agentsLoading() && agents().length === 0 && !agentsError()) {
+                <p class="agents-hint">No agents available</p>
+              }
+              @if (agentsError()) {
+                <p class="agents-hint agents-error">{{ agentsError() }}</p>
+              }
             </div>
           </div>
         </div>

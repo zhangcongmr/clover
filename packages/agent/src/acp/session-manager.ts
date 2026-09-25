@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { SseAcpClient } from './sse-client.js';
 import { RedisClient } from '../redis/client.js';
+import type { AgentRegistry } from './agent-registry.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type * as acp from '@agentclientprotocol/sdk';
 
@@ -16,6 +17,12 @@ export interface AcpSession {
   agentSessionId: string | null;
   /** Working directory associated with the last agent session. */
   agentCwd: string | null;
+  /** Whether connection-state/agent-session listeners are registered on `client`. */
+  callbacksBound?: boolean;
+  /** Teardown functions for the listeners registered on `client`. */
+  detachFns?: Array<() => void>;
+  /** Redis channel unsubscribers for this wrapper session. */
+  redisUnsubs?: Array<() => void>;
 }
 
 export interface SessionCreateOptions {
@@ -40,7 +47,11 @@ export class AcpSessionManager {
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private publishCallbacks: Map<string, (event: any) => void> = new Map();
 
-  constructor(redis?: RedisClient) {
+  constructor(
+    redis?: RedisClient,
+    /** Optional registry providing pre-warmed shared agent connections. */
+    private registry?: AgentRegistry,
+  ) {
     this.redis = redis || RedisClient.getInstance();
     this.startCleanupInterval();
   }
@@ -62,28 +73,12 @@ export class AcpSessionManager {
       agentEnv: options.agentEnv,
     };
 
-    // 创建 ACP 客户端
+    // 占位客户端：实际连接在 ensureConnected 时绑定到预热共享连接
+    // （或在无 registry 时于本地建立）。运行期的 wrapper 包装流程保持不变。
     const client = new SseAcpClient(sessionId, config, this.redis);
 
-    // 同步 wrapper 状态：agent 连接断开时标记为 disconnected
-    client.onDisconnected(() => {
-      const s = this.sessions.get(sessionId);
-      if (s) {
-        s.status = 'disconnected';
-      }
-    });
-
-    // 持久化底层 agent session id，崩溃后可据此 resume
-    client.onAgentSessionChange(() => {
-      const s = this.sessions.get(sessionId);
-      if (s) {
-        s.agentSessionId = client.getAgentSessionId();
-        s.agentCwd = config.defaultCwd;
-      }
-    });
-
     // 订阅 Redis 频道接收客户端消息
-    this.setupRedisSubscriptions(sessionId, client);
+    const redisUnsubs = this.setupRedisSubscriptions(sessionId);
 
     // 存储会话
     const session: AcpSession = {
@@ -95,6 +90,7 @@ export class AcpSessionManager {
       status: 'active',
       agentSessionId: null,
       agentCwd: null,
+      redisUnsubs,
     };
     this.sessions.set(sessionId, session);
 
@@ -103,12 +99,14 @@ export class AcpSessionManager {
     return sessionId;
   }
 
-  private setupRedisSubscriptions(sessionId: string, client: SseAcpClient): void {
-    // 订阅 prompt 请求
-    this.redis.subscribe(`acp:prompt:${sessionId}`, async (message) => {
+  private setupRedisSubscriptions(sessionId: string): Array<() => void> {
+    // 订阅 prompt 请求（handler 运行时解析会话与连接，允许连接被换绑/复用）
+    const unsubPrompt = this.redis.subscribe(`acp:prompt:${sessionId}`, async (message) => {
+      const session = this.sessions.get(sessionId);
+      if (!session) return;
       try {
         const msg: SessionMessage = JSON.parse(message);
-        await this.handleClientMessage(sessionId, msg, client);
+        await this.handleClientMessage(sessionId, msg, session.client);
       } catch (error) {
         console.error(`[ACP Session] Error handling prompt message:`, error);
         await this.publishEvent(sessionId, {
@@ -120,14 +118,18 @@ export class AcpSessionManager {
     });
 
     // 订阅权限响应
-    this.redis.subscribe(`acp:permission:${sessionId}`, async (message) => {
+    const unsubPermission = this.redis.subscribe(`acp:permission:${sessionId}`, async (message) => {
+      const session = this.sessions.get(sessionId);
+      if (!session) return;
       try {
         const msg: SessionMessage = JSON.parse(message);
-        await this.handlePermissionResponse(sessionId, msg, client);
+        await this.handlePermissionResponse(sessionId, msg, session.client);
       } catch (error) {
         console.error(`[ACP Session] Error handling permission message:`, error);
       }
     });
+
+    return [unsubPrompt, unsubPermission];
   }
 
   private async handleClientMessage(
@@ -163,8 +165,8 @@ export class AcpSessionManager {
         timestamp: Date.now(),
       });
 
-      // 调用客户端处理 prompt
-      const result = await client.handlePrompt(msg.payload.content);
+      // 调用客户端处理 prompt（按 wrapper session 定向到其 ACP session）
+      const result = await client.handlePrompt(sessionId, msg.payload.content);
 
       // 发布完成事件
       await this.publishEvent(sessionId, {
@@ -187,7 +189,7 @@ export class AcpSessionManager {
     client: SseAcpClient
   ): Promise<void> {
     try {
-      await client.handleCancel();
+      await client.handleCancel(sessionId);
       await this.publishEvent(sessionId, {
         type: 'cancel_complete',
         payload: {},
@@ -215,6 +217,105 @@ export class AcpSessionManager {
     await this.redis.publish(channel, JSON.stringify(event));
   }
 
+  // ==========================================================================
+  // Connection management (预热复用 + 检查逻辑 + 兜底)
+  // ==========================================================================
+
+  /**
+   * Make sure the wrapper session is attached to a live agent connection.
+   *
+   * 检查逻辑：
+   *  1. 已连接（且由 registry 拥有）→ 直接复用，跳过 spawn+initialize；
+   *  2. 否则从 AgentRegistry 预热池取共享连接（预热未就绪时由
+   *     getOrCreate 内部兜底 spawn+initialize）；
+   *  3. 无 registry（兼容旧用法）→ 走原有的本地 spawn+initialize 路径。
+   */
+  private async ensureConnected(session: AcpSession): Promise<void> {
+    const registry = this.registry;
+
+    if (
+      session.client?.isConnected() &&
+      session.callbacksBound &&
+      (!registry || registry.owns(session.client))
+    ) {
+      session.client.attach(session.sessionId);
+      return;
+    }
+
+    let newlyBound = false;
+
+    if (registry) {
+      // 预热已就绪 → 直接复用；未就绪/已死 → 内部兜底 spawn+initialize
+      const conn = await registry.getOrCreate(session.config);
+      newlyBound = this.bindConnection(session, conn);
+    } else {
+      const conn = session.client;
+      if (!conn.isConnected()) {
+        await conn.connect({
+          command: session.config.agentCommand || 'opencode',
+          args: session.config.agentArgs || ['acp'],
+          env: session.config.agentEnv,
+        });
+      }
+      newlyBound = this.bindConnection(session, conn);
+    }
+
+    session.status = 'active';
+    session.lastActivity = Date.now();
+
+    if (newlyBound) {
+      await this.publishEvent(session.sessionId, {
+        type: 'connected',
+        payload: { sessionId: session.sessionId },
+        timestamp: Date.now(),
+      });
+    }
+
+    console.log(`[ACP Session] Session connected: ${session.sessionId}`);
+  }
+
+  /**
+   * Bind the session to a (shared) connection and register its listeners.
+   * Returns true when listeners were (re-)registered, i.e. the wrapper just
+   * attached to a connection.
+   */
+  private bindConnection(session: AcpSession, conn: SseAcpClient): boolean {
+    const alreadyBound = session.client === conn && session.callbacksBound === true;
+
+    if (!alreadyBound) {
+      // Detach listeners from the previous connection (e.g. placeholder).
+      session.detachFns?.forEach(fn => {
+        try { fn(); } catch { /* ignore */ }
+      });
+      session.detachFns = [];
+
+      const wrapperId = session.sessionId;
+
+      const offState = conn.onConnectionState((connected) => {
+        const s = this.sessions.get(wrapperId);
+        if (s) {
+          s.status = connected ? 'active' : 'disconnected';
+        }
+      });
+
+      const offAgentSession = conn.onAgentSessionChange((changedWrapperId, acpSessionId) => {
+        if (changedWrapperId !== wrapperId) return;
+        const s = this.sessions.get(wrapperId);
+        if (s) {
+          s.agentSessionId = acpSessionId;
+          s.agentCwd = s.config.defaultCwd;
+        }
+      });
+
+      session.detachFns = [offState, offAgentSession];
+      session.client = conn;
+      session.callbacksBound = true;
+    }
+
+    conn.attach(session.sessionId);
+    return !alreadyBound;
+  }
+
   async connectSession(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -222,24 +323,7 @@ export class AcpSessionManager {
     }
 
     try {
-      // 连接到 agent
-      await session.client.connect({
-        command: session.config.agentCommand || 'opencode',
-        args: session.config.agentArgs || ['acp'],
-        env: session.config.agentEnv,
-      });
-
-      session.status = 'active';
-      session.lastActivity = Date.now();
-
-      // 发布连接成功事件
-      await this.publishEvent(sessionId, {
-        type: 'connected',
-        payload: { sessionId },
-        timestamp: Date.now(),
-      });
-
-      console.log(`[ACP Session] Session connected: ${sessionId}`);
+      await this.ensureConnected(session);
     } catch (error) {
       console.error(`[ACP Session] Connect error:`, error);
       await this.publishEvent(sessionId, {
@@ -251,6 +335,10 @@ export class AcpSessionManager {
     }
   }
 
+  // ==========================================================================
+  // ACP session operations (all guarded by ensureConnected)
+  // ==========================================================================
+
   async createAcpSession(sessionId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -259,11 +347,9 @@ export class AcpSessionManager {
 
     try {
       // 复用已有 wrapper 时其 agent 可能已断开：先确保连接再建会话
-      if (!session.client.isConnected()) {
-        await this.connectSession(sessionId);
-      }
+      await this.ensureConnected(session);
 
-      const result = await session.client.handleNewSession({ cwd, mcpServers });
+      const result = await session.client.handleNewSession(sessionId, { cwd, mcpServers });
       session.lastActivity = Date.now();
 
       await this.publishEvent(sessionId, {
@@ -302,7 +388,10 @@ export class AcpSessionManager {
     }
 
     try {
-      const result = await session.client.handleLoadSession({ sessionId: loadSessionId, cwd, mcpServers });
+      // 断线恢复：预热连接复用 / 兜底 spawn
+      await this.ensureConnected(session);
+
+      const result = await session.client.handleLoadSession(sessionId, { sessionId: loadSessionId, cwd, mcpServers });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
@@ -318,7 +407,10 @@ export class AcpSessionManager {
     }
 
     try {
-      const result = await session.client.handleResumeSession({ sessionId: resumeSessionId, cwd, mcpServers });
+      // 断线恢复：预热连接复用 / 兜底 spawn
+      await this.ensureConnected(session);
+
+      const result = await session.client.handleResumeSession(sessionId, { sessionId: resumeSessionId, cwd, mcpServers });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
@@ -334,8 +426,11 @@ export class AcpSessionManager {
     }
 
     try {
-      await session.client.handleDeleteSession({ sessionId: deleteSessionId });
+      await session.client.handleDeleteSession(sessionId, { sessionId: deleteSessionId });
       session.lastActivity = Date.now();
+      if (session.agentSessionId === deleteSessionId) {
+        session.agentSessionId = null;
+      }
     } catch (error) {
       console.error(`[ACP Session] Delete session error:`, error);
       throw error;
@@ -354,7 +449,7 @@ export class AcpSessionManager {
     }
 
     try {
-      const result = await session.client.handleSetConfigOption({ sessionId, configId, type, value });
+      const result = await session.client.handleSetConfigOption(sessionId, { configId, type, value });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
@@ -399,14 +494,18 @@ export class AcpSessionManager {
       throw new Error(`Session ${sessionId} not found`);
     }
 
+    // 检查逻辑：已连接则跳过 spawn+initialize；预热连接直接复用
+    await this.ensureConnected(session);
+
     await session.client.ensureSession(
+      sessionId,
       session.agentSessionId,
       session.agentCwd ?? session.config.defaultCwd,
     );
 
     session.lastActivity = Date.now();
     session.status = session.client.isConnected() ? 'active' : 'disconnected';
-    session.agentSessionId = session.client.getAgentSessionId();
+    session.agentSessionId = session.client.getAcpSessionId(sessionId);
     session.agentCwd = session.config.defaultCwd;
   }
 
@@ -414,10 +513,23 @@ export class AcpSessionManager {
     const session = this.sessions.get(sessionId);
     if (session) {
       try {
-        session.client.disconnect();
+        if (this.registry?.owns(session.client)) {
+          // 归还共享预热连接：只解绑，不杀进程
+          session.client.detach(sessionId);
+        } else {
+          session.client.disconnect();
+        }
       } catch (error) {
         // 忽略断开连接错误
       }
+
+      session.detachFns?.forEach(fn => {
+        try { fn(); } catch { /* ignore */ }
+      });
+      session.redisUnsubs?.forEach(unsub => {
+        try { unsub(); } catch { /* ignore */ }
+      });
+
       this.sessions.delete(sessionId);
       console.log(`[ACP Session] Removed session: ${sessionId}`);
     }
@@ -453,7 +565,11 @@ export class AcpSessionManager {
 
     for (const [, session] of this.sessions) {
       try {
-        session.client.disconnect();
+        session.detachFns?.forEach(fn => fn());
+        session.redisUnsubs?.forEach(unsub => unsub());
+        if (!this.registry?.owns(session.client)) {
+          session.client.disconnect();
+        }
       } catch (error) {
         // 忽略错误
       }
