@@ -47,6 +47,14 @@ export type { WebSocketServices, WebSocketOptions } from './ws/index.js';
 export { RedisClient } from './redis/client.js';
 export type { RedisConfig } from './redis/client.js';
 
+// Helpers
+export { loadSslConfig, isJson } from './helpers/index.js';
+export type { SslConfig } from './helpers/index.js';
+
+// Server
+export { createServer, setupAgentMiddleware } from './server.js';
+export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';
+
 // ACP SSE + Redis
 export { SseManager } from './acp/sse-manager.js';
 export type { SseConnection, ServerEvent } from './acp/sse-manager.js';
