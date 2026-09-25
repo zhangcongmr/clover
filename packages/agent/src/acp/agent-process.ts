@@ -26,12 +26,11 @@ export class AgentProcess {
       this.kill();
     }
 
-    const { command, args = [], cwd, env } = config;
+    const { command, args = [], env } = config;
 
     console.log(`[ACP AgentProcess] Spawning: ${command} ${args.join(' ')}`);
 
     this.process = spawn(command, args, {
-      cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
       shell: true,
       env: {

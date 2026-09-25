@@ -52,7 +52,7 @@ export class SseAcpClient {
    * SSE reconnect path and the prompt lazy-recovery path) cannot spawn two
    * agent processes for the same wrapper.
    */
-  async connect(params: { command?: string; args?: string[]; cwd?: string; env?: Record<string, string> }): Promise<void> {
+  async connect(params: { command?: string; args?: string[]; env?: Record<string, string> }): Promise<void> {
     if (this.connectPromise) {
       await this.connectPromise;
       return;
@@ -65,10 +65,9 @@ export class SseAcpClient {
     }
   }
 
-  private async connectInternal(params: { command?: string; args?: string[]; cwd?: string; env?: Record<string, string> }): Promise<void> {
+  private async connectInternal(params: { command?: string; args?: string[]; env?: Record<string, string> }): Promise<void> {
     const command = params.command || this.config.agentCommand;
     const args = params.args || this.config.agentArgs;
-    const cwd = params.cwd || this.config.defaultCwd;
     const env = params.env || this.config.agentEnv;
 
     if (!command) {
@@ -87,7 +86,7 @@ export class SseAcpClient {
 
     // 1. Spawn agent process
     this.agentProcess = new AgentProcess();
-    this.agentProcess.spawn({ command, args, cwd, env });
+    this.agentProcess.spawn({ command, args, env });
 
     // 2. Create stdio-based ACP stream
     const stream = this.agentProcess.createStream();
@@ -193,7 +192,6 @@ export class SseAcpClient {
     await this.connect({
       command: this.config.agentCommand,
       args: this.config.agentArgs,
-      cwd: this.config.defaultCwd,
       env: this.config.agentEnv,
     });
   }
