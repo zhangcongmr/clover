@@ -39,10 +39,13 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     app,
   });
 } else {
-  setupAgentMiddleware(app, {
+  const services = setupAgentMiddleware(app, {
     corsPorts: [4200, 4000],
     corsOrigins: ['192.168.153.129'],
     staticDir: browserDistFolder,
+  });
+  services.agentRegistry.warmupAll().catch((error) => {
+    console.error('[AgentRegistry] Warmup failed:', error);
   });
   // Note: In dev mode, ACP WebSocket setup requires httpServer access.
   // The config endpoint (POST /api/local/acp/config) will work,
