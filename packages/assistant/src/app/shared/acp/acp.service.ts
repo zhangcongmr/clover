@@ -802,7 +802,9 @@ export class AcpService {
     this.loadingText.set('Loading session history...');
     this.isReplayingHistory.set(true);
     try {
-      const result = await this.sseService.loadSession(currentSessionId, sessionId, cwd, mcpServers);
+      const result = await this.sseService.loadSession(
+        currentSessionId, sessionId, cwd || this.workingDirHint() || undefined, mcpServers,
+      );
 
       this.selectedSessionId.set(sessionId);
       this.sessionState.update(s => ({
@@ -867,7 +869,9 @@ export class AcpService {
     this.loadingText.set('Loading session history...');
     this.isReplayingHistory.set(true);
     try {
-      await this.sseService.resumeSession(currentSessionId, sessionId, cwd, mcpServers);
+      await this.sseService.resumeSession(
+        currentSessionId, sessionId, cwd || this.workingDirHint() || undefined, mcpServers,
+      );
 
       this.selectedSessionId.set(sessionId);
       this.sessionState.update(s => ({

@@ -15,7 +15,9 @@ export interface AcpSession {
   /** Last underlying agent ACP session id. Persisted in memory so it can be
    *  resumed if the agent process crashes (survives agent re-spawn). */
   agentSessionId: string | null;
-  /** Working directory associated with the last agent session. */
+  /** Working directory of the current agent session. Captured from the
+   *  connection's binding when the session changes (session/new·load·resume),
+   *  so it survives agent re-spawn for crash recovery. */
   agentCwd: string | null;
   /** Whether connection-state/agent-session listeners are registered on `client`. */
   callbacksBound?: boolean;
@@ -26,7 +28,6 @@ export interface AcpSession {
 }
 
 export interface SessionCreateOptions {
-  cwd?: string;
   agentCommand?: string;
   agentArgs?: string[];
   agentEnv?: Record<string, string>;
@@ -64,10 +65,8 @@ export class AcpSessionManager {
 
   async createSession(options: SessionCreateOptions = {}): Promise<string> {
     const sessionId = uuidv4();
-    const defaultCwd = options.cwd || process.cwd();
 
     const config: SseAcpClientConfig = {
-      defaultCwd,
       agentCommand: options.agentCommand,
       agentArgs: options.agentArgs,
       agentEnv: options.agentEnv,
@@ -303,7 +302,8 @@ export class AcpSessionManager {
         const s = this.sessions.get(wrapperId);
         if (s) {
           s.agentSessionId = acpSessionId;
-          s.agentCwd = s.config.defaultCwd;
+          // 记录会话真实 cwd（可能与创建时传入的项目目录不同，如时间戳目录）
+          s.agentCwd = conn.getAcpSessionCwd(wrapperId) ?? s.agentCwd;
         }
       });
 
@@ -381,6 +381,45 @@ export class AcpSessionManager {
     }
   }
 
+  /**
+   * 列出指定 agent 的会话（无需创建 wrapper session）。
+   *
+   * `session/list` 是连接级请求：有 registry 时直接复用预热共享连接，
+   * 省去 wrapper 的 uuid / 占位客户端 / Redis 订阅 / 监听器绑定开销；
+   * 无 registry 时兜底走原有的 create → connect → list → remove 流程。
+   */
+  async listAgentSessions(
+    agent: { command: string; args?: string[]; env?: Record<string, string> },
+    cwd: string,
+    cursor?: string,
+  ): Promise<any> {
+    if (this.registry) {
+      const conn = await this.registry.getOrCreate({
+        agentCommand: agent.command,
+        agentArgs: agent.args,
+        agentEnv: agent.env,
+      });
+      return conn.handleListSessions({ cwd, cursor });
+    }
+
+    // 兜底（无 registry）：保持原 wrapper 流程
+    const sessionId = await this.createSession({
+      agentCommand: agent.command,
+      agentArgs: agent.args,
+      agentEnv: agent.env,
+    });
+    try {
+      await this.connectSession(sessionId);
+      return await this.listAcpSessions(sessionId, cwd, cursor);
+    } finally {
+      try {
+        await this.removeSession(sessionId);
+      } catch (cleanupError) {
+        console.warn(`[ACP Session] Failed to clean up wrapper session ${sessionId}:`, cleanupError);
+      }
+    }
+  }
+
   async loadAcpSession(sessionId: string, loadSessionId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -391,7 +430,11 @@ export class AcpSessionManager {
       // 断线恢复：预热连接复用 / 兜底 spawn
       await this.ensureConnected(session);
 
-      const result = await session.client.handleLoadSession(sessionId, { sessionId: loadSessionId, cwd, mcpServers });
+      const result = await session.client.handleLoadSession(sessionId, {
+        sessionId: loadSessionId,
+        cwd: this.resolveCwd(session, cwd),
+        mcpServers,
+      });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
@@ -410,7 +453,11 @@ export class AcpSessionManager {
       // 断线恢复：预热连接复用 / 兜底 spawn
       await this.ensureConnected(session);
 
-      const result = await session.client.handleResumeSession(sessionId, { sessionId: resumeSessionId, cwd, mcpServers });
+      const result = await session.client.handleResumeSession(sessionId, {
+        sessionId: resumeSessionId,
+        cwd: this.resolveCwd(session, cwd),
+        mcpServers,
+      });
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
@@ -483,6 +530,14 @@ export class AcpSessionManager {
   }
 
   /**
+   * 请求未带 cwd 时的回退链：本次会话 cwd → 已绑定 agent 会话的真实 cwd → 进程目录。
+   * 兜底逻辑在 wrapper 层完成——共享连接不持有 cwd。
+   */
+  private resolveCwd(session: AcpSession, cwd?: string | null): string {
+    return cwd || session.agentCwd || process.cwd();
+  }
+
+  /**
    * Ensure the agent is connected and has an active ACP session.
    * If a previous agent session id was persisted (and the agent supports
    * resume), it resumes that session to preserve context; otherwise it throws
@@ -497,16 +552,13 @@ export class AcpSessionManager {
     // 检查逻辑：已连接则跳过 spawn+initialize；预热连接直接复用
     await this.ensureConnected(session);
 
-    await session.client.ensureSession(
-      sessionId,
-      session.agentSessionId,
-      session.agentCwd ?? session.config.defaultCwd,
-    );
+    const cwd = this.resolveCwd(session, session.agentCwd);
+    await session.client.ensureSession(sessionId, session.agentSessionId, cwd);
 
     session.lastActivity = Date.now();
     session.status = session.client.isConnected() ? 'active' : 'disconnected';
     session.agentSessionId = session.client.getAcpSessionId(sessionId);
-    session.agentCwd = session.config.defaultCwd;
+    session.agentCwd = cwd;
   }
 
   async removeSession(sessionId: string): Promise<void> {
