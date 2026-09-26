@@ -181,9 +181,9 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
       mkdirSync(cwd, { recursive: true });
 
-      // 创建会话
+      // 创建会话（cwd 不再存入 wrapper——会话真实 cwd 在 session/new·load·resume
+      // 绑定时从连接侧记录，此处仅生成目录并返回给前端）
       const sessionId = await sessionManager.createSession({
-        cwd: String(cwd).trim(),
         agentCommand,
         agentArgs,
         agentEnv,
@@ -351,7 +351,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/acp/list-all-sessions
-   * 聚合列出所有 agent 的会话（每个 agent 独立 create → connect → list → 清理）
+   * 聚合列出所有 agent 的会话（直接复用 registry 预热连接，不创建 wrapper session）
    */
   app.post('/api/acp/list-all-sessions', async (req: Request, res: Response) => {
     const { cwd, agents } = req.body;
@@ -367,42 +367,42 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     const workingDir = String(cwd).trim();
+
+    const results = await Promise.all(
+      agents.map(async (agent): Promise<
+        | { ok: true; agentId: string; sessions: any[] }
+        | { ok: false; agentId: string; error: string }
+        | null
+      > => {
+        if (!agent || typeof agent.id !== 'string' || typeof agent.command !== 'string') {
+          return null;
+        }
+
+        try {
+          const result = await sessionManager.listAgentSessions(
+            { command: agent.command, args: agent.args, env: agent.env },
+            workingDir,
+          );
+          return { ok: true, agentId: agent.id, sessions: result?.sessions ?? [] };
+        } catch (error) {
+          const message = (error as Error).message || String(error);
+          console.warn(`[ACP Routes] Failed to list sessions for agent ${agent.id}:`, message);
+          return { ok: false, agentId: agent.id, error: message };
+        }
+      }),
+    );
+
     const allSessions: any[] = [];
     const failures: { agentId: string; error: string }[] = [];
 
-    for (const agent of agents) {
-      if (!agent || typeof agent.id !== 'string' || typeof agent.command !== 'string') {
-        continue;
-      }
-
-      let sessionId: string | null = null;
-      try {
-        sessionId = await sessionManager.createSession({
-          cwd: workingDir,
-          agentCommand: agent.command,
-          agentArgs: agent.args,
-          agentEnv: agent.env,
-        });
-
-        await sessionManager.connectSession(sessionId);
-
-        const result = await sessionManager.listAcpSessions(sessionId, workingDir);
-        const sessions: any[] = result?.sessions ?? [];
-
-        for (const s of sessions) {
-          allSessions.push({ ...s, agentId: agent.id });
+    for (const result of results) {
+      if (!result) continue;
+      if (result.ok) {
+        for (const s of result.sessions) {
+          allSessions.push({ ...s, agentId: result.agentId });
         }
-      } catch (error) {
-        console.warn(`[ACP Routes] Failed to list sessions for agent ${agent.id}:`, (error as Error).message || error);
-        failures.push({ agentId: agent.id, error: (error as Error).message || String(error) });
-      } finally {
-        if (sessionId) {
-          try {
-            await sessionManager.removeSession(sessionId);
-          } catch (cleanupError) {
-            console.warn(`[ACP Routes] Failed to clean up wrapper session for agent ${agent.id}:`, cleanupError);
-          }
-        }
+      } else {
+        failures.push({ agentId: result.agentId, error: result.error });
       }
     }
 

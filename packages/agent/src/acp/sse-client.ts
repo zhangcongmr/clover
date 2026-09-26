@@ -7,7 +7,6 @@ import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
 
 export interface SseAcpClientConfig {
-  defaultCwd: string;
   agentCommand?: string;
   agentArgs?: string[];
   agentEnv?: Record<string, string>;
@@ -82,13 +81,10 @@ export class SseAcpClient {
    * concurrent callers (warmup, SSE reconnect, prompt lazy-recovery) cannot
    * spawn two agent processes for the same connection.
    */
-  async connect(params: { command?: string; args?: string[]; env?: Record<string, string>; cwd?: string }): Promise<void> {
+  async connect(params: { command?: string; args?: string[]; env?: Record<string, string> }): Promise<void> {
     if (this.connectPromise) {
       await this.connectPromise;
       return;
-    }
-    if (params.cwd) {
-      this.config.defaultCwd = params.cwd;
     }
     this.connectPromise = this.connectInternal(params);
     try {
@@ -321,6 +317,11 @@ export class SseAcpClient {
     return this.sessionBindings.get(wrapperId)?.acpSessionId ?? null;
   }
 
+  /** Working directory the wrapper's current agent session is bound to. */
+  getAcpSessionCwd(wrapperId: string): string | undefined {
+    return this.sessionBindings.get(wrapperId)?.cwd;
+  }
+
   // ==========================================================================
   // Callbacks (multi-listener)
   // ==========================================================================
@@ -469,7 +470,7 @@ export class SseAcpClient {
    * - Never creates a fresh session here: new sessions are created explicitly by
    *   the frontend via `session/create`.
    */
-  async ensureSession(wrapperId: string, resumeSessionId?: string | null, resumeCwd?: string): Promise<void> {
+  async ensureSession(wrapperId: string, resumeSessionId: string | null, resumeCwd: string): Promise<void> {
     if (!this.isConnected()) {
       await this.reconnect();
     }
@@ -481,13 +482,11 @@ export class SseAcpClient {
       throw new Error('No previous agent session to resume; create a new session or load one from history');
     }
 
-    const cwd = resumeCwd ?? this.config.defaultCwd;
-
     const resumeCapability = this.agentCapabilities?.sessionCapabilities?.resume;
     if (resumeCapability === undefined || resumeCapability === null) {
       throw new Error('Agent does not support session resume; load the previous session from history or start a new one');
     }
-    await this.handleResumeSession(wrapperId, { sessionId: resumeSessionId, cwd });
+    await this.handleResumeSession(wrapperId, { sessionId: resumeSessionId, cwd: resumeCwd });
   }
 
   /**
@@ -630,12 +629,12 @@ export class SseAcpClient {
   /**
    * Load a session from agent for a wrapper session.
    */
-  async handleLoadSession(wrapperId: string, params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
+  async handleLoadSession(wrapperId: string, params: { sessionId: string; cwd: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
 
-    const cwd = params.cwd || this.config.defaultCwd;
+    const cwd = params.cwd;
 
     console.log(`[SSE ACP Client] Loading session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
@@ -665,12 +664,12 @@ export class SseAcpClient {
   /**
    * Resume a session from agent for a wrapper session.
    */
-  async handleResumeSession(wrapperId: string, params: { sessionId: string; cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
+  async handleResumeSession(wrapperId: string, params: { sessionId: string; cwd: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
 
-    const cwd = params.cwd || this.config.defaultCwd;
+    const cwd = params.cwd;
 
     console.log(`[SSE ACP Client] Resuming session: ${params.sessionId} (wrapper: ${wrapperId})`);
 

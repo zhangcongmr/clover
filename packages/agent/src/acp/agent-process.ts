@@ -6,7 +6,6 @@ import { ndJsonStream } from '@agentclientprotocol/sdk';
 export interface AgentProcessConfig {
   command: string;
   args?: string[];
-  cwd?: string;
   env?: Record<string, string>;
 }
 

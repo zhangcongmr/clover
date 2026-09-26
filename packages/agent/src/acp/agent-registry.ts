@@ -207,7 +207,6 @@ export class AgentRegistry {
     let connection = state.connection;
     if (!connection) {
       connection = new SseAcpClient(`agent:${state.config.id}`, {
-        defaultCwd: process.cwd(),
         agentCommand: command,
         agentArgs: args,
         agentEnv: env,
