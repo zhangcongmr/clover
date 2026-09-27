@@ -27,7 +27,7 @@ export class SseManager {
 
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
-      this.cleanup();
+      // this.cleanup();
     }, 30000);
   }
 
