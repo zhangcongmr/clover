@@ -10,7 +10,6 @@ import {
   PromptCapabilities,
   ModelState,
   ContentBlock,
-  TextContent,
   ToolCall,
   ToolCallUpdate,
   Plan,
@@ -102,6 +101,9 @@ export interface AcpSessionState {
 export class AcpService {
   private sseService = inject(AcpSseService);
 
+  /** Placeholder session title used until the agent provides its own (LLM) title. */
+  private static readonly PLACEHOLDER_TITLE = 'New Session';
+
   readonly sessionState = signal<AcpSessionState>({
     sessionId: null,
     isConnected: false,
@@ -191,6 +193,14 @@ export class AcpService {
    *  true, onSessionCreated skips task/session record creation. */
   private isInternalSession = false;
 
+  /** Whether `sessionState().title` is a local placeholder (first user message)
+   *  still awaiting the agent's own (LLM) title. Cleared once an agent title is
+   *  adopted via `applySessionTitle`. */
+  private provisionalTitle = false;
+
+  /** Timer for the delayed agent-title refresh after a prompt completes. */
+  private titleRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
   readonly messageCount = computed(() => this.messages().length);
   readonly hasActiveSession = computed(() => this.sessionState().sessionId !== null);
   readonly isConnected = computed(() => this.sessionState().isConnected);
@@ -253,6 +263,11 @@ export class AcpService {
       this.processingStartTime.set(null);
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
+      }
+      // Agents (e.g. OpenCode) generate the session title asynchronously after
+      // the turn finishes — re-check once the local title is still a placeholder.
+      if (this.provisionalTitle) {
+        this.scheduleTitleRefresh();
       }
     });
 
@@ -515,21 +530,119 @@ export class AcpService {
     this.processingStartTime.set(Date.now());
     this.isProcessing.set(true);
 
-    // Split text blocks for session title generation
-    const textBlocks = content.filter(
-      (b): b is TextContent => b.type === 'text' && !!b.text
-    );
-
-    // 会话标题：用首条用户消息文本生成（ACP agent 不会主动下发 session_info_update 标题）
-    if (!this.sessionState().title && textBlocks.length > 0) {
-      const firstText = textBlocks[0].text!.trim().replace(/\s+/g, ' ');
-      this.sessionState.update(s => ({
-        ...s,
-        title: firstText.length > 50 ? firstText.slice(0, 50) + '…' : firstText,
-      }));
+    // 会话标题占位：使用固定文案；agent 下发正式标题
+    // （session_info_update 或 session/list）后由 applySessionTitle 覆盖
+    if (!this.sessionState().title) {
+      this.provisionalTitle = true;
+      this.sessionState.update(s => ({ ...s, title: AcpService.PLACEHOLDER_TITLE }));
     }
 
     await this.sseService.sendPrompt(sessionId, content);
+  }
+
+  // ============================================================================
+  // Session title synchronization
+  // ============================================================================
+
+  /**
+   * Sets a fixed placeholder title for a brand-new session. The placeholder is
+   * provisional: it is replaced once the agent provides its own (LLM-generated)
+   * title via `session_info_update` or `session/list`.
+   */
+  setProvisionalTitle(): void {
+    this.provisionalTitle = true;
+    this.sessionState.update(s => ({ ...s, title: AcpService.PLACEHOLDER_TITLE }));
+  }
+
+  /**
+   * Adopts an agent/LLM-provided title for a session. Agent titles always win
+   * over local placeholders. Updates: the header (when the session is active),
+   * the in-memory session list, the owning project/task record, and the
+   * persisted `projects.json`/`tasks.json` (backend save-session upserts).
+   */
+  async applySessionTitle(sessionId: string, title: string): Promise<void> {
+    const next = title.trim();
+    if (!sessionId || !next) return;
+
+    if (this.selectedSessionId() === sessionId) {
+      this.provisionalTitle = false;
+      if (this.sessionState().title !== next) {
+        this.sessionState.update(s => ({ ...s, title: next }));
+      }
+    }
+
+    this.sessions.update(list =>
+      list.map(s => (s.sessionId === sessionId ? { ...s, title: next } : s))
+    );
+
+    // Locate the owning project/task record: match by session id first,
+    // fall back to the current cwd.
+    const hasSession = (r: ProjectInfo) => r.sessions?.some(s => s.sessionId === sessionId);
+    const cwd = this.sessionState().cwd || this.selectedProjectPath() || '';
+    const owner =
+      this.projects().find(hasSession) ??
+      this.tasks().find(hasSession) ??
+      this.projects().find(p => p.path === cwd) ??
+      this.tasks().find(t => t.path === cwd) ??
+      null;
+    if (!owner) return;
+
+    const agentId =
+      owner.sessions?.find(s => s.sessionId === sessionId)?.agentId ||
+      this.selectedAgent()?.id || 'opencode';
+    const updatedAt = new Date().toISOString();
+
+    const rewrite = (list: ProjectInfo[]): ProjectInfo[] =>
+      list.map(item => {
+        if (item.path !== owner.path || item.type !== owner.type) return item;
+        return {
+          ...item,
+          name: item.type === 'task' ? next : item.name,
+          sessions: item.sessions.map(s =>
+            s.sessionId === sessionId ? { ...s, title: next, updatedAt } : s
+          ),
+        };
+      });
+
+    if (owner.type === 'task') {
+      this.tasks.update(rewrite);
+    } else {
+      this.projects.update(rewrite);
+    }
+
+    await this.saveSessionToProject(owner.path, { sessionId, agentId, title: next, updatedAt });
+  }
+
+  /** Delays the agent-title fetch — agents generate titles asynchronously
+   *  after the turn completes, so a short delay avoids racing the write. */
+  private scheduleTitleRefresh(delayMs = 1500): void {
+    if (this.titleRefreshTimer) clearTimeout(this.titleRefreshTimer);
+    this.titleRefreshTimer = setTimeout(() => {
+      this.titleRefreshTimer = null;
+      void this.refreshAgentTitle();
+    }, delayMs);
+  }
+
+  /** Pulls the agent's session list and adopts its title for the current
+   *  session when it differs from the local placeholder. Keeps the placeholder
+   *  (and retries on the next prompt_complete) if the agent has none yet. */
+  private async refreshAgentTitle(): Promise<void> {
+    if (!this.provisionalTitle) return;
+    const wrapperId = this.sessionState().sessionId;
+    const acpSessionId = this.selectedSessionId();
+    if (!wrapperId || !acpSessionId) return;
+
+    const cwd = this.sessionState().cwd || this.selectedProjectPath() || this.workingDirHint() || undefined;
+    try {
+      const result = await this.sseService.listSessions(wrapperId, cwd);
+      const list: SessionInfo[] = result?.sessions ?? [];
+      const found = list.find(s => s.sessionId === acpSessionId);
+      if (found?.title?.trim()) {
+        await this.applySessionTitle(acpSessionId, found.title);
+      }
+    } catch (error) {
+      console.warn('[ACP] Failed to refresh agent session title:', error);
+    }
   }
 
   /**
@@ -555,6 +668,11 @@ export class AcpService {
   }
 
   async disconnect(): Promise<void> {
+    if (this.titleRefreshTimer) {
+      clearTimeout(this.titleRefreshTimer);
+      this.titleRefreshTimer = null;
+    }
+    this.provisionalTitle = false;
     this.sseService.disconnect();
     this.wrapperAgentId = null;
     this.selectedSessionId.set(null);
@@ -617,24 +735,37 @@ export class AcpService {
 
       if (cwd) {
         const existingProject = this.projects().find(p => p.path === cwd);
-        const existingSessionIds = new Set(
-          (existingProject?.sessions || []).map(s => `${s.sessionId}:${s.agentId}`)
+        const existingRecords = new Map(
+          (existingProject?.sessions || []).map(s => [`${s.sessionId}:${s.agentId}`, s])
         );
-        
+
         for (const session of allSessions) {
-          const key = `${session.sessionId}:${(session as any).agentId}`;
-          if (existingSessionIds.has(key)) {
+          const agentId = (session as any).agentId;
+          const key = `${session.sessionId}:${agentId}`;
+          const record = existingRecords.get(key);
+
+          if (record) {
+            // 已有记录：agent 返回的标题发生变化（如首轮后 LLM 生成）时回写
+            const agentTitle = session.title?.trim();
+            if (agentTitle && agentTitle !== record.title) {
+              try {
+                await this.applySessionTitle(session.sessionId, agentTitle);
+                record.title = agentTitle;
+              } catch (error) {
+                console.warn('[ACP] Failed to refresh session title:', session.sessionId, error);
+              }
+            }
             continue;
           }
-          
+
           try {
             await this.sseService.saveSessionToProject(cwd, {
               sessionId: session.sessionId,
-              agentId: (session as any).agentId,
+              agentId,
               title: session.title || `Session ${session.sessionId.substring(0, 8)}`,
               updatedAt: session.updatedAt || new Date().toISOString(),
             });
-            existingSessionIds.add(key);
+            existingRecords.set(key, { sessionId: session.sessionId, agentId, title: session.title });
           } catch (error) {
             console.error('[ACP] Failed to persist session:', session.sessionId, error);
           }
@@ -782,9 +913,10 @@ export class AcpService {
     this.activeTodosMessages.set([]);
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
-    // 会话标题：从已加载的会话列表取回
+    this.provisionalTitle = false;
+    // 会话标题：从已加载的会话列表取回；列表存在但无标题时清空，避免残留上一个会话的标题
     const loaded = this.sessions().find(s => s.sessionId === sessionId);
-    if (loaded?.title) {
+    if (loaded) {
       this.sessionState.update(s => ({ ...s, title: loaded.title }));
     }
 
@@ -849,9 +981,10 @@ export class AcpService {
     this.activeTodosMessages.set([]);
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
-    // 会话标题：从已加载的会话列表取回
+    this.provisionalTitle = false;
+    // 会话标题：从已加载的会话列表取回；列表存在但无标题时清空，避免残留上一个会话的标题
     const resumed = this.sessions().find(s => s.sessionId === sessionId);
-    if (resumed?.title) {
+    if (resumed) {
       this.sessionState.update(s => ({ ...s, title: resumed.title }));
     }
 
@@ -1006,10 +1139,10 @@ export class AcpService {
 
       case 'session_info_update':
         if (update.title) {
-          this.sessionState.update(s => ({
-            ...s,
-            title: update.title
-          }));
+          const targetSessionId = (update as { sessionId?: string }).sessionId ?? this.selectedSessionId();
+          if (targetSessionId) {
+            void this.applySessionTitle(targetSessionId, update.title);
+          }
         }
         break;
 
