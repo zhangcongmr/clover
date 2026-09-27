@@ -32,7 +32,7 @@
 	  <div class="slash-command-menu custom-scroll">
 		@for (cmd of filteredCommands(); track cmd.name; let i = $index) {
 		  <button class="slash-command-item" [class.active]="i === selectedIndex()"
-			(mousedown)="selectCommand(cmd)" (mouseenter)="selectedIndex.set(i)">
+			(mousedown)="$event.preventDefault(); selectCommand(cmd)" (mouseenter)="selectedIndex.set(i)">
 			<div class="slash-command-row">
 			  <span class="slash-command-name">/{{ cmd.name }}</span>
 			  @if (cmd.source === 'client') {
