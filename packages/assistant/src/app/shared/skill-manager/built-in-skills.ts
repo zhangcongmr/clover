@@ -11,12 +11,12 @@ import type { SkillInfo } from '../skills/skill.service';
  */
 export const BUILT_IN_SKILLS: readonly SkillInfo[] = [
   {
-    name: 'theme-generator',
+    name: 'Theme-generator',
     description: 'Generate an A2UI theme preview from a style description',
     content: THEME_GENERATOR_CONTENT,
   },
   {
-    name: 'restaurants-finder',
+    name: 'Restaurants-finder',
     description: 'Find restaurants and book tables (A2UI)',
     content: RESTAURANTS_FINDER_CONTENT,
   },
