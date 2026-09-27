@@ -74,10 +74,25 @@
 }
 
 .item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
   font-size: 13px;
   color: var(--vscode-foreground);
   margin-bottom: 2px;
+}
+
+.badge-builtin {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-sideBar-background, var(--vscode-background));
 }
 
 .item-desc {

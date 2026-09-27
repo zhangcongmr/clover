@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SkillService, type SkillInfo } from '../skills/skill.service';
+import { BUILT_IN_SKILL_NAMES } from './built-in-skills';
 
 @Component({
   selector: 'app-skill-manager',
@@ -18,6 +19,7 @@ export class SkillManagerComponent {
   error: string | null = null;
 
   showForm = false;
+  viewMode = false;
   editingSkill: SkillInfo | null = null;
   formData = this.getEmptyForm();
   nameError: string | null = null;
@@ -44,20 +46,39 @@ export class SkillManagerComponent {
 
   openAddForm(): void {
     this.editingSkill = null;
+    this.viewMode = false;
     this.formData = this.getEmptyForm();
     this.nameError = null;
     this.showForm = true;
   }
 
   openEditForm(skill: SkillInfo): void {
+    if (this.isBuiltIn(skill.name)) {
+      this.openViewForm(skill);
+      return;
+    }
     this.editingSkill = skill;
+    this.viewMode = false;
     this.formData = { ...skill };
     this.nameError = null;
     this.showForm = true;
   }
 
+  openViewForm(skill: SkillInfo): void {
+    this.editingSkill = skill;
+    this.viewMode = true;
+    this.formData = { ...skill };
+    this.nameError = null;
+    this.showForm = true;
+  }
+
+  isBuiltIn(name: string): boolean {
+    return BUILT_IN_SKILL_NAMES.has(name);
+  }
+
   closeForm(): void {
     this.showForm = false;
+    this.viewMode = false;
     this.editingSkill = null;
     this.formData = this.getEmptyForm();
     this.nameError = null;

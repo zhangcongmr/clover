@@ -19,16 +19,27 @@
       @for (skill of skills; track skill.name) {
         <li class="item-row">
           <div class="item-main">
-            <div class="item-name">{{ skill.name }}</div>
+            <div class="item-name">
+              {{ skill.name }}
+              @if (isBuiltIn(skill.name)) {
+                <span class="badge-builtin">Built-in</span>
+              }
+            </div>
             @if (skill.description) {
               <div class="item-desc">{{ skill.description }}</div>
             }
             <div class="item-preview">{{ skill.content }}</div>
           </div>
           <div class="item-actions">
-            <button type="button" class="btn btn-ghost" (click)="openEditForm(skill)">Edit</button>
+            @if (isBuiltIn(skill.name)) {
+              <button type="button" class="btn btn-ghost" (click)="openViewForm(skill)">View</button>
+            } @else {
+              <button type="button" class="btn btn-ghost" (click)="openEditForm(skill)">Edit</button>
+            }
             <button type="button" class="btn btn-ghost" (click)="copySkill(skill.name)">Copy</button>
-            <button type="button" class="btn btn-ghost btn-danger" (click)="deleteSkill(skill.name)">Delete</button>
+            @if (!isBuiltIn(skill.name)) {
+              <button type="button" class="btn btn-ghost btn-danger" (click)="deleteSkill(skill.name)">Delete</button>
+            }
           </div>
         </li>
       }
@@ -39,7 +50,7 @@
     <div class="form-overlay">
       <div class="form-panel" role="dialog" aria-modal="true">
         <div class="form-header">
-          <h3>{{ editingSkill ? 'Edit Skill' : 'Add Skill' }}</h3>
+          <h3>{{ viewMode ? 'View Skill' : (editingSkill ? 'Edit Skill' : 'Add Skill') }}</h3>
           <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close">×</button>
         </div>
         <div class="form-body">
@@ -50,7 +61,7 @@
               type="text"
               [(ngModel)]="formData.name"
               (ngModelChange)="onNameChange()"
-              [disabled]="!!editingSkill"
+              [disabled]="!!editingSkill || viewMode"
               [class.invalid]="!!nameError"
               pattern="[a-zA-Z0-9_-]+"
               title="Letters, numbers, hyphens, underscores only"
@@ -71,6 +82,7 @@
               id="skill-desc"
               type="text"
               [(ngModel)]="formData.description"
+              [readonly]="viewMode"
               autocomplete="off"
               placeholder="Optional summary"
             />
@@ -82,14 +94,19 @@
               id="skill-content"
               [(ngModel)]="formData.content"
               rows="14"
+              [readonly]="viewMode"
               spellcheck="false"
               placeholder="Prompt text…"
             ></textarea>
           </div>
         </div>
         <div class="form-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
-          <button type="button" class="btn btn-primary" (click)="saveSkill()">Save</button>
+          @if (viewMode) {
+            <button type="button" class="btn btn-secondary" (click)="closeForm()">Close</button>
+          } @else {
+            <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="saveSkill()">Save</button>
+          }
         </div>
       </div>
     </div>
