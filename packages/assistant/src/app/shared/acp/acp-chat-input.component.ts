@@ -1465,10 +1465,26 @@ export class AcpChatInputComponent {
   }
 
   selectCommand(cmd: { name: string; description: string }): void {
-    this.inputValue.set(`/${cmd.name} `);
+    const value = `/${cmd.name} `;
+    this.inputValue.set(value);
     this.selectedIndex.set(0);
-    this.messageInput?.nativeElement?.focus();
+    this.focusInputAtEnd(value);
   }
+
+  private focusInputAtEnd(expected: string, retries = 10): void {
+    const el = this.messageInput?.nativeElement as HTMLTextAreaElement | undefined;
+    if (!el) return;
+    if (el.disabled) return;
+    el.focus();
+    if (el.value === expected) {
+      el.setSelectionRange(expected.length, expected.length);
+      return;
+    }
+    if (retries > 0) {
+      setTimeout(() => this.focusInputAtEnd(expected, retries - 1), 16);
+    }
+  }
+
 
   private scrollToActive(index: number, menuSelector: string, itemSelector: string): void {
     const box = this.messageInput?.nativeElement?.closest('.acp-chat-input-box');
