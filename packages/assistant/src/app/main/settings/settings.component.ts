@@ -21,6 +21,8 @@ export class SettingsComponent {
 
   readonly previousViewId = input<number>(1);
   readonly goBack = output<number>();
+  /** Emitted when the user starts a custom (AI generated) theme from Appearance. */
+  readonly generateCustomTheme = output<void>();
 
   categories = this.settingsService.categories;
   activeCategoryId = this.settingsService.activeCategoryId;
@@ -100,6 +102,10 @@ export class SettingsComponent {
 
   setTheme(theme: string) {
     this.settingsService.setTheme(theme);
+  }
+
+  onGenerateCustomTheme() {
+    this.generateCustomTheme.emit();
   }
 
   onTerminalFontFamilyChange(event: Event) {

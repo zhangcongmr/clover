@@ -46,6 +46,10 @@ export class AgentComponent {
   private previousSidebarCollapsed = false;
   /** Projects whose session list is collapsed (keyed by project name). */
   collapsedProjects = signal<Set<string>>(new Set());
+  /** Project whose session list is expanded. Deliberately separate from the
+   *  selected project/task: clicking New Task or a task changes the selection
+   *  and must not fold an already expanded project. */
+  expandedProjectName = signal<string | null>(null);
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -133,7 +137,62 @@ export class AgentComponent {
   }
 
   protected activeSessionId = computed(() => this.acpService.selectedSessionId());
-  
+
+  /**
+   * Single source of truth for the sidebar highlight: exactly one of
+   * New Task / Task / Project / Session can be active at a time.
+   *
+   * Priority:
+   *  1. The selected task's own session — the task row stands in for it.
+   *  2. A session actually rendered under a project (first project wins).
+   *  3. The selected task.
+   *  4. The selected project.
+   *  5. New Task — default when nothing else is selected.
+   *
+   * A session id that is not listed in the sidebar (e.g. the internal session
+   * created to prefetch config options, which acp.service records before it
+   * knows the session is internal) never wins, so the highlight falls back
+   * instead of going dark.
+   */
+  private readonly activeItemKey = computed(() => {
+    const selected = this.selectedProject();
+    const sessionId = this.activeSessionId();
+
+    if (selected?.type === 'task' && sessionId &&
+        selected.sessions?.some(s => s.sessionId === sessionId)) {
+      return `task:${selected.path}`;
+    }
+
+    if (sessionId) {
+      for (const project of this.projects()) {
+        if (this.sessionsOf(project).some(s => s.sessionId === sessionId)) {
+          return `session:${project.name}:${sessionId}`;
+        }
+      }
+    }
+
+    if (selected?.type === 'task') return `task:${selected.path}`;
+    if (selected?.type === 'project') return `project:${selected.name}`;
+
+    return 'new-task';
+  });
+
+  protected isNewTaskActive(): boolean {
+    return this.activeItemKey() === 'new-task';
+  }
+
+  protected isTaskActive(task: ProjectInfo): boolean {
+    return this.activeItemKey() === `task:${task.path}`;
+  }
+
+  protected isProjectActive(project: ProjectInfo): boolean {
+    return this.activeItemKey() === `project:${project.name}`;
+  }
+
+  protected isSessionActive(project: ProjectInfo, session: SessionWithAgent): boolean {
+    return this.activeItemKey() === `session:${project.name}:${session.sessionId}`;
+  }
+
   private isLoadingSessions = false;
 
   constructor() {
@@ -153,6 +212,7 @@ export class AgentComponent {
           const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
           if (cur) {
             if (cur.type === 'project') {
+              this.expandedProjectName.set(cur.name);
               this.loadSessionsForProject(cur.path).then(() => {
                 const selectedSessionId = this.acpService.selectedSessionId();
                 if (selectedSessionId) {
@@ -214,6 +274,7 @@ export class AgentComponent {
 
     // Expand if it was collapsed
     this.expandProject(name);
+    this.expandedProjectName.set(name);
 
     this.acpService.saveSelectedProject(projectInfo.path);
     if(projectInfo.sessions?.length > 0) {

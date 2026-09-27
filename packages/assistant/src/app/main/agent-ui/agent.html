@@ -13,7 +13,7 @@
 
     <!-- New Task nav -->
     <div class="sidebar-nav">
-      <div class="nav-item" [class.active]="selectedProject() === null && !activeSessionId()"
+      <div class="nav-item" [class.active]="isNewTaskActive()"
         (click)="createNewTask()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -42,7 +42,7 @@
         <div class="task-list custom-scroll">
           @for (task of acpService.tasks(); track task.id) {
             <div class="task-item"
-              [class.active]="selectedProject()?.id === task.id"
+              [class.active]="isTaskActive(task)"
               [class.loading]="sessionLoadingId() === (task.sessions[0]?.sessionId || '')"
               (click)="loadTaskSession(task.id!, task.sessions[0]?.sessionId || '')">
               <span class="task-title">{{ task.sessions[0]?.title || 'Untitled' }}</span>
@@ -94,7 +94,7 @@
 
         <div class="project-list custom-scroll">
         @for (project of projects(); track project.name) {
-          <div class="project-item" [class.active]="selectedProject()?.name === project.name && selectedProject()?.type === 'project' && !activeSessionId()"
+          <div class="project-item" [class.active]="isProjectActive(project)"
             (click)="selectProject(project.name)">
             <svg class="sidebar-chevron" [class.collapsed]="isProjectCollapsed(project.name)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
@@ -109,10 +109,10 @@
             </button>
           </div>
 
-          @if (selectedProject()?.name === project.name && selectedProject()?.type === 'project' && !isProjectCollapsed(project.name)) {
+          @if (expandedProjectName() === project.name && !isProjectCollapsed(project.name)) {
           <div class="project-sessions">
             @for (session of sessionsOf(project); track session.sessionId) {
-              <div class="session-item" [class.active]="activeSessionId() === session.sessionId"
+              <div class="session-item" [class.active]="isSessionActive(project, session)"
                 [class.loading]="sessionLoadingId() === session.sessionId"
                 [class.disabled]="sessionLoadingId() !== null"
                 (click)="loadSession(session.sessionId)">

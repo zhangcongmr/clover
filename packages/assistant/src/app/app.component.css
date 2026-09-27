@@ -7,6 +7,7 @@
   height: 100%;
   justify-content: flex-start;
   overflow: hidden;
+  position: relative;
 }
 
 .ast-app-header {
@@ -108,6 +109,19 @@
   min-height: 0;
   justify-content: flex-start;
   background-color: var(--vscode-background);
+  /* Keep the body's own z-index stacking (menus, dialogs) below the settings /
+     profile overlay. `isolation` instead of `position` so absolutely positioned
+     children keep the containing block they have today. */
+  isolation: isolate;
+}
+
+/* Settings / profile are rendered as an opaque layer on top of the always
+   mounted app-body, so switching views never tears the body down. */
+.app-overlay-view {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--vscode-background);
 }
 
 .ast-left-side-area {

@@ -835,11 +835,12 @@ export class AcpChatInputComponent {
   constructor() {
     this.loadMcpServers();
     this.skillService.refresh().catch(() => {});
-    // Slash command requested from outside (e.g. app menu) → write it into the input.
+    // Slash command requested from outside (e.g. Settings → Appearance) → write it
+    // into the input. The pending value is kept until the user edits or sends the
+    // text, so a chat input recreated while switching panels re-applies it too.
     effect(() => {
       const cmd = this.acpService.pendingSlashCommand();
       if (!cmd) return;
-      this.acpService.pendingSlashCommand.set(null);
       this.fillSlashCommand(cmd);
     });
   }
@@ -1213,6 +1214,7 @@ export class AcpChatInputComponent {
     }
 
     this.errorMessage.set(null);
+    this.acpService.pendingSlashCommand.set(null);
     this.inputValue.set('');
 
     const textarea = this.messageInput?.nativeElement;
@@ -1282,6 +1284,10 @@ export class AcpChatInputComponent {
   }
 
   onInput(): void {
+    // The user is editing the text: stop re-applying an externally injected slash command.
+    if (this.acpService.pendingSlashCommand()) {
+      this.acpService.pendingSlashCommand.set(null);
+    }
     const textarea = this.messageInput?.nativeElement;
     if (textarea) {
       // Only reset selectedIndex when the value actually changed (not on arrow key navigation)
@@ -1328,6 +1334,9 @@ export class AcpChatInputComponent {
       if (event.key === 'Escape') {
         event.preventDefault();
         this.inputValue.set('');
+        // The input was cleared without firing `input`: treat it as an edit so
+        // an injected slash command is not re-applied later.
+        this.acpService.pendingSlashCommand.set(null);
         return;
       }
     }
@@ -1472,6 +1481,9 @@ export class AcpChatInputComponent {
   }
 
   selectCommand(cmd: { name: string; description: string }): void {
+    // Picking a command from the menu counts as an edit: drop any externally
+    // injected slash command so it cannot overwrite this choice later.
+    this.acpService.pendingSlashCommand.set(null);
     this.fillSlashCommand(cmd.name);
   }
 
@@ -1482,23 +1494,26 @@ export class AcpChatInputComponent {
     this.focusInputAtEnd(value);
   }
 
-  private focusInputAtEnd(expected: string, retries = 10): void {
+  /**
+   * Focus the textarea with the caret at the end of `expected`, retrying while
+   * the view settles: the subtree may still be inert, the textarea disabled,
+   * ngModel may not have painted the value yet, or focus() may be refused for
+   * any other transient reason. Retries stop as soon as this instance is
+   * detached — the replacement instance applies the pending command itself.
+   */
+  private focusInputAtEnd(expected: string, retriesLeft = 50): void {
+    if (retriesLeft <= 0) return;
     const el = this.messageInput?.nativeElement as HTMLTextAreaElement | undefined;
-    if (!el) {
-      if (retries > 0) {
-        setTimeout(() => this.focusInputAtEnd(expected, retries - 1), 16);
+    if (el && !el.isConnected) return;
+    if (el && !el.disabled && el.value === expected) {
+      el.focus();
+      if (document.activeElement === el) {
+        el.setSelectionRange(expected.length, expected.length);
+        return;
       }
-      return;
+      // focus() was refused (e.g. the subtree is still inert) → keep trying.
     }
-    if (el.disabled) return;
-    el.focus();
-    if (el.value === expected) {
-      el.setSelectionRange(expected.length, expected.length);
-      return;
-    }
-    if (retries > 0) {
-      setTimeout(() => this.focusInputAtEnd(expected, retries - 1), 16);
-    }
+    setTimeout(() => this.focusInputAtEnd(expected, retriesLeft - 1), 25);
   }
 
 
