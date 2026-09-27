@@ -40,6 +40,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
   contentComp = viewChild(ContentComponent);
+  agentComp = viewChild(AgentComponent);
   upBtnlist = viewChild<ElementRef<HTMLElement>>('upBtnlist');
   http = inject(HttpClient);
   injector = inject(Injector);
@@ -826,6 +827,33 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     this.lastSelectedDisplayViewId = viewId;
   }
 
+  /** Settings → Appearance → custom theme: return to the assistant and load the
+   *  Theme-generator skill into the chat input as a slash command. */
+  onGenerateCustomTheme() {
+    const skill = BUILT_IN_SKILLS.find(s => s.name === 'Theme-generator');
+    if (skill) {
+      if (!this.agentPanelOpen) {
+        this.agentPanelOpen = true;
+        localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+      }
+      this.acpService.pendingSlashCommand.set(skill.name);
+    }
+    this.onGoBack(this.previousViewId);
+    // Return the sidebar to a fresh task (same as clicking "New Task"), so the
+    // injected slash command starts a new session instead of the previous one.
+    Promise.resolve(this.agentComp()?.createNewTask()).then(() => {
+      // createNewTask() is async and clears messages, which can swap the chat
+      // input instance; re-apply the command so the final instance ends up
+      // filled *and* focused. Skipped once the user edited or sent the text.
+      const cmd = this.acpService.pendingSlashCommand();
+      if (!cmd) return;
+      // Already typing somewhere → don't yank focus/caret back.
+      if (document.activeElement instanceof HTMLTextAreaElement) return;
+      this.acpService.pendingSlashCommand.set(null);
+      this.acpService.pendingSlashCommand.set(cmd);
+    });
+  }
+
   toggleAstContentPanel() {
     this.astContentPanelOpen = !this.astContentPanelOpen;
     localStorage.setItem(this.AST_CONTENT_PANEL_OPEN_KEY, String(this.astContentPanelOpen));
@@ -954,17 +982,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       case 'terminal':
         this.toggleTerminal();
         break;
-      case 'theme-prompt': {
-        const skill = BUILT_IN_SKILLS.find(s => s.name === 'Theme-generator');
-        if (skill) {
-          if (!this.agentPanelOpen) {
-            this.agentPanelOpen = true;
-            localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
-          }
-          this.acpService.pendingSlashCommand.set(skill.name);
-        }
-        break;
-      }
       case 'settings':
         this.toggleDisplayViewId(5);
         break;

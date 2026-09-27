@@ -163,7 +163,8 @@ export class AcpService {
   readonly availableCommands = signal<Array<{ name: string; description: string; input?: unknown }>>([]);
 
   /** Slash command waiting to be written into the chat input.
-   *  Set by outside triggers (e.g. the app menu) and consumed by the chat input. */
+   *  Set by outside triggers (e.g. Settings → Appearance) and applied by every
+   *  chat input instance until the user edits or sends the text. */
   readonly pendingSlashCommand = signal<string | null>(null);
 
   // Agent selection
@@ -694,6 +695,9 @@ export class AcpService {
     this.usage.set(null);
     this.availableCommands.set([]);
     this.activeTodosId.set(null);
+    // Unanswered questions belong to the session that just went away; keeping
+    // them would leave hasActiveQuestions() true and the chat textarea disabled.
+    this.activeQuestionsMessages.set([]);
   }
 
   // ============================================================================
