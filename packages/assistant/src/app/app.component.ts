@@ -17,6 +17,7 @@ import { addDynamicFileIconSymbol } from '../svg-sprite.const';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import { AcpService } from './shared/acp/acp.service';
+import { BUILT_IN_SKILLS } from './shared/skill-manager/built-in-skills';
 import { NotificationService } from './shared/notification/notification.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
@@ -73,11 +74,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   agentPanelOpen = true;
   dockPosition: 'left' | 'right' = 'left';
   terminalPanelShow = false;
-  themePromptOpen = false;
-  themePromptText = '';
-  themePromptLoading = false;
-  themePromptError: string | null = null;
-  themePromptResult: Record<string, string> | null = null;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
@@ -406,251 +402,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     }
   }
 
-  openThemePrompt(): void {
-    this.themePromptOpen = true;
-    this.themePromptError = null;
-    this.themePromptResult = null;
-  }
-
-  closeThemePrompt(): void {
-    if (this.themePromptLoading) {
-      return;
-    }
-    this.themePromptOpen = false;
-    this.themePromptError = null;
-  }
-
-  async submitThemePrompt(): Promise<void> {
-    const trimmedPrompt = this.themePromptText.trim();
-    if (!trimmedPrompt) {
-      this.themePromptError = 'Tell me how you feel or describe the style you want, and I will create a matching theme for you.';
-      return;
-    }
-    await this.generateThemeFromPrompt(trimmedPrompt);
-  }
-
-  private getThemeSystemPrompt(): string {
-    return `
-You are a UI theme generation assistant. You MUST open your response with a single JSON code block containing ALL theme, typography, and file icon data. Do not output any other text before the JSON block.
-
-RESPONSE FORMAT (MANDATORY): Open your response with a JSON code block wrapped in triple backticks with "json" language identifier, in exactly this format:
-
-\`\`\`json
-{
-  "colors": {
-    "background": "#1e1e1e",
-    "primary": "#007acc",
-    "text": "#cccccc",
-    "surface": "#252526",
-    "accent": "#0097fb",
-    "border": "#3c3c3c"
-  },
-  "typography": {
-    "fontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    "fontSize": "14px",
-    "fontWeight": "400",
-    "lineHeight": "1.5",
-    "monoFont": "'Courier New', monospace",
-    "codeFontSize": "13px",
-    "headingFont": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    "headingWeight": "600",
-    "labelSize": "13px",
-    "labelWeight": "400",
-    "inputSize": "14px",
-    "buttonSize": "14px",
-    "buttonWeight": "500",
-    "menuSize": "13px",
-    "tabSize": "13px",
-    "treeSize": "13px",
-    "badgeSize": "11px",
-    "smallSize": "12px"
-  },
-  "googleFonts": ["Inter", "JetBrains Mono"],
-  "radius": {
-    "sm": "4px",
-    "md": "8px",
-    "lg": "16px"
-  },
-  "shadow": {
-    "sm": "0 2px 8px rgba(0,0,0,0.1)",
-    "md": "0 8px 24px rgba(0,0,0,0.15)",
-    "lg": "0 18px 50px rgba(0,0,0,0.22)"
-  },
-  "motion": {
-    "duration": "0.3s",
-    "easing": "ease"
-  },
-  "bgGradient": "linear-gradient(135deg, rgba(102,126,234,0.12) 0%, transparent 50%, rgba(251,168,31,0.08) 100%)",
-  "editorBgGradient": "linear-gradient(135deg, rgba(110,130,230,0.08) 0%, transparent 60%)",
-  "themeIcon": "M12 2C6.48 2...",
-  "fileIcons": [
-    {
-      "extension": "js",
-      "iconId": "icon-file-js",
-      "svgPath": "M...Z"
-    }
-  ]
-}
-\`\`\`
-
-For colors: provide all 6 values in hex format (e.g., #1e1e1e) that match the user's described theme mood or style. The colors object must contain background, primary, text, surface, accent, border.
-
-For typography: generate font styles that match the user's described mood or style. If using non-web-safe fonts, add the font name to the googleFonts array.
-- fontFamily: primary interface font stack (prefer web-safe or Google Fonts as first choice)
-- fontSize: base font size (typically 14px)
-- fontWeight: base text weight (typically 400)
-- lineHeight: base line height (typically 1.5)
-- monoFont: monospace font stack for code
-- codeFontSize: code/terminal font size (typically 13px)
-- headingFont: heading font family (can differ from body)
-- headingWeight: heading font weight (typically 600)
-- labelSize / labelWeight: UI label font size/weight
-- inputSize: input field font size
-- buttonSize / buttonWeight: button font size/weight
-- menuSize: menu item font size
-- tabSize: tab label font size
-- treeSize: file tree item font size
-- badgeSize: badge/label font size
-- smallSize: secondary text font size
-
-For googleFonts: if any typography fontFamily/monoFont/headingFont uses a Google Font (e.g., Inter, Roboto, Noto Sans, JetBrains Mono, Fira Code, IBM Plex Mono, Playfair Display, etc.), list the exact font name in this array. Only include the primary font name, not the full font stack. Do NOT list system/web-safe fonts (Arial, Georgia, Times New Roman, Courier New, etc.).
-
-For radius: generate border-radius values (px units) that match the user's described mood, emotion, or style. Provide 3 values:
-- sm: small radius for small UI elements (scrollbar, badges, tree items, progress bar). Range: 2px-8px.
-- md: medium radius for buttons, inputs, select menus, modals. Range: 4px-16px.
-- lg: large radius for panels, dialogs, cards. Range: 8px-24px.
-The pill value (9999px) is fixed and should not be included. Match the emotional mood: intense/angry/tech styles use sharper corners (sm:2, md:4, lg:8), calm/soft/friendly styles use rounder corners (sm:6, md:12, lg:20), balanced/professional styles use moderate values (sm:4, md:8, lg:16).
-
-For shadow: generate box-shadow values (full CSS value string) for 3 elevation levels that match the user's described mood, emotion, or style. Each value should be a valid CSS box-shadow string (e.g., "0 2px 8px rgba(0,0,0,0.1)").
-- sm: small elevation for menus, dropdowns, cards on hover
-- md: medium elevation for modals, floating windows
-- lg: large elevation for dialogs, panels, overlays
-Match the emotional mood: flat/minimal styles use no or very subtle shadows (small offset, low opacity), deep/pronounced styles use larger offsets and blur with higher opacity, playful/creative styles can use colored shadows (e.g., rgba with a tint). Use rgba(0,0,0,X) as the default color.
-
-For motion: generate duration and easing values that match the user's described mood, emotion, or style. These control all UI transitions and animations (panel fade-ins, hover effects, progress bar).
-- duration: CSS transition/animation duration string. Range: 0.1s (instant/snappy) to 0.8s (slow/deliberate). Default: 0.3s.
-- easing: CSS easing function string. One of "ease", "ease-in-out", "ease-out", "ease-in", "linear", or a cubic-bezier(...) value. Default: "ease".
-Match the emotional mood: energetic/playful styles use shorter durations (0.15s-0.2s) with ease-out or bounce-like cubic-bezier; calm/professional styles use moderate durations (0.2s-0.3s) with ease; dramatic/emphatic styles use longer durations (0.4s-0.6s) with ease-out.
-
-For bgGradient: generate a CSS background-image value (gradient) that adds a subtle ambient color wash to the application background. This is applied as an overlay on top of the solid background color. Recommended to use high transparency (alpha ≤ 0.15) for subtlety. The value must be a valid CSS gradient function: linear-gradient(...), radial-gradient(...), conic-gradient(...), or a comma-separated combination.
-- Use rgba() with alpha ≤ 0.15 for color stops to keep the effect subtle
-- Include at least one transparent or very low opacity stop to blend with the solid background
-- Optionally, use multiple gradient layers separated by commas
-If the user's mood does not suggest a gradient (e.g., "minimal", "clean", "professional"), set this to an empty string to omit.
-Mood mapping: calm/peaceful → warm-toned subtle gradients; cold/tech-focused → blue-purple tones; playful/creative → multi-color diagonal gradients; intense/dark → very dark subtle radial gradients; minimal → no gradient (empty string).
-
-For editorBgGradient: same rules as bgGradient, but applied specifically to the code editor background (CodeMirror editor view, markdown preview panel, and shadow DOM preview). This allows the editor area to have a distinct gradient from the body background. If omitted, the editor uses the solid --vscode-background. Recommended alpha ≤ 0.08 for editor since it is a reading/editing surface.
-
-For themeIcon: provide a single SVG path d attribute for a 24x24 icon that represents the emotion, mood, or feeling of the user's description (e.g., fire for anger, heart for love, sun for happy, cloud for sad, leaf for calm). Use fill="currentColor".
-
-Include ALL of these extensions in fileIcons: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, sql, yaml, sh, bat, txt, csv, lock, env, git, png, jpg, svg, pdf, zip.
-
-For each fileIcons entry:
-- extension: the file extension without dot
-- iconId: choose from icon-file-js, icon-file-ts, icon-file-json, icon-file-html, icon-file-css, icon-file-py, icon-file-md, icon-file-go, icon-file-rs, icon-file-vue, icon-file-sql, icon-file-txt, icon-file-xml, icon-file-sh, icon-file-pdf, icon-file-zip, icon-file-lock, icon-file-git, icon-file-env, icon-file-rb, icon-file-cpp, icon-file-java, icon-file-csv, icon-file-php, icon-file-bat
-- svgPath: SVG path d attribute for a 24x24 icon. Use fill="currentColor". The paths should reflect both the file type and the user's described mood or emotion. For example, a "calm" mood should use softer, rounded paths; an "angry" or "intense" mood should use sharp, angular paths; a "playful" mood should use organic, curved shapes. Prefer using the file extension text string, its abbreviation, or related file type characteristics as the basis for svgPath generation.
-`;
-  }
-
-  private async generateThemeFromPrompt(prompt: string): Promise<void> {
-    this.themePromptLoading = true;
-    this.themePromptError = null;
-    this.themePromptResult = null;
-    const systemPrompt = this.getThemeSystemPrompt();
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: prompt,
-          model: 'deepseek-v4-flash',
-          history: [],
-          system: systemPrompt,
-          autoCreate: true,
-        }),
-        credentials: 'include',
-      });
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('无法获取数据流');
-      }
-
-      const decoder = new TextDecoder();
-      let assistantText = '';
-      let done = false;
-
-      while (!done) {
-        const result = await reader.read();
-        if (result.done) {
-          break;
-        }
-
-        const chunk = decoder.decode(result.value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (!line.startsWith('data:')) {
-            continue;
-          }
-
-          const data = line.slice(6).trim();
-          if (!data) {
-            continue;
-          }
-          if (data === '[DONE]') {
-            done = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.content) {
-              assistantText += parsed.content;
-            }
-
-            if (parsed.sessionId) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (window as any).currentSessionId = parsed.sessionId;
-            }
-          } catch {
-            // ignore invalid JSON fragments
-          }
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(`请求失败 ${response.status}，请稍后重试`);
-      }
-
-      console.log('生成主题成功', assistantText);
-      const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
-      const match = jsonBlockRegex.exec(assistantText);
-      if (!match) return;
-      try {
-        const parsed = JSON.parse(match[1]);
-        const cssVars = this.applyToUI(parsed);
-
-        this.themePromptResult = cssVars;
-        this.themePromptOpen = false;
-      } catch {
-        return;
-      }
-    } catch (err: any) {
-      console.error('生成主题失败', err);
-      this.themePromptError = err?.message || '生成主题失败，请重试';
-    } finally {
-      this.themePromptLoading = false;
-    }
-  }
-
   onA2uiThemeApply(data: Record<string, any>) {
     try {
-      const cssVars = this.applyToUI(data);
-      this.themePromptResult = cssVars;
+      this.applyToUI(data);
     } catch (err: any) {
       console.error('应用A2UI主题失败', err);
     }
@@ -1200,9 +954,17 @@ For each fileIcons entry:
       case 'terminal':
         this.toggleTerminal();
         break;
-      case 'theme-prompt':
-        this.openThemePrompt();
+      case 'theme-prompt': {
+        const skill = BUILT_IN_SKILLS.find(s => s.name === 'Theme-generator');
+        if (skill) {
+          if (!this.agentPanelOpen) {
+            this.agentPanelOpen = true;
+            localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+          }
+          this.acpService.pendingSlashCommand.set(skill.name);
+        }
         break;
+      }
       case 'settings':
         this.toggleDisplayViewId(5);
         break;

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, HostListener, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, HostListener, viewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
@@ -835,6 +835,13 @@ export class AcpChatInputComponent {
   constructor() {
     this.loadMcpServers();
     this.skillService.refresh().catch(() => {});
+    // Slash command requested from outside (e.g. app menu) → write it into the input.
+    effect(() => {
+      const cmd = this.acpService.pendingSlashCommand();
+      if (!cmd) return;
+      this.acpService.pendingSlashCommand.set(null);
+      this.fillSlashCommand(cmd);
+    });
   }
 
   @HostListener('document:click', ['$event'])
@@ -1465,7 +1472,11 @@ export class AcpChatInputComponent {
   }
 
   selectCommand(cmd: { name: string; description: string }): void {
-    const value = `/${cmd.name} `;
+    this.fillSlashCommand(cmd.name);
+  }
+
+  private fillSlashCommand(name: string): void {
+    const value = name.startsWith('/') ? `${name} ` : `/${name} `;
     this.inputValue.set(value);
     this.selectedIndex.set(0);
     this.focusInputAtEnd(value);
@@ -1473,7 +1484,12 @@ export class AcpChatInputComponent {
 
   private focusInputAtEnd(expected: string, retries = 10): void {
     const el = this.messageInput?.nativeElement as HTMLTextAreaElement | undefined;
-    if (!el) return;
+    if (!el) {
+      if (retries > 0) {
+        setTimeout(() => this.focusInputAtEnd(expected, retries - 1), 16);
+      }
+      return;
+    }
     if (el.disabled) return;
     el.focus();
     if (el.value === expected) {

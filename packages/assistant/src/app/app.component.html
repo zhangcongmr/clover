@@ -253,37 +253,6 @@
 }
 
 
-@if(themePromptOpen) {
-  <div class="theme-prompt-overlay" (click)="closeThemePrompt()">
-    <div class="theme-prompt-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <div class="theme-prompt-header">
-        <div>Enter a theme or emotion</div>
-        <button type="button" class="close-btn" title="Close" (click)="closeThemePrompt()">×</button>
-      </div>
-      <textarea
-        class="theme-prompt-textarea"
-        [value]="themePromptText"
-        (input)="themePromptText = $any($event.target).value"
-        placeholder="For example: I am very angry today / describe the style you like"
-        rows="4"></textarea>
-      <div class="theme-prompt-hint">💡 Enter an emotion (like "happy") to automatically match an emotional theme, or describe the style you want directly.</div>
-      <div class="theme-prompt-actions">
-        <button type="button" class="theme-prompt-cancel" (click)="closeThemePrompt()">Cancel</button>
-        <button type="button" class="theme-prompt-submit" [disabled]="themePromptLoading" (click)="submitThemePrompt()">
-          {{ themePromptLoading ? 'Generating...' : 'Generate Theme' }}
-        </button>
-      </div>
-      <div class="theme-prompt-status">
-        @if(themePromptError) {
-          <span class="error">{{ themePromptError }}</span>
-        } @else if(!themePromptLoading && themePromptResult) {
-          <span class="success">Theme applied</span>
-        }
-      </div>
-    </div>
-  </div>
-}
-
 <app-notification></app-notification>
 
 @if(indicatorDetailType != 'none') {

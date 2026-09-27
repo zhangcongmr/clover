@@ -162,6 +162,10 @@ export class AcpService {
   // Slash commands
   readonly availableCommands = signal<Array<{ name: string; description: string; input?: unknown }>>([]);
 
+  /** Slash command waiting to be written into the chat input.
+   *  Set by outside triggers (e.g. the app menu) and consumed by the chat input. */
+  readonly pendingSlashCommand = signal<string | null>(null);
+
   // Agent selection
   readonly selectedAgent = signal<AgentConfig | null>(getInitialAgent());
 
