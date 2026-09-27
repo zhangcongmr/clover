@@ -799,7 +799,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/projects/save-session
-   * 保存会话到项目
+   * 保存会话到项目（upsert）；path 不属于 project 时回退到 task 记录（tasks.json）
    */
   app.post('/api/projects/save-session', async (req: Request, res: Response) => {
     const { projectPath, session } = req.body;
@@ -810,22 +810,43 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
+      const matches = (s: ProjectSession) =>
+        s.sessionId === session.sessionId && s.agentId === session.agentId;
+
+      // 1. 已包含该会话的 project 记录
       const projects = readProjects();
-      const project = projects.find(p => p.path === projectPath);
-      if (!project) {
-        res.status(404).json({ error: 'Project not found' });
+      const ownerProject = projects.find(p => p.path === projectPath && p.sessions?.some(matches));
+      if (ownerProject) {
+        const idx = ownerProject.sessions.findIndex(matches);
+        ownerProject.sessions[idx] = { ...ownerProject.sessions[idx], ...session };
+        writeProjects(projects);
+        res.json({ success: true, project: ownerProject });
         return;
       }
 
-      const idx = project.sessions.findIndex(s => s.sessionId === session.sessionId && s.agentId === session.agentId);
-      if (idx >= 0) {
-        project.sessions[idx] = { ...project.sessions[idx], ...session };
-      } else {
-        project.sessions.push(session);
+      // 2. 该会话可能属于 task 记录（tasks.json）——同步标题等字段
+      const tasks = readTasks();
+      const ownerTask = tasks.find(t => t.path === projectPath && t.sessions?.some(matches));
+      if (ownerTask) {
+        const idx = ownerTask.sessions.findIndex(matches);
+        ownerTask.sessions[idx] = { ...ownerTask.sessions[idx], ...session };
+        // 任务标题与会话标题保持一致（task.name 用于会话头部回填）
+        if (session.title) ownerTask.name = session.title;
+        writeTasks(tasks);
+        res.json({ success: true, task: ownerTask });
+        return;
       }
 
-      writeProjects(projects);
-      res.json({ success: true, project });
+      // 3. 兼容原行为：path 命中 project 但会话尚不存在 → 追加
+      const project = projects.find(p => p.path === projectPath);
+      if (project) {
+        project.sessions.push(session);
+        writeProjects(projects);
+        res.json({ success: true, project });
+        return;
+      }
+
+      res.status(404).json({ error: 'Project not found' });
     } catch (error) {
       console.error('[ACP Routes] Save session error:', error);
       res.status(500).json({ error: (error as Error).message });

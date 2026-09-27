@@ -1232,13 +1232,10 @@ export class AcpChatInputComponent {
       nonTextBlocks.length > 0 ? nonTextBlocks : undefined
     );
 
-    // Set session title early so onSessionCreated can use it for task/session records
+    // Set a provisional session title early so onSessionCreated can use it for
+    // task/session records; it is replaced once the agent's (LLM) title arrives.
     if (this.acpService.isNewSession() && !this.acpService.sessionState().title && rawText) {
-      const firstText = rawText.replace(/\s+/g, ' ');
-      this.acpService.sessionState.update(s => ({
-        ...s,
-        title: firstText.length > 50 ? firstText.slice(0, 50) + '…' : firstText,
-      }));
+      this.acpService.setProvisionalTitle();
     }
 
     try {
