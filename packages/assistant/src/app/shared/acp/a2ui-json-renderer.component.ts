@@ -222,15 +222,58 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Hides the ACP chat panel from the screenshot while keeping its layout space,
-   * so the remaining elements stay at their original positions. html2canvas skips
-   * elements whose computed visibility is not `visible`, including their subtrees.
+   * Replaces the ACP chat panel in the clone with an empty placeholder of the
+   * same size, so html2canvas does not have to clone, serialise and lay out the
+   * whole chat DOM while the surrounding elements keep their exact positions.
+   * The size is measured on the live document because the clone is detached and
+   * therefore has no layout. Falls back to `visibility: hidden` when the panel
+   * cannot be measured (zero size or out-of-flow positioning).
    */
   private hideScreenshotExclusions(clone: HTMLElement): void {
-    const hidden = clone.querySelectorAll<HTMLElement>('app-acp-chat');
-    for (const element of Array.from(hidden)) {
-      element.style.setProperty('visibility', 'hidden');
+    const sources = Array.from(document.querySelectorAll<HTMLElement>('app-acp-chat'));
+    const targets = Array.from(clone.querySelectorAll<HTMLElement>('app-acp-chat'));
+    for (const [index, target] of targets.entries()) {
+      const source = sources[index];
+      const placeholder = source ? this.createChatPlaceholder(source) : null;
+      if (placeholder) {
+        target.replaceWith(placeholder);
+      } else {
+        target.style.setProperty('visibility', 'hidden');
+      }
     }
+  }
+
+  /**
+   * Builds a flow-in placeholder that occupies exactly the outer box of the
+   * given chat element (explicit border-box size, `flex: 0 0 auto`, copied
+   * margin and border paint styles, transparent background so the parent's
+   * background shows through), or returns null when the box cannot be
+   * reproduced.
+   */
+  private createChatPlaceholder(source: HTMLElement): HTMLElement | null {
+    const rect = source.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+    const computed = window.getComputedStyle(source);
+    if (computed.position === 'absolute' || computed.position === 'fixed') {
+      return null;
+    }
+
+    const placeholder = document.createElement('div');
+    placeholder.style.setProperty('box-sizing', 'border-box');
+    placeholder.style.setProperty('flex', '0 0 auto');
+    placeholder.style.setProperty('width', `${rect.width}px`);
+    placeholder.style.setProperty('height', `${rect.height}px`);
+    placeholder.style.setProperty('margin', computed.margin);
+    // No background on purpose: the placeholder stays transparent so the area
+    // shows the parent's background painted by the clone, which keeps it in sync
+    // with the theme applied to the clone instead of freezing a colour measured
+    // on the live document.
+    placeholder.style.setProperty('border', computed.border);
+    placeholder.style.setProperty('border-radius', computed.borderRadius);
+    placeholder.style.setProperty('box-shadow', computed.boxShadow);
+    return placeholder;
   }
 
   /**
