@@ -616,6 +616,16 @@ interface McpServerOption {
     .project-option.active {
       background-color: var(--vscode-primary-background);
     }
+    .project-option.active .project-name {
+      color: var(--vscode-primary-foreground);
+    }
+    .project-option.active .project-path {
+      color: var(--vscode-primary-foreground);
+      opacity: 1;
+    }
+    .project-option.active .project-check {
+      color: var(--vscode-primary-foreground);
+    }
     .project-option .project-name {
       font-size: 13px;
       font-weight: 500;
@@ -690,10 +700,10 @@ interface McpServerOption {
       background-color: var(--vscode-primary-background);
     }
     .slash-command-item.active .slash-command-name {
-      color: var(--n-10);
+      color: var(--vscode-primary-foreground);
     }
     .slash-command-item.active .slash-command-desc {
-      color: var(--n-20);
+      color: var(--vscode-primary-foreground);
       opacity: 1;
     }
     .slash-command-row {
@@ -722,8 +732,8 @@ interface McpServerOption {
       color: var(--vscode-badge-foreground);
     }
     .slash-command-item.active .slash-command-badge {
-      background-color: rgba(255, 255, 255, 0.2);
-      color: #ffffff;
+      background-color: var(--vscode-primary-foreground);
+      color: var(--vscode-primary-background);
     }
     .slash-command-desc {
       font-size: 11px;

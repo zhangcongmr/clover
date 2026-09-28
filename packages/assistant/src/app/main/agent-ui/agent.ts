@@ -22,6 +22,22 @@ const PROJECT_COLORS = [
   '#e91e63', '#3f51b5', '#009688', '#795548',
 ];
 
+const COLLAPSED_PROJECTS_KEY = 'clover_collapsed_projects';
+
+/** Read the persisted collapsed-project names, returning an empty set on SSR or corrupt data. */
+function readCollapsedProjects(): Set<string> {
+  if (typeof localStorage === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(COLLAPSED_PROJECTS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((n): n is string => typeof n === 'string'));
+  } catch {
+    return new Set();
+  }
+}
+
 @Component({
   selector: "div[ast-agent]",
   templateUrl: "./agent.html",
@@ -45,11 +61,7 @@ export class AgentComponent {
   /** Left sidebar collapsed state before the panel was maximized, restored on restore. */
   private previousSidebarCollapsed = false;
   /** Projects whose session list is collapsed (keyed by project name). */
-  collapsedProjects = signal<Set<string>>(new Set());
-  /** Project whose session list is expanded. Deliberately separate from the
-   *  selected project/task: clicking New Task or a task changes the selection
-   *  and must not fold an already expanded project. */
-  expandedProjectName = signal<string | null>(null);
+  collapsedProjects = signal<Set<string>>(readCollapsedProjects());
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
@@ -196,6 +208,18 @@ export class AgentComponent {
   private isLoadingSessions = false;
 
   constructor() {
+    // Persist collapsed project state to localStorage whenever it changes (browser only).
+    if (isPlatformBrowser(this.platformId)) {
+      effect(() => {
+        const names = Array.from(this.collapsedProjects());
+        try {
+          localStorage.setItem(COLLAPSED_PROJECTS_KEY, JSON.stringify(names));
+        } catch {
+          // ignore quota/serialization failures
+        }
+      });
+    }
+
     // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
     this.acpService.isNewSession.set(true);
     if (typeof window !== 'undefined') {
@@ -212,7 +236,6 @@ export class AgentComponent {
           const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
           if (cur) {
             if (cur.type === 'project') {
-              this.expandedProjectName.set(cur.name);
               this.loadSessionsForProject(cur.path).then(() => {
                 const selectedSessionId = this.acpService.selectedSessionId();
                 if (selectedSessionId) {
@@ -274,7 +297,6 @@ export class AgentComponent {
 
     // Expand if it was collapsed
     this.expandProject(name);
-    this.expandedProjectName.set(name);
 
     this.acpService.saveSelectedProject(projectInfo.path);
     if(projectInfo.sessions?.length > 0) {

@@ -39,6 +39,10 @@ Map the following theme properties to the A2UI \`createSurface\` message's \`the
 | colors.selectionBackground | selectionBackground | Text selection background color (hex) |
 | colors.selectionForeground | selectionForeground | Text selection text color (hex) |
 | colors.border | borderColor | Border color (hex) |
+| colors.primaryForeground | primaryForeground | Text/icon color used on top of primary-colored backgrounds (hex) |
+| colors.accentForeground | accentForeground | Text/icon color used on top of accent-colored backgrounds (hex) |
+| colors.hoverBackground | hoverBackground | Hover background for interactive items (hex/rgba) |
+| colors.itemActiveBackground | itemActiveBackground | Active/selected item background (hex/rgba) |
 | typography.fontFamily | fontFamily | Primary interface font stack |
 | typography.fontSize | fontSize | Base font size (e.g., "14px") |
 | typography.fontWeight | fontWeight | Base text weight (e.g., "400") |
@@ -289,7 +293,11 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
           "accent": "#8e44ad",
           "selectionBackground": "#c4d7f2",
           "selectionForeground": "#000000",
-          "border": "#e0d5eb"
+          "border": "#e0d5eb",
+          "primaryForeground": "#ffffff",
+          "accentForeground": "#ffffff",
+          "hoverBackground": "rgba(155, 89, 182, 0.10)",
+          "itemActiveBackground": "rgba(155, 89, 182, 0.16)"
         },
         "typography": {
           "fontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
@@ -548,7 +556,11 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
           "accent": "#00b4d8",
           "selectionBackground": "#264f78",
           "selectionForeground": "#ffffff",
-          "border": "#1e3a5f"
+          "border": "#1e3a5f",
+          "primaryForeground": "#ffffff",
+          "accentForeground": "#0a1628",
+          "hoverBackground": "rgba(52, 152, 219, 0.12)",
+          "itemActiveBackground": "rgba(52, 152, 219, 0.20)"
         },
         "typography": {
           "fontFamily": "'Inter', 'Segoe UI', sans-serif",
@@ -644,7 +656,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
 
 4. Theme Property Generation Rules:
 
-   For colors: provide all 8 values in hex format (e.g., #1e1e1e) that match the user's described theme mood or style.
+   For colors: provide all 12 values that match the user's described theme mood or style (use hex format, e.g., #1e1e1e; translucent backgrounds may use rgba()).
    - background: Main background color
    - primary: Primary brand color
    - secondary: Secondary/supporting color (muted tone of primary, used for secondary buttons, badges, subtle accents)
@@ -654,6 +666,10 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
    - selectionBackground: Text selection background color (lighter tint of primary, alpha ~0.3)
    - selectionForeground: Text selection text color (high contrast against selectionBackground)
    - border: Border color
+   - primaryForeground: Text/icon color on top of primary backgrounds (buttons, active items) — must keep strong contrast against primary
+   - accentForeground: Text/icon color on top of accent backgrounds — must keep strong contrast against accent
+   - hoverBackground: Hover background for interactive items (subtle translucent tint, alpha ~0.08-0.15)
+   - itemActiveBackground: Background of the selected/active item (subtle translucent accent tint, alpha ~0.10-0.25)
 
    For typography: generate font styles that match the user's described mood or style.
    - fontFamily: primary interface font stack (prefer web-safe or Google Fonts as first choice)

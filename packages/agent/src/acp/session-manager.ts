@@ -59,7 +59,7 @@ export class AcpSessionManager {
 
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredSessions();
+      // this.cleanupExpiredSessions();
     }, 60000);
   }
 

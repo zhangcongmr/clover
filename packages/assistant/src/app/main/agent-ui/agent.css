@@ -147,7 +147,7 @@
 }
 
 .nav-item.active {
-  background: rgba(0, 120, 212, 0.12);
+  background: var(--vscode-item-active-background);
 }
 
 .nav-item svg:not(.sidebar-chevron) {
@@ -181,7 +181,7 @@
 }
 
 .task-item.active {
-  background: rgba(0, 120, 212, 0.12);
+  background: var(--vscode-item-active-background);
 }
 
 .task-item.loading {
@@ -317,7 +317,7 @@
 }
 
 .project-item.active {
-  background: rgba(0, 120, 212, 0.12);
+  background: var(--vscode-item-active-background);
 }
 
 .project-icon {
@@ -524,7 +524,7 @@
 }
 
 .session-item.active {
-  background: var(--vscode-accent-color);
+  background: var(--vscode-item-active-background);
 }
 
 .session-title {

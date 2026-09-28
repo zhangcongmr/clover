@@ -59,6 +59,7 @@
 
 .settings-category-item.active {
   background: var(--vscode-primary-background);
+  color: var(--vscode-primary-foreground);
 }
 
 .cat-icon {
@@ -315,7 +316,7 @@
 }
 
 .theme-card.active {
-  border-color: var(--vscode-accent-color);
+  border-color: var(--borderless-accent);
 }
 
 .theme-card:hover {

@@ -29,7 +29,7 @@
 }
 
 :host(.ast-right-menu) .ast-menu-every-item.active {
-  background: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+  background: var(--vscode-item-active-background, rgba(0, 102, 204, 0.12));
   color: var(--borderless-accent, #0066cc);
 }
 

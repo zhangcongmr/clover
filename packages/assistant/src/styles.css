@@ -57,14 +57,17 @@
   --vscode-foreground: #616161;
   --vscode-surface-background: #f8f8f8;
   --vscode-accent-color: #f8f8f8;
+  --vscode-accent-foreground: #ffffff;
   --vscode-editor-selectionBackground: #add6ff;
   --vscode-editor-selectionForeground: #000000;
   --vscode-border-color: #e2e2e2;
   --vscode-primary-background: #007acc;
+  --vscode-primary-foreground: #ffffff;
   --vscode-secondary-background: #bcddf3;
 
   /* Unified interactive hover background (neutral) */
   --vscode-hover-background: #e8e8e8;
+  --vscode-item-active-background: rgba(0, 102, 204, 0.12);
 
   /* Dropdown */
   --vscode-dropdown-background: #ffffff;
@@ -171,7 +174,7 @@
   --borderless-gap: 4px;
   --borderless-item-bg: rgba(0, 0, 0, 0.04);
   --borderless-item-bg-hover: rgba(0, 0, 0, 0.08);
-  --borderless-item-bg-active: rgba(0, 102, 204, 0.12);
+  --borderless-item-bg-active: var(--vscode-item-active-background);
   --borderless-item-radius: 8px;
   --borderless-accent: #0066cc;
   --borderless-accent-hover: #0052a3;
@@ -231,14 +234,17 @@
   --vscode-foreground: #cccccc;
   --vscode-surface-background: #181818;
   --vscode-accent-color: #181818;
+  --vscode-accent-foreground: #1b1b1b;
   --vscode-editor-selectionBackground: #264f78;
   --vscode-editor-selectionForeground: #ffffff;
   --vscode-border-color: #252526;
   --vscode-primary-background: #0078d4;
+  --vscode-primary-foreground: #ffffff;
   --vscode-secondary-background: #252526;
 
   /* Unified interactive hover background (neutral) */
   --vscode-hover-background: #FFFFFF1A;
+  --vscode-item-active-background: rgba(0, 120, 212, 0.20);
 
   /* Dropdown */
   --vscode-dropdown-background: #252526;
@@ -309,7 +315,7 @@
   --borderless-gap: 4px;
   --borderless-item-bg: rgba(255, 255, 255, 0.06);
   --borderless-item-bg-hover: rgba(255, 255, 255, 0.10);
-  --borderless-item-bg-active: rgba(0, 120, 212, 0.20);
+  --borderless-item-bg-active: var(--vscode-item-active-background);
   --borderless-item-radius: 8px;
   --borderless-accent: #4daafc;
   --borderless-accent-hover: #6db8ff;
@@ -397,7 +403,7 @@ img, svg {
 }
 
 .ast-menu-every-item.active {
-    background-color: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+    background-color: var(--vscode-item-active-background, rgba(0, 102, 204, 0.12));
     color: var(--borderless-accent, #0066cc);
 }
 

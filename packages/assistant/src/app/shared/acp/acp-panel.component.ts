@@ -151,6 +151,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     .acp-dock-item.active {
       border-color: var(--vscode-accent-color);
       background: var(--vscode-primary-background);
+      color: var(--vscode-primary-foreground);
     }
 
     .acp-dock-item svg {
@@ -230,7 +231,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 
     .editor-toggle-btn.active {
       opacity: 1;
-      color: var(--vscode-accent-color);
+      color: var(--borderless-accent);
       background: var(--vscode-toolbar-activeBackground, rgba(128, 128, 128, 0.3));
     }
 
@@ -342,7 +343,7 @@ import { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
     }
 
     .welcome-tab.active {
-      background-color: rgba(0, 120, 212, 0.12);
+      background-color: var(--vscode-item-active-background);
       color: var(--vscode-foreground);
       border-color: transparent;
     }
