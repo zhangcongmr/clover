@@ -555,6 +555,10 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       ],
       selectionBackground: ['--vscode-editor-selectionBackground'],
       selectionForeground: ['--vscode-editor-selectionForeground'],
+      primaryForeground: ['--vscode-primary-foreground'],
+      accentForeground: ['--vscode-accent-foreground'],
+      hoverBackground: ['--vscode-hover-background'],
+      itemActiveBackground: ['--vscode-item-active-background'],
     };
 
     const cssVars: Record<string, string> = {};
@@ -579,6 +583,10 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       else if (['uiborder', 'border'].includes(normalizedKey)) canonical = 'border';
       else if (['uiselectionbackground', 'selectionbackground', 'selection'].includes(normalizedKey)) canonical = 'selectionBackground';
       else if (['uiselectionforeground', 'selectionforeground'].includes(normalizedKey)) canonical = 'selectionForeground';
+      else if (['uiprimaryforeground', 'primaryforeground'].includes(normalizedKey)) canonical = 'primaryForeground';
+      else if (['uiaccentforeground', 'accentforeground'].includes(normalizedKey)) canonical = 'accentForeground';
+      else if (['uihoverbackground', 'hoverbackground'].includes(normalizedKey)) canonical = 'hoverBackground';
+      else if (['uiitemactivebackground', 'itemactivebackground'].includes(normalizedKey)) canonical = 'itemActiveBackground';
 
       if (canonical && keyMap[canonical]) {
         for (const cssVar of keyMap[canonical]) {

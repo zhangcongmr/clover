@@ -90,7 +90,7 @@
 
 .view-btn.active {
   background: var(--borderless-accent, #0066cc);
-  color: white;
+  color: var(--vscode-accent-foreground, #ffffff);
 }
 
 .content-container {
@@ -139,7 +139,7 @@
 }
 
 .icon-item.selected {
-  background: var(--borderless-item-bg-active, rgba(0, 102, 204, 0.12));
+  background: var(--vscode-item-active-background, rgba(0, 102, 204, 0.12));
   border-color: var(--borderless-accent, #0066cc);
 }
 
