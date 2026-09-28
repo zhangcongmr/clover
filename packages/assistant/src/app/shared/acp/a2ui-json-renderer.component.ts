@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Injector, OnDestroy, PLATFORM_ID, afterNextRender, output, ViewChild, effect, inject, input, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, Injector, OnDestroy, PLATFORM_ID, afterNextRender, output, ViewChild, effect, inject, input, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import html2canvas from '@html2canvas/html2canvas';
 import { SurfaceComponent } from '@a2ui/angular/v0_9';
@@ -38,6 +38,13 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   surfaces = signal<string[]>([]);
   remainingContent = signal<string>('');
   screenshot = signal<string>('');
+  /** Whether the maximised screenshot preview overlay is open. */
+  screenshotPreviewOpen = signal(false);
+
+  @HostListener('document:keydown.escape')
+  onEscapeKeydown(): void {
+    this.screenshotPreviewOpen.set(false);
+  }
 
   constructor() {
     effect(() => {
