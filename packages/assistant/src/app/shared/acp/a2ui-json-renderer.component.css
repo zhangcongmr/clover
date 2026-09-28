@@ -8,3 +8,7 @@
   flex-direction: column;
   gap: 8px;
 }
+.a2ui-screenshot {
+  width: 100%;
+  border-radius: 8px;
+}

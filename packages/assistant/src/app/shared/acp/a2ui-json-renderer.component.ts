@@ -1,5 +1,6 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnDestroy, output, ViewChild, effect, inject, input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Injector, OnDestroy, PLATFORM_ID, afterNextRender, output, ViewChild, effect, inject, input, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import html2canvas from '@html2canvas/html2canvas';
 import { SurfaceComponent } from '@a2ui/angular/v0_9';
 import { A2uiRendererService } from '@a2ui/angular/v0_9';
 import { A2uiClientAction } from '@a2ui/web_core/v0_9';
@@ -31,9 +32,12 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   private pendingCssVars: Record<string, string> = {};
   private themeDataFromModel: Record<string, any> | null = null;
   private actionSubscription: any;
+  private platformId = inject(PLATFORM_ID);
+  private injector = inject(Injector);
 
   surfaces = signal<string[]>([]);
   remainingContent = signal<string>('');
+  screenshot = signal<string>('');
 
   constructor() {
     effect(() => {
@@ -134,9 +138,99 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
 
       this.processedBlockCount = completeBlocks.length;
       this.surfaces.set([...this.knownSurfaceIds]);
+
+      void this.captureScreenshot();
     }
 
     this.remainingContent.set(this.computeRemainingContent(content));
+  }
+
+  /**
+   * Captures a screenshot of document.documentElement.cloneNode(true) with the
+   * generated theme applied and publishes it through the `screenshot` signal.
+   */
+  private async captureScreenshot(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    // Let Angular render the freshly created surfaces before cloning the document
+    await new Promise<void>((resolve) => {
+      afterNextRender(() => resolve(), { injector: this.injector });
+    });
+
+    try {
+      const clone = document.documentElement.cloneNode(true) as HTMLElement;
+
+      for (const stale of Array.from(clone.querySelectorAll('[data-a2ui-screenshot]'))) {
+        stale.remove();
+      }
+
+      this.applyThemeToClone(clone);
+      this.hideScreenshotExclusions(clone);
+
+      // html2canvas only resolves its reference element while cloning the document it
+      // belongs to, so the detached clone is hosted by a temporary off-screen iframe.
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute(
+        'style',
+        `position:fixed;left:-10000px;top:0;border:0;width:${window.innerWidth}px;height:${window.innerHeight}px;`
+      );
+      document.body.appendChild(iframe);
+
+      try {
+        const iframeDoc = iframe.contentDocument;
+        if (!iframeDoc) {
+          return;
+        }
+        // Non-deprecated replacement for document.write(): move the clone in as the
+        // iframe's root element. Cloned <script> elements keep their "already started"
+        // flag, so no application code is re-executed inside the iframe.
+        iframeDoc.documentElement.replaceWith(clone);
+
+        const canvas = await html2canvas(iframeDoc.documentElement, {
+          ignoreElements: (element) => this.isExcludedFromScreenshot(element),
+        });
+        this.screenshot.set(canvas.toDataURL());
+      } finally {
+        iframe.remove();
+      }
+    } catch (e) {
+      console.warn('a2ui screenshot failed', e);
+    }
+  }
+
+  /**
+   * Sets the generated theme properties on the cloned document root through
+   * ThemeService.applyThemeVariablesTo().
+   */
+  private applyThemeToClone(clone: HTMLElement): void {
+    if (!this.themeDataFromModel) {
+      return;
+    }
+    const cssVars = this.themeService.themeDataToCssVars(this.themeDataFromModel);
+    clone.setAttribute('data-theme', 'custom');
+    this.themeService.applyThemeVariablesTo(clone, cssVars);
+  }
+
+  /**
+   * Elements dropped from the html2canvas clone entirely (no layout space left):
+   * the agent's task list and project list.
+   */
+  private isExcludedFromScreenshot(element: Element): boolean {
+    return element.classList.contains('task-list') || element.classList.contains('project-list');
+  }
+
+  /**
+   * Hides the ACP chat panel from the screenshot while keeping its layout space,
+   * so the remaining elements stay at their original positions. html2canvas skips
+   * elements whose computed visibility is not `visible`, including their subtrees.
+   */
+  private hideScreenshotExclusions(clone: HTMLElement): void {
+    const hidden = clone.querySelectorAll<HTMLElement>('app-acp-chat');
+    for (const element of Array.from(hidden)) {
+      element.style.setProperty('visibility', 'hidden');
+    }
   }
 
   /**
