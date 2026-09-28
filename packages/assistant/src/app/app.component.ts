@@ -419,7 +419,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     }
 
     const { cssVars: rawVars, googleFonts } = result;
-    const cssVars = this.mapThemeKeysToCss(rawVars);
+    const cssVars = this.themeService.mapThemeKeysToCss(rawVars);
 
     if (!cssVars || Object.keys(cssVars).length === 0) {
       throw new Error('未能从响应中解析出主题变量');
@@ -466,56 +466,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       this.saveThemeIcon();
     }
 
-    // Process colors
-    const colors = parsed.colors;
-    if (!colors || typeof colors !== 'object') return null;
-
-    const cssVars: Record<string, string> = {};
-    for (const [key, value] of Object.entries(colors)) {
-      if (typeof value === 'string' && value.trim()) {
-        cssVars[key.trim()] = value.trim();
-      }
-    }
-
-    // Process typography
-    const typography = parsed.typography;
-    if (typography && typeof typography === 'object') {
-      const typoCssVars = this.mapTypographyToCss(typography);
-      Object.assign(cssVars, typoCssVars);
-    }
-
-    // Process radius
-    const radius = parsed.radius;
-    if (radius && typeof radius === 'object') {
-      const radiusCssVars = this.mapRadiusToCss(radius);
-      Object.assign(cssVars, radiusCssVars);
-    }
-
-    // Process shadow
-    const shadow = parsed.shadow;
-    if (shadow && typeof shadow === 'object') {
-      const shadowCssVars = this.mapShadowToCss(shadow);
-      Object.assign(cssVars, shadowCssVars);
-    }
-
-    // Process motion
-    const motion = parsed.motion;
-    if (motion && typeof motion === 'object') {
-      const motionCssVars = this.mapMotionToCss(motion);
-      Object.assign(cssVars, motionCssVars);
-    }
-
-    // Process bgGradient
-    if (parsed.bgGradient && typeof parsed.bgGradient === 'string' && parsed.bgGradient.trim()) {
-      const bgGradientCssVars = this.mapBgGradientToCss(parsed.bgGradient.trim());
-      Object.assign(cssVars, bgGradientCssVars);
-    }
-
-    // Process editorBgGradient
-    if (parsed.editorBgGradient && typeof parsed.editorBgGradient === 'string' && parsed.editorBgGradient.trim()) {
-      const editorBgGradientCssVars = this.mapEditorBgGradientToCss(parsed.editorBgGradient.trim());
-      Object.assign(cssVars, editorBgGradientCssVars);
-    }
+    // Process colors / typography / radius / shadow / motion / gradients
+    const cssVars = this.themeService.parseThemeCssVars(parsed);
+    if (Object.keys(cssVars).length === 0) return null;
 
     // Process googleFonts
     const googleFonts: string[] = [];
@@ -527,183 +480,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       }
     }
 
-    return Object.keys(cssVars).length > 0 ? { cssVars, googleFonts } : null;
-  }
-
-  private mapThemeKeysToCss(themeVars: Record<string, string>): Record<string, string> {
-    const keyMap: Record<string, string[]> = {
-      background: [// 组件背景色
-        '--vscode-background'
-      ],
-      surface: [// 组件表面色
-        '--vscode-surface-background'
-      ],
-      primary: [// 组件主色
-        '--vscode-primary-background'
-      ],
-      secondary: [// 组件次要色
-        '--vscode-secondary-background'
-      ],
-      text: [// 组件文字色
-        '--vscode-foreground'
-      ],
-      accent: [// 组件强调色
-        '--vscode-accent-color'
-      ],
-      border: [// 组件边框色
-        '--vscode-border-color'
-      ],
-      selectionBackground: ['--vscode-editor-selectionBackground'],
-      selectionForeground: ['--vscode-editor-selectionForeground'],
-      primaryForeground: ['--vscode-primary-foreground'],
-      accentForeground: ['--vscode-accent-foreground'],
-      hoverBackground: ['--vscode-hover-background'],
-      itemActiveBackground: ['--vscode-item-active-background'],
-    };
-
-    const cssVars: Record<string, string> = {};
-
-    for (const [key, value] of Object.entries(themeVars)) {
-      // Keys already prefixed with --vscode- (typography, radius, shadow, motion, gradients)
-      // pass through directly without remapping
-      if (key.startsWith('--vscode-')) {
-        cssVars[key] = value;
-        continue;
-      }
-
-      const normalizedKey = key.toLowerCase().replace(/[\s_-]/g, '');
-      let canonical = '';
-
-      if (['uibackground', 'background'].includes(normalizedKey)) canonical = 'background';
-      else if (['uiprimarycolor', 'primarycolor', 'primary'].includes(normalizedKey)) canonical = 'primary';
-      else if (['uisecondarycolor', 'secondarycolor', 'secondary'].includes(normalizedKey)) canonical = 'secondary';
-      else if (['uitextcolor', 'textcolor', 'text'].includes(normalizedKey)) canonical = 'text';
-      else if (['uisurface', 'surface'].includes(normalizedKey)) canonical = 'surface';
-      else if (['uiaccent', 'accent'].includes(normalizedKey)) canonical = 'accent';
-      else if (['uiborder', 'border'].includes(normalizedKey)) canonical = 'border';
-      else if (['uiselectionbackground', 'selectionbackground', 'selection'].includes(normalizedKey)) canonical = 'selectionBackground';
-      else if (['uiselectionforeground', 'selectionforeground'].includes(normalizedKey)) canonical = 'selectionForeground';
-      else if (['uiprimaryforeground', 'primaryforeground'].includes(normalizedKey)) canonical = 'primaryForeground';
-      else if (['uiaccentforeground', 'accentforeground'].includes(normalizedKey)) canonical = 'accentForeground';
-      else if (['uihoverbackground', 'hoverbackground'].includes(normalizedKey)) canonical = 'hoverBackground';
-      else if (['uiitemactivebackground', 'itemactivebackground'].includes(normalizedKey)) canonical = 'itemActiveBackground';
-
-      if (canonical && keyMap[canonical]) {
-        for (const cssVar of keyMap[canonical]) {
-          cssVars[cssVar] = value;
-        }
-      }
-    }
-
-    return cssVars;
-  }
-
-  private mapTypographyToCss(typography: Record<string, string>): Record<string, string> {
-    const keyMap: Record<string, string[]> = {
-      fontFamily: ['--vscode-font-family'],
-      fontSize: ['--vscode-font-size'],
-      fontWeight: ['--vscode-font-weight'],
-      lineHeight: ['--vscode-line-height'],
-      monoFont: ['--vscode-font-mono', '--vscode-terminal-font-family'],
-      codeFontSize: ['--vscode-code-font-size', '--vscode-terminal-font-size'],
-      headingFont: ['--vscode-heading-font-family'],
-      headingWeight: ['--vscode-heading-font-weight'],
-      labelSize: ['--vscode-label-font-size'],
-      labelWeight: ['--vscode-label-font-weight'],
-      inputSize: ['--vscode-input-font-size'],
-      buttonSize: ['--vscode-button-font-size'],
-      buttonWeight: ['--vscode-button-font-weight'],
-      menuSize: ['--vscode-menu-font-size'],
-      tabSize: ['--vscode-tab-font-size'],
-      treeSize: ['--vscode-tree-font-size'],
-      badgeSize: ['--vscode-badge-font-size'],
-      smallSize: ['--vscode-small-font-size'],
-    };
-
-    const cssVars: Record<string, string> = {};
-    for (const [key, value] of Object.entries(typography)) {
-      if (typeof value !== 'string' || !value.trim()) continue;
-      const normalizedKey = key.replace(/[\s_-]/g, '');
-      const targets = keyMap[normalizedKey];
-      if (targets) {
-        for (const cssVar of targets) {
-          cssVars[cssVar] = value;
-        }
-      }
-    }
-    return cssVars;
-  }
-
-  private mapShadowToCss(shadow: Record<string, string>): Record<string, string> {
-    const keyMap: Record<string, string[]> = {
-      sm: ['--vscode-shadow-sm'],
-      md: ['--vscode-shadow-md'],
-      lg: ['--vscode-shadow-lg'],
-    };
-
-    const cssVars: Record<string, string> = {};
-    for (const [key, value] of Object.entries(shadow)) {
-      if (typeof value !== 'string' || !value.trim()) continue;
-      const targets = keyMap[key];
-      if (targets) {
-        for (const cssVar of targets) {
-          cssVars[cssVar] = value;
-        }
-      }
-    }
-    return cssVars;
-  }
-
-  private mapRadiusToCss(radius: Record<string, string>): Record<string, string> {
-    const keyMap: Record<string, string[]> = {
-      sm: ['--vscode-radius-sm'],
-      md: ['--vscode-radius-md'],
-      lg: ['--vscode-radius-lg'],
-      pill: ['--vscode-radius-pill'],
-    };
-
-    const cssVars: Record<string, string> = {};
-    for (const [key, value] of Object.entries(radius)) {
-      if (typeof value !== 'string' || !value.trim()) continue;
-      const targets = keyMap[key];
-      if (targets) {
-        for (const cssVar of targets) {
-          cssVars[cssVar] = value;
-        }
-      }
-    }
-    return cssVars;
-  }
-
-  private mapMotionToCss(motion: Record<string, string>): Record<string, string> {
-    const keyMap: Record<string, string[]> = {
-      duration: ['--vscode-motion-duration'],
-      easing: ['--vscode-motion-easing'],
-    };
-
-    const cssVars: Record<string, string> = {};
-    for (const [key, value] of Object.entries(motion)) {
-      if (typeof value !== 'string' || !value.trim()) continue;
-      const targets = keyMap[key];
-      if (targets) {
-        for (const cssVar of targets) {
-          cssVars[cssVar] = value;
-        }
-      }
-    }
-    return cssVars;
-  }
-
-  private mapBgGradientToCss(bgGradient: string): Record<string, string> {
-    return {
-      '--vscode-bg-gradient': bgGradient,
-    };
-  }
-
-  private mapEditorBgGradientToCss(editorBgGradient: string): Record<string, string> {
-    return {
-      '--vscode-editor-bg-gradient': editorBgGradient,
-    };
+    return { cssVars, googleFonts };
   }
 
   onCloseTab(evt: any) {
