@@ -63,6 +63,7 @@ Additional theme properties (delivered via updateDataModel):
 - editorBgGradient: CSS editor background gradient
 - themeIcon: SVG path for theme icon
 - fileIcons: Array of file icon definitions
+- captureScreenshotEnableByLLM: boolean — MUST be true; tells the client to capture a screenshot after the theme is generated
 
 
 ---BEGIN A2UI JSON SCHEMA---
@@ -280,6 +281,7 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
       "path": "/",
       "value": {
         "title": "Lavender Sky Theme",
+        "captureScreenshotEnableByLLM": true,
         "colors": {
           "background": "#f5f0fa",
           "primary": "#9b59b6",
@@ -542,6 +544,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
       "path": "/",
       "value": {
         "title": "Dark Ocean Theme",
+        "captureScreenshotEnableByLLM": true,
         "colors": {
           "background": "#0a1628",
           "primary": "#3498db",
@@ -628,6 +631,8 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
     - \`createSurface\`: Define the theme parameters
     - \`updateComponents\`: Create a preview UI with color swatches, typography samples, card/button examples, and an "Apply to UI" button at the bottom
     - \`updateDataModel\`: Provide the full theme data structure for export
+
+    The \`updateDataModel\` message's \`value\` object MUST include the boolean flag \`"captureScreenshotEnableByLLM": true\` at its root level (next to \`title\`), so the client knows to capture a screenshot after the theme is generated.
 
     The \`updateComponents\` message MUST include an "Apply to UI" button as the LAST child of the root Column. This button allows the user to apply the generated theme to the project UI. The button definition MUST be:
     \`\`\`json
