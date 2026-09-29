@@ -31,6 +31,7 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   private knownSurfaceIds = new Set<string>();
   private pendingCssVars: Record<string, string> = {};
   private themeDataFromModel: Record<string, any> | null = null;
+  private captureScreenshotEnableByLLM = false;
   private actionSubscription: any;
   private platformId = inject(PLATFORM_ID);
   private injector = inject(Injector);
@@ -109,6 +110,8 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
             // Store theme data from updateDataModel for applyTheme action
             if (item.updateDataModel?.value) {
               this.themeDataFromModel = item.updateDataModel.value;
+              this.captureScreenshotEnableByLLM =
+                item.updateDataModel.value.captureScreenshotEnableByLLM === true;
             }
           }
         } catch (e) { /* ignore invalid JSON */ }
@@ -146,7 +149,9 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
       this.processedBlockCount = completeBlocks.length;
       this.surfaces.set([...this.knownSurfaceIds]);
 
-      void this.captureScreenshot();
+      if (this.captureScreenshotEnableByLLM) {
+        void this.captureScreenshot();
+      }
     }
 
     this.remainingContent.set(this.computeRemainingContent(content));
