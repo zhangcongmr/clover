@@ -178,6 +178,17 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
         stale.remove();
       }
 
+      // Pin everything to the layout viewport: clientWidth/clientHeight exclude the
+      // classic scrollbar gutter that window.innerWidth/innerHeight still include.
+      // html2canvas sizes its canvas from the clone document's scroll size, freezes
+      // computed styles from this host iframe and builds its own scrollbar-less
+      // iframe at windowWidth/windowHeight, so a gutter or a scrollable overflow in
+      // either document would turn into blank strips on the right and bottom of the
+      // screenshot. Clipping the clone keeps the host document from gaining one.
+      const viewportWidth = document.documentElement.clientWidth;
+      const viewportHeight = document.documentElement.clientHeight;
+      clone.style.setProperty('overflow', 'hidden');
+
       this.applyThemeToClone(clone);
       this.hideScreenshotExclusions(clone);
 
@@ -186,7 +197,7 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
       const iframe = document.createElement('iframe');
       iframe.setAttribute(
         'style',
-        `position:fixed;left:-10000px;top:0;border:0;width:${window.innerWidth}px;height:${window.innerHeight}px;`
+        `position:fixed;left:-10000px;top:0;border:0;overflow:hidden;width:${viewportWidth}px;height:${viewportHeight}px;`
       );
       document.body.appendChild(iframe);
 
@@ -199,16 +210,69 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
         // iframe's root element. Cloned <script> elements keep their "already started"
         // flag, so no application code is re-executed inside the iframe.
         iframeDoc.documentElement.replaceWith(clone);
+        await this.prepareHostStyles(iframeDoc);
 
         const canvas = await html2canvas(iframeDoc.documentElement, {
+          windowWidth: viewportWidth,
+          windowHeight: viewportHeight,
+          width: viewportWidth,
+          height: viewportHeight,
           ignoreElements: (element) => this.isExcludedFromScreenshot(element),
         });
+
         this.screenshot.set(canvas.toDataURL());
       } finally {
         iframe.remove();
       }
     } catch (e) {
       console.warn('a2ui screenshot failed', e);
+    }
+  }
+
+  /**
+   * The off-screen host document loads its stylesheets asynchronously, while
+   * html2canvas immediately reads computed styles from it and inlines them into its
+   * own clone. Capturing before a stylesheet has applied - even one as small as
+   * `body { margin: 0 }` - freezes the unstyled layout (UA default 8px margins) and
+   * leaves blank strips around the screenshot. Waits for the links and fonts to
+   * settle, then injects any stylesheet that still did not apply.
+   */
+  private async prepareHostStyles(host: Document): Promise<void> {
+    const links = Array.from(host.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+    await Promise.all(
+      links.map(
+        (link) =>
+          new Promise<void>((resolve) => {
+            if (link.sheet) {
+              resolve();
+              return;
+            }
+            const settle = () => resolve();
+            link.addEventListener('load', settle, { once: true });
+            link.addEventListener('error', settle, { once: true });
+            // Safety net so a stylesheet that never settles cannot stall the capture.
+            setTimeout(settle, 3000);
+          })
+      )
+    );
+
+    await Promise.all(
+      links
+        .filter((link) => !link.sheet)
+        .map(async (link) => {
+          try {
+            const css = await (await fetch(link.href)).text();
+            const style = host.createElement('style');
+            style.textContent = css;
+            link.after(style);
+          } catch {
+            // Keep going: the capture is still useful without that stylesheet.
+          }
+        })
+    );
+
+    if (host.fonts && host.fonts.status === 'loading') {
+      await Promise.race([host.fonts.ready, new Promise<void>((resolve) => setTimeout(resolve, 2000))]);
     }
   }
 
