@@ -8,10 +8,18 @@
   flex-direction: column;
   gap: 8px;
 }
-.a2ui-screenshot {
-  width: 100%;
+.a2ui-preview-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.a2ui-preview-thumb {
+  flex: 1 1 0;
+  min-width: 0;
   border-radius: 8px;
+  overflow: hidden;
   cursor: zoom-in;
+  border: 1px solid var(--vscode-border-color, #e6dde0);
 }
 .a2ui-screenshot-overlay {
   position: fixed;
@@ -20,15 +28,53 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 16px;
   padding: 24px;
   box-sizing: border-box;
   background: color-mix(in srgb, var(--vscode-background) 75%, transparent);
   cursor: zoom-out;
 }
-.a2ui-screenshot-preview {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.a2ui-preview-stage {
+  display: flex;
+  /* Fills the space left by the nav buttons, capped at the preview's
+     design width; min-width: 0 allows shrinking below the SVG's
+     intrinsic width so the buttons never overlap its edges. */
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: min(1600px, calc(100vw - 48px - 112px));
+}
+.a2ui-preview-zoom {
+  width: 100%;
   border-radius: 8px;
   box-shadow: 0 0 16px rgba(0, 0, 0, 0.25);
+}
+.a2ui-preview-nav {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--vscode-border-color, #e6dde0);
+  border-radius: 50%;
+  background: var(--vscode-background, #ffffff);
+  color: var(--vscode-foreground, #1f1f1f);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.a2ui-preview-nav:hover {
+  background: color-mix(in srgb, var(--vscode-background, #ffffff) 82%, var(--vscode-foreground, #1f1f1f));
+}
+.a2ui-preview-nav:active {
+  transform: scale(0.94);
+}
+.a2ui-preview-nav svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

@@ -1,17 +1,20 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, Injector, OnDestroy, PLATFORM_ID, afterNextRender, output, ViewChild, effect, inject, input, signal } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import html2canvas from '@html2canvas/html2canvas';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, output, ViewChild, effect, inject, input, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { SurfaceComponent } from '@a2ui/angular/v0_9';
 import { A2uiRendererService } from '@a2ui/angular/v0_9';
 import { A2uiClientAction } from '@a2ui/web_core/v0_9';
 import { FormatMessagePipe } from './tool-call-info.pipe';
 import { A2uiThemeBridgeService } from './a2ui-theme-bridge.service';
 import { ThemeService } from '../../theme.service';
+import { ThemePreviewSvgComponent, ThemePreviewVariant } from './theme-preview-svg.component';
+
+/** Ordered list of previews cycled through by the overlay navigation. */
+const PREVIEW_VARIANTS: ThemePreviewVariant[] = ['welcome', 'chat'];
 
 @Component({
   selector: 'app-a2ui-json-renderer',
   standalone: true,
-  imports: [CommonModule, SurfaceComponent, FormatMessagePipe],
+  imports: [CommonModule, SurfaceComponent, FormatMessagePipe, ThemePreviewSvgComponent],
   templateUrl: './a2ui-json-renderer.component.html',
   styleUrls: ['./a2ui-json-renderer.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -22,6 +25,7 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   themeApply = output<Record<string, any>>();
 
   @ViewChild('surfacesContainer') surfacesContainer!: ElementRef<HTMLElement>;
+  @ViewChild('previewRoot') previewRoot?: ElementRef<HTMLElement>;
 
   protected renderer = inject(A2uiRendererService);
   private themeBridge = inject(A2uiThemeBridgeService);
@@ -30,21 +34,46 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   private processedBlockCount = 0;
   private knownSurfaceIds = new Set<string>();
   private pendingCssVars: Record<string, string> = {};
+  private pendingPreviewVars: Record<string, string> | null = null;
   private themeDataFromModel: Record<string, any> | null = null;
   private captureScreenshotEnableByLLM = false;
   private actionSubscription: any;
-  private platformId = inject(PLATFORM_ID);
-  private injector = inject(Injector);
 
   surfaces = signal<string[]>([]);
   remainingContent = signal<string>('');
-  screenshot = signal<string>('');
-  /** Whether the maximised screenshot preview overlay is open. */
-  screenshotPreviewOpen = signal(false);
+  /** Theme CSS variables recolouring the SVG previews; null until generated. */
+  previewPalette = signal<Record<string, string> | null>(null);
+  /** Which preview is maximised in the overlay, null when closed. */
+  zoomedPreview = signal<ThemePreviewVariant | null>(null);
 
   @HostListener('document:keydown.escape')
   onEscapeKeydown(): void {
-    this.screenshotPreviewOpen.set(false);
+    this.zoomedPreview.set(null);
+  }
+
+  @HostListener('document:keydown.arrowleft')
+  onArrowLeftKeydown(): void {
+    this.stepPreview(-1);
+  }
+
+  @HostListener('document:keydown.arrowright')
+  onArrowRightKeydown(): void {
+    this.stepPreview(1);
+  }
+
+  /**
+   * Cycles the maximised overlay through the available previews, wrapping
+   * around at either end. Stops the click from bubbling to the overlay,
+   * which would otherwise close it.
+   */
+  stepPreview(delta: number, event?: Event): void {
+    event?.stopPropagation();
+    if (!this.zoomedPreview()) {
+      return;
+    }
+    const index = PREVIEW_VARIANTS.indexOf(this.zoomedPreview()!);
+    const next = (index + delta + PREVIEW_VARIANTS.length) % PREVIEW_VARIANTS.length;
+    this.zoomedPreview.set(PREVIEW_VARIANTS[next]);
   }
 
   constructor() {
@@ -69,6 +98,10 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
     if (Object.keys(this.pendingCssVars).length > 0 && this.surfacesContainer) {
       this.themeBridge.applyVarsToElement(this.surfacesContainer.nativeElement, this.pendingCssVars);
       this.pendingCssVars = {};
+    }
+    if (this.pendingPreviewVars && this.previewRoot) {
+      this.themeBridge.applyVarsToElement(this.previewRoot.nativeElement, this.pendingPreviewVars);
+      this.pendingPreviewVars = null;
     }
   }
 
@@ -150,7 +183,7 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
       this.surfaces.set([...this.knownSurfaceIds]);
 
       if (this.captureScreenshotEnableByLLM) {
-        void this.captureScreenshot();
+        this.refreshThemePreview();
       }
     }
 
@@ -158,198 +191,29 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Captures a screenshot of document.documentElement.cloneNode(true) with the
-   * generated theme applied and publishes it through the `screenshot` signal.
+   * Recolours the SVG theme previews with the generated theme: converts the
+   * theme data to scoped CSS variables and applies them to the preview root,
+   * which the inline SVG mockups inherit through the cascade. Rendering the
+   * previews is pure CSS - no rasterisation, no DOM state switching.
    */
-  private async captureScreenshot(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-
-    // Let Angular render the freshly created surfaces before cloning the document
-    await new Promise<void>((resolve) => {
-      afterNextRender(() => resolve(), { injector: this.injector });
-    });
-
-    try {
-      const clone = document.documentElement.cloneNode(true) as HTMLElement;
-
-      for (const stale of Array.from(clone.querySelectorAll('[data-a2ui-screenshot]'))) {
-        stale.remove();
-      }
-
-      // Pin everything to the layout viewport: clientWidth/clientHeight exclude the
-      // classic scrollbar gutter that window.innerWidth/innerHeight still include.
-      // html2canvas sizes its canvas from the clone document's scroll size, freezes
-      // computed styles from this host iframe and builds its own scrollbar-less
-      // iframe at windowWidth/windowHeight, so a gutter or a scrollable overflow in
-      // either document would turn into blank strips on the right and bottom of the
-      // screenshot. Clipping the clone keeps the host document from gaining one.
-      const viewportWidth = document.documentElement.clientWidth;
-      const viewportHeight = document.documentElement.clientHeight;
-      clone.style.setProperty('overflow', 'hidden');
-
-      this.applyThemeToClone(clone);
-      this.hideScreenshotExclusions(clone);
-
-      // html2canvas only resolves its reference element while cloning the document it
-      // belongs to, so the detached clone is hosted by a temporary off-screen iframe.
-      const iframe = document.createElement('iframe');
-      iframe.setAttribute(
-        'style',
-        `position:fixed;left:-10000px;top:0;border:0;overflow:hidden;width:${viewportWidth}px;height:${viewportHeight}px;`
-      );
-      document.body.appendChild(iframe);
-
-      try {
-        const iframeDoc = iframe.contentDocument;
-        if (!iframeDoc) {
-          return;
-        }
-        // Non-deprecated replacement for document.write(): move the clone in as the
-        // iframe's root element. Cloned <script> elements keep their "already started"
-        // flag, so no application code is re-executed inside the iframe.
-        iframeDoc.documentElement.replaceWith(clone);
-        await this.prepareHostStyles(iframeDoc);
-
-        const canvas = await html2canvas(iframeDoc.documentElement, {
-          windowWidth: viewportWidth,
-          windowHeight: viewportHeight,
-          width: viewportWidth,
-          height: viewportHeight,
-          ignoreElements: (element) => this.isExcludedFromScreenshot(element),
-        });
-
-        this.screenshot.set(canvas.toDataURL());
-      } finally {
-        iframe.remove();
-      }
-    } catch (e) {
-      console.warn('a2ui screenshot failed', e);
-    }
-  }
-
-  /**
-   * The off-screen host document loads its stylesheets asynchronously, while
-   * html2canvas immediately reads computed styles from it and inlines them into its
-   * own clone. Capturing before a stylesheet has applied - even one as small as
-   * `body { margin: 0 }` - freezes the unstyled layout (UA default 8px margins) and
-   * leaves blank strips around the screenshot. Waits for the links and fonts to
-   * settle, then injects any stylesheet that still did not apply.
-   */
-  private async prepareHostStyles(host: Document): Promise<void> {
-    const links = Array.from(host.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
-    await Promise.all(
-      links.map(
-        (link) =>
-          new Promise<void>((resolve) => {
-            if (link.sheet) {
-              resolve();
-              return;
-            }
-            const settle = () => resolve();
-            link.addEventListener('load', settle, { once: true });
-            link.addEventListener('error', settle, { once: true });
-            // Safety net so a stylesheet that never settles cannot stall the capture.
-            setTimeout(settle, 3000);
-          })
-      )
-    );
-
-    await Promise.all(
-      links
-        .filter((link) => !link.sheet)
-        .map(async (link) => {
-          try {
-            const css = await (await fetch(link.href)).text();
-            const style = host.createElement('style');
-            style.textContent = css;
-            link.after(style);
-          } catch {
-            // Keep going: the capture is still useful without that stylesheet.
-          }
-        })
-    );
-
-    if (host.fonts && host.fonts.status === 'loading') {
-      await Promise.race([host.fonts.ready, new Promise<void>((resolve) => setTimeout(resolve, 2000))]);
-    }
-  }
-
-  /**
-   * Sets the generated theme properties on the cloned document root through
-   * ThemeService.applyThemeVariablesTo().
-   */
-  private applyThemeToClone(clone: HTMLElement): void {
+  private refreshThemePreview(): void {
     if (!this.themeDataFromModel) {
       return;
     }
-    const cssVars = this.themeService.themeDataToCssVars(this.themeDataFromModel);
-    clone.setAttribute('data-theme', 'custom');
-    this.themeService.applyThemeVariablesTo(clone, cssVars);
-  }
-
-  /**
-   * Elements dropped from the html2canvas clone entirely (no layout space left):
-   * the agent's task list and project list.
-   */
-  private isExcludedFromScreenshot(element: Element): boolean {
-    return element.classList.contains('task-list') || element.classList.contains('project-list');
-  }
-
-  /**
-   * Replaces the ACP chat panel in the clone with an empty placeholder of the
-   * same size, so html2canvas does not have to clone, serialise and lay out the
-   * whole chat DOM while the surrounding elements keep their exact positions.
-   * The size is measured on the live document because the clone is detached and
-   * therefore has no layout. Falls back to `visibility: hidden` when the panel
-   * cannot be measured (zero size or out-of-flow positioning).
-   */
-  private hideScreenshotExclusions(clone: HTMLElement): void {
-    const sources = Array.from(document.querySelectorAll<HTMLElement>('app-acp-chat'));
-    const targets = Array.from(clone.querySelectorAll<HTMLElement>('app-acp-chat'));
-    for (const [index, target] of targets.entries()) {
-      const source = sources[index];
-      const placeholder = source ? this.createChatPlaceholder(source) : null;
-      if (placeholder) {
-        target.replaceWith(placeholder);
-      } else {
-        target.style.setProperty('visibility', 'hidden');
+    const vars = this.themeService.themeDataToCssVars(this.themeDataFromModel);
+    const root = this.previewRoot?.nativeElement;
+    if (root) {
+      const previous = this.previewPalette();
+      if (previous) {
+        for (const key of Object.keys(previous)) {
+          root.style.removeProperty(key);
+        }
       }
+      this.themeBridge.applyVarsToElement(root, vars);
+    } else {
+      this.pendingPreviewVars = vars;
     }
-  }
-
-  /**
-   * Builds a flow-in placeholder that occupies exactly the outer box of the
-   * given chat element (explicit border-box size, `flex: 0 0 auto`, copied
-   * margin and border paint styles, transparent background so the parent's
-   * background shows through), or returns null when the box cannot be
-   * reproduced.
-   */
-  private createChatPlaceholder(source: HTMLElement): HTMLElement | null {
-    const rect = source.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) {
-      return null;
-    }
-    const computed = window.getComputedStyle(source);
-    if (computed.position === 'absolute' || computed.position === 'fixed') {
-      return null;
-    }
-
-    const placeholder = document.createElement('div');
-    placeholder.style.setProperty('box-sizing', 'border-box');
-    placeholder.style.setProperty('flex', '0 0 auto');
-    placeholder.style.setProperty('width', `${rect.width}px`);
-    placeholder.style.setProperty('height', `${rect.height}px`);
-    placeholder.style.setProperty('margin', computed.margin);
-    // No background on purpose: the placeholder stays transparent so the area
-    // shows the parent's background painted by the clone, which keeps it in sync
-    // with the theme applied to the clone instead of freezing a colour measured
-    // on the live document.
-    placeholder.style.setProperty('border', computed.border);
-    placeholder.style.setProperty('border-radius', computed.borderRadius);
-    placeholder.style.setProperty('box-shadow', computed.boxShadow);
-    return placeholder;
+    this.previewPalette.set(vars);
   }
 
   /**
