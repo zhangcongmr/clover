@@ -139,7 +139,7 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
         {
           "id": "root",
           "component": "Column",
-          "children": ["title", "preview-card", "color-swatches", "typography-preview", "apply-btn"]
+          "children": ["title", "preview-card", "color-swatches", "typography-preview", "save-btn", "apply-btn"]
         },
         {
           "id": "title",
@@ -254,6 +254,22 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
           "component": "Text",
           "variant": "caption",
           "text": "Caption text sample"
+        },
+        {
+          "id": "save-btn",
+          "component": "Button",
+          "child": "save-btn-text",
+          "variant": "default",
+          "action": {
+            "event": {
+              "name": "addToThemeLibrary"
+            }
+          }
+        },
+        {
+          "id": "save-btn-text",
+          "component": "Text",
+          "text": "Add to Theme Library"
         },
         {
           "id": "apply-btn",
@@ -402,7 +418,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
         {
           "id": "root",
           "component": "Column",
-          "children": ["title", "preview-card", "color-swatches", "typography-preview", "apply-btn"]
+          "children": ["title", "preview-card", "color-swatches", "typography-preview", "save-btn", "apply-btn"]
         },
         {
           "id": "title",
@@ -519,6 +535,22 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
           "text": "Caption text sample"
         },
         {
+          "id": "save-btn",
+          "component": "Button",
+          "child": "save-btn-text",
+          "variant": "default",
+          "action": {
+            "event": {
+              "name": "addToThemeLibrary"
+            }
+          }
+        },
+        {
+          "id": "save-btn-text",
+          "component": "Text",
+          "text": "Add to Theme Library"
+        },
+        {
           "id": "apply-btn",
           "component": "Button",
           "child": "apply-btn-text",
@@ -629,10 +661,26 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
 2. Then provide the A2UI JSON block wrapped in \`<a2ui-json>\` and \`</a2ui-json>\` tags.
 3. The JSON MUST contain exactly 3 messages in order:
     - \`createSurface\`: Define the theme parameters
-    - \`updateComponents\`: Create a preview UI with color swatches, typography samples, card/button examples, and an "Apply to UI" button at the bottom
+    - \`updateComponents\`: Create a preview UI with color swatches, typography samples, card/button examples, an "Add to Theme Library" button and an "Apply to UI" button at the bottom
     - \`updateDataModel\`: Provide the full theme data structure for export
 
     The \`updateDataModel\` message's \`value\` object MUST include the boolean flag \`"captureScreenshotEnableByLLM": true\` at its root level (next to \`title\`), so the client knows to capture a screenshot after the theme is generated.
+
+    The \`updateComponents\` message MUST include an "Add to Theme Library" button immediately before the "Apply to UI" button. This button allows the user to save the generated theme into the local theme library. The button definition MUST be:
+    \`\`\`json
+    {
+      "id": "save-btn",
+      "component": "Button",
+      "child": "save-btn-text",
+      "variant": "default",
+      "action": { "event": { "name": "addToThemeLibrary" } }
+    },
+    {
+      "id": "save-btn-text",
+      "component": "Text",
+      "text": "Add to Theme Library"
+    }
+    \`\`\`
 
     The \`updateComponents\` message MUST include an "Apply to UI" button as the LAST child of the root Column. This button allows the user to apply the generated theme to the project UI. The button definition MUST be:
     \`\`\`json
@@ -649,9 +697,9 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
       "text": "Apply to UI"
     }
     \`\`\`
-    The root component's children array MUST end with \`"apply-btn"\`:
+    The root component's children array MUST end with \`"save-btn", "apply-btn"\`:
     \`\`\`json
-    "children": ["title", "preview-card", "color-swatches", "typography-preview", "apply-btn"]
+    "children": ["title", "preview-card", "color-swatches", "typography-preview", "save-btn", "apply-btn"]
     \`\`\`
 
 4. Theme Property Generation Rules:

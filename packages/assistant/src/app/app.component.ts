@@ -11,6 +11,7 @@ import { SettingsComponent } from './main/settings/settings.component';
 import { UserCenterComponent } from './main/user-center/user-center.component';
 import { file } from 'opfs-tools';
 import { ThemeService } from './theme.service';
+import { ThemeLibraryService } from './theme-library.service';
 import { customFileIcons, customFileIconPaths } from './shared/ast-tree/ast-tree.component';
 import { computeFileIcons } from './shared/ast-tree/ast-tree.component';
 import { addDynamicFileIconSymbol } from '../svg-sprite.const';
@@ -36,6 +37,7 @@ import { LayoutService } from './main/layout.service';
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
   protected themeService = inject(ThemeService);
+  private themeLibrary = inject(ThemeLibraryService);
   protected notificationService = inject(NotificationService);
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
@@ -427,6 +429,12 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
     this.themeService.setTheme('custom');
     this.themeService.setThemeVariables(cssVars);
+
+    // Keep the theme library's active highlight in sync when a generated
+    // theme is applied from chat and it happens to be a saved library entry.
+    if (typeof parsed?.title === 'string' && parsed.title.trim()) {
+      this.themeLibrary.setActiveByTitle(parsed.title.trim());
+    }
 
     // Load Google Fonts if needed
     if (googleFonts.length > 0) {

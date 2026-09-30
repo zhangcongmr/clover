@@ -26,22 +26,38 @@ export class SkillService {
   }
 
   /**
-   * Seed built-in skills to the server when they are missing.
-   * Failures are swallowed so skill loading keeps working.
+   * Seed built-in skills to the server when they are missing, and overwrite
+   * existing ones whose stored content no longer matches the bundled copy so
+   * built-in skill updates actually reach the agent. Built-in skills are
+   * read-only in the skill manager (copies get a different name), so an
+   * overwrite cannot destroy user edits. Failures are swallowed so skill
+   * loading keeps working.
    */
   private async registerMissingBuiltIns(skills: SkillInfo[]): Promise<void> {
-    const existing = new Set(skills.map(s => s.name));
+    const existing = new Map(skills.map(s => [s.name, s]));
     for (const builtin of BUILT_IN_SKILLS) {
-      if (existing.has(builtin.name)) continue;
+      const current = existing.get(builtin.name);
+      const method = !current ? 'POST' : current.content !== builtin.content ? 'PUT' : null;
+      if (!method) continue;
       try {
-        const res = await fetch('/api/skills', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(builtin),
-        });
+        const res = await fetch(
+          !current
+            ? '/api/skills'
+            : `/api/skills/${encodeURIComponent(builtin.name)}`,
+          {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(builtin),
+          }
+        );
         if (res.ok) {
-          skills.push(builtin);
-          existing.add(builtin.name);
+          if (current) {
+            current.content = builtin.content;
+            current.description = builtin.description;
+          } else {
+            skills.push(builtin);
+          }
+          existing.set(builtin.name, builtin);
         }
       } catch (err) {
         console.error(`Failed to register built-in skill "${builtin.name}":`, err);
