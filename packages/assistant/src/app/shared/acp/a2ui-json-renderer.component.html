@@ -1,20 +1,31 @@
-<div class="a2ui-json-renderer">
+<div class="a2ui-json-renderer" #previewRoot>
   @if (surfaces().length > 0) {
     <div class="a2ui-surfaces-container" #surfacesContainer>
       @for (surfaceId of surfaces(); track surfaceId) {
         <a2ui-v09-surface [surfaceId]="surfaceId" />
-        @if (screenshot()) {
-          <img class="a2ui-screenshot" data-a2ui-screenshot alt="a2ui screenshot" [src]="screenshot()" (click)="screenshotPreviewOpen.set(true)" />
-        }
       }
+    </div>
+  }
+  @if (previewPalette()) {
+    <div class="a2ui-preview-row">
+      <app-theme-preview-svg variant="welcome" class="a2ui-preview-thumb" (click)="zoomedPreview.set('welcome')" />
+      <app-theme-preview-svg variant="chat" class="a2ui-preview-thumb" (click)="zoomedPreview.set('chat')" />
     </div>
   }
   @if (remainingContent()) {
     <div class="message-text" [innerHTML]="remainingContent() | formatMessage"></div>
   }
-  @if (screenshotPreviewOpen() && screenshot()) {
-    <div class="a2ui-screenshot-overlay" data-a2ui-screenshot (click)="screenshotPreviewOpen.set(false)">
-      <img class="a2ui-screenshot-preview" alt="a2ui screenshot preview" [src]="screenshot()" />
+  @if (zoomedPreview(); as variant) {
+    <div class="a2ui-screenshot-overlay" (click)="zoomedPreview.set(null)">
+      <button type="button" class="a2ui-preview-nav a2ui-preview-nav--prev" aria-label="Previous preview" (click)="stepPreview(-1, $event)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+      </button>
+      <div class="a2ui-preview-stage">
+        <app-theme-preview-svg [variant]="variant" class="a2ui-preview-zoom" />
+      </div>
+      <button type="button" class="a2ui-preview-nav a2ui-preview-nav--next" aria-label="Next preview" (click)="stepPreview(1, $event)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+      </button>
     </div>
   }
 </div>

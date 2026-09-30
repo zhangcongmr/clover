@@ -1,0 +1,112 @@
+:host {
+  display: block;
+}
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--vscode-font-family, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif);
+}
+text {
+  fill: var(--vscode-foreground, #5f5458);
+}
+
+/* surfaces */
+.bg {
+  fill: var(--vscode-background, #fef5f8);
+}
+.sf {
+  fill: var(--vscode-surface-background, #ffffff);
+}
+.pri {
+  fill: var(--vscode-primary-background, #d86a85);
+}
+.onp {
+  fill: var(--vscode-primary-foreground, #ffffff);
+}
+.tint {
+  fill: var(--vscode-primary-background, #d86a85);
+  fill-opacity: 0.15;
+}
+.thumb {
+  fill: var(--vscode-primary-background, #d86a85);
+  fill-opacity: 0.5;
+}
+
+/* text levels */
+.m1 {
+  fill: var(--vscode-foreground, #5f5458);
+  opacity: 0.7;
+}
+.m2 {
+  fill: var(--vscode-foreground, #5f5458);
+  opacity: 0.5;
+}
+
+/* strokes */
+.ln {
+  stroke: var(--vscode-border-color, #e6dde0);
+  stroke-width: 1;
+}
+.bd {
+  stroke: var(--vscode-border-color, #e6dde0);
+  stroke-width: 1;
+}
+.ic {
+  color: var(--vscode-foreground, #5f5458);
+}
+.dim {
+  opacity: 0.55;
+}
+.st {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--vscode-foreground, #5f5458);
+}
+.stw {
+  fill: none;
+  stroke: var(--vscode-primary-foreground, #ffffff);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* semantic badges (fixed, not themed) */
+.avatar-a {
+  fill: #3b8ee8;
+}
+.grn {
+  fill: #2fbf71;
+}
+.wt {
+  fill: #ffffff;
+}
+.oct {
+  fill: #17a398;
+  font-weight: 600;
+}
+.oc-bd {
+  fill: var(--vscode-surface-background, #ffffff);
+  stroke: #2bb8ae;
+  stroke-width: 1.2;
+}
+
+/* typography helpers */
+.b {
+  font-weight: 700;
+}
+.fw6 {
+  font-weight: 600;
+}
+.fw5 {
+  font-weight: 500;
+}
+.mid {
+  text-anchor: middle;
+}
+.code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
+}

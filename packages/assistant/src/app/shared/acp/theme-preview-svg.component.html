@@ -1,0 +1,302 @@
+<svg
+  viewBox="0 0 1763 805"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  [attr.aria-label]="variant() === 'welcome' ? 'Theme preview: welcome screen' : 'Theme preview: chat screen'"
+>
+  <!-- backgrounds -->
+  <rect class="bg" x="0" y="0" width="1763" height="805" />
+  <rect class="sf" x="0" y="0" width="325" height="805" />
+  <line class="ln" x1="48.5" y1="0" x2="48.5" y2="805" />
+  <line class="ln" x1="325.5" y1="0" x2="325.5" y2="805" />
+
+  <!-- icon rail -->
+  <use class="ic" href="#icon-menu" x="15" y="13" width="18" height="18" />
+  <g class="st" transform="translate(16,69)">
+    <rect x="0.7" y="0.7" width="6.5" height="6.5" rx="1.6" />
+    <rect x="8.8" y="0.7" width="6.5" height="6.5" rx="1.6" />
+    <rect x="0.7" y="8.8" width="6.5" height="6.5" rx="1.6" />
+    <rect x="8.8" y="8.8" width="6.5" height="6.5" rx="1.6" />
+  </g>
+  <g class="st" transform="translate(16,124)">
+    <rect x="0.8" y="0.8" width="14.4" height="16" rx="2.4" />
+    <path d="M4 5.5 H12" />
+    <path d="M4 9 H12" />
+    <path d="M4 12.5 H8.5" />
+  </g>
+  <use class="ic" href="#icon-search" x="15" y="178" width="18" height="17" />
+  <g class="st" transform="translate(15,234)">
+    <circle cx="9" cy="9" r="8.2" />
+    <line x1="0.8" y1="9" x2="17.2" y2="9" />
+    <ellipse cx="9" cy="9" rx="4.1" ry="8.2" />
+  </g>
+
+  <!-- sidebar header -->
+  <text class="b" x="62" y="27" font-size="14.5">Clover</text>
+  <text class="m1" x="116" y="27" font-size="11.5">v0.1.2</text>
+  <use class="ic dim" href="#icon-shrink-close" x="294" y="14" width="17" height="17" />
+  <line class="ln" x1="48" y1="45.5" x2="325" y2="45.5" />
+
+  <!-- new task -->
+  <rect class="tint" x="58" y="61" width="257" height="31" rx="8" />
+  <g class="st" style="color: var(--vscode-primary-background, #d86a85)" transform="translate(68,68.5)">
+    <circle cx="8" cy="8" r="7" />
+    <path d="M8 4.6 V11.4 M4.6 8 H11.4" />
+  </g>
+  <text class="fw6" x="94" y="81" font-size="13">New Task</text>
+
+  <!-- tasks -->
+  <g class="st" transform="translate(66,124)">
+    <rect x="0.8" y="1.4" width="13" height="12.4" rx="2.6" />
+    <path d="M3.6 7.6 L6.1 10.1 L11.2 4.6" />
+  </g>
+  <text class="b" x="94" y="135" font-size="13">Tasks</text>
+  <text class="m1" x="137" y="135" font-size="12.5">(3)</text>
+  <use class="ic dim" href="#icon-down" x="161" y="124" width="14" height="14" />
+
+  <!-- sessions -->
+  <text class="m1" x="68" y="180" font-size="12.5">梅花盛开 A2UI 主题设计</text>
+  @if (variant() === 'chat') {
+    <rect class="tint" x="58" y="200" width="257" height="31" rx="8" />
+  }
+  <text class="m1" x="68" y="220" font-size="12.5">樱花盛开主题生成</text>
+  <text class="m1" x="68" y="260" font-size="12.5">Top 3 Chinese Restaurants</text>
+  @if (variant() === 'welcome') {
+    <rect class="thumb" x="317" y="149" width="4" height="56" rx="2" />
+  }
+
+  <!-- projects -->
+  <use class="ic" href="#icon-folder" x="66" y="294" width="17" height="16" />
+  <text class="b" x="94" y="307" font-size="13">Projects</text>
+  <use class="ic dim" href="#icon-down" x="152" y="295" width="14" height="14" />
+  <g class="st dim" transform="translate(286,295)">
+    <path d="M7 1.5 V12.5 M1.5 7 H12.5" />
+  </g>
+
+  <!-- session search -->
+  <rect class="sf bd" x="58" y="336" width="257" height="33" rx="8" />
+  <use class="ic dim" href="#icon-search" x="72" y="345" width="15" height="14" />
+  <text class="m2" x="95" y="357" font-size="12.5">Search sessions</text>
+
+  <!-- agent tree -->
+  <use class="ic dim" href="#icon-down" x="62" y="397" width="14" height="14" />
+  <rect class="avatar-a" x="84" y="392" width="23" height="23" rx="6" />
+  <text class="wt mid fw6" x="95.5" y="408" font-size="12.5">A</text>
+  <text class="fw6" x="115" y="408" font-size="13">assistant</text>
+
+  <text class="m1" x="68" y="453" font-size="12.5">Running pnpm install in</text>
+  <text class="m1" x="68" y="473" font-size="12.5">workspace</text>
+  <rect class="oc-bd" x="68" y="481" width="24" height="17" rx="4.5" />
+  <text class="oct mid" x="80" y="493" font-size="10">oc</text>
+
+  <text class="m1" x="68" y="534" font-size="12.5">ACP Session not found error</text>
+  <text class="m1" x="68" y="554" font-size="12.5">analysis</text>
+  <rect class="oc-bd" x="68" y="562" width="24" height="17" rx="4.5" />
+  <text class="oct mid" x="80" y="574" font-size="10">oc</text>
+
+  <text class="m1" x="68" y="614" font-size="12.5">将active状态硬编码颜色改为</text>
+  <text class="m1" x="68" y="634" font-size="12.5">CSS变量</text>
+
+  <!-- sidebar footer -->
+  <line class="ln" x1="48" y1="645.5" x2="325" y2="645.5" />
+  <g class="st" transform="translate(67,660.5)">
+    <path d="M3.2 1 H8.6 L12.4 4.8 V13.2 A1.6 1.6 0 0 1 10.8 14.8 H3.2 A1.6 1.6 0 0 1 1.6 13.2 V2.6 A1.6 1.6 0 0 1 3.2 1 Z" />
+    <path d="M8.4 1.2 V5 H12.2" />
+  </g>
+  <text x="94" y="672" font-size="13">Skills</text>
+  <g class="st" transform="translate(67,700.5)">
+    <path d="M4.8 1.4 V5 M10 1.4 V5 M2.6 5 H12.2 V7.6 A4.8 4.8 0 0 1 2.6 7.6 Z" />
+    <path d="M7.4 12.4 V14.6" />
+  </g>
+  <text x="94" y="712" font-size="13">MCP Servers</text>
+  <use class="ic" href="#icon-settings" x="67" y="736" width="15" height="15" />
+  <text x="94" y="748" font-size="13">Settings</text>
+  <g class="st" transform="translate(67,776)">
+    <circle cx="7" cy="7" r="6.4" />
+    <path d="M7 6.6 V10.4" />
+    <circle cx="7" cy="4.1" r="0.9" style="fill: currentColor; stroke: none" />
+  </g>
+  <text x="94" y="788" font-size="13">Help</text>
+
+  <!-- window controls -->
+  <use class="ic dim" href="#icon-shrink-close" x="1658" y="14" width="18" height="18" />
+  <g class="st dim" transform="translate(1696,14)">
+    <path d="M1 5 V1 H5 M11 1 H15 V5 M15 11 V15 H11 M5 15 H1 11" />
+  </g>
+  <use class="ic dim" href="#icon-more" x="1728" y="14" width="16" height="16" />
+
+  @if (variant() === 'welcome') {
+    <!-- headline -->
+    <text class="b mid" x="1044" y="249" font-size="26">What can I help you with today?</text>
+
+    <!-- mode tabs -->
+    <rect class="tint" x="907" y="275" width="90" height="52" rx="26" />
+    <g class="st" transform="translate(944,287)">
+      <path d="M2 12 A8 8 0 0 1 14 12" />
+      <path d="M8 12 L11.4 7.6" />
+      <circle cx="8" cy="12" r="1.3" style="fill: currentColor; stroke: none" />
+    </g>
+    <text class="fw6 mid" x="952" y="319" font-size="12.5">Working</text>
+
+    <rect class="sf bd" x="1004" y="275" width="84" height="52" rx="26" />
+    <use class="ic" href="#icon-view-code" x="1037" y="287" width="18" height="18" />
+    <text class="mid" x="1046" y="319" font-size="12.5">Coding</text>
+
+    <rect class="sf bd" x="1094" y="275" width="86" height="52" rx="26" />
+    <g class="st" transform="translate(1129,287)">
+      <circle cx="8" cy="8" r="7.2" />
+      <circle cx="8" cy="8" r="2.6" style="fill: currentColor; stroke: none" />
+    </g>
+    <text class="mid" x="1137" y="319" font-size="12.5">Design</text>
+
+    <!-- quick actions -->
+    <rect class="sf bd" x="724" y="363" width="142" height="32" rx="8" />
+    <g class="st" transform="translate(735,372)">
+      <path d="M3.2 1 H8.6 L12.4 4.8 V13.2 A1.6 1.6 0 0 1 10.8 14.8 H3.2 A1.6 1.6 0 0 1 1.6 13.2 V2.6 A1.6 1.6 0 0 1 3.2 1 Z" />
+      <path d="M8.4 1.2 V5 H12.2" />
+    </g>
+    <text class="m1" x="756" y="384" font-size="12.5">Documentation</text>
+
+    <rect class="sf bd" x="874" y="363" width="165" height="32" rx="8" />
+    <text class="m1 mid" x="892" y="384" font-size="13" font-weight="600">$</text>
+    <text class="m1" x="906" y="384" font-size="12.5">Financial Services</text>
+
+    <rect class="sf bd" x="1046" y="363" width="128" height="32" rx="8" />
+    <g class="st" transform="translate(1057,372)">
+      <circle cx="7" cy="7" r="6.4" />
+      <path d="M7 7 V0.6 A6.4 6.4 0 0 1 13.4 7 Z" style="fill: currentColor; stroke: none" />
+    </g>
+    <text class="m1" x="1078" y="384" font-size="12.5">Visualization</text>
+
+    <rect class="sf bd" x="1181" y="363" width="166" height="32" rx="8" />
+    <g class="st" transform="translate(1192,372)">
+      <path d="M1.4 7 L7.4 1.4 L13.4 7" />
+      <path d="M3.2 6.2 V13.6 H11.6 V6.2" />
+      <path d="M5.9 13.6 V9.6 H8.9 V13.6" />
+    </g>
+    <text class="m1" x="1213" y="384" font-size="12.5">Personal Workspace</text>
+
+    <!-- composer -->
+    <rect class="sf bd" x="690" y="447" width="705" height="120" rx="12" />
+    <text class="m2" x="711" y="479" font-size="14">Describe what to build</text>
+
+    <g class="st dim" transform="translate(704,541)">
+      <path d="M9.6 4.4 L4.4 9.6 a2.5 2.5 0 0 0 3.5 3.5 l5.4-5.4 a4.2 4.2 0 0 0-5.9-5.9 L2 7.3" />
+    </g>
+    <g class="st dim" transform="translate(736,542)">
+      <path d="M6.4 9.6 a3 3 0 0 1 0-4.2 l2-2 a3 3 0 0 1 4.2 4.2 l-1 1" />
+      <path d="M9.6 6.4 a3 3 0 0 1 0 4.2 l-2 2 a3 3 0 0 1-4.2-4.2 l1-1" />
+    </g>
+
+    <rect class="sf bd" x="764" y="537" width="97" height="24" rx="6" />
+    <g class="st" transform="translate(773,542)">
+      <circle cx="7" cy="7" r="6" />
+      <circle cx="7" cy="7" r="2.4" style="fill: currentColor; stroke: none" />
+    </g>
+    <text class="m1" x="792" y="553" font-size="11.5">OpenCode</text>
+
+    <rect class="sf bd" x="869" y="537" width="70" height="24" rx="6" />
+    <text class="m1" x="879" y="553" font-size="11.5">build</text>
+    <use class="ic dim" href="#icon-down" x="917" y="544" width="12" height="12" />
+
+    <rect class="sf bd" x="947" y="537" width="176" height="24" rx="6" />
+    <text class="m1" x="957" y="553" font-size="11.5">OpenCode Zen/Big Pickle</text>
+    <use class="ic dim" href="#icon-down" x="1100" y="544" width="12" height="12" />
+
+    <rect class="sf bd" x="1131" y="537" width="117" height="24" rx="6" />
+    <g class="st" transform="translate(1140,542)">
+      <path d="M4.6 1.6 V5 M9.4 1.6 V5 M2.4 5 H11.6 V7.4 A4.6 4.6 0 0 1 2.4 7.4 Z" />
+      <path d="M7 11 V13.4" />
+    </g>
+    <text class="m1" x="1161" y="553" font-size="11">MCP Servers</text>
+    <use class="ic dim" href="#icon-down" x="1227" y="544" width="12" height="12" />
+
+    <g class="st" transform="translate(1326,541)">
+      <path d="M1 4.5 H15 M1 9 H15 M1 13.5 H15" />
+      <circle cx="5" cy="4.5" r="1.9" style="fill: currentColor; stroke: none" />
+      <circle cx="10.5" cy="9" r="1.9" style="fill: currentColor; stroke: none" />
+      <circle cx="6.5" cy="13.5" r="1.9" style="fill: currentColor; stroke: none" />
+    </g>
+    <rect class="pri" x="1353" y="534" width="30" height="30" rx="8" />
+    <path class="stw" d="M1368 554.5 V544 M1364 548 L1368 544 L1372 548" />
+
+    <!-- project picker -->
+    <rect class="sf bd" x="690" y="573" width="126" height="30" rx="8" />
+    <use class="ic" href="#icon-folder" x="701" y="581" width="16" height="15" />
+    <text class="m1" x="723" y="592" font-size="12.5">Select Project</text>
+  } @else {
+    <!-- chat header -->
+    <line class="ln" x1="325" y1="45.5" x2="1763" y2="45.5" />
+    <g class="st" transform="translate(341,14)">
+      <circle cx="8" cy="8" r="6.6" />
+      <circle cx="8" cy="8" r="2.5" style="fill: currentColor; stroke: none" />
+    </g>
+    <text class="fw6" x="367" y="28" font-size="14.5">樱花盛开主题生成</text>
+    <circle class="grn" cx="493" cy="22" r="4.5" />
+
+    <!-- chat body -->
+    <text class="fw6" x="567" y="57" font-size="26">樱雪初绽 Sakura Bloom</text>
+
+    <rect class="sf bd" x="567" y="90" width="933" height="160" rx="14" />
+    <text class="b" x="587" y="122" font-size="15">樱雪初绽 · 主题预览卡片</text>
+    <text class="m1" x="587" y="153" font-size="13">花瓣粉的主色调搭配奶油白表面与柔和阴影，圆润的转角如同春日枝头的花苞，</text>
+    <text class="m1" x="587" y="175" font-size="13">整体气质温柔、诗意、舒缓。</text>
+    <rect class="pri" x="587" y="190" width="98" height="36" rx="8" />
+    <text class="onp mid fw6" x="636" y="213" font-size="13.5">主要按钮</text>
+
+    <rect class="sf bd" x="567" y="275" width="933" height="76" rx="14" />
+    <text class="b" x="587" y="306" font-size="15">色板 Color Palette</text>
+    <text class="m1" x="587" y="334" font-size="13">背景 #fdf5f7 · 主色 #d96a86 · 强调 #f2a0b5 · 文字 #4a3b41</text>
+
+    <rect class="sf bd" x="567" y="375" width="933" height="200" rx="14" />
+    <text class="b" x="587" y="406" font-size="15">字体 Typography</text>
+    <text class="fw5" x="587" y="448" font-size="21">春风十里，不如花开一树</text>
+    <text class="m1" x="587" y="479" font-size="13">正文示例：樱色渐次盛开于枝头，字面留白宽松，行高 1.7，读来轻盈通透。</text>
+    <text class="m2" x="587" y="522" font-size="11.5">辅助说明文字：花瓣落英的细微层次</text>
+    <text class="code" x="587" y="557" font-size="13">const blossom = () => 'sakura'; // 等宽字体示例</text>
+
+    <rect class="pri" x="567" y="608" width="120" height="40" rx="8" />
+    <text class="onp mid fw6" x="627" y="633" font-size="14">Apply to UI</text>
+
+    <circle class="sf bd" cx="1042" cy="620" r="17" />
+    <use class="ic dim" href="#icon-down" x="1034" y="612" width="16" height="16" />
+
+    <rect class="thumb" x="1526" y="560" width="5" height="44" rx="2.5" />
+
+    <!-- composer -->
+    <rect class="sf bd" x="567" y="660" width="961" height="130" rx="12" />
+    <text class="m2" x="587" y="693" font-size="14">Describe what to build</text>
+
+    <g class="st dim" transform="translate(579,759)">
+      <path d="M9.6 4.4 L4.4 9.6 a2.5 2.5 0 0 0 3.5 3.5 l5.4-5.4 a4.2 4.2 0 0 0-5.9-5.9 L2 7.3" />
+    </g>
+    <g class="st dim" transform="translate(611,760)">
+      <path d="M6.4 9.6 a3 3 0 0 1 0-4.2 l2-2 a3 3 0 0 1 4.2 4.2 l-1 1" />
+      <path d="M9.6 6.4 a3 3 0 0 1 0 4.2 l-2 2 a3 3 0 0 1-4.2-4.2 l1-1" />
+    </g>
+
+    <rect class="sf bd" x="641" y="754" width="97" height="24" rx="6" />
+    <g class="st" transform="translate(650,759)">
+      <circle cx="7" cy="7" r="6" />
+      <circle cx="7" cy="7" r="2.4" style="fill: currentColor; stroke: none" />
+    </g>
+    <text class="m1" x="669" y="770" font-size="11.5">OpenCode</text>
+
+    <rect class="sf bd" x="746" y="754" width="70" height="24" rx="6" />
+    <text class="m1" x="756" y="770" font-size="11.5">build</text>
+    <use class="ic dim" href="#icon-down" x="794" y="761" width="12" height="12" />
+
+    <rect class="sf bd" x="824" y="754" width="176" height="24" rx="6" />
+    <text class="m1" x="834" y="770" font-size="11.5">OpenCode Zen/Big Pickle</text>
+    <use class="ic dim" href="#icon-down" x="977" y="761" width="12" height="12" />
+
+    <g class="st" transform="translate(1461,759)">
+      <path d="M1 4.5 H15 M1 9 H15 M1 13.5 H15" />
+      <circle cx="5" cy="4.5" r="1.9" style="fill: currentColor; stroke: none" />
+      <circle cx="10.5" cy="9" r="1.9" style="fill: currentColor; stroke: none" />
+      <circle cx="6.5" cy="13.5" r="1.9" style="fill: currentColor; stroke: none" />
+    </g>
+    <rect class="pri" x="1491" y="751" width="30" height="30" rx="8" />
+    <path class="stw" d="M1506 771.5 V761 M1502 765 L1506 761 L1510 765" />
+  }
+</svg>
