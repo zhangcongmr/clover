@@ -71,6 +71,24 @@ export class ThemeService {
     }
   }
 
+  /**
+   * 全量替换内联主题变量：先移除旧变量的内联样式，再写入新变量。
+   * 用于 Light/Dark 内置预设切换，避免残留 AI 自定义主题的键。
+   */
+  replaceThemeVariables(vars: Record<string, string>): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const root = document.documentElement;
+      for (const key of Object.keys(this.generatedVariables)) {
+        if (!(key in vars)) {
+          root.style.removeProperty(key);
+        }
+      }
+      this.generatedVariables = { ...vars };
+      this.applyTheme();
+      this.saveThemeVariables();
+    }
+  }
+
   clearThemeVariables(): void {
     if (isPlatformBrowser(this.platformId)) {
       const root = document.documentElement;
