@@ -4,6 +4,8 @@ import { AcpService } from './acp.service';
 import { AcpChatComponent } from './acp-chat.component';
 import { AcpChatInputComponent } from './acp-chat-input.component';
 import { AcpPermissionDialogComponent } from './acp-permission-dialog.component';
+import { WELCOME_TABS, type WelcomeAction, type WelcomeTabId } from './welcome-presets';
+import { buildThemePrompt, randomThemePromptSeed, THEME_SKILL_NAME } from '../skill-manager/built-in/theme-prompt-seeds';
 
 
 @Component({
@@ -405,12 +407,21 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   protected acpService = inject(AcpService);
   showDockMenu = signal<boolean>(false);
   showSettings = signal<boolean>(false);
+  /** Welcome screen data: category tabs, each with its own quick-action tags. */
+  protected readonly welcomeTabs = WELCOME_TABS;
+  protected readonly activeWelcomeTabId = signal<WelcomeTabId>('working');
+  protected readonly activeWelcomeActions = computed(() =>
+    WELCOME_TABS.find(tab => tab.id === this.activeWelcomeTabId())?.actions ?? []
+  );
   protected hostWidth = signal<number>(0);
   protected isPanelWide = computed(() => this.hostWidth() >= AcpPanelComponent.PANEL_WIDE_THRESHOLD);
   protected hasMessages = computed(() => this.acpService.messages().length > 0);
   private hostRef = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
   @ViewChild(AcpChatComponent) private acpChat?: AcpChatComponent;
+  @ViewChild(AcpChatInputComponent) private chatInput?: AcpChatInputComponent;
+  /** Label of the last random theme seed, so consecutive picks differ. */
+  private lastThemeSeedLabel?: string;
 
   ngOnInit(): void {
     this.resizeObserver = new ResizeObserver(entries => {
@@ -434,6 +445,29 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   setDockPosition(position: 'left' | 'right'): void {
     this.dockPositionChange.emit(position);
     this.showDockMenu.set(false);
+  }
+
+  /** Switches the welcome screen's category tab (swaps the quick-action tags). */
+  selectWelcomeTab(id: WelcomeTabId): void {
+    this.activeWelcomeTabId.set(id);
+  }
+
+  /**
+   * Prefills the welcome screen's chat input with the tag's prompt template.
+   * The `themeGenerator` entry mirrors Settings → "+ Generate themes using
+   * AI": load the Theme-generator skill prefilled with a random style seed
+   * (deduplicated against the previous pick).
+   */
+  applyWelcomeAction(action: WelcomeAction): void {
+    if (action.themeGenerator) {
+      const seed = randomThemePromptSeed(this.lastThemeSeedLabel);
+      this.lastThemeSeedLabel = seed.label;
+      this.chatInput?.prefillPrompt(`/${THEME_SKILL_NAME} ${buildThemePrompt(seed)}`);
+      return;
+    }
+    if (action.prompt) {
+      this.chatInput?.prefillPrompt(action.prompt);
+    }
   }
 
   onSettingsChange(value: boolean): void {
