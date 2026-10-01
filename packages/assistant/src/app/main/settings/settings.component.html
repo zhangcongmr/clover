@@ -240,7 +240,7 @@
           <div class="setting-info">
             <div class="setting-info-header">
               <label class="setting-label">Theme Library</label>
-              <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate Theme</button>
+              <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate themes using AI</button>
             </div>
             <p class="setting-desc">Themes you saved from the generator. Click a theme to preview and apply it</p>
           </div>
@@ -248,35 +248,40 @@
             @if (themeLibrary.themes().length === 0) {
               <div class="theme-library-empty">
                 <p>No saved themes yet. Generate a theme and click "Add to Theme Library" to save it here.</p>
-                <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">Generate Theme</button>
+                <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate themes using AI</button>
               </div>
             } @else {
-              <div class="theme-library-grid">
-                @for (theme of themeLibrary.themes(); track theme.id) {
-                  <div
-                    class="theme-library-card"
-                    [class.active]="currentTheme() === 'custom' && themeLibrary.activeId() === theme.id"
-                    (click)="openPreview(theme)"
-                  >
-                    <button
-                      type="button"
-                      class="theme-library-delete"
-                      aria-label="Delete theme"
-                      title="Delete theme"
-                      (click)="deleteTheme(theme, $event)"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </button>
-                    <div class="theme-library-thumb">
-                      <app-theme-preview-svg variant="welcome" [palette]="theme.vars" />
-                    </div>
-                    <span class="theme-library-name">{{ theme.title }}</span>
+              @for (group of themeGroups(); track group.id) {
+                <div class="theme-library-group">
+                  <h3 class="theme-library-group-title">{{ group.label }}</h3>
+                  <div class="theme-library-grid">
+                    @for (theme of group.themes; track theme.id) {
+                      <div
+                        class="theme-library-card"
+                        [class.active]="currentTheme() === 'custom' && themeLibrary.activeId() === theme.id"
+                        (click)="openPreview(theme)"
+                      >
+                        <button
+                          type="button"
+                          class="theme-library-delete"
+                          aria-label="Delete theme"
+                          title="Delete theme"
+                          (click)="deleteTheme(theme, $event)"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                        <div class="theme-library-thumb">
+                          <app-theme-preview-svg variant="welcome" [palette]="theme.vars" />
+                        </div>
+                        <span class="theme-library-name">{{ theme.title }}</span>
+                      </div>
+                    }
                   </div>
-                }
-              </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -509,7 +514,7 @@
       </div>
       <div class="theme-preview-actions">
         <span class="theme-preview-title">{{ theme.title }}</span>
-        <div class="theme-preview-buttons">
+        <div class="theme-preview-buttons theme-preview-variants">
           <button
             type="button"
             class="btn btn-ghost"
@@ -522,6 +527,8 @@
             [disabled]="previewVariant() === 'chat'"
             (click)="previewVariant.set('chat')"
           >Chat</button>
+        </div>
+        <div class="theme-preview-buttons theme-preview-cta">
           <button type="button" class="btn btn-danger" (click)="deleteTheme(theme, $event)">Delete</button>
           <button type="button" class="btn btn-primary" (click)="applyLibraryTheme(theme)">Apply</button>
         </div>

@@ -1,6 +1,7 @@
 import { Injectable, Inject, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ThemeService } from './theme.service';
+import { resolveChipCategoryId } from './shared/skill-manager/built-in/theme-chips-library';
 
 /** A theme saved into the local library by the user. */
 export interface SavedTheme {
@@ -13,6 +14,13 @@ export interface SavedTheme {
   vars: Record<string, string>;
   /** Google Fonts the theme depends on. */
   googleFonts: string[];
+  /**
+   * Chip-library category the theme was generated from (id from
+   * `THEME_CHIP_CATEGORIES`, normalised to 'other' when unknown/missing).
+   * Echoed by the skill in the data model when the prompt carried a
+   * "Chip category:" line.
+   */
+  categoryId?: string;
 }
 
 const LIBRARY_KEY = 'clover-theme-library';
@@ -68,6 +76,8 @@ export class ThemeLibraryService {
       createdAt: existingIndex >= 0 ? list[existingIndex].createdAt : Date.now(),
       vars,
       googleFonts,
+      // Chip category echoed by the skill in the data model; unknown/absent → 'other'.
+      categoryId: resolveChipCategoryId(raw?.['chipCategory']),
     };
 
     const next = existingIndex >= 0
