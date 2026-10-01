@@ -1,4 +1,5 @@
-<div data-layer="tab-header"  (mouseenter)="whenMouseEnterTabContainer($event)"
+<div data-layer="tab-header" [style.border-top]="headerBorderTop()"
+    (mouseenter)="whenMouseEnterTabContainer($event)"
     (mouseleave)="whenMouseLeaveTabContainer($event)">
   @if(leftMoreButtons().length>0) {
     <div class="LeftAppHeader ast-left-app-header">

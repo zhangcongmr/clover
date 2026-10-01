@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, contentChildren, effect, input, model, output, signal, viewChild } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, computed, contentChildren, effect, input, model, output, signal, viewChild } from '@angular/core';
 import {CdkDrag, CdkDragDrop, CdkDropList} from '@angular/cdk/drag-drop';
 import { AstTabComponent, AstTabType } from '../ast-tab.component';
 import { AstMenuComponent } from '../../ast-menu/ast-menu.component';
@@ -17,6 +17,12 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly addTabEnable = input<boolean>(false);
   readonly closable = input(true);
   readonly tabType = input<AstTabType>({});// tab的大小 如果不填写则默认为2rem；tab样式类型 如果不填写，会默认初始化为 bottom 类型
+  // 容器级顶边框样式（作用于 tab-header）：缺省为 ''（不显示）
+  headerBorderTop = computed(() => {
+    const v = this.tabType()['borderTop'];
+    if (!v) return '';
+    return v === true ? '1px solid var(--vscode-border-color)' : v;
+  });
   readonly addNewTab = output<any>();
   readonly dragDrop = output<any>()
 

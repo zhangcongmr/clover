@@ -134,6 +134,7 @@
     display: flex;
     flex-direction: column;
     background-color: var(--vscode-background);
+    border-right: 1px solid var(--vscode-border-color);
     margin-right: 5px;
 }
 
