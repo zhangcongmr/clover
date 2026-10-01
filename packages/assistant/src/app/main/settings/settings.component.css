@@ -317,49 +317,22 @@
   max-width: 100px;
 }
 
-.theme-selector {
+.current-theme {
   display: flex;
+  align-items: center;
   gap: 12px;
 }
 
-.theme-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: var(--vscode-radius-md, 6px);
-  border: 2px solid transparent;
-  transition: border-color 0.15s;
+.current-theme-thumb {
+  width: 220px;
 }
 
-.theme-card.active {
-  border-color: var(--borderless-accent);
+.current-theme-thumb app-theme-preview-svg {
+  display: block;
 }
 
-.theme-card:hover {
-  border-color: var(--vscode-accent-color);
-}
-
-.theme-preview {
-  width: 72px;
-  height: 48px;
-  border-radius: var(--vscode-radius-sm, 3px);
-  border: 1px solid var(--vscode-border-color);
-}
-
-.theme-preview-light {
-  background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%);
-}
-
-.theme-preview-dark {
-  background: linear-gradient(135deg, #1e1e1e 0%, #252526 100%);
-}
-
-.theme-name {
-  font-size: 12px;
-  color: var(--vscode-foreground);
+.current-theme-value {
+  font-weight: 700;
 }
 
 .btn-danger {
