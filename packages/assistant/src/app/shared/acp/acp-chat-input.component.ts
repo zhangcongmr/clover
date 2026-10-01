@@ -1720,6 +1720,18 @@ export class AcpChatInputComponent {
     this.fillSlashCommand(cmd.name);
   }
 
+  /**
+   * Prefills the textarea with a ready-made prompt (welcome-screen quick
+   * action) and focuses the caret at the end so the user can edit before
+   * sending. Clears any pending externally injected slash command.
+   */
+  prefillPrompt(text: string): void {
+    this.acpService.pendingSlashCommand.set(null);
+    this.inputValue.set(text);
+    this.selectedIndex.set(0);
+    this.focusInputAtEnd(text);
+  }
+
   /** Swaps the prompt's style description for a seed from the suggestion chips. */
   applyThemeSeed(seed: ThemePromptSeed): void {
     const value = `/${THEME_SKILL_NAME} ${buildThemePrompt(seed)}`;
