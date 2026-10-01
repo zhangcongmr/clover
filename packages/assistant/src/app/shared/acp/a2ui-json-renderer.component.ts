@@ -6,6 +6,8 @@ import { A2uiClientAction } from '@a2ui/web_core/v0_9';
 import { FormatMessagePipe } from './tool-call-info.pipe';
 import { A2uiThemeBridgeService } from './a2ui-theme-bridge.service';
 import { ThemeService } from '../../theme.service';
+import { ThemeLibraryService } from '../../theme-library.service';
+import { NotificationService } from '../notification/notification.service';
 import { ThemePreviewSvgComponent, ThemePreviewVariant } from './theme-preview-svg.component';
 
 /** Ordered list of previews cycled through by the overlay navigation. */
@@ -30,6 +32,8 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   protected renderer = inject(A2uiRendererService);
   private themeBridge = inject(A2uiThemeBridgeService);
   private themeService = inject(ThemeService);
+  private themeLibrary = inject(ThemeLibraryService);
+  private notification = inject(NotificationService);
 
   private processedBlockCount = 0;
   private knownSurfaceIds = new Set<string>();
@@ -88,6 +92,15 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
       (action: A2uiClientAction) => {
         if (action.name === 'applyTheme' && this.themeDataFromModel) {
           this.themeApply.emit(this.themeDataFromModel);
+        }
+        // User-initiated save into the local theme library (never automatic).
+        if (action.name === 'addToThemeLibrary' && this.themeDataFromModel) {
+          const saved = this.themeLibrary.addFromThemeData(this.themeDataFromModel);
+          if (saved) {
+            this.notification.showNotification(`"${saved.title}" added to theme library`, 'success');
+          } else {
+            this.notification.showNotification('Theme could not be saved to library', 'error');
+          }
         }
       }
     );

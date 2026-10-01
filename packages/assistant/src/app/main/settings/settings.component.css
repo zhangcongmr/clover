@@ -546,3 +546,218 @@
 .agents-hint.agents-error {
   color: #f44747;
 }
+
+/* ==========================================================================
+   Theme library (Settings ¡ú Appearance)
+   ========================================================================== */
+
+.setting-item-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.setting-control-wide {
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.theme-library-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px dashed var(--vscode-border-color);
+  border-radius: var(--vscode-radius-md, 6px);
+}
+
+.theme-library-empty p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  opacity: 0.75;
+}
+
+.theme-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.theme-library-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: var(--vscode-radius-md, 6px);
+  background: var(--vscode-surface-background, transparent);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.theme-library-card:hover {
+  border-color: var(--vscode-accent-color);
+}
+
+.theme-library-card.active {
+  border-color: var(--borderless-accent, var(--vscode-accent-color));
+}
+
+.theme-library-thumb {
+  border: 1px solid var(--vscode-border-color);
+  border-radius: var(--vscode-radius-sm, 3px);
+  overflow: hidden;
+  aspect-ratio: 1763 / 805;
+}
+
+.theme-library-thumb app-theme-preview-svg {
+  display: block;
+}
+
+.theme-library-name {
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-library-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 50%;
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.theme-library-card:hover .theme-library-delete {
+  opacity: 1;
+}
+
+.theme-library-delete:hover {
+  background: #c44545;
+  border-color: #c44545;
+  color: #ffffff;
+}
+
+/* Maximised theme preview overlay */
+
+.theme-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--vscode-background) 75%, transparent);
+  cursor: zoom-out;
+}
+
+.theme-preview-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Fill the space left by the nav buttons, capped so the mockup stays sane;
+     min-width: 0 lets it shrink so buttons never overlap the preview. */
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: min(1600px, calc(100vw - 48px - 112px));
+}
+
+.theme-preview-canvas {
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.25);
+}
+
+.theme-preview-canvas app-theme-preview-svg {
+  display: block;
+}
+
+.theme-preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.theme-preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.theme-preview-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-preview-nav {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 50%;
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.theme-preview-nav:hover {
+  background: color-mix(in srgb, var(--vscode-background) 82%, var(--vscode-foreground));
+}
+
+.theme-preview-nav:active {
+  transform: scale(0.94);
+}
+
+.theme-preview-nav svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--vscode-border-color);
+  color: var(--vscode-foreground);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--vscode-hover-background);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-color: var(--vscode-primary-background);
+}

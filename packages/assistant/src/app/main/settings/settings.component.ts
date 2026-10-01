@@ -1,9 +1,12 @@
-import { Component, inject, input, output, signal } from "@angular/core";
+import { Component, HostListener, inject, input, output, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { SettingsService } from "./settings.service";
 import { LocalAgentService } from "../../shared/local-agent/local-agent.service";
 import { CoreService } from "../../core.service";
 import { AcpSseService } from "../../shared/acp/acp-sse.service";
+import { ThemeLibraryService, SavedTheme } from "../../theme-library.service";
+import { ThemePreviewSvgComponent, ThemePreviewVariant } from "../../shared/acp/theme-preview-svg.component";
+import { NotificationService } from "../../shared/notification/notification.service";
 import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
 
 @Component({
@@ -11,13 +14,15 @@ import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-s
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ThemePreviewSvgComponent],
 })
 export class SettingsComponent {
   private settingsService = inject(SettingsService);
   protected localAgentService = inject(LocalAgentService);
   private coreService = inject(CoreService);
   private sseService = inject(AcpSseService);
+  protected themeLibrary = inject(ThemeLibraryService);
+  private notification = inject(NotificationService);
 
   readonly previousViewId = input<number>(1);
   readonly goBack = output<number>();
@@ -106,6 +111,68 @@ export class SettingsComponent {
 
   onGenerateCustomTheme() {
     this.generateCustomTheme.emit();
+  }
+
+  // ==========================================================================
+  // Theme library preview overlay (Settings → Appearance)
+  // ==========================================================================
+
+  /** Theme shown in the maximised preview overlay, null when closed. */
+  previewTheme = signal<SavedTheme | null>(null);
+  /** Which mockup variant the overlay shows. */
+  previewVariant = signal<ThemePreviewVariant>('welcome');
+
+  openPreview(theme: SavedTheme) {
+    this.previewTheme.set(theme);
+    this.previewVariant.set('welcome');
+  }
+
+  closePreview() {
+    this.previewTheme.set(null);
+  }
+
+  /** Cycles the overlay through the saved themes, wrapping at either end. */
+  stepPreview(delta: number, event?: Event) {
+    event?.stopPropagation();
+    const themes = this.themeLibrary.themes();
+    const current = this.previewTheme();
+    if (!current || themes.length === 0) return;
+    const index = themes.findIndex(t => t.id === current.id);
+    const next = (index + delta + themes.length) % themes.length;
+    this.previewTheme.set(themes[next]);
+  }
+
+  applyLibraryTheme(theme: SavedTheme) {
+    if (this.themeLibrary.apply(theme.id)) {
+      this.settingsService.currentTheme.set('custom');
+      this.notification.showNotification(`"${theme.title}" applied`, 'success');
+      this.closePreview();
+    }
+  }
+
+  deleteTheme(theme: SavedTheme, event?: Event) {
+    event?.stopPropagation();
+    if (!confirm(`Delete "${theme.title}" from the theme library?`)) return;
+    this.themeLibrary.remove(theme.id);
+    if (this.previewTheme()?.id === theme.id) {
+      this.closePreview();
+    }
+    this.notification.showNotification(`"${theme.title}" deleted`, 'info');
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKeydown() {
+    this.closePreview();
+  }
+
+  @HostListener('document:keydown.arrowleft')
+  onArrowLeftKeydown() {
+    if (this.previewTheme()) this.stepPreview(-1);
+  }
+
+  @HostListener('document:keydown.arrowright')
+  onArrowRightKeydown() {
+    if (this.previewTheme()) this.stepPreview(1);
   }
 
   onTerminalFontFamilyChange(event: Event) {
