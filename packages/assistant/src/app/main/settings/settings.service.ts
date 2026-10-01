@@ -2,6 +2,8 @@ import { Injectable, WritableSignal, signal, inject } from '@angular/core';
 import { file, write } from 'opfs-tools';
 import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
 import { ThemeService } from '../../theme.service';
+import { ThemeLibraryService } from '../../theme-library.service';
+import { BUILTIN_THEME_PRESETS } from '../../builtin-theme-presets';
 import { NotificationService } from '../../shared/notification/notification.service';
 
 export interface SettingsCategory {
@@ -19,6 +21,7 @@ export interface OpfsStorageInfo {
 export class SettingsService {
   private localAgentService = inject(LocalAgentService);
   private themeService = inject(ThemeService);
+  private themeLibrary = inject(ThemeLibraryService);
   private notificationService = inject(NotificationService);
 
   readonly categories: SettingsCategory[] = [
@@ -116,12 +119,25 @@ export class SettingsService {
   }
 
   toggleTheme() {
-    this.themeService.toggleTheme();
-    this.currentTheme.set(this.themeService.getCurrentTheme());
+    this.setTheme(this.themeService.getCurrentTheme() === 'dark' ? 'default' : 'dark');
   }
 
   setTheme(theme: string) {
     this.themeService.setTheme(theme);
+
+    const preset = BUILTIN_THEME_PRESETS[theme];
+    if (preset) {
+      // Fully replace inline vars so a previously applied AI/custom theme
+      // cannot leak keys into the built-in Light/Dark preset.
+      this.themeService.replaceThemeVariables(preset.vars);
+      this.themeService.removeGoogleFonts();
+      if (preset.googleFonts.length > 0) {
+        this.themeService.loadGoogleFonts(preset.googleFonts);
+      }
+      // Drop the Theme Library highlight: a built-in preset is now active.
+      this.themeLibrary.clearActive();
+    }
+
     this.currentTheme.set(theme);
   }
 

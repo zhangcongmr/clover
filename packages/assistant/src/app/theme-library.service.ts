@@ -114,6 +114,11 @@ export class ThemeLibraryService {
     this.setActiveId(match ? match.id : null);
   }
 
+  /** Clears the active highlight (e.g. when a built-in Light/Dark preset is selected). */
+  clearActive(): void {
+    this.setActiveId(null);
+  }
+
   private setActiveId(id: string | null): void {
     this.activeId.set(id);
     if (!isPlatformBrowser(this.platformId)) {
