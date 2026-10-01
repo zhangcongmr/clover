@@ -13,6 +13,11 @@ export interface AstTabType {
      */
     type?: 'bilateral' | 'bottom' | 'textbottom' | 'borderless' | 'lightcolorselection' | 'filled';
     backgroundColor?: string;
+    /**
+     * 容器级属性（作用于 tab-header 整条，而非单个 tab）：
+     * true = '1px solid var(--vscode-border-color)'；字符串 = 自定义 border-top 值；缺省 = 无顶边框
+     */
+    borderTop?: boolean | string;
 }
 
 @Component({
