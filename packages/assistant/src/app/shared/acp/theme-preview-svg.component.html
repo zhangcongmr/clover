@@ -1,3 +1,112 @@
+<!--
+================================================================================
+位图 -> SVG 同步 Prompt（UI 截图更新后，按此 prompt 更新本文件）
+================================================================================
+【重要】同步更新 theme-preview-svg.component.html 时，本注释区域严禁删除！
+       本注释是下次位图变更后重新生成/同步 SVG 的唯一 prompt 来源，
+       只允许在 prompt 内容确实需要修订时整段保留并更新其文字。
+================================================================================
+
+背景：本文件是 LLM 根据以下两张 UI 位图手工转换成的静态矢量图，用于主题预览
+缩略图（Settings 主题库卡片）与浮层放大预览。两张位图与本 SVG 的关系：
+  - packages/assistant/base01.png：welcome 变体（欢迎页），对应 variant() === 'welcome'
+  - packages/assistant/base02.png：chat 变体（会话页），对应 variant() === 'chat'
+  - 两张位图均为 1763 x 805 像素，即 viewBox="0 0 1763 805"，坐标 1:1 对应，无需缩放换算。
+
+当 UI 改版、上述位图被替换成新截图时，请把以下 prompt 完整发给 LLM（或由 agent
+直接执行），以同步更新 theme-preview-svg.component.html 及其同目录 .css：
+
+--------------------------------------------------------------------------------
+PROMPT START
+--------------------------------------------------------------------------------
+
+任务：把两张 UI 截图转换/同步为一个 Angular 内联模板 SVG 矢量图。
+
+输入：
+  1. packages/assistant/base01.png（welcome 页面截图，1763x805）
+  2. packages/assistant/base02.png（chat 会话页面截图，1763x805）
+  3. 现有文件 packages/assistant/src/app/shared/acp/theme-preview-svg.component.html
+     与其同名 .css（若是首次生成则无此文件）
+
+输出：更新后的 theme-preview-svg.component.html（Angular 模板语法）+ 配套 .css。
+
+步骤 1 读图与测绘：
+  - 用 Read 工具打开两张位图，识别 UI 分区：左侧 48px 图标栏（icon rail）、
+    325px 宽侧边栏（sidebar）、右侧主内容区（main）。
+  - 对每个元素（文本、图标、按钮、卡片、分隔线、输入框、chip、滚动条），
+    在位图上估读其像素坐标 (x, y) 与宽高，直接作为 SVG 坐标
+    （viewBox 与位图同尺寸，1:1，不缩放）。
+  - 记录圆角半径 rx：小 chip 6-8、卡片 12-14、pill 胶囊 26、滚动条 2-2.5。
+  - 记录分隔线位置：x=48.5（图标栏右缘）、x=325.5（侧边栏右缘）、y=45.5（顶栏下缘）。
+    线条坐标带 .5 偏移（x.5 / y.5）以保证 1px 线落在整数像素上清晰不发虚。
+  - 记录文本基线 y 与字号 font-size（顶栏 14.5、区块标题 13-15、正文 12.5-13、
+    占位符 14、辅助 11-11.5、大标题 21-26）。
+
+步骤 2 结构组织（保持现有骨架，只替换变化的部分）：
+  - 根元素为 svg，属性：viewBox="0 0 1763 805"、xmlns、role="img"、
+    用 Angular 属性绑定 [attr.aria-label] 按 variant 输出描述文本。
+  - 元素顺序：背景 rect 组 -> 侧边栏（两变体共用）-> 窗口控件 ->
+    Angular if/else 控制流块（条件为 variant() === 'welcome'）-> /svg。
+    if 分支放 welcome 内容：headline、mode tabs、quick actions、composer、
+    project picker；else 分支放 chat 内容：chat header、聊天卡片、Apply to UI、
+    composer。
+  - 两变体共用的图标栏与侧边栏代码放在控制流块之外，只写一遍；仅内容不同的
+    区域放进 if/else 控制流块。注意：本文件是 Angular 模板，连 HTML 注释里
+    也不能出现 at 符号加关键字的字面量（会被模板解析器误认为未闭合的控制流块
+    而报 NG5002），需要提及时用 “if/else 块” 这样的文字描述代替。
+
+  - 每个逻辑区块前加一行 HTML 注释，例如 sidebar footer、composer。
+
+步骤 3 颜色一律走 CSS 变量（关键约束，勿写死色值）：
+  - 禁止在 HTML 中出现具体颜色值；所有 fill/stroke/opacity 写进 .css 的类里，
+    用 var(--vscode-*, 从位图取的回退色) 形式，使换主题时预览自动变色。
+  - 现有类约定（保持并复用，新元素按此归类）：
+      .bg   主背景        .sf   表面/卡片    .pri  主色按钮   .onp  主色上的文字
+      .tint 主色浅底(0.15) .thumb 滚动条/高亮(0.5) .bd 卡片描边 .ln 分隔线
+      .m1   一级弱化文字(0.7) .m2 占位/更弱文字(0.5)
+      .st   线条图标（无填充 + currentColor + stroke 1.4 + round） .dim 淡化(0.55)
+      .ic   复用全局 sprite 图标着色  .stw 主色按钮上的白色线条图标
+      .b/.fw6/.fw5 字重  .mid text-anchor:middle  .code 等宽字体
+      固定语义色：.avatar-a 蓝头像  .grn 绿点  .wt 白字  .oct/.oc-bd oc 徽标
+  - 若新截图出现新的视觉角色（如错误红、警告黄），在 .css 新增一个语义类，
+    同样用 var(--vscode-*, 回退色)，不要把色值写进 HTML。
+
+步骤 4 图标转换：
+  - 优先复用全局 sprite：查 src/svg-sprite.const.ts 中已有 symbol id（icon-menu、
+    icon-search、icon-folder、icon-settings、icon-down、icon-more、
+    icon-view-code、icon-shrink-close 等），用 use 元素引用：
+    class="ic" href="#icon-menu" 并给出 x / y / width / height。
+  - sprite 中没有的图标，手绘为 g 元素（class="st"，transform="translate(x,y)"）
+    内含 path/circle/rect/line，坐标为图标自身局部坐标（一般 0-18 的画布），
+    stroke-width 1.4、stroke-linecap 与 stroke-linejoin 为 round，靠 color 继承
+    着色；小实心点用 style="fill: currentColor; stroke: none" 内联覆盖。
+  - 图标位置以位图左上角像素作为 translate 基准。
+
+步骤 5 文本：
+  - 用 text 元素，x 为左缘（带 .mid 类时为中心），y 为基线；逐条按位图抄写文案。
+  - 中英文混排照抄位图内容；占位文本用 .m2，次级说明用 .m1，标题用 .b/.fw6。
+
+步骤 6 自检：
+  - 文件顶部的整段同步 Prompt 注释严禁删除或截断，更新后必须原样保留在第 1 行起始处。
+  - HTML 中不得出现任何具体颜色值；不得出现 img 标签或外链资源；不得使用
+    foreignObject；位图仍为 1763x805 时不得改变 viewBox 尺寸。
+  - 控制流块之外不得放只属于某一变体的元素；两变体各自完整渲染。
+  - 配套 .css 的类要覆盖模板中用到的全部 class。
+  - 运行 pnpm --filter ./packages/assistant build 验证编译通过。
+  - 用 Read 把更新后的 SVG 渲染结果与两张位图逐区域比对（侧边栏、顶栏、
+    主内容、composer、角落按钮），修正明显偏差的坐标。
+
+--------------------------------------------------------------------------------
+PROMPT END
+--------------------------------------------------------------------------------
+
+其它约定（不在 prompt 内重复，但改本文件时须知）：
+  - 主题变量 scoped 由 theme-preview-svg.component.ts 的 palette input 写到 :host，
+    本模板只负责引用 var(--vscode-*)，勿直接读 palette。
+  - 本组件被 Settings 主题库卡片、浮层预览与 a2ui 预览复用，variant 取值
+    'welcome' | 'chat'；新增变体需同步修改 .ts 的 ThemePreviewVariant 类型。
+================================================================================
+-->
 <svg
   viewBox="0 0 1763 805"
   xmlns="http://www.w3.org/2000/svg"
