@@ -64,6 +64,7 @@ Additional theme properties (delivered via updateDataModel):
 - themeIcon: SVG path for theme icon
 - fileIcons: Array of file icon definitions
 - captureScreenshotEnableByLLM: boolean — MUST be true; tells the client to capture a screenshot after the theme is generated
+- chipCategory: string — chip category id (e.g. "guofeng"). Include this property ONLY when the user's prompt contains a "Chip category: …" line; echo the id given in parentheses exactly as-is (if only a label is recognizable, echo the label). When the user's prompt has no "Chip category:" line, you MUST omit this property entirely.
 
 
 ---BEGIN A2UI JSON SCHEMA---

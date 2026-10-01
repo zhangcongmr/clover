@@ -19,6 +19,7 @@ import { NotificationComponent } from './shared/notification/notification.compon
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import { AcpService } from './shared/acp/acp.service';
 import { BUILT_IN_SKILLS } from './shared/skill-manager/built-in-skills';
+import { buildThemePrompt, randomThemePromptSeed, THEME_SKILL_NAME } from './shared/skill-manager/built-in/theme-prompt-seeds';
 import { NotificationService } from './shared/notification/notification.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
@@ -85,6 +86,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private readonly ACP_PANEL_OPEN_KEY = 'clover_acp_panel_open';
   private static readonly  ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
   private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'clover_acp_previous_left_pct';
+  /** Last theme style seed picked for the Generate Theme prompt (variety). */
+  private lastThemeSeedLabel?: string;
 
   keepTerminalInstance = {
     value: false,
@@ -621,15 +624,18 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   }
 
   /** Settings → Appearance → custom theme: return to the assistant and load the
-   *  Theme-generator skill into the chat input as a slash command. */
+   *  Theme-generator skill into the chat input, prefilled with a complete,
+   *  randomly seeded style prompt the user can send as-is or edit. */
   onGenerateCustomTheme() {
-    const skill = BUILT_IN_SKILLS.find(s => s.name === 'Theme-generator');
+    const skill = BUILT_IN_SKILLS.find(s => s.name === THEME_SKILL_NAME);
     if (skill) {
       if (!this.agentPanelOpen) {
         this.agentPanelOpen = true;
         localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
       }
-      this.acpService.pendingSlashCommand.set(skill.name);
+      const seed = randomThemePromptSeed(this.lastThemeSeedLabel);
+      this.lastThemeSeedLabel = seed.label;
+      this.acpService.pendingSlashCommand.set(`/${THEME_SKILL_NAME} ${buildThemePrompt(seed)}`);
     }
     this.onGoBack(this.previousViewId);
     // Return the sidebar to a fresh task (same as clicking "New Task"), so the

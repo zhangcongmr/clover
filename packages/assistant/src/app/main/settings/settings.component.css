@@ -599,6 +599,17 @@
   opacity: 0.75;
 }
 
+.theme-library-group + .theme-library-group {
+  margin-top: 18px;
+}
+
+.theme-library-group-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
 .theme-library-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -713,22 +724,32 @@
 }
 
 .theme-preview-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .theme-preview-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--vscode-foreground);
+  justify-self: start;
 }
 
 .theme-preview-buttons {
   display: flex;
   gap: 8px;
+}
+
+/* Welcome / Chat variant switcher: centred in the action bar. */
+.theme-preview-variants {
+  justify-self: center;
+}
+
+/* Delete / Apply actions: pinned to the right. */
+.theme-preview-cta {
+  justify-self: end;
 }
 
 .theme-preview-nav {

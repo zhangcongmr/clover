@@ -1,10 +1,11 @@
-import { Component, HostListener, inject, input, output, signal } from "@angular/core";
+import { Component, HostListener, inject, input, output, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { SettingsService } from "./settings.service";
 import { LocalAgentService } from "../../shared/local-agent/local-agent.service";
 import { CoreService } from "../../core.service";
 import { AcpSseService } from "../../shared/acp/acp-sse.service";
 import { ThemeLibraryService, SavedTheme } from "../../theme-library.service";
+import { THEME_CHIP_CATEGORIES } from "../../shared/skill-manager/built-in/theme-chips-library";
 import { ThemePreviewSvgComponent, ThemePreviewVariant } from "../../shared/acp/theme-preview-svg.component";
 import { NotificationService } from "../../shared/notification/notification.service";
 import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
@@ -71,6 +72,22 @@ export class SettingsComponent {
   opfsClearing = signal(false);
 
   showSavedToast = signal(false);
+
+  /**
+   * Saved themes grouped by chip-library category. Groups follow
+   * `THEME_CHIP_CATEGORIES` order (the library's own "其他" category is last),
+   * themes without a valid `categoryId` fall into "其他", and empty groups are
+   * hidden.
+   */
+  readonly themeGroups = computed(() => {
+    const groups = THEME_CHIP_CATEGORIES.map(c => ({ id: c.id, label: c.label, themes: [] as SavedTheme[] }));
+    const otherGroup = groups.find(g => g.id === 'other') ?? groups[groups.length - 1];
+    for (const theme of this.themeLibrary.themes()) {
+      const group = groups.find(g => g.id === theme.categoryId) ?? otherGroup;
+      group.themes.push(theme);
+    }
+    return groups.filter(g => g.themes.length > 0);
+  });
 
   constructor() {
     this.checkAgentStatus();

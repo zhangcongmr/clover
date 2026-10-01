@@ -7,7 +7,21 @@ import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
+import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { SkillService } from '../skills/skill.service';
+import {
+  buildThemePrompt,
+  THEME_PROMPT_SEEDS,
+  THEME_SKILL_NAME,
+  type ThemePromptSeed,
+} from '../skill-manager/built-in/theme-prompt-seeds';
+import {
+  findChipCategoryIdByLabel,
+  FLAT_THEME_CHIPS,
+  THEME_CHIP_CATEGORIES,
+  type ThemeChip,
+  type ThemeChipCategory,
+} from '../skill-manager/built-in/theme-chips-library';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const TEXT_MIME_TYPES = new Set([
@@ -43,7 +57,7 @@ interface McpServerOption {
 @Component({
   selector: 'app-acp-chat-input',
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent],
   templateUrl: './acp-chat-input.component.html',
   styles: [`
     :host {
@@ -67,6 +81,169 @@ interface McpServerOption {
     .acp-chat-input-box.drag-over {
       border-color: var(--vscode-border-color);
       box-shadow: 0 0 0 1px var(--vscode-accent-color) inset;
+    }
+    .acp-chat-input-box.theme-scenario {
+      border-color: var(--vscode-primary-background);
+      background-image: var(--vscode-bg-gradient);
+    }
+    .theme-scenario-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 14px 0;
+    }
+    .theme-scenario-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      padding: 3px 6px 3px 8px;
+      border: 1px solid var(--vscode-primary-background);
+      border-radius: 999px;
+      background-color: var(--vscode-hover-background);
+      color: var(--vscode-foreground);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .theme-scenario-chip svg {
+      flex-shrink: 0;
+      color: var(--vscode-primary-background);
+    }
+    .theme-scenario-clear {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.15s, background-color 0.15s;
+    }
+    .theme-scenario-clear:hover {
+      opacity: 1;
+      background-color: var(--vscode-item-active-background);
+    }
+    .theme-seed-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .theme-seed-chip {
+      padding: 3px 10px;
+      border: 1px solid var(--vscode-border-color);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .theme-seed-chip:hover {
+      background-color: var(--vscode-hover-background);
+      border-color: var(--vscode-primary-background);
+    }
+    .theme-scenario-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .theme-chips-entry {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      padding: 3px 10px;
+      border: 1px solid var(--vscode-border-color);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .theme-chips-entry svg {
+      flex-shrink: 0;
+    }
+    .theme-chips-entry:hover,
+    .theme-chips-entry.active {
+      background-color: var(--vscode-hover-background);
+      border-color: var(--vscode-primary-background);
+    }
+    .theme-chips-entry.active {
+      color: var(--vscode-primary-background);
+    }
+    .theme-chips-dialog-body {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      padding: 6px 14px 14px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .theme-chips-cats {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 150px;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+    .theme-chips-cat {
+      flex-shrink: 0;
+      text-align: left;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background-color 0.15s, color 0.15s;
+    }
+    .theme-chips-cat:hover {
+      background-color: var(--vscode-hover-background);
+    }
+    .theme-chips-cat.active {
+      background-color: var(--vscode-hover-background);
+      color: var(--vscode-primary-background);
+      font-weight: 600;
+    }
+    .theme-chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+      align-content: flex-start;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .theme-chips-item {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border: 1px solid var(--vscode-border-color);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--vscode-foreground);
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .theme-chips-item:hover {
+      background-color: var(--vscode-hover-background);
+      border-color: var(--vscode-primary-background);
     }
     .acp-chat-attachments {
       display: flex;
@@ -827,6 +1004,37 @@ export class AcpChatInputComponent {
     return this.inputValue().startsWith('/') && this.filteredCommands().length > 0;
   });
 
+  /**
+   * Theme-generation scenario is derived from the input content (not from
+   * `pendingSlashCommand`, which is cleared on the first edit) so the UI
+   * stays visible while the user composes the prompt.
+   */
+  readonly isThemeScenario = computed(() => {
+    const match = this.inputValue().trim().match(/^\/([^\s]+)/);
+    return match?.[1] === THEME_SKILL_NAME;
+  });
+
+  readonly chatPlaceholder = computed(() =>
+    this.isThemeScenario()
+      ? 'Describe a style or mood — e.g. lavender sky, dark ocean, cyberpunk'
+      : 'Describe what to build'
+  );
+
+  /** Style seeds powering the one-click suggestion chips. */
+  readonly themeSeeds: readonly ThemePromptSeed[] = THEME_PROMPT_SEEDS;
+
+  // ── Chips library panel (Theme-generator scenario) ────────────────
+  readonly showChipsLibrary = signal(false);
+  readonly activeChipCategoryId = signal<string>('all');
+  readonly chipCategories: readonly ThemeChipCategory[] = THEME_CHIP_CATEGORIES;
+
+  /** Chips shown in the panel grid: everything for "all", else one category. */
+  readonly visibleLibraryChips = computed<readonly ThemeChip[]>(() => {
+    const id = this.activeChipCategoryId();
+    if (id === 'all') return FLAT_THEME_CHIPS;
+    return this.chipCategories.find(c => c.id === id)?.chips ?? FLAT_THEME_CHIPS;
+  });
+
   readonly showAgentDisconnectedWarning = computed(() => {
     const s = this.acpService.sessionState();
     return s.isConnected && !s.agentConnected;
@@ -853,6 +1061,11 @@ export class AcpChatInputComponent {
       if (!cmd) return;
       this.fillSlashCommand(cmd);
     });
+    // Leaving the theme scenario (send, prefix deleted, …) → close the panel
+    // so re-entering it does not resurrect a stale open state.
+    effect(() => {
+      if (!this.isThemeScenario()) this.showChipsLibrary.set(false);
+    });
   }
 
   @HostListener('document:click', ['$event'])
@@ -873,6 +1086,16 @@ export class AcpChatInputComponent {
     if (!target.closest('.mcp-selector')) {
       this.showMcpDropdown.set(false);
     }
+    // Clicks outside the scenario bar / chips dialog dismiss the panel; clicks
+    // inside the dialog (category buttons, chips) must keep it open.
+    if (!target.closest('.theme-scenario-bar') && !target.closest('.ast-modal')) {
+      this.showChipsLibrary.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.showChipsLibrary.set(false);
   }
 
   loadMcpServers(): void {
@@ -1495,6 +1718,49 @@ export class AcpChatInputComponent {
     // injected slash command so it cannot overwrite this choice later.
     this.acpService.pendingSlashCommand.set(null);
     this.fillSlashCommand(cmd.name);
+  }
+
+  /** Swaps the prompt's style description for a seed from the suggestion chips. */
+  applyThemeSeed(seed: ThemePromptSeed): void {
+    const value = `/${THEME_SKILL_NAME} ${buildThemePrompt(seed)}`;
+    this.acpService.pendingSlashCommand.set(null);
+    this.inputValue.set(value);
+    this.selectedIndex.set(0);
+    this.focusInputAtEnd(value);
+  }
+
+  toggleChipsLibrary(): void {
+    this.showChipsLibrary.update(open => !open);
+  }
+
+  selectChipCategory(id: string): void {
+    this.activeChipCategoryId.set(id);
+  }
+
+  /**
+   * Applies a library chip and closes the panel ("apply & close").
+   * The chip's category is forced into the prompt as an explicit
+   * `Chip category:` line so the skill can echo it back in the data model
+   * (that is how the saved theme is filed into the theme library group).
+   */
+  applyLibraryChip(chip: ThemeChip): void {
+    const categoryId = findChipCategoryIdByLabel(chip.label);
+    const categoryLabel = this.chipCategories.find(c => c.id === categoryId)?.label ?? '其他';
+    const value = `/${THEME_SKILL_NAME} ${buildThemePrompt(chip)}\nChip category: ${categoryLabel} (id: ${categoryId})`;
+    this.acpService.pendingSlashCommand.set(null);
+    this.inputValue.set(value);
+    this.selectedIndex.set(0);
+    this.focusInputAtEnd(value);
+    this.showChipsLibrary.set(false);
+  }
+
+  /** Exits the theme-generation scenario by clearing the input. */
+  clearThemeScenario(): void {
+    this.acpService.pendingSlashCommand.set(null);
+    this.showChipsLibrary.set(false);
+    this.inputValue.set('');
+    const el = this.messageInput?.nativeElement as HTMLTextAreaElement | undefined;
+    el?.focus();
   }
 
   private fillSlashCommand(name: string): void {

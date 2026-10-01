@@ -1,6 +1,6 @@
 <div class="acp-chat-input-container">
   <input #fileInput type="file" multiple hidden (change)="onFilesSelected($event)" />
-  <div class="acp-chat-input-box" [class.drag-over]="isDragOver()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+  <div class="acp-chat-input-box" [class.drag-over]="isDragOver()" [class.theme-scenario]="isThemeScenario()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
 	@if (errorMessage(); as error) {
 	  <div class="chat-common-error-box">
 		<div class="chat-error-banner">
@@ -47,7 +47,7 @@
 	  </div>
 	}
 	<textarea #messageInput [ngModel]="inputValue()" (ngModelChange)="inputValue.set($event)"
-	  (input)="onInput()" (keydown)="onKeydown($event)" (paste)="onPaste($event)" placeholder="Describe what to build"
+	  (input)="onInput()" (keydown)="onKeydown($event)" (paste)="onPaste($event)" [attr.placeholder]="chatPlaceholder()"
 	  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
 	  [disabled]="acpService.hasActiveQuestions()" rows="1"
 	  class="message-textarea custom-scroll"></textarea>
@@ -83,6 +83,36 @@
 			</button>
 		  </div>
 		}
+	  </div>
+	}
+	@if (isThemeScenario()) {
+	  <div class="theme-scenario-bar">
+		<div class="theme-scenario-head">
+		  <span class="theme-scenario-chip">
+			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.83-.44-1.12-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.56-2.5 5.56-5.55C21.97 6.01 17.46 2 12 2z"/>
+			  <circle cx="13.5" cy="6.5" r=".6"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="8.5" cy="7.5" r=".6"/><circle cx="6.5" cy="12.5" r=".6"/>
+			</svg>
+			<span>Theme Generator</span>
+			<button type="button" class="theme-scenario-clear" title="Exit theme generator" (click)="clearThemeScenario()">
+			  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+				<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+			  </svg>
+			</button>
+		  </span>
+		  <button type="button" class="theme-chips-entry" [class.active]="showChipsLibrary()" title="Browse the full style chips library" (click)="toggleChipsLibrary()">
+			<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+			  <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+			</svg>
+			<span>Chips 库</span>
+		  </button>
+		</div>
+		<div class="theme-seed-chips">
+		  @for (seed of themeSeeds; track seed.label) {
+			<button type="button" class="theme-seed-chip" (click)="applyThemeSeed(seed)">{{ seed.label }}</button>
+		  }
+		</div>
 	  </div>
 	}
 	<div class="acp-chat-toolbar">
@@ -297,4 +327,19 @@
 	</div>
   }
 </div>
+<ast-modal [visible]="showChipsLibrary()" title="Chips 库" modalSize="large" (close)="showChipsLibrary.set(false)">
+  <div class="ast-modal-body theme-chips-dialog-body">
+	<div class="theme-chips-cats custom-scroll">
+	  <button type="button" class="theme-chips-cat" [class.active]="activeChipCategoryId() === 'all'" (click)="selectChipCategory('all')">全部</button>
+	  @for (cat of chipCategories; track cat.id) {
+		<button type="button" class="theme-chips-cat" [class.active]="activeChipCategoryId() === cat.id" (click)="selectChipCategory(cat.id)">{{ cat.label }}</button>
+	  }
+	</div>
+	<div class="theme-chips-grid custom-scroll">
+	  @for (chip of visibleLibraryChips(); track chip.label) {
+		<button type="button" class="theme-chips-item" (click)="applyLibraryChip(chip)">{{ chip.label }}</button>
+	  }
+	</div>
+  </div>
+</ast-modal>
 <app-file-picker-dialog #filePicker (selected)="onFolderSelected($event)"></app-file-picker-dialog>
