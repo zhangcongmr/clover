@@ -89,13 +89,13 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
     });
 
     this.actionSubscription = this.renderer.surfaceGroup.onAction.subscribe(
-      (action: A2uiClientAction) => {
+      async (action: A2uiClientAction) => {
         if (action.name === 'applyTheme' && this.themeDataFromModel) {
           this.themeApply.emit(this.themeDataFromModel);
         }
         // User-initiated save into the local theme library (never automatic).
         if (action.name === 'addToThemeLibrary' && this.themeDataFromModel) {
-          const saved = this.themeLibrary.addFromThemeData(this.themeDataFromModel);
+          const saved = await this.themeLibrary.addFromThemeData(this.themeDataFromModel);
           if (saved) {
             this.notification.showNotification(`"${saved.title}" added to theme library`, 'success');
           } else {

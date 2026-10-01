@@ -226,7 +226,7 @@ export class SettingsComponent {
     event?.stopPropagation();
     if (theme.builtinKey) return;
     if (!confirm(`Delete "${theme.title}" from the theme library?`)) return;
-    this.themeLibrary.remove(theme.id);
+    void this.themeLibrary.remove(theme.id);
     if (this.previewTheme()?.id === theme.id) {
       this.closePreview();
     }

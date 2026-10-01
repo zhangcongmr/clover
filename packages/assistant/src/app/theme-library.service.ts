@@ -23,15 +23,22 @@ export interface SavedTheme {
   categoryId?: string;
 }
 
-const LIBRARY_KEY = 'clover-theme-library';
+/** Id of the applied library theme — a small scalar, kept in localStorage. */
 const ACTIVE_THEME_ID_KEY = 'clover-active-theme-id';
+
+const DB_NAME = 'clover-theme-library';
+const DB_VERSION = 1;
+const THEMES_STORE = 'themes';
 
 /**
  * Local library of user-saved generated themes.
  *
  * Themes are only added when the user clicks "Add to Theme Library" in the
- * theme-generator preview, never automatically. Persisted in localStorage as
- * one JSON array (~1-3KB per theme).
+ * theme-generator preview, never automatically. Persisted in IndexedDB
+ * (database `clover-theme-library`, one record per theme keyed by `id`);
+ * the active theme id remains in localStorage. When IndexedDB is
+ * unavailable the library degrades to in-memory only (a single warning is
+ * logged).
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeLibraryService {
@@ -42,10 +49,17 @@ export class ThemeLibraryService {
   /** Id of the currently applied library theme, null when a built-in theme is active. */
   readonly activeId = signal<string | null>(null);
 
+  /** Resolves once the initial IndexedDB load finished. */
+  private readonly ready: Promise<void>;
+  private db: IDBDatabase | null = null;
+
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     if (isPlatformBrowser(this.platformId)) {
-      this.themes.set(this.loadThemes());
+      this.ready = this.initStorage();
       this.activeId.set(this.loadActiveId());
+    } else {
+      // Server rendering: no storage; keep the public API awaitable.
+      this.ready = Promise.resolve();
     }
   }
 
@@ -54,9 +68,13 @@ export class ThemeLibraryService {
    * A theme with the same title is replaced in place (regenerating a theme
    * updates the stored entry instead of duplicating it).
    *
+   * Awaits the initial IndexedDB load so a write can never overwrite stored
+   * themes with a not-yet-loaded in-memory list.
+   *
    * @returns the stored entry, or null when the payload carries no colours.
    */
-  addFromThemeData(raw: Record<string, any>): SavedTheme | null {
+  async addFromThemeData(raw: Record<string, any>): Promise<SavedTheme | null> {
+    await this.ready;
     const vars = this.themeService.themeDataToCssVars(raw);
     if (Object.keys(vars).length === 0) {
       return null;
@@ -85,18 +103,19 @@ export class ThemeLibraryService {
       : [entry, ...list];
 
     this.themes.set(next);
-    this.persist(next);
+    await this.persistUpsert(entry);
     return entry;
   }
 
   /** Removes a theme. Clears `activeId` when the removed theme was applied. */
-  remove(id: string): void {
+  async remove(id: string): Promise<void> {
+    await this.ready;
     const next = this.themes().filter(t => t.id !== id);
     this.themes.set(next);
-    this.persist(next);
     if (this.activeId() === id) {
       this.setActiveId(null);
     }
+    await this.persistDelete(id);
   }
 
   /**
@@ -141,38 +160,81 @@ export class ThemeLibraryService {
     }
   }
 
-  private loadThemes(): SavedTheme[] {
-    try {
-      const raw = localStorage.getItem(LIBRARY_KEY);
-      if (!raw) {
-        return [];
-      }
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-      return parsed.filter((t: any) =>
-        t && typeof t.id === 'string' && typeof t.title === 'string' &&
-        t.vars && typeof t.vars === 'object'
-      );
-    } catch {
-      return [];
-    }
-  }
-
   private loadActiveId(): string | null {
     return localStorage.getItem(ACTIVE_THEME_ID_KEY);
   }
 
-  private persist(themes: SavedTheme[]): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
+  /** Opens the database and loads the stored themes. */
+  private async initStorage(): Promise<void> {
     try {
-      localStorage.setItem(LIBRARY_KEY, JSON.stringify(themes));
-    } catch {
-      /* Storage full or unavailable: keep the in-memory list working. */
+      this.db = await this.openDb();
+      const stored = await this.idbGetAll();
+      this.themes.set(stored.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)));
+    } catch (err) {
+      this.db = null;
+      console.warn('[ThemeLibrary] IndexedDB unavailable — the theme library will not persist.', err);
     }
+  }
+
+  private persistUpsert(entry: SavedTheme): Promise<void> {
+    if (!this.db) {
+      return Promise.resolve();
+    }
+    return this.idbPutMany([entry]).catch(err =>
+      console.warn('[ThemeLibrary] Failed to persist theme.', err)
+    );
+  }
+
+  private persistDelete(id: string): Promise<void> {
+    if (!this.db) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      const tx = this.db!.transaction(THEMES_STORE, 'readwrite');
+      tx.objectStore(THEMES_STORE).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = tx.onabort = () => {
+        console.warn('[ThemeLibrary] Failed to delete theme record.', tx.error);
+        resolve();
+      };
+    });
+  }
+
+  private openDb(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(THEMES_STORE)) {
+          db.createObjectStore(THEMES_STORE, { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error('IndexedDB open blocked'));
+    });
+  }
+
+  private idbGetAll(): Promise<SavedTheme[]> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(THEMES_STORE, 'readonly');
+      const request = tx.objectStore(THEMES_STORE).getAll();
+      request.onsuccess = () => resolve((request.result as SavedTheme[]) ?? []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /** Upserts all entries in a single readwrite transaction. */
+  private idbPutMany(entries: SavedTheme[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(THEMES_STORE, 'readwrite');
+      const store = tx.objectStore(THEMES_STORE);
+      for (const entry of entries) {
+        store.put(entry);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    });
   }
 
   private slugify(title: string): string {

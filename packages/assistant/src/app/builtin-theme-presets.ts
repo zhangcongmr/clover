@@ -3,7 +3,7 @@ import type { SavedTheme } from './theme-library.service';
 /**
  * Built-in presets backing the Light / Dark theme cards in
  * Settings → Appearance. They are intentionally NOT stored in the
- * user-editable Theme Library (`clover-theme-library`), so they can
+ * user-editable Theme Library, so they can
  * never be deleted or duplicated there.
  *
  * Selecting a card fully replaces the inline theme variables with the
