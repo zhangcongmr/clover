@@ -5,10 +5,26 @@ import { LocalAgentService } from "../../shared/local-agent/local-agent.service"
 import { CoreService } from "../../core.service";
 import { AcpSseService } from "../../shared/acp/acp-sse.service";
 import { ThemeLibraryService, SavedTheme } from "../../theme-library.service";
+import { BUILTIN_THEME_PRESETS } from "../../builtin-theme-presets";
 import { THEME_CHIP_CATEGORIES } from "../../shared/skill-manager/built-in/theme-chips-library";
 import { ThemePreviewSvgComponent, ThemePreviewVariant } from "../../shared/acp/theme-preview-svg.component";
 import { NotificationService } from "../../shared/notification/notification.service";
 import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
+
+/** Theme card entry: a saved library theme, or a built-in Light/Dark preset. */
+export interface ThemeLibraryEntry extends SavedTheme {
+  /** Set on built-in presets ('default' → Light, 'dark' → Dark); absent on saved themes. */
+  builtinKey?: 'default' | 'dark';
+  /** Card title shown in the UI (differs from the preset's internal title). */
+  displayTitle?: string;
+}
+
+/** A rendered row of the Theme Library (built-in group first, then chip categories). */
+export interface ThemeGroup {
+  id: string;
+  label: string;
+  themes: ThemeLibraryEntry[];
+}
 
 @Component({
   selector: 'app-settings',
@@ -73,20 +89,40 @@ export class SettingsComponent {
 
   showSavedToast = signal(false);
 
+  /** Built-in Light/Dark presets, shown as the first Theme Library group. */
+  private readonly builtinThemes: ThemeLibraryEntry[] = [
+    { ...BUILTIN_THEME_PRESETS['default'], builtinKey: 'default', displayTitle: 'Light' },
+    { ...BUILTIN_THEME_PRESETS['dark'], builtinKey: 'dark', displayTitle: 'Dark' },
+  ];
+
   /**
-   * Saved themes grouped by chip-library category. Groups follow
-   * `THEME_CHIP_CATEGORIES` order (the library's own "其他" category is last),
-   * themes without a valid `categoryId` fall into "其他", and empty groups are
-   * hidden.
+   * Saved themes grouped by chip-library category, preceded by the built-in
+   * Light/Dark group. Groups follow `THEME_CHIP_CATEGORIES` order (the
+   * library's own "其他" category is last), themes without a valid
+   * `categoryId` fall into "其他", and empty saved groups are hidden.
    */
-  readonly themeGroups = computed(() => {
-    const groups = THEME_CHIP_CATEGORIES.map(c => ({ id: c.id, label: c.label, themes: [] as SavedTheme[] }));
+  readonly themeGroups = computed<ThemeGroup[]>(() => {
+    const builtinGroup: ThemeGroup = {
+      id: 'builtin',
+      label: 'Built-in',
+      themes: this.builtinThemes,
+    };
+    const groups: ThemeGroup[] = THEME_CHIP_CATEGORIES.map(c => ({ id: c.id, label: c.label, themes: [] }));
     const otherGroup = groups.find(g => g.id === 'other') ?? groups[groups.length - 1];
     for (const theme of this.themeLibrary.themes()) {
       const group = groups.find(g => g.id === theme.categoryId) ?? otherGroup;
       group.themes.push(theme);
     }
-    return groups.filter(g => g.themes.length > 0);
+    return [builtinGroup, ...groups.filter(g => g.themes.length > 0)];
+  });
+
+  /** Name of the theme currently applied to the app (Light / Dark / saved title). */
+  readonly currentThemeTitle = computed<string>(() => {
+    const current = this.currentTheme();
+    if (current === 'default') return 'Light';
+    if (current === 'dark') return 'Dark';
+    const active = this.themeLibrary.themes().find(t => t.id === this.themeLibrary.activeId());
+    return active?.title ?? 'Custom Theme';
   });
 
   constructor() {
@@ -135,11 +171,24 @@ export class SettingsComponent {
   // ==========================================================================
 
   /** Theme shown in the maximised preview overlay, null when closed. */
-  previewTheme = signal<SavedTheme | null>(null);
+  previewTheme = signal<ThemeLibraryEntry | null>(null);
   /** Which mockup variant the overlay shows. */
   previewVariant = signal<ThemePreviewVariant>('welcome');
 
-  openPreview(theme: SavedTheme) {
+  /** Card/overlay title: built-in presets show Light/Dark instead of the preset title. */
+  themeCardTitle(theme: ThemeLibraryEntry): string {
+    return theme.displayTitle ?? theme.title;
+  }
+
+  /** Whether the card is the theme currently applied to the app. */
+  isThemeCardActive(theme: ThemeLibraryEntry): boolean {
+    if (theme.builtinKey) {
+      return this.currentTheme() === theme.builtinKey;
+    }
+    return this.currentTheme() === 'custom' && this.themeLibrary.activeId() === theme.id;
+  }
+
+  openPreview(theme: ThemeLibraryEntry) {
     this.previewTheme.set(theme);
     this.previewVariant.set('welcome');
   }
@@ -148,10 +197,10 @@ export class SettingsComponent {
     this.previewTheme.set(null);
   }
 
-  /** Cycles the overlay through the saved themes, wrapping at either end. */
+  /** Cycles the overlay through the built-in and saved themes, wrapping at either end. */
   stepPreview(delta: number, event?: Event) {
     event?.stopPropagation();
-    const themes = this.themeLibrary.themes();
+    const themes = this.themeGroups().flatMap(group => group.themes);
     const current = this.previewTheme();
     if (!current || themes.length === 0) return;
     const index = themes.findIndex(t => t.id === current.id);
@@ -159,7 +208,13 @@ export class SettingsComponent {
     this.previewTheme.set(themes[next]);
   }
 
-  applyLibraryTheme(theme: SavedTheme) {
+  applyLibraryTheme(theme: ThemeLibraryEntry) {
+    if (theme.builtinKey) {
+      this.setTheme(theme.builtinKey);
+      this.notification.showNotification(`"${this.themeCardTitle(theme)}" applied`, 'success');
+      this.closePreview();
+      return;
+    }
     if (this.themeLibrary.apply(theme.id)) {
       this.settingsService.currentTheme.set('custom');
       this.notification.showNotification(`"${theme.title}" applied`, 'success');
@@ -167,8 +222,9 @@ export class SettingsComponent {
     }
   }
 
-  deleteTheme(theme: SavedTheme, event?: Event) {
+  deleteTheme(theme: ThemeLibraryEntry, event?: Event) {
     event?.stopPropagation();
+    if (theme.builtinKey) return;
     if (!confirm(`Delete "${theme.title}" from the theme library?`)) return;
     this.themeLibrary.remove(theme.id);
     if (this.previewTheme()?.id === theme.id) {

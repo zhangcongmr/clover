@@ -215,22 +215,17 @@
       <div class="settings-section custom-scroll">
         <h2 class="section-title">Appearance</h2>
 
-        <!-- Theme -->
+        <!-- Current Theme (read-only; Light/Dark live in the Built-in group below) -->
         <div class="setting-item">
           <div class="setting-info">
-            <label class="setting-label">Theme</label>
-            <p class="setting-desc">Switch between light and dark theme</p>
+            <label class="setting-label">Current theme: <span class="current-theme-value">{{ currentThemeTitle() }}</span></label>
+            <p class="setting-desc">Theme currently applied to the app</p>
           </div>
           <div class="setting-control">
-            <div class="theme-selector">
-              <label class="theme-card" [class.active]="currentTheme() === 'default'" (click)="setTheme('default')">
-                <div class="theme-preview theme-preview-light"></div>
-                <span class="theme-name">Light</span>
-              </label>
-              <label class="theme-card" [class.active]="currentTheme() === 'dark'" (click)="setTheme('dark')">
-                <div class="theme-preview theme-preview-dark"></div>
-                <span class="theme-name">Dark</span>
-              </label>
+            <div class="current-theme">
+              <div class="theme-library-thumb current-theme-thumb">
+                <app-theme-preview-svg variant="welcome" />
+              </div>
             </div>
           </div>
         </div>
@@ -242,25 +237,20 @@
               <label class="setting-label">Theme Library</label>
               <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate themes using AI</button>
             </div>
-            <p class="setting-desc">Themes you saved from the generator. Click a theme to preview and apply it</p>
+            <p class="setting-desc">Built-in presets and themes you saved from the generator. Click a theme to preview and apply it</p>
           </div>
           <div class="setting-control setting-control-wide">
-            @if (themeLibrary.themes().length === 0) {
-              <div class="theme-library-empty">
-                <p>No saved themes yet. Generate a theme and click "Add to Theme Library" to save it here.</p>
-                <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate themes using AI</button>
-              </div>
-            } @else {
-              @for (group of themeGroups(); track group.id) {
-                <div class="theme-library-group">
-                  <h3 class="theme-library-group-title">{{ group.label }}</h3>
-                  <div class="theme-library-grid">
-                    @for (theme of group.themes; track theme.id) {
-                      <div
-                        class="theme-library-card"
-                        [class.active]="currentTheme() === 'custom' && themeLibrary.activeId() === theme.id"
-                        (click)="openPreview(theme)"
-                      >
+            @for (group of themeGroups(); track group.id) {
+              <div class="theme-library-group">
+                <h3 class="theme-library-group-title">{{ group.label }}</h3>
+                <div class="theme-library-grid">
+                  @for (theme of group.themes; track theme.id) {
+                    <div
+                      class="theme-library-card"
+                      [class.active]="isThemeCardActive(theme)"
+                      (click)="openPreview(theme)"
+                    >
+                      @if (!theme.builtinKey) {
                         <button
                           type="button"
                           class="theme-library-delete"
@@ -273,15 +263,21 @@
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                           </svg>
                         </button>
-                        <div class="theme-library-thumb">
-                          <app-theme-preview-svg variant="welcome" [palette]="theme.vars" />
-                        </div>
-                        <span class="theme-library-name">{{ theme.title }}</span>
+                      }
+                      <div class="theme-library-thumb">
+                        <app-theme-preview-svg variant="welcome" [palette]="theme.vars" />
                       </div>
-                    }
-                  </div>
+                      <span class="theme-library-name">{{ themeCardTitle(theme) }}</span>
+                    </div>
+                  }
                 </div>
-              }
+              </div>
+            }
+            @if (themeLibrary.themes().length === 0) {
+              <div class="theme-library-empty">
+                <p>No saved themes yet. Generate a theme and click "Add to Theme Library" to save it here.</p>
+                <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate themes using AI</button>
+              </div>
             }
           </div>
         </div>
@@ -513,7 +509,7 @@
         <app-theme-preview-svg [variant]="previewVariant()" [palette]="theme.vars" />
       </div>
       <div class="theme-preview-actions">
-        <span class="theme-preview-title">{{ theme.title }}</span>
+        <span class="theme-preview-title">{{ themeCardTitle(theme) }}</span>
         <div class="theme-preview-buttons theme-preview-variants">
           <button
             type="button"
@@ -529,7 +525,9 @@
           >Chat</button>
         </div>
         <div class="theme-preview-buttons theme-preview-cta">
-          <button type="button" class="btn btn-danger" (click)="deleteTheme(theme, $event)">Delete</button>
+          @if (!theme.builtinKey) {
+            <button type="button" class="btn btn-danger" (click)="deleteTheme(theme, $event)">Delete</button>
+          }
           <button type="button" class="btn btn-primary" (click)="applyLibraryTheme(theme)">Apply</button>
         </div>
       </div>
