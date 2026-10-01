@@ -110,6 +110,19 @@
   color: var(--vscode-foreground);
 }
 
+/* Label row with an action button pinned to the far right. */
+.setting-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.setting-info-header .setting-label {
+  margin-bottom: 0;
+}
+
 .setting-desc {
   margin: 0;
   font-size: 12px;
@@ -179,8 +192,14 @@
 }
 
 .btn-secondary {
-  background: var(--vscode-primary-background);
+  background: var(--vscode-background);
   color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--vscode-hover-background);
+  border-color: var(--vscode-secondary-background);
 }
 
 .btn-secondary:disabled {
@@ -548,7 +567,7 @@
 }
 
 /* ==========================================================================
-   Theme library (Settings ¡ú Appearance)
+   Theme library (Settings ï¿½ï¿½ Appearance)
    ========================================================================== */
 
 .setting-item-stack {

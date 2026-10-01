@@ -238,14 +238,17 @@
         <!-- Theme Library (saved AI generated themes) -->
         <div class="setting-item setting-item-stack">
           <div class="setting-info">
-            <label class="setting-label">Theme Library</label>
+            <div class="setting-info-header">
+              <label class="setting-label">Theme Library</label>
+              <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">+ Generate Theme</button>
+            </div>
             <p class="setting-desc">Themes you saved from the generator. Click a theme to preview and apply it</p>
           </div>
           <div class="setting-control setting-control-wide">
             @if (themeLibrary.themes().length === 0) {
               <div class="theme-library-empty">
                 <p>No saved themes yet. Generate a theme and click "Add to Theme Library" to save it here.</p>
-                <button class="btn btn-primary" (click)="onGenerateCustomTheme()">Generate Theme</button>
+                <button class="btn btn-secondary" (click)="onGenerateCustomTheme()">Generate Theme</button>
               </div>
             } @else {
               <div class="theme-library-grid">
@@ -275,17 +278,6 @@
                 }
               </div>
             }
-          </div>
-        </div>
-
-        <!-- Custom Theme (AI generated) -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <label class="setting-label">Custom Theme</label>
-            <p class="setting-desc">Describe a style or emotion in the chat and the assistant generates a matching theme for you</p>
-          </div>
-          <div class="setting-control">
-            <button class="btn btn-primary" (click)="onGenerateCustomTheme()">Generate Theme</button>
           </div>
         </div>
 
