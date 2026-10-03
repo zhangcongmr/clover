@@ -575,7 +575,10 @@ computedScrollBarLength = signal("0px");
     this.downMenuOpen = false
   }
 
-  onMoreButtonClick(action: string) {
+  onMoreButtonClick(item: { label: string; id: string; action?: Function }) {
+    if (item.action) {
+      item.action();
+    }
   }
 
   drop(event: CdkDragDrop<string[]>) {

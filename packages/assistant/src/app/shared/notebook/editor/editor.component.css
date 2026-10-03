@@ -15,7 +15,6 @@
 
 .preview-toggle-btn {
   padding: 4px 12px;
-  background-color: var(--vscode-primary-background);
   color: var(--vscode-foreground);
   border: 1px solid var(--vscode-border-color);
   border-radius: 4px;

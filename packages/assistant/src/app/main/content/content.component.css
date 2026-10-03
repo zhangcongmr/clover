@@ -316,6 +316,20 @@ textarea:focus {
   margin: 0;
 }
 
+.empty-state-maximize-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+}
+
 .ShareOnActions .btn.cancel {
     background: #f3f3f3;
     color: #333;

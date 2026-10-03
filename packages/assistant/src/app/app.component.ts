@@ -1011,6 +1011,17 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     }
   }
 
+  onContentPanelMaximize(): void {
+    this.agentPanelOpen = false;
+    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
+  }
+
+  onContentPanelRestore(): void {
+    this.agentPanelOpen = true;
+    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+    this.refreshAgentPanelWidth();
+  }
+
   override dragEnd(evt: any) {
     super.dragEnd(evt);
     this.saveLeftPct();
