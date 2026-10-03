@@ -57,7 +57,6 @@ export class AgentComponent {
   searchQuery = signal('');
   selectedProject = computed(() => this.acpService.getSelectedProjectInfo(this.acpService.selectedProjectPath()));
   acpPanelMaximized = signal<boolean>(false);
-  acpPanelDockPosition = signal<'left' | 'right'>('right');
   /** Left sidebar collapsed state before the panel was maximized, restored on restore. */
   private previousSidebarCollapsed = false;
   /** Projects whose session list is collapsed (keyed by project name). */
@@ -524,10 +523,6 @@ export class AgentComponent {
     this.acpPanelMaximized.set(false);
     this.layoutService.setSidebarCollapsed(this.previousSidebarCollapsed);
     this.restorePanel.emit();
-  }
-
-  onAcpPanelDockChange(position: 'left' | 'right'): void {
-    this.acpPanelDockPosition.set(position);
   }
 
   onSearchInput(event: Event): void {

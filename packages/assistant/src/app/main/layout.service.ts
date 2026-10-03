@@ -4,6 +4,7 @@ import { Injectable, signal } from '@angular/core';
 export class LayoutService {
   /** 中间面板（编辑器）是否展开 */
   readonly astContentPanelOpen = signal(false);
+  readonly dockPosition = signal<'left' | 'right'>('right');
 
   toggleAstContentPanel(): void {
     this.astContentPanelOpen.update(v => !v);
