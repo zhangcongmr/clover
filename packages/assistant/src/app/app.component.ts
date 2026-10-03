@@ -24,6 +24,7 @@ import { NotificationService } from './shared/notification/notification.service'
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
+import { KeepAliveDirective } from './shared/keep-alive.directive';
 import { LayoutService } from './main/layout.service';
 
 @Component({
@@ -33,7 +34,7 @@ import { LayoutService } from './main/layout.service';
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
-        AgentComponent], // Add TerminalComponent to imports
+        AgentComponent, KeepAliveDirective], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
