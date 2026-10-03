@@ -197,7 +197,7 @@
   <!-- Right: ACP panel (always occupies the right panel) -->
   <div class="agent-main">
     @if (isBrowser()) {
-      <app-acp-panel
+      <app-acp-panel class="custom-scroll"
         [isMaximized]="acpPanelMaximized()"
         [editorToggleActive]="layoutService.astContentPanelOpen()"
         (maximizePanel)="onAcpPanelMaximize()"

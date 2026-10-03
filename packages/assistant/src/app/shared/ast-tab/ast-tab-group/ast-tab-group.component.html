@@ -59,7 +59,7 @@
             </svg>
           </div>
         } @else {
-          <div class="btn-svg MoreBtn" (click)="onMoreButtonClick(item.id)" title="{{item.label}}">
+          <div class="btn-svg MoreBtn" (click)="onMoreButtonClick(item)" title="{{item.label}}">
             <svg class="icon" width="20" height="20">
               <use [attr.href]="'#icon-' + item.id"></use>
             </svg>

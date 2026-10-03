@@ -175,7 +175,8 @@
 
           <div ast-content [leftOffset]="(dockPosition() === 'right' || !agentPanelOpen) ? 0 : agentPanelWidthPx()"
             (dataListChangeOutput)="onHandleDataListChange($event)" (indicatorDetail)="toggleIndicatorDetailPanel($event)"
-            (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
+            (disconnectTerminal)="disconnectAllTerminals()" (maximizePanel)="onContentPanelMaximize()"
+            (restorePanel)="onContentPanelRestore()" [style.height]="topPct * 100 + '%'">
           </div>
           @if(terminalPanelShow || keepTerminalInstance.value) {
             <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"

@@ -180,6 +180,7 @@
         }
       </div>
     } @else {
+      <!--TODO-->
       <div class="empty-state">
         @if (welcomeIconPath()) {
           <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -200,6 +201,18 @@
           <p class="empty-state-text">No tabs open</p>
         }
       </div>
+      <button type="button" class="btn-svg empty-state-maximize-btn" (click)="toggleContentMaximize()"
+        [title]="contentMaximized() ? 'Restore Panel' : 'Maximize Panel'">
+        @if (contentMaximized()) {
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <use href="#icon-restore"></use>
+          </svg>
+        } @else {
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <use href="#icon-maximize"></use>
+          </svg>
+        }
+      </button>
     }
   </div>
 </div>
