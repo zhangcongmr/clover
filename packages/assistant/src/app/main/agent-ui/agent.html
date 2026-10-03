@@ -199,11 +199,9 @@
     @if (isBrowser()) {
       <app-acp-panel
         [isMaximized]="acpPanelMaximized()"
-        [dockPosition]="acpPanelDockPosition()"
         [editorToggleActive]="layoutService.astContentPanelOpen()"
         (maximizePanel)="onAcpPanelMaximize()"
         (restorePanel)="onAcpPanelRestore()"
-        (dockPositionChange)="onAcpPanelDockChange($event)"
         (editorToggle)="editorToggle.emit()"
         (sidebarExpand)="layoutService.expandSidebar()"
         (themeApply)="themeApply.emit($event)"

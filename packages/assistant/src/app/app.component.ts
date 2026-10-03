@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild, computed } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -76,13 +76,12 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   /** astContentPanel open state before the ACP panel was maximized, restored on restore. */
   private previousAstContentPanelOpen = true;
   agentPanelOpen = true;
-  dockPosition: 'left' | 'right' = 'left';
+  dockPosition = computed(() => this.layoutService.dockPosition());
   terminalPanelShow = false;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
   private readonly AST_CONTENT_PANEL_OPEN_KEY = 'clover_ast_content_panel_open';
-  private readonly ACP_DOCK_POSITION_KEY = 'clover_acp_dock_position';
   private readonly ACP_PANEL_OPEN_KEY = 'clover_acp_panel_open';
   private static readonly  ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
   private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'clover_acp_previous_left_pct';
@@ -230,11 +229,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       if (savedAstContentPanelOpen !== null) {
         this.astContentPanelOpen = savedAstContentPanelOpen === 'true';
       }
-      // 从 localStorage 恢复停靠位置
-      const savedDock = localStorage.getItem(this.ACP_DOCK_POSITION_KEY);
-      if (savedDock === 'left' || savedDock === 'right') {
-        this.dockPosition = savedDock;
-      }
+
       // 从 localStorage 恢复面板打开状态
       const savedOpen = localStorage.getItem(this.ACP_PANEL_OPEN_KEY);
       if (savedOpen !== null) {
@@ -676,11 +671,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
   }
 
-  onDockPositionChange(position: 'left' | 'right') {
-    this.dockPosition = position;
-    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
-  }
-
   // Method to open a new terminal tab
   toggleTerminal(): void {
     if(!this.keepTerminalInstance.value) {
@@ -1051,7 +1041,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private getHorizontalPct(evt: MouseEvent): number {
     const baseWidth = this.hostEl.nativeElement.clientWidth;
     const usable = baseWidth - this.leftSideAreaWidth - 15;
-    if (this.dockPosition === 'left') {
+    if (this.dockPosition() === 'left') {
       return 1 - (evt.clientX - this.leftSideAreaWidth) / usable;
     }
     return 1 - (baseWidth - evt.clientX - 4) / usable;
