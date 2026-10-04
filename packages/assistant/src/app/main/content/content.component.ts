@@ -141,10 +141,19 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // 内容面板是否最大化（最大化时隐藏 Agent 面板）
   contentMaximized = signal(false);
 
-  rightMoreButtons = [
+  // 内容视图：overview=概览占位内容，workspace=整个 ast-content-main
+  contentView = signal<'overview' | 'workspace'>('overview');
+
+  // icon/label 记录 overview 按钮当前应显示的视图图标与文案，与 contentView 保持同步
+  rightMoreButtons: Array<{ label: string; id: string; icon?: 'overview' | 'workspace'; action?: Function }> = [
     { label: 'Maximize Panel', id: 'maximize', action: () => this.toggleContentMaximize() },
-    { label: 'more', id: 'hori-more' },
+    { label: this.overviewButtonLabel, id: 'overview', icon: this.contentView(), action: (evt: any) => this.toggleOverviewMenu(evt) },
   ];
+
+  // Overview 下拉菜单状态
+  isOverviewMenuOpen = signal(false);
+  overviewMenuInitiator: DOMRect | undefined;
+  overviewMenuBlurSwitch = true;
 
   private savers: AutoSaver[] = [];
   
@@ -155,10 +164,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   // 添加自动刷新定时器
   private refreshIntervalId: any = null;
 
-  // 添加更多按钮菜单相关变量
-  isMoreMenuOpen = false;
-  moreMenuInitiator: DOMRect | undefined;
-  blurSwitch = true;
+
 
   userResource = resource({
     // Define a reactive comput`tion.
@@ -311,12 +317,43 @@ showButtonPlaceholder = computed(() => {
     }
   }
 
+  toggleOverviewMenu(evt: any) {
+    if (!this.isOverviewMenuOpen()) {
+      this.isOverviewMenuOpen.set(true);
+      this.overviewMenuInitiator = evt?.target?.getBoundingClientRect?.() ?? undefined;
+    } else {
+      this.isOverviewMenuOpen.set(false);
+    }
+  }
+
+  onOverviewMenuEnter() {
+    this.overviewMenuBlurSwitch = false;
+  }
+
+  onOverviewMenuLeave() {
+    this.overviewMenuBlurSwitch = true;
+  }
+
+  /** overview 按钮文案：跟随当前视图（与下拉菜单选项文案一致） */
+  get overviewButtonLabel(): string {
+    return this.contentView() === 'overview' ? 'Overview' : 'Workspace Files';
+  }
+
+  selectContentView(view: 'overview' | 'workspace') {
+    if (this.contentView() !== view) {
+      this.contentView.set(view);
+      // 视图切换后同步 overview 按钮图标与文案
+      this.refreshRightMoreBtns();
+    }
+    this.isOverviewMenuOpen.set(false);
+  }
+
   private refreshRightMoreBtns() {
     this.rightMoreButtons = [
       this.contentMaximized()
         ? { label: 'Restore Panel', id: 'restore', action: () => this.toggleContentMaximize() }
         : { label: 'Maximize Panel', id: 'maximize', action: () => this.toggleContentMaximize() },
-      { label: 'more', id: 'hori-more' },
+      { label: this.overviewButtonLabel, id: 'overview', icon: this.contentView(), action: (evt: any) => this.toggleOverviewMenu(evt) },
     ];
   }
 
@@ -847,27 +884,6 @@ Always use the welcome_greeting tool.`;
     }
   }
 
-  MoreBtn(evt: any) {
-    if (!this.isMoreMenuOpen) {
-      this.isMoreMenuOpen = !this.isMoreMenuOpen;
-      this.moreMenuInitiator = evt.target.getBoundingClientRect();
-    }
-  }
-
-  blurMoreBtn(evt: any) {
-    if (this.blurSwitch) {
-      this.isMoreMenuOpen = false;
-    }
-  }
-
-  mouseentermenu(evt: any) {
-    this.blurSwitch = false;
-  }
-
-  mouseleavemenu(evt: any) {
-    this.blurSwitch = true;
-  }
-
   deleteProject() {
     if (!this.nodeDef || !this.nodeDef.id) {
       this.notificationService.showNotification('No project to delete', 'error');
@@ -878,8 +894,7 @@ Always use the welcome_greeting tool.`;
       this.coreService.deleteData(`/user/nodedef/${this.nodeDef.id}`).subscribe({
         next: () => {
           this.notificationService.showNotification('Project deleted successfully', 'success');
-          this.isMoreMenuOpen = false;
-          
+
           // Delete the corresponding container after successful deletion of nodedef
           const containerName = `con-${this.coreService.userData?.username}-${this.nodeDef?.name}`;
           fetch('/api/cmn/delete', {
