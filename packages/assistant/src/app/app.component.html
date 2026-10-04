@@ -151,7 +151,7 @@
     </div>
     <div class="ast-panel-container" [class.dock-left]="dockPosition() === 'left'">
       <!-- 水平拖动条 -->
-      @if(astContentPanelOpen && agentPanelOpen) {
+      @if(astContentPanelOpen() && agentPanelOpen) {
         <div style="position: absolute;width: 100%;height: 100%;">
           <div class="split-line-ew ast-split-handle-ew"
             [style.left]="dockPosition() === 'right' ? 'calc(100% - ' + agentPanelWidthPx() + 'px - 4px)' : agentPanelWidthPx() + 'px'"
@@ -160,10 +160,10 @@
       }
 
       <!-- Docked Agent panel -->
-      <div *appKeepAlive="agentPanelOpen && (dockPosition() === 'right' || dockPosition() === 'left')" ast-agent [style.flex]="astContentPanelOpen ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (maximizePanel)="onAgentPanelMaximize()" (restorePanel)="onAgentPanelRestore()" (themeApply)="onA2uiThemeApply($event)" (openSettings)="toggleDisplayViewId(5)"></div>
+      <div *appKeepAlive="agentPanelOpen && (dockPosition() === 'right' || dockPosition() === 'left')" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (maximizePanel)="onAgentPanelMaximize()" (restorePanel)="onAgentPanelRestore()" (themeApply)="onA2uiThemeApply($event)" (openSettings)="toggleDisplayViewId(5)"></div>
 
       <!-- Middle panel -->
-      <div *appKeepAlive="astContentPanelOpen" class="card-base ast-middle-panel" [style.width]="agentPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
+      <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
           <!-- 垂直拖动条 -->
           <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
             <div class="split-line-ns ast-split-handle-ns"

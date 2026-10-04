@@ -408,6 +408,7 @@ export class AgentComponent {
 
   async createNewTask(): Promise<void> {
     this.panelError.set(null);
+    this.layoutService.toggleAstContentPanel(false);
     // 先清空 selectedProject，再设 isNewSession，
     // 防止 effect 在 selectedProject 仍指向 Task 时触发 loadTaskSession
     await this.acpService.saveSelectedSession(null);

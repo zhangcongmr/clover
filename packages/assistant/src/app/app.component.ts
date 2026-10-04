@@ -58,7 +58,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     const raw = getComputedStyle(this.hostEl.nativeElement)
       .getPropertyValue('--left-side-area-width').trim();
     const leftArea = parseFloat(raw) || this.leftSideAreaWidth;
-    if (!this.astContentPanelOpen) {
+    if (!this.astContentPanelOpen()) {
       this.agentPanelWidthPx.set(baseWidth - leftArea);
       return;
     }
@@ -72,8 +72,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   lastSelectedDisplayViewId: number = 1;
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
-  get astContentPanelOpen() { return this.layoutService.astContentPanelOpen(); }
-  set astContentPanelOpen(value: boolean) { this.layoutService.astContentPanelOpen.set(value); }
+  astContentPanelOpen = computed(() => this.layoutService.astContentPanelOpen());
   /** astContentPanel open state before the ACP panel was maximized, restored on restore. */
   private previousAstContentPanelOpen = true;
   agentPanelOpen = true;
@@ -82,7 +81,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
-  private readonly AST_CONTENT_PANEL_OPEN_KEY = 'clover_ast_content_panel_open';
   private readonly ACP_PANEL_OPEN_KEY = 'clover_acp_panel_open';
   private static readonly  ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
   private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'clover_acp_previous_left_pct';
@@ -226,9 +224,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       }
       // 从 localStorage 恢复文件图标
       this.loadSavedFileIcons();
-      const savedAstContentPanelOpen = localStorage.getItem(this.AST_CONTENT_PANEL_OPEN_KEY);
+      const savedAstContentPanelOpen = localStorage.getItem(this.layoutService.AST_CONTENT_PANEL_OPEN_KEY);
       if (savedAstContentPanelOpen !== null) {
-        this.astContentPanelOpen = savedAstContentPanelOpen === 'true';
+        this.layoutService.astContentPanelOpen.set(savedAstContentPanelOpen === 'true');
       }
 
       // 从 localStorage 恢复面板打开状态
@@ -650,9 +648,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   }
 
   toggleAstContentPanel() {
-    this.astContentPanelOpen = !this.astContentPanelOpen;
-    localStorage.setItem(this.AST_CONTENT_PANEL_OPEN_KEY, String(this.astContentPanelOpen));
-    if (!this.astContentPanelOpen) {
+    this.layoutService.toggleAstContentPanel();
+    if (!this.layoutService.astContentPanelOpen()) {
       this.previousLeftPct = this.leftPct;
       this.leftPct = 0;
     } else {
@@ -1000,14 +997,14 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   }
 
   onAgentPanelMaximize(): void {
-    this.previousAstContentPanelOpen = this.astContentPanelOpen;
-    if (this.astContentPanelOpen) {
+    this.previousAstContentPanelOpen = this.astContentPanelOpen();
+    if (this.astContentPanelOpen()) {
       this.toggleAstContentPanel();
     }
   }
 
   onAgentPanelRestore(): void {
-    if (this.astContentPanelOpen !== this.previousAstContentPanelOpen) {
+    if (this.astContentPanelOpen() !== this.previousAstContentPanelOpen) {
       this.toggleAstContentPanel();
     }
   }

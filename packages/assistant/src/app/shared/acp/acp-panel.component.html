@@ -17,12 +17,14 @@
             }
         </div>
         <div class="acp-actions">
-            <button class="editor-toggle-btn" [class.active]="editorToggleActive()"
-                (click)="editorToggle.emit()" title="Toggle Editor">
-                <svg class="icon" width="20" height="20">
-                    <use href="#icon-shrink-close"></use>
-                </svg>
-            </button>
+            @if(!acpService.isNewSession()) {
+                <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()"
+                    (click)="editorToggle.emit()" title="Toggle Editor">
+                    <svg class="icon" width="20" height="20">
+                        <use href="#icon-shrink-close"></use>
+                    </svg>
+                </button>
+            }
 
             @if (isMaximized()) {
                 <button class="acp-icon-button" (click)="restorePanel.emit()" title="Restore Panel">
