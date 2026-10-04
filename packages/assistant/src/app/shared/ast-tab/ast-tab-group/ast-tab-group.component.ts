@@ -117,7 +117,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   ngOnInit() {
   }
 
-  showButtonAdded = false; // 标记是否已经添加了“show all opened”按钮，避免重复添加
+  showAllOpenedBtnAdded = false; // 标记是否已经添加了“show all opened”按钮，避免重复添加
   ngAfterViewInit(): void {
     if (!this.tabGroupResizeObservable()) {
       return;
@@ -150,9 +150,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       this.scrollToRightEnable = false;
       ulElement.scrollTo({ left: 0, behavior: 'instant' });
 
-      if (this.showButtonAdded) {
-        this.rightMoreButtons.update(v => v.filter((_, i) => i !== 0));
-        this.showButtonAdded = false;
+      if (this.showAllOpenedBtnAdded) {
+        this.rightMoreButtons.update(v => v.filter(btn => btn.id !== 'down'));
+        this.showAllOpenedBtnAdded = false;
       }
       return;
     }
@@ -180,9 +180,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.scrollToLeftEnable = this.leftScroll > 0;
     this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
 
-    if (!this.showButtonAdded) {
+    if (!this.showAllOpenedBtnAdded) {
       this.rightMoreButtons.update(v => [{ label: 'show all opened', id: 'down' }, ...v]);
-      this.showButtonAdded = true;
+      this.showAllOpenedBtnAdded = true;
     }
   }
   

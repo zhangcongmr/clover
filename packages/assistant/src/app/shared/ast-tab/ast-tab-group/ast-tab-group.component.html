@@ -52,7 +52,7 @@
   @if (rightMoreButtons().length>0) {
     <div class="RightAppHeader ast-right-app-header">
       @for (item of rightMoreButtons(); track item.id) {
-        @if(item.id == 'down' && showButtonAdded) {
+        @if(item.id == 'down' && showAllOpenedBtnAdded) {
           <div class="btn-svg MoreBtn"  tabindex="1" (click)="onDownButtonClick($event, item.id)" (blur)="blurDownBtn($event)" title="{{item.label}}">
             <svg class="icon" width="20" height="20">
               <use [attr.href]="'#icon-' + item.id"></use>
