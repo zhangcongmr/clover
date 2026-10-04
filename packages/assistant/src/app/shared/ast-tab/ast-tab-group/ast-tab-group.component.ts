@@ -31,7 +31,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly headerOnly = input<boolean>(false); //是否只显示tab栏，不显示内容区，默认为false
   readonly fobiddenContextMenu = input(false)
   readonly leftMoreButtons = model<Array<{ label: string; id: string; action?: Function }>>([]); //左上角更多操作按钮
-  readonly rightMoreButtons = model<Array<{ label: string; id: string; icon?: 'overview' | 'workspace'; action?: Function }>>([]); //右上角更多操作按钮
+  readonly rightMoreButtons = model<Array<{ label: string; id: string; action?: Function }>>([]); //右上角更多操作按钮
 
   private resizeObserver?: ResizeObserver;
   ulStyle: string = "height: 2rem;"
