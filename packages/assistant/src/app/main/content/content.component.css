@@ -1,6 +1,7 @@
 :host {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     position: relative;
     /* background-color: var(--vscode-background); */
     background-color: var(--vscode-background);
@@ -43,6 +44,9 @@
 }
 
 .ast-content-main {
+    grid-area: 1 / 1;
+    min-width: 0;
+    min-height: 0;
     position: relative;
     display: flex;
     flex: 1;
@@ -173,13 +177,6 @@
     display: flex;
     gap: 11px;
     justify-content: flex-start
-}
-.ast-right-app-header {
-  align-items: flex-end;
-  display: inline-flex;
-  gap: 10px;
-  width: 150px;
-  justify-content: flex-end;
 }
 #flat-form {
     max-width: 100%;
@@ -317,18 +314,37 @@ textarea:focus {
   margin: 0;
 }
 
-.empty-state-maximize-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+/* 右上角操作区：与 ast-tab-group 的 tab header（height:2rem, padding-right:8px, gap:10px）几何一致，
+   覆盖在主内容区同一网格单元的右上角，避免使用 position:absolute */
+.ast-actions-bar {
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: end;
   z-index: 10;
+  height: 2rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 2px;
-  background: transparent;
-  border: none;
+  gap: 10px;
+  padding-right: 8px;
   color: var(--vscode-foreground);
+}
+
+/* 对齐 tab-group 中 .btn-svg.MoreBtn 的 20x20 尺寸，去除 <button> 浏览器默认样式 */
+.ast-actions-bar .btn-svg {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  font: inherit;
 }
 
 .ShareOnActions .btn.cancel {
@@ -442,4 +458,118 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   opacity: 0.8;
+}
+
+/* Overview 占位内容样式 */
+.overview-placeholder {
+  grid-area: 1 / 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  user-select: none;
+}
+
+.overview-placeholder-icon {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.overview-placeholder-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.overview-placeholder-desc {
+  font-size: 14px;
+  margin: 0;
+  color: var(--vscode-border-color);
+}
+
+/* 空态时 Overview 切换按钮样式 */
+.ast-actions-bar .overview-switch-btn {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  min-width: 10rem;
+  padding: 3px 10px;
+  border: 1px solid var(--vscode-border-color, #d4d4d4);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.ast-actions-bar .overview-switch-btn:hover {
+  background-color: var(--vscode-hover-background);
+  border-color: var(--vscode-accent-color, #0066cc);
+}
+
+.ast-actions-bar .overview-switch-btn:focus-visible {
+  outline: 1px solid var(--vscode-accent-color, #0066cc);
+  outline-offset: 1px;
+}
+
+.ast-actions-bar .overview-switch-btn .overview-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.ast-actions-bar .overview-switch-btn .overview-label {
+  flex: 1 1 auto;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.ast-actions-bar .overview-switch-btn .overview-arrow {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.ast-actions-bar .overview-switch-btn[aria-expanded="true"] .overview-arrow {
+  transform: rotate(180deg);
+}
+
+/* Overview 下拉菜单样式 */
+.ast-overview-menu {
+  min-width: 180px;
+}
+
+.overview-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: var(--borderless-item-radius, 8px);
+  transition: background-color 0.15s ease;
+}
+
+.overview-menu-item:hover {
+  background: var(--vscode-hover-background);
+}
+
+.overview-menu-item.active {
+  background: var(--vscode-item-active-background, rgba(0, 102, 204, 0.12));
+  color: var(--borderless-accent, #0066cc);
+}
+
+.overview-menu-item span {
+  flex: 1;
+}
+
+.overview-menu-check {
+  color: #107c10;
+  flex-shrink: 0;
 }
