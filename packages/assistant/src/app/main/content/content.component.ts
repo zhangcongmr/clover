@@ -4,6 +4,7 @@ import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
 
 import { FormsModule } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
@@ -21,7 +22,6 @@ import { NoteBookComponent } from '../../shared/notebook/notebook.component';
 import { NodeDef } from '@julyware/common';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
-import { AstMenuComponent } from '../../shared/ast-menu/ast-menu.component';
 import { normalizeApiSpec } from "api-render-ui"
 import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
@@ -54,7 +54,7 @@ interface WebSocketResponse {
   host: {
     '(mouseleave)': 'onHostMouseLeave($event)'
   },
-  imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent, AstMenuComponent,
+  imports: [FormsModule, NgTemplateOutlet, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
     NoteBookComponent, FilePickerDialogComponent
   ]
 })
@@ -136,24 +136,19 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchKeyword = ''
   searchResults = ''
 
-  leftMoreButtons: Array<{ label: string; id: string; action: () => void }> = []
+  // 内容视图：overview=概览占位内容，workspace=整个 ast-content-main
+  contentView = signal<'overview' | 'workspace'>('overview');
+
+  // 左上角按钮：仅侧栏收起按钮（视图分段控件固定渲染在左侧，不放入 leftMoreButtons）
+  leftMoreButtons: Array<{ label: string; id: string; action?: Function }> = [];
 
   // 内容面板是否最大化（最大化时隐藏 Agent 面板）
   contentMaximized = signal(false);
 
-  // 内容视图：overview=概览占位内容，workspace=整个 ast-content-main
-  contentView = signal<'overview' | 'workspace'>('overview');
-
-  // icon/label 记录 overview 按钮当前应显示的视图图标与文案，与 contentView 保持同步
-  rightMoreButtons: Array<{ label: string; id: string; icon?: 'overview' | 'workspace'; action?: Function }> = [
+  // 右上角按钮：仅窗口控制（视图切换移到左上角分段控件）
+  rightMoreButtons: Array<{ label: string; id: string; action?: Function }> = [
     { label: 'Maximize Panel', id: 'maximize', action: () => this.toggleContentMaximize() },
-    { label: this.overviewButtonLabel, id: 'overview', icon: this.contentView(), action: (evt: any) => this.toggleOverviewMenu(evt) },
   ];
-
-  // Overview 下拉菜单状态
-  isOverviewMenuOpen = signal(false);
-  overviewMenuInitiator: DOMRect | undefined;
-  overviewMenuBlurSwitch = true;
 
   private savers: AutoSaver[] = [];
   
@@ -298,13 +293,11 @@ showButtonPlaceholder = computed(() => {
   }
 
   private refreshLeftMoreBtns() {
-    if (this.sideOpen) {
-      this.leftMoreButtons = [];
-    } else {
-      this.leftMoreButtons = [
-        { label: 'Shrink the project explorer', id: 'shrink-close', action: () => this.shrinkExplorer() },
-      ];
-    }
+    this.leftMoreButtons = this.sideOpen
+      ? []
+      : [
+          { label: 'Shrink the project explorer', id: 'shrink-close', action: () => this.shrinkExplorer() },
+        ];
   }
 
   toggleContentMaximize() {
@@ -317,35 +310,10 @@ showButtonPlaceholder = computed(() => {
     }
   }
 
-  toggleOverviewMenu(evt: any) {
-    if (!this.isOverviewMenuOpen()) {
-      this.isOverviewMenuOpen.set(true);
-      this.overviewMenuInitiator = evt?.target?.getBoundingClientRect?.() ?? undefined;
-    } else {
-      this.isOverviewMenuOpen.set(false);
-    }
-  }
-
-  onOverviewMenuEnter() {
-    this.overviewMenuBlurSwitch = false;
-  }
-
-  onOverviewMenuLeave() {
-    this.overviewMenuBlurSwitch = true;
-  }
-
-  /** overview 按钮文案：跟随当前视图（与下拉菜单选项文案一致） */
-  get overviewButtonLabel(): string {
-    return this.contentView() === 'overview' ? 'Overview' : 'Workspace Files';
-  }
-
   selectContentView(view: 'overview' | 'workspace') {
     if (this.contentView() !== view) {
       this.contentView.set(view);
-      // 视图切换后同步 overview 按钮图标与文案
-      this.refreshRightMoreBtns();
     }
-    this.isOverviewMenuOpen.set(false);
   }
 
   private refreshRightMoreBtns() {
@@ -353,7 +321,6 @@ showButtonPlaceholder = computed(() => {
       this.contentMaximized()
         ? { label: 'Restore Panel', id: 'restore', action: () => this.toggleContentMaximize() }
         : { label: 'Maximize Panel', id: 'maximize', action: () => this.toggleContentMaximize() },
-      { label: this.overviewButtonLabel, id: 'overview', icon: this.contentView(), action: (evt: any) => this.toggleOverviewMenu(evt) },
     ];
   }
 
@@ -1279,6 +1246,7 @@ Always use the welcome_greeting tool.`;
     this.currentDisplayViewId = 1;
     this.sideOpen = true;
     this.sidePanelOpenedByHover = false;
+    this.refreshLeftMoreBtns();
 
     // 重置状态
     this.showLocationSelector.set(false);
