@@ -1,20 +1,20 @@
-
-@if(sideOpen) {
-  <div class="ast-content-drag-overlay">
-    <div class="split-line ast-content-split-handle"
-      [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
-      (mousedown)="dragStart($event, 'ew')"></div>
-  </div>
-}
-
-<div class="ast-content-drag-overlay">
-  <div [style.display]="addMarkFile?'block': 'none'" class="new_file ast-content-new-file-popup">
-    <input type="text" name="createNewFile" [(ngModel)]="newFileName" (keyup)="newFileKeyUp($event, newFileName)"
-      autocomplete="off" required>
-  </div>
-  <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
-</div>
 <div class="ast-content-main">
+  @if(sideOpen) {
+    <div class="ast-content-drag-overlay">
+      <div class="split-line ast-content-split-handle"
+        [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
+        (mousedown)="dragStart($event, 'ew')"></div>
+    </div>
+  }
+
+  <div class="ast-content-drag-overlay">
+    <div [style.display]="addMarkFile?'block': 'none'" class="new_file ast-content-new-file-popup">
+      <input type="text" name="createNewFile" [(ngModel)]="newFileName" (keyup)="newFileKeyUp($event, newFileName)"
+        autocomplete="off" required>
+    </div>
+    <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
+  </div>
+
   @if (sideOpen) {
     <div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
       @if(currentDisplayViewId==1) {
