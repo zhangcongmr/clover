@@ -42,8 +42,6 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   /** Emitted when the sidebar expand button is clicked. */
   sidebarExpand = output<void>();
   isMaximized = input<boolean>(false);
-  /** Whether the editor (AST content panel) is open; drives the toggle button state. */
-  editorToggleActive = input<boolean>(false);
   /** Whether the left sidebar is collapsed; controls visibility of the expand button. */
   sidebarCollapsed = input<boolean>(false);
   protected acpService = inject(AcpService);

@@ -199,7 +199,6 @@
     @if (isBrowser()) {
       <app-acp-panel class="custom-scroll"
         [isMaximized]="acpPanelMaximized()"
-        [editorToggleActive]="layoutService.astContentPanelOpen()"
         (maximizePanel)="onAcpPanelMaximize()"
         (restorePanel)="onAcpPanelRestore()"
         (editorToggle)="editorToggle.emit()"
