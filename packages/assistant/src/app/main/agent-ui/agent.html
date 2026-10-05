@@ -198,9 +198,6 @@
   <div class="agent-main">
     @if (isBrowser()) {
       <app-acp-panel class="custom-scroll"
-        [isMaximized]="acpPanelMaximized()"
-        (maximizePanel)="onAcpPanelMaximize()"
-        (restorePanel)="onAcpPanelRestore()"
         (editorToggle)="editorToggle.emit()"
         (sidebarExpand)="layoutService.expandSidebar()"
         (themeApply)="themeApply.emit($event)"

@@ -56,9 +56,6 @@ export class AgentComponent {
 
   searchQuery = signal('');
   selectedProject = computed(() => this.acpService.getSelectedProjectInfo(this.acpService.selectedProjectPath()));
-  acpPanelMaximized = signal<boolean>(false);
-  /** Left sidebar collapsed state before the panel was maximized, restored on restore. */
-  private previousSidebarCollapsed = false;
   /** Projects whose session list is collapsed (keyed by project name). */
   collapsedProjects = signal<Set<string>>(readCollapsedProjects());
 
@@ -75,10 +72,6 @@ export class AgentComponent {
 
   /** Re-emitted upward so app.component can toggle the AST content (editor) panel. */
   editorToggle = output<void>();
-  /** Re-emitted upward when the ACP panel is maximized. */
-  maximizePanel = output<void>();
-  /** Re-emitted upward when the ACP panel is restored. */
-  restorePanel = output<void>();
   /** Re-emitted upward when user clicks "应用到项目UI" in A2UI theme preview. */
   themeApply = output<Record<string, any>>();
   /** Re-emitted upward when the sidebar Settings entry is clicked. */
@@ -460,19 +453,6 @@ export class AgentComponent {
     if (diffHr < 24) return `${diffHr}h`;
     const diffDay = Math.floor(diffHr / 24);
     return `${diffDay}d`;
-  }
-
-  onAcpPanelMaximize(): void {
-    this.previousSidebarCollapsed = this.layoutService.sidebarCollapsed();
-    this.acpPanelMaximized.set(true);
-    this.layoutService.collapseSidebar();
-    this.maximizePanel.emit();
-  }
-
-  onAcpPanelRestore(): void {
-    this.acpPanelMaximized.set(false);
-    this.layoutService.setSidebarCollapsed(this.previousSidebarCollapsed);
-    this.restorePanel.emit();
   }
 
   onSearchInput(event: Event): void {

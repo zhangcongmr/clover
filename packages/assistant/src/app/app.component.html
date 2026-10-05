@@ -121,33 +121,63 @@
             </div>
           }
         </div>
-        <div data-svg-wrapper="" data-layer="acp-agent" class="btn-svg AcpAgentBtn" title="ACP Agent"
-          (click)="toggleAgentPanel()">
-          <svg  class="icon" width="24" height="24">
-            <use href="#icon-app"></use>
-          </svg>
-        </div>
-        <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="toggleAstContentPanel()">
-          <svg class="icon" width="26" height="24">
-            <use href="#icon-editor"></use>
-          </svg>
-        </div>
-        <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
-          <svg class="icon" width="26" height="25">
-            <use href="#icon-search"></use>
-          </svg>
-        </div>
+        @if(agentPanelOpen && dockPosition() === 'left') {
+          <!--TODO -->
+        }
+        @if(astContentPanelOpen() && !agentPanelOpen) {
+          <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
+            <svg class="icon" width="26" height="25">
+              <use href="#icon-search"></use>
+            </svg>
+          </div>
+          <div data-svg-wrapper="" data-layer="community-manage" class="btn-svg CommunityManage" title="Community" (click)="toggleDisplayViewId(4)">
+            <svg class="icon" width="25" height="25">
+              <use href="#icon-community-manage-btn"></use>
+            </svg>
+          </div>
+        }
         <!-- <div data-svg-wrapper="" data-layer="plugins-btn" class="btn-svg PluginsBtn" title="Plugins" (click)="toggleDisplayViewId(3)">
           <svg class="icon" width="25" height="25">
             <use href="#icon-plugin-btn"></use>
           </svg>
         </div> -->
-        <div data-svg-wrapper="" data-layer="community-manage" class="btn-svg CommunityManage" title="Community" (click)="toggleDisplayViewId(4)">
-          <svg class="icon" width="25" height="25">
-            <use href="#icon-community-manage-btn"></use>
-          </svg>
-        </div>
-       </div>
+      </div>
+      <div class="acp-dock-wrapper" (click)="$event.stopPropagation()">
+        <button class="acp-icon-button" (click)="toggleDockMenu()" title="Dock Position">
+          <svg width="16" height="16"><use href="#icon-hori-more"></use></svg>
+        </button>
+        @if (showDockMenu()) {
+          <div class="acp-dock-menu">
+            <div class="acp-dock-menu-title">Docking position</div>
+            <div class="acp-dock-menu-items">
+              <button class="acp-dock-item" [class.active]="dockPosition() === 'left' && agentPanelOpen && astContentPanelOpen()" (click)="setDockPositionWithPanels('left')" title="Agent Left, Content Right">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <line x1="9" y1="3" x2="9" y2="21"/>
+                </svg>
+              </button>
+              <button class="acp-dock-item" [class.active]="dockPosition() === 'right' && agentPanelOpen && astContentPanelOpen()" (click)="setDockPositionWithPanels('right')" title="Content Left, Agent Right">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <line x1="15" y1="3" x2="15" y2="21"/>
+                </svg>
+              </button>
+              <button class="acp-dock-item" [class.active]="agentPanelOpen && !astContentPanelOpen()" (click)="maximizeAgentPanel()" title="Maximize Agent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </button>
+              <button class="acp-dock-item" [class.active]="!agentPanelOpen && astContentPanelOpen()" (click)="maximizeContentPanel()" title="Maximize Content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M9 9h6M9 12h6M9 15h4"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
     </div>
     <div class="ast-panel-container" [class.dock-left]="dockPosition() === 'left'">
       <!-- 水平拖动条 -->
@@ -160,7 +190,7 @@
       }
 
       <!-- Docked Agent panel -->
-      <div *appKeepAlive="agentPanelOpen && (dockPosition() === 'right' || dockPosition() === 'left')" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (maximizePanel)="onAgentPanelMaximize()" (restorePanel)="onAgentPanelRestore()" (themeApply)="onA2uiThemeApply($event)" (openSettings)="toggleDisplayViewId(5)"></div>
+      <div *appKeepAlive="agentPanelOpen" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (themeApply)="onA2uiThemeApply($event)" (openSettings)="toggleDisplayViewId(5)"></div>
 
       <!-- Middle panel -->
       <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
@@ -172,8 +202,7 @@
 
           <div ast-content [leftOffset]="(dockPosition() === 'right' || !agentPanelOpen) ? 0 : agentPanelWidthPx()"
             (dataListChangeOutput)="onHandleDataListChange($event)" (indicatorDetail)="toggleIndicatorDetailPanel($event)"
-            (disconnectTerminal)="disconnectAllTerminals()" (maximizePanel)="onContentPanelMaximize()"
-            (restorePanel)="onContentPanelRestore()" [style.height]="topPct * 100 + '%'">
+            (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
           </div>
           @if(terminalPanelShow || keepTerminalInstance.value) {
             <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"

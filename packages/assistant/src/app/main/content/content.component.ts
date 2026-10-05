@@ -111,8 +111,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   readonly indicatorDetail = output<number>();
   dataListChangeOutput = output<Array<AstTreeNode>>();
   disconnectTerminal = output<void>();
-  readonly maximizePanel = output<void>();
-  readonly restorePanel = output<void>();
 
   sideOpen = true
   // 标记侧边栏是否由左边缘hover打开;仅该方式打开时,离开区域才自动关闭
@@ -141,14 +139,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   // 左上角按钮：仅侧栏收起按钮（视图分段控件固定渲染在左侧，不放入 leftMoreButtons）
   leftMoreButtons: Array<{ label: string; id: string; action?: Function }> = [];
-
-  // 内容面板是否最大化（最大化时隐藏 Agent 面板）
-  contentMaximized = signal(false);
-
-  // 右上角按钮：仅窗口控制（视图切换移到左上角分段控件）
-  rightMoreButtons: Array<{ label: string; id: string; action?: Function }> = [
-    { label: 'Maximize Panel', id: 'maximize', action: () => this.toggleContentMaximize() },
-  ];
 
   private savers: AutoSaver[] = [];
   
@@ -294,28 +284,10 @@ showButtonPlaceholder = computed(() => {
         ];
   }
 
-  toggleContentMaximize() {
-    this.contentMaximized.update(v => !v);
-    this.refreshRightMoreBtns();
-    if (this.contentMaximized()) {
-      this.maximizePanel.emit();
-    } else {
-      this.restorePanel.emit();
-    }
-  }
-
   selectContentView(view: 'overview' | 'workspace') {
     if (this.contentView() !== view) {
       this.contentView.set(view);
     }
-  }
-
-  private refreshRightMoreBtns() {
-    this.rightMoreButtons = [
-      this.contentMaximized()
-        ? { label: 'Restore Panel', id: 'restore', action: () => this.toggleContentMaximize() }
-        : { label: 'Maximize Panel', id: 'maximize', action: () => this.toggleContentMaximize() },
-    ];
   }
 
   // 检测是否为本地项目（根节点 isLocal = true）
