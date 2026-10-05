@@ -68,13 +68,6 @@ export class SettingsComponent {
   pluginsEnabled = this.settingsService.pluginsEnabled;
   useMemoryMode = this.settingsService.useMemoryMode;
 
-  readonly modelOptions = [
-    { value: 'deepseek-v4-flash', label: 'DeepSeek v4 Flash' },
-    { value: 'deepseek-v3', label: 'DeepSeek v3' },
-    { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  ];
-
   agentStatus = signal<'unknown' | 'connected' | 'disconnected'>('unknown');
   agentTesting = signal(false);
 

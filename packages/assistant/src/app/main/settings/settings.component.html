@@ -434,25 +434,6 @@
       <div class="settings-section">
         <h2 class="section-title">Advanced Settings</h2>
 
-        <!-- AI Model -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <label class="setting-label">AI Model</label>
-            <p class="setting-desc">Default AI model used for chat and theme generation</p>
-          </div>
-          <div class="setting-control">
-            <select
-              class="setting-select"
-              [value]="selectedModel()"
-              (change)="onModelChange($event)"
-            >
-              @for (opt of modelOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
         <!-- Plugins View -->
         <div class="setting-item">
           <div class="setting-info">
