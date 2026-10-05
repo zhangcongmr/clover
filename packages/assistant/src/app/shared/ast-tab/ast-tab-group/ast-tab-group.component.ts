@@ -181,8 +181,11 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
 
     if (!this.showAllOpenedBtnAdded) {
-      this.rightMoreButtons.update(v => [{ label: 'show all opened', id: 'down' }, ...v]);
-      this.showAllOpenedBtnAdded = true;
+      // 如果右上角按钮中没有 id 为 'down' 的按钮，则添加
+      if(!this.rightMoreButtons().some(btn => btn.id === 'down')) {
+        this.rightMoreButtons.update(v => [{ label: 'show all opened', id: 'down' }, ...v]);
+        this.showAllOpenedBtnAdded = true;
+      }
     }
   }
   
