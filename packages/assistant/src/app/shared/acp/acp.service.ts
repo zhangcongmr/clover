@@ -123,10 +123,6 @@ export class AcpService {
   readonly activeTodosMessages = signal<AcpMessage[]>([]);
   readonly activeQuestionsMessages = signal<AcpMessage[]>([]);
 
-  // Session history
-  readonly sessions = signal<SessionInfo[]>([]);
-  readonly sessionsLoading = signal<boolean>(false);
-
   // Projects
   readonly projects = signal<ProjectInfo[]>([]);
   readonly projectsLoading = signal<boolean>(false);
@@ -254,6 +250,15 @@ export class AcpService {
     return { cwd: this.workingDirHint() || undefined };
   }
 
+  /** 在 projects/tasks 持久化记录中查找指定 session 的信息。 */
+  private findSessionRecord(sessionId: string): ProjectSessionInfo | null {
+    for (const record of [...this.projects(), ...this.tasks()]) {
+      const found = record.sessions?.find(s => s.sessionId === sessionId);
+      if (found) return found;
+    }
+    return null;
+  }
+
   private setupSseCallbacks(): void {
     this.sseService.onSessionUpdate((update) => {
       this.handleSessionUpdate(update);
@@ -330,25 +335,21 @@ export class AcpService {
         const cwd = this.sessionState().cwd || this.workingDirHint() || '';
         const agentId = this.selectedAgent()?.id || 'opencode';
 
-        const newSession: SessionInfo = {
-          cwd,
-          sessionId: acpSessionId,
-          title: this.sessionState().title,
-          updatedAt: new Date().toISOString(),
-        };
-        this.sessions.update(list => [
-          newSession,
-          ...list.filter(s => s.sessionId !== acpSessionId),
-        ]);
-
         const project = this.projects().find(p => p.path === cwd);
         if (project) {
-          await this.saveSessionToProject(cwd, {
+          const record: ProjectSessionInfo = {
             sessionId: acpSessionId,
             agentId,
             title: this.sessionState().title || 'New session',
             updatedAt: new Date().toISOString(),
-          });
+          };
+          await this.saveSessionToProject(cwd, record);
+          // 本地同步 upsert，新会话立即出现在侧边栏，无需等待 listProjects 刷新
+          this.projects.update(list => list.map(p =>
+            p.path === cwd
+              ? { ...p, sessions: [...(p.sessions || []).filter(s => s.sessionId !== acpSessionId), record] }
+              : p
+          ));
           await this.saveSelectedSession(acpSessionId);
         }
       }
@@ -422,31 +423,6 @@ export class AcpService {
   // ============================================================================
   // Connection management
   // ============================================================================
-
-  async connect(url: string): Promise<void> {
-    this.sessionState.update(s => ({ ...s, isConnecting: true, error: null }));
-
-    try {
-      // Create a new wrapper session and connect to SSE (no internal ACP session yet)
-      await this.createWrapperSession(this.workingDirHint() || undefined);
-
-      this.sessionState.update(s => ({
-        ...s,
-        isConnected: true,
-        isConnecting: false
-      }));
-
-      // List sessions after connecting
-      await this.listSessions(this.workingDirHint() || undefined);
-    } catch (error: any) {
-      this.sessionState.update(s => ({
-        ...s,
-        isConnecting: false,
-        error: error.message || 'Failed to connect'
-      }));
-      throw error;
-    }
-  }
 
   /**
    * Creates a wrapper session only: spawns the agent wrapper on the server,
@@ -576,10 +552,6 @@ export class AcpService {
       }
     }
 
-    this.sessions.update(list =>
-      list.map(s => (s.sessionId === sessionId ? { ...s, title: next } : s))
-    );
-
     // Locate the owning project/task record: match by session id first,
     // fall back to the current cwd.
     const hasSession = (r: ProjectInfo) => r.sessions?.some(s => s.sessionId === sessionId);
@@ -691,7 +663,6 @@ export class AcpService {
     this.messages.set([]);
     this.replayBuffer = [];
     this.plans.set(new Map());
-    this.sessions.set([]);
     this.usage.set(null);
     this.availableCommands.set([]);
     this.activeTodosId.set(null);
@@ -704,42 +675,16 @@ export class AcpService {
   // Session history
   // ============================================================================
 
-  async listSessions(cwd?: string, cursor?: string): Promise<void> {
-    this.sessionsLoading.set(true);
-    try {
-      const sessionId = this.sessionState().sessionId;
-      if (!sessionId) {
-        this.sessions.set([]);
-        this.sessionsLoading.set(false);
-        return;
-      }
-
-      // 同步等待 agent 返回会话列表
-      const result = await this.sseService.listSessions(sessionId, cwd, cursor);
-      const sessions = result?.sessions ?? [];
-      this.sessions.set(sessions);
-      this.sessionsLoading.set(false);
-    } catch (error) {
-      console.error('[ACP] Failed to list sessions:', error);
-      this.sessionsLoading.set(false);
-    }
-  }
-
   async listSessionsFromAllAgents(cwd?: string): Promise<void> {
-    this.sessionsLoading.set(true);
-
     try {
       const targetCwd = cwd || this.workingDirHint() || undefined;
       if (!targetCwd) {
-        this.sessions.set([]);
         return;
       }
 
       // 聚合一次调用：服务端逐个 agent create/connect/list/清理
       const result = await this.sseService.listAllSessions(targetCwd, AVAILABLE_AGENTS);
       const allSessions: SessionInfo[] = result?.sessions ?? [];
-
-      this.sessions.set(allSessions);
 
       if (cwd) {
         const existingProject = this.projects().find(p => p.path === cwd);
@@ -778,11 +723,12 @@ export class AcpService {
             console.error('[ACP] Failed to persist session:', session.sessionId, error);
           }
         }
+
+        // 持久化完成后刷新，使新记录的会话进入 projects() 列表
+        await this.listProjects();
       }
     } catch (error) {
       console.warn('[ACP] Failed to list sessions from all agents:', (error as Error).message || error);
-    } finally {
-      this.sessionsLoading.set(false);
     }
   }
 
@@ -834,10 +780,6 @@ export class AcpService {
       throw error;
     }
     await this.listProjects();
-    // 关联清除该项目下的 session 列表
-    if (project?.path) {
-      this.sessions.update(list => list.filter(s => s.cwd !== project.path));
-    }
   }
 
   async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<void> {
@@ -922,8 +864,8 @@ export class AcpService {
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     this.provisionalTitle = false;
-    // 会话标题：从已加载的会话列表取回；列表存在但无标题时清空，避免残留上一个会话的标题
-    const loaded = this.sessions().find(s => s.sessionId === sessionId);
+    // 会话标题：从项目/任务记录取回；记录存在但无标题时清空，避免残留上一个会话的标题
+    const loaded = this.findSessionRecord(sessionId);
     if (loaded) {
       this.sessionState.update(s => ({ ...s, title: loaded.title }));
     }
@@ -990,8 +932,8 @@ export class AcpService {
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     this.provisionalTitle = false;
-    // 会话标题：从已加载的会话列表取回；列表存在但无标题时清空，避免残留上一个会话的标题
-    const resumed = this.sessions().find(s => s.sessionId === sessionId);
+    // 会话标题：从项目/任务记录取回；记录存在但无标题时清空，避免残留上一个会话的标题
+    const resumed = this.findSessionRecord(sessionId);
     if (resumed) {
       this.sessionState.update(s => ({ ...s, title: resumed.title }));
     }
@@ -1049,7 +991,7 @@ export class AcpService {
       // 无活跃 wrapper：先创建并连接一次性 wrapper，再通过它删除目标 ACP 会话
       const wrapper = await this.createWrapperSession(this.workingDirHint() || undefined);
       await this.sseService.deleteAcpSession(wrapper.sessionId, sessionId);
-      // 重置一次性 wrapper 的连接状态（不清空 sessions 列表）
+      // 重置一次性 wrapper 的连接状态
       this.sseService.disconnect();
       this.wrapperAgentId = null;
       this.selectedSessionId.set(null);
@@ -1061,9 +1003,6 @@ export class AcpService {
         error: null
       });
     }
-
-    // 从列表中移除
-    this.sessions.update(sessions => sessions.filter(s => s.sessionId !== sessionId));
   }
 
   // ============================================================================
