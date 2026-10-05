@@ -93,42 +93,17 @@ export class AgentComponent {
       }));
   });
 
-  /** Merge a project's live + persisted sessions, deduped, with search applied. */
+  /** A project's persisted sessions, with search applied. */
   protected sessionsOf(project: ProjectInfo): SessionWithAgent[] {
     const query = this.searchQuery().toLowerCase();
 
-    const agentSessions = this.acpService.sessions()
-      .filter(s => s.cwd === project.path);
-
-    const persistedSessions = (project.sessions || []).map(s => ({
+    let sessions: SessionWithAgent[] = (project.sessions || []).map(s => ({
       sessionId: s.sessionId,
       cwd: project.path,
       title: s.title,
       updatedAt: s.updatedAt,
       agentId: s.agentId,
     }));
-
-    const mergedMap = new Map<string, SessionWithAgent>();
-
-    for (const s of agentSessions) {
-      mergedMap.set(s.sessionId, { ...s, agentId: (s as any).agentId || this.acpService.selectedAgent()?.id });
-    }
-
-    for (const s of persistedSessions) {
-      if (!mergedMap.has(s.sessionId)) {
-        mergedMap.set(s.sessionId, s);
-      } else {
-        const existing = mergedMap.get(s.sessionId)!;
-        if (!existing.agentId && s.agentId) {
-          existing.agentId = s.agentId;
-        }
-        if (!existing.title && s.title) {
-          existing.title = s.title;
-        }
-      }
-    }
-
-    let sessions = Array.from(mergedMap.values());
 
     if (query) {
       sessions = sessions.filter(s =>
@@ -298,15 +273,7 @@ export class AgentComponent {
     this.expandProject(name);
 
     this.acpService.saveSelectedProject(projectInfo.path);
-    if(projectInfo.sessions?.length > 0) {
-      this.acpService.sessions.set(projectInfo.sessions.map(s => ({
-        sessionId: s.sessionId,
-        cwd: projectInfo.path,
-        title: s.title,
-        updatedAt: s.updatedAt,
-        agentId: s.agentId,
-      })));
-    } else {
+    if (!projectInfo.sessions?.length) {
       this.loadSessionsForProject(projectInfo.path);
     }
   }
@@ -360,7 +327,7 @@ export class AgentComponent {
 
     try {
       await this.acpService.loadSession(sessionId, cwd, agentId, this.acpService.selectedMcpServers());
-      await this.ensureSessionInProject(sessionId);
+      this.acpService.selectedProjectPath.set(cwd || null);
       await this.acpService.saveSelectedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to load session:', error);
@@ -382,7 +349,7 @@ export class AgentComponent {
 
     try {
       await this.acpService.resumeSession(sessionId, cwd, agentId, undefined, this.acpService.selectedMcpServers());
-      await this.ensureSessionInProject(sessionId);
+      this.acpService.selectedProjectPath.set(cwd || null);
       await this.acpService.saveSelectedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to resume session:', error);
@@ -462,24 +429,6 @@ export class AgentComponent {
     } finally {
       this.panelLoading.set(false);
       this.sessionLoadingId.set(null);
-    }
-  }
-
-  private async ensureSessionInProject(sessionId: string): Promise<void> {
-    const selected = this.selectedProject();
-    if (!selected) return;
-    
-    const exists = selected.sessions?.some(s => s.sessionId === sessionId);
-    if (exists) return;
-    
-    const session = this.acpService.sessions().find(s => s.sessionId === sessionId);
-    if (session) {
-      await this.acpService.saveSessionToProject(selected.path, {
-        sessionId,
-        agentId: this.acpService.selectedAgent()?.id || 'opencode',
-        title: session.title || 'Loaded session',
-        updatedAt: new Date().toISOString(),
-      });
     }
   }
 

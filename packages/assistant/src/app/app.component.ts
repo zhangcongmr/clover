@@ -755,7 +755,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
         break;
       case 'close-folder':
         this.contentComp()?.closeFolder();
-        this.acpService.workingDirHint.set('');
         if (this.acpService.sessionState().isConnected) {
           this.acpService.disconnect();
         }

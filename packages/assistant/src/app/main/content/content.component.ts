@@ -252,12 +252,6 @@ showButtonPlaceholder = computed(() => {
     // 检测是否为本地项目
     this.checkIsLocalProject();
 
-    // 刷新 ACP working directory hint
-    const rootNode = this.dataList()?.[0];
-    if (rootNode?.rootPath) {
-      this.acpService.workingDirHint.set(rootNode.rootPath);
-    }
-
     this.generateWelcomeContent();
 
     // 启动自动刷新功能
@@ -914,7 +908,6 @@ Always use the welcome_greeting tool.`;
 
   // Callback from FilePickerDialog when a folder is selected
   async onFilePickerSelected(result: { path: string; kind: 'folder' | 'file' }) {
-    this.acpService.workingDirHint.set(result.path);
     if (result.kind === 'folder') {
       // saveSelectedProject triggers setupProjectSyncEffect → loadAgentProject
       await this.acpService.saveSelectedProject(result.path);
@@ -970,7 +963,6 @@ Always use the welcome_greeting tool.`;
     if (!path || path === this.currentProjectPath) return;
     const token = ++this.projectLoadToken;
     this.currentProjectPath = path;
-    this.acpService.workingDirHint.set(path);
     this.openedList.set([]); // 切换项目时清空已打开的文件 tab
     this.agentProjectLoading.set(true);
     try {
