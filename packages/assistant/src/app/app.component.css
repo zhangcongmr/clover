@@ -148,9 +148,22 @@
   justify-content: flex-start
 }
 
+.ast-down-btnlist {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: flex-start
+}
+
 /* ACP Dock Menu Styles */
 .acp-dock-wrapper {
   position: relative;
+}
+
+.acp-dock-wrapper .settings-btn {
+  width: 28px;
+  height: 28px;
 }
 
 .acp-dock-menu {
