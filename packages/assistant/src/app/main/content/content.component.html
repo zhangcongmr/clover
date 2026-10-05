@@ -17,12 +17,6 @@
     @if (contentView() === 'overview' || !sideOpen) {
       <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
     }
-    <button type="button" class="btn-svg" (click)="toggleContentMaximize()"
-      [title]="contentMaximized() ? 'Restore Panel' : 'Maximize Panel'">
-      <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <use [attr.href]="contentMaximized() ? '#icon-restore' : '#icon-maximize'"></use>
-      </svg>
-    </button>
   </div>
 }
 @if (contentView() === 'workspace') {
@@ -173,8 +167,7 @@
 		@if (openedList().length>0) {
 		  <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
 		   (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
-		   [(leftMoreButtons)]="leftMoreButtons"
-		   [(rightMoreButtons)]="rightMoreButtons">
+		   [(leftMoreButtons)]="leftMoreButtons">
 			<!-- 侧栏收起时分段控件投影到 tab 头部左侧槽位（该槽位仅在 leftMoreButtons 非空即侧栏收起时渲染），与 shrink 按钮并排 -->
 			<div tabHeaderSegment class="view-segment-slot">
 			  <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>

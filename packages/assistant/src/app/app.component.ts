@@ -73,17 +73,17 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
   astContentPanelOpen = computed(() => this.layoutService.astContentPanelOpen());
-  /** astContentPanel open state before the ACP panel was maximized, restored on restore. */
-  private previousAstContentPanelOpen = true;
   agentPanelOpen = true;
   dockPosition = computed(() => this.layoutService.dockPosition());
+  protected showDockMenu = signal(false);
   terminalPanelShow = false;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
   private readonly ACP_PANEL_OPEN_KEY = 'clover_acp_panel_open';
-  private static readonly  ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
+  private static readonly ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
   private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'clover_acp_previous_left_pct';
+  private readonly ACP_DOCK_POSITION_KEY = 'clover_acp_dock_position';
   /** Last theme style seed picked for the Generate Theme prompt (variety). */
   private lastThemeSeedLabel?: string;
 
@@ -233,6 +233,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       const savedOpen = localStorage.getItem(this.ACP_PANEL_OPEN_KEY);
       if (savedOpen !== null) {
         this.agentPanelOpen = savedOpen === 'true';
+      }
+      // 从 localStorage 恢复停靠位置
+      const savedDock = localStorage.getItem(this.ACP_DOCK_POSITION_KEY);
+      if (savedDock === 'left' || savedDock === 'right') {
+        this.layoutService.dockPosition.set(savedDock);
       }
       // leftPct 已由 getDefaultLeftPct() 在组件构造阶段恢复（见 getDefaultLeftPct），此处无需重复赋值
       // 从 localStorage 恢复 ACP 面板最大化前的宽度比例
@@ -669,6 +674,57 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
   }
 
+  toggleDockMenu(): void {
+    this.showDockMenu.update(v => !v);
+  }
+
+  setDockPosition(position: 'left' | 'right'): void {
+    this.layoutService.dockPosition.set(position);
+    this.showDockMenu.set(false);
+    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
+  }
+
+  /** Maximize Agent panel: ensure agent is open, content is closed */
+  maximizeAgentPanel(): void {
+    if (!this.agentPanelOpen) {
+      this.agentPanelOpen = true;
+      localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+    }
+    if (this.layoutService.astContentPanelOpen()) {
+      this.layoutService.toggleAstContentPanel(false);
+    }
+    this.showDockMenu.set(false);
+    this.refreshAgentPanelWidth();
+  }
+
+  /** Maximize Content panel: ensure content is open, agent is closed */
+  maximizeContentPanel(): void {
+    if (this.agentPanelOpen) {
+      this.agentPanelOpen = false;
+      localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
+    }
+    if (!this.layoutService.astContentPanelOpen()) {
+      this.layoutService.toggleAstContentPanel(true);
+    }
+    this.showDockMenu.set(false);
+  }
+
+  /** Set dock position and ensure both panels are open (two-panel layout) */
+  setDockPositionWithPanels(position: 'left' | 'right'): void {
+    this.layoutService.dockPosition.set(position);
+    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
+    // Ensure both panels are open for two-panel layout
+    if (!this.agentPanelOpen) {
+      this.agentPanelOpen = true;
+      localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+    }
+    if (!this.layoutService.astContentPanelOpen()) {
+      this.layoutService.toggleAstContentPanel(true);
+    }
+    this.showDockMenu.set(false);
+    this.refreshAgentPanelWidth();
+  }
+
   // Method to open a new terminal tab
   toggleTerminal(): void {
     if(!this.keepTerminalInstance.value) {
@@ -992,30 +1048,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   restoreAcpPanel() {
     this.leftPct = this.previousLeftPct;
     this.saveLeftPct();
-    this.refreshAgentPanelWidth();
-  }
-
-  onAgentPanelMaximize(): void {
-    this.previousAstContentPanelOpen = this.astContentPanelOpen();
-    if (this.astContentPanelOpen()) {
-      this.toggleAstContentPanel();
-    }
-  }
-
-  onAgentPanelRestore(): void {
-    if (this.astContentPanelOpen() !== this.previousAstContentPanelOpen) {
-      this.toggleAstContentPanel();
-    }
-  }
-
-  onContentPanelMaximize(): void {
-    this.agentPanelOpen = false;
-    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
-  }
-
-  onContentPanelRestore(): void {
-    this.agentPanelOpen = true;
-    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
     this.refreshAgentPanelWidth();
   }
 

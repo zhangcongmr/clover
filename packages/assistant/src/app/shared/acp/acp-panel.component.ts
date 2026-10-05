@@ -20,8 +20,7 @@ import { LayoutService } from '../../main/layout.service';
   ],
   templateUrl: './acp-panel.component.html',
   host: {
-    '[class.dock-left]': "layoutService.dockPosition() === 'left'",
-    '(document:click)': 'onDocumentClick()'
+    '[class.dock-left]': "layoutService.dockPosition() === 'left'"
   },
   styleUrls: ['./acp-panel.component.css'],
 })
@@ -33,19 +32,14 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
 
   themeApply = output<Record<string, any>>();
   private static readonly PANEL_WIDE_THRESHOLD = 600;
-  private readonly ACP_DOCK_POSITION_KEY = 'clover_acp_dock_position';
   closePanel = output<void>();
-  maximizePanel = output<void>();
-  restorePanel = output<void>();
   /** Emitted when the editor (AST content panel) toggle button is clicked. */
   editorToggle = output<void>();
   /** Emitted when the sidebar expand button is clicked. */
   sidebarExpand = output<void>();
-  isMaximized = input<boolean>(false);
   /** Whether the left sidebar is collapsed; controls visibility of the expand button. */
   sidebarCollapsed = input<boolean>(false);
   protected acpService = inject(AcpService);
-  showDockMenu = signal<boolean>(false);
   showSettings = signal<boolean>(false);
   /** Welcome screen data: category tabs, each with its own quick-action tags. */
   protected readonly welcomeTabs = WELCOME_TABS;
@@ -66,12 +60,6 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
       this.hostWidth.set(entries[0].contentRect.width);
     });
     this.resizeObserver.observe(this.hostRef.nativeElement);
-
-    // 从 localStorage 恢复停靠位置
-    const savedDock = localStorage.getItem(this.ACP_DOCK_POSITION_KEY);
-    if (savedDock === 'left' || savedDock === 'right') {
-      this.layoutService.dockPosition.set(savedDock);
-    }
   }
 
   ngOnDestroy(): void {
@@ -80,16 +68,6 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
 
   toggleSettings(): void {
     this.showSettings.update(v => !v);
-  }
-
-  toggleDockMenu(): void {
-    this.showDockMenu.update(v => !v);
-  }
-
-  setDockPosition(position: 'left' | 'right'): void {
-    this.layoutService.dockPosition.set(position);
-    this.showDockMenu.set(false);
-    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
   }
 
   /** Switches the welcome screen's category tab (swaps the quick-action tags). */
@@ -117,12 +95,6 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
 
   onSettingsChange(value: boolean): void {
     this.showSettings.set(value);
-  }
-
-  onDocumentClick(): void {
-    if (this.showDockMenu()) {
-      this.showDockMenu.set(false);
-    }
   }
 
   /**
