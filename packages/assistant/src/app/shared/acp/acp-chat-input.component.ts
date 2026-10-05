@@ -1483,9 +1483,7 @@ export class AcpChatInputComponent {
     try {
       const isNewSession = this.acpService.isNewSession();
       if (isNewSession) {
-        const cwd = this.acpService.selectedProjectPath()
-          || this.acpService.workingDirHint()
-          || undefined;
+        const cwd = this.acpService.selectedProjectPath() || undefined;
         const selectedNames = Array.from(this.selectedMcpServers());
         const mcpServersPayload = selectedNames.length > 0 ? selectedNames : undefined;
         await this.acpService.ensureChatSession(cwd, mcpServersPayload);

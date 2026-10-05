@@ -130,9 +130,6 @@ export class AcpService {
   // Tasks
   readonly tasks = signal<ProjectInfo[]>([]);
 
-  // Working directory hint from file picker
-  readonly workingDirHint = signal<string>('');
-
   // Currently selected project path (synced from agent project selection)
   readonly selectedProjectPath = signal<string | null>(null);
 
@@ -247,7 +244,7 @@ export class AcpService {
       }
     }
 
-    return { cwd: this.workingDirHint() || undefined };
+    return {};
   }
 
   /** 在 projects/tasks 持久化记录中查找指定 session 的信息。 */
@@ -332,7 +329,7 @@ export class AcpService {
 
       // Create session record (moved from acp-chat-input sendMessage)
       if (this.isNewSession()) {
-        const cwd = this.sessionState().cwd || this.workingDirHint() || '';
+        const cwd = this.sessionState().cwd || '';
         const agentId = this.selectedAgent()?.id || 'opencode';
 
         const project = this.projects().find(p => p.path === cwd);
@@ -538,8 +535,8 @@ export class AcpService {
   /**
    * Adopts an agent/LLM-provided title for a session. Agent titles always win
    * over local placeholders. Updates: the header (when the session is active),
-   * the in-memory session list, the owning project/task record, and the
-   * persisted `projects.json`/`tasks.json` (backend save-session upserts).
+   * every local project/task record containing the session, and the persisted
+   * `projects.json`/`tasks.json` (backend save-session upserts).
    */
   async applySessionTitle(sessionId: string, title: string): Promise<void> {
     const next = title.trim();
@@ -551,6 +548,25 @@ export class AcpService {
         this.sessionState.update(s => ({ ...s, title: next }));
       }
     }
+
+    const updatedAt = new Date().toISOString();
+
+    // 补偿性更新：在 owner 查找之前无条件立即同步本地 project/task 记录中
+    // 该 session 的标题，UI 无需等待后端刷新即可反映新标题
+    //（替代原 sessions 列表的即时更新）
+    const updateTitle = (list: ProjectInfo[]): ProjectInfo[] =>
+      list.map(item => {
+        if (!item.sessions?.some(s => s.sessionId === sessionId)) return item;
+        return {
+          ...item,
+          name: item.type === 'task' ? next : item.name,
+          sessions: item.sessions.map(s =>
+            s.sessionId === sessionId ? { ...s, title: next, updatedAt } : s
+          ),
+        };
+      });
+    this.projects.update(updateTitle);
+    this.tasks.update(updateTitle);
 
     // Locate the owning project/task record: match by session id first,
     // fall back to the current cwd.
@@ -567,25 +583,6 @@ export class AcpService {
     const agentId =
       owner.sessions?.find(s => s.sessionId === sessionId)?.agentId ||
       this.selectedAgent()?.id || 'opencode';
-    const updatedAt = new Date().toISOString();
-
-    const rewrite = (list: ProjectInfo[]): ProjectInfo[] =>
-      list.map(item => {
-        if (item.path !== owner.path || item.type !== owner.type) return item;
-        return {
-          ...item,
-          name: item.type === 'task' ? next : item.name,
-          sessions: item.sessions.map(s =>
-            s.sessionId === sessionId ? { ...s, title: next, updatedAt } : s
-          ),
-        };
-      });
-
-    if (owner.type === 'task') {
-      this.tasks.update(rewrite);
-    } else {
-      this.projects.update(rewrite);
-    }
 
     await this.saveSessionToProject(owner.path, { sessionId, agentId, title: next, updatedAt });
   }
@@ -609,7 +606,7 @@ export class AcpService {
     const acpSessionId = this.selectedSessionId();
     if (!wrapperId || !acpSessionId) return;
 
-    const cwd = this.sessionState().cwd || this.selectedProjectPath() || this.workingDirHint() || undefined;
+    const cwd = this.sessionState().cwd || this.selectedProjectPath() || undefined;
     try {
       const result = await this.sseService.listSessions(wrapperId, cwd);
       const list: SessionInfo[] = result?.sessions ?? [];
@@ -669,6 +666,7 @@ export class AcpService {
     // Unanswered questions belong to the session that just went away; keeping
     // them would leave hasActiveQuestions() true and the chat textarea disabled.
     this.activeQuestionsMessages.set([]);
+    this.activeTodosMessages.set([]);
   }
 
   // ============================================================================
@@ -677,7 +675,7 @@ export class AcpService {
 
   async listSessionsFromAllAgents(cwd?: string): Promise<void> {
     try {
-      const targetCwd = cwd || this.workingDirHint() || undefined;
+      const targetCwd = cwd || undefined;
       if (!targetCwd) {
         return;
       }
@@ -875,7 +873,7 @@ export class AcpService {
     // Phase 3: Create wrapper session if needed
     if (!currentSessionId) {
       this.loadingText.set('Connecting to server...');
-      const wrapper = await this.createWrapperSession(cwd || this.workingDirHint() || undefined);
+      const wrapper = await this.createWrapperSession(cwd || undefined);
       currentSessionId = wrapper.sessionId;
       this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
     }
@@ -885,7 +883,7 @@ export class AcpService {
     this.isReplayingHistory.set(true);
     try {
       const result = await this.sseService.loadSession(
-        currentSessionId, sessionId, cwd || this.workingDirHint() || undefined, mcpServers,
+        currentSessionId, sessionId, cwd || undefined, mcpServers,
       );
 
       this.selectedSessionId.set(sessionId);
@@ -943,7 +941,7 @@ export class AcpService {
     // Phase 3: Create wrapper session if needed
     if (!currentSessionId) {
       this.loadingText.set('Connecting to server...');
-      const wrapper = await this.createWrapperSession(cwd || this.workingDirHint() || undefined);
+      const wrapper = await this.createWrapperSession(cwd || undefined);
       currentSessionId = wrapper.sessionId;
       this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
     }
@@ -953,7 +951,7 @@ export class AcpService {
     this.isReplayingHistory.set(true);
     try {
       await this.sseService.resumeSession(
-        currentSessionId, sessionId, cwd || this.workingDirHint() || undefined, mcpServers,
+        currentSessionId, sessionId, cwd || undefined, mcpServers,
       );
 
       this.selectedSessionId.set(sessionId);
@@ -989,7 +987,7 @@ export class AcpService {
       await this.sseService.deleteAcpSession(currentSessionId, sessionId);
     } else {
       // 无活跃 wrapper：先创建并连接一次性 wrapper，再通过它删除目标 ACP 会话
-      const wrapper = await this.createWrapperSession(this.workingDirHint() || undefined);
+      const wrapper = await this.createWrapperSession();
       await this.sseService.deleteAcpSession(wrapper.sessionId, sessionId);
       // 重置一次性 wrapper 的连接状态
       this.sseService.disconnect();
