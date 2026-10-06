@@ -810,3 +810,102 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Files-changed summary panel shown after an assistant round finishes */
+.files-changed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.files-changed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+  font-size: var(--vscode-small-font-size, 12px);
+}
+
+.files-changed-title {
+  font-weight: 600;
+}
+
+.files-changed-stats {
+  display: flex;
+  gap: 8px;
+  font-family: var(--vscode-font-mono);
+}
+
+.files-changed-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 6px;
+  background-color: var(--vscode-editor-background, var(--vscode-background));
+  overflow: hidden;
+}
+
+.file-row + .file-row {
+  border-top: 1px solid var(--vscode-border-color);
+}
+
+.file-row-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.file-row-header:hover {
+  background-color: var(--vscode-hover-background);
+}
+
+.file-row.expanded .file-row-header {
+  background-color: var(--vscode-textBlockQuote-background, rgba(128, 128, 128, 0.06));
+  border-bottom: 1px solid var(--vscode-border-color);
+}
+
+.file-row-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--vscode-font-mono);
+  font-size: 12px;
+}
+
+.file-row-stats {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  font-family: var(--vscode-font-mono);
+  font-size: var(--vscode-small-font-size, 12px);
+}
+
+.file-row .tool-call-diff {
+  border: none;
+  border-radius: 0;
+  max-height: 480px;
+}
+
+.file-row .diff-line-num {
+  width: 40px;
+}
+
+.diff-gap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-family: var(--vscode-font-mono);
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  background-color: var(--vscode-sideBar-background, rgba(128, 128, 128, 0.06));
+  border-top: 1px solid var(--vscode-border-color);
+  border-bottom: 1px solid var(--vscode-border-color);
+}

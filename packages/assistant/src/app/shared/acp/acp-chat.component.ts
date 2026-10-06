@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
-import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe } from './tool-call-info.pipe';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, buildChangedFiles, type ChangedFile } from './tool-call-info.pipe';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp.model';
@@ -20,7 +20,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, CopyCodeButtonDirective, A2uiJsonRendererComponent],
+  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, CopyCodeButtonDirective, A2uiJsonRendererComponent],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
@@ -43,6 +43,41 @@ export class AcpChatComponent implements OnDestroy {
   readonly activeTodosMessages = computed(() => this.acpService.activeTodosMessages());
 
   readonly activeQuestionsMessages = computed(() => this.acpService.activeQuestionsMessages());
+
+  /** Per-assistant-message file changes, aggregated per finished round. */
+  readonly changedFilesMap = computed<Map<string, ChangedFile[]>>(() => {
+    const messages = this.acpService.messages();
+    const cwd = this.acpService.sessionState().cwd || this.acpService.selectedProjectPath() || undefined;
+    return buildChangedFiles(messages, cwd);
+  });
+
+  /** Files changed before the given assistant message (null when there are none). */
+  changedFilesFor(message: AcpMessage): ChangedFile[] | null {
+    return this.changedFilesMap().get(message.id) ?? null;
+  }
+
+  totalAdditions(files: ChangedFile[]): number {
+    return files.reduce((sum, f) => sum + f.additions, 0);
+  }
+
+  totalDeletions(files: ChangedFile[]): number {
+    return files.reduce((sum, f) => sum + f.deletions, 0);
+  }
+
+  private expandedFileChanges = new Set<string>();
+
+  isFileExpanded(messageId: string, fileKey: string): boolean {
+    return this.expandedFileChanges.has(`${messageId}::${fileKey}`);
+  }
+
+  toggleFileChange(messageId: string, fileKey: string): void {
+    const key = `${messageId}::${fileKey}`;
+    if (this.expandedFileChanges.has(key)) {
+      this.expandedFileChanges.delete(key);
+    } else {
+      this.expandedFileChanges.add(key);
+    }
+  }
 
   todosCollapsed = false;
 
