@@ -22,10 +22,13 @@ import { BUILT_IN_SKILLS } from './shared/skill-manager/built-in-skills';
 import { buildThemePrompt, randomThemePromptSeed, THEME_SKILL_NAME } from './shared/skill-manager/built-in/theme-prompt-seeds';
 import { NotificationService } from './shared/notification/notification.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
 import { KeepAliveDirective } from './shared/keep-alive.directive';
 import { LayoutService } from './main/layout.service';
+
+/** Dock 菜单项标识，与模板中 #dockIcon 的 @case 分支一一对应 */
+type DockItemId = 'dock-left' | 'dock-right' | 'agent-max' | 'content-max';
 
 @Component({
     selector: 'app-root',
@@ -33,7 +36,7 @@ import { LayoutService } from './main/layout.service';
     styleUrls: ['./app.component.css'],
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
-      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe,
+      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
         AgentComponent, KeepAliveDirective], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -76,6 +79,30 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   agentPanelOpen = true;
   dockPosition = computed(() => this.layoutService.dockPosition());
   protected showDockMenu = signal(false);
+
+  /**
+   * 当前选中的 dock 项。四个分支互斥：
+   * agent + content → left/right，agent only → agent-max，content only → content-max。
+   * 两个面板都关闭时返回 null，触发按钮回退到通用的 hori-more 图标。
+   * 用 getter 而非 computed：agentPanelOpen 是普通字段，computed 不会跟踪它的变化。
+   */
+  get activeDockItemId(): DockItemId | null {
+    const contentOpen = this.astContentPanelOpen();
+    if (this.agentPanelOpen) {
+      return contentOpen
+        ? (this.dockPosition() === 'left' ? 'dock-left' : 'dock-right')
+        : 'agent-max';
+    }
+    return contentOpen ? 'content-max' : null;
+  }
+
+  /** dock 菜单项，模板用 @for 渲染，标题与行为集中维护 */
+  protected readonly dockItems: { id: DockItemId; title: string; activate: () => void }[] = [
+    { id: 'dock-left', title: 'Agent Left, Content Right', activate: () => this.setDockPositionWithPanels('left') },
+    { id: 'dock-right', title: 'Content Left, Agent Right', activate: () => this.setDockPositionWithPanels('right') },
+    { id: 'agent-max', title: 'Maximize Agent', activate: () => this.maximizeAgentPanel() },
+    { id: 'content-max', title: 'Maximize Content', activate: () => this.maximizeContentPanel() },
+  ];
   terminalPanelShow = false;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
@@ -674,8 +701,13 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
   }
 
-  toggleDockMenu(): void {
-    this.showDockMenu.update(v => !v);
+  /** 鼠标移入 dock 按钮即弹出菜单（移出整个 dock 区域时由 closeDockMenu 关闭） */
+  openDockMenu(): void {
+    this.showDockMenu.set(true);
+  }
+
+  closeDockMenu(): void {
+    this.showDockMenu.set(false);
   }
 
   setDockPosition(position: 'left' | 'right'): void {
