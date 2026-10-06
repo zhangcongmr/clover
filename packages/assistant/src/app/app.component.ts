@@ -723,7 +723,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
     }
     if (this.layoutService.astContentPanelOpen()) {
-      this.layoutService.toggleAstContentPanel(false);
+      // 同样走 toggleAstContentPanel()：收起内容面板时把当前比例存入 previousLeftPct，
+      // 这样再切回双面板布局时能恢复用户上一次拖动的分栏比例。
+      this.toggleAstContentPanel();
     }
     this.showDockMenu.set(false);
     this.refreshAgentPanelWidth();
@@ -751,7 +753,9 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
     }
     if (!this.layoutService.astContentPanelOpen()) {
-      this.layoutService.toggleAstContentPanel(true);
+      // 走 toggleAstContentPanel() 而不是直接改 service：max agent 时 leftPct 已被置 0，
+      // 直接置位 astContentPanelOpen 会让 refreshAgentPanelWidth() 按 (1 - 0) 算出整幅宽度。
+      this.toggleAstContentPanel();
     }
     this.showDockMenu.set(false);
     this.refreshAgentPanelWidth();
