@@ -71,13 +71,27 @@ export class DynamicVirtualScrollStrategy {
 
   private viewport: CdkVirtualScrollViewport | null = null;
 
-  /** Height of every item including its trailing flex gap; 0 = not measured yet. */
+  /**
+   * Height of every item including its trailing flex gap, always populated:
+   * unmeasured items carry the current `estimate` as a seed so that the prefix
+   * sums never depend on a globally re-estimated value (which would shift every
+   * offset above the viewport and make the scroll position jump).
+   */
   private heights: number[] = [];
+
+  /** Whether the height at the same index came from a real measurement. */
+  private measuredFlags: boolean[] = [];
+
+  /** Number of really measured items. */
+  private measuredCount = 0;
+
+  /** Sum of the heights of the really measured items. */
+  private measuredTotal = 0;
 
   /** Prefix sums of `heights`; `offsets[i]` is the pixel offset of item `i`. */
   private offsets: number[] = [0];
 
-  /** Height used for items that have not been measured yet. */
+  /** Height seeded into items that have not been measured yet. */
   private estimate = FALLBACK_ITEM_HEIGHT;
 
   /** Observed gap between two rendered items (flex `gap` / margins). */
@@ -86,6 +100,7 @@ export class DynamicVirtualScrollStrategy {
   private contentObserver: ResizeObserver | null = null;
   private viewportObserver: ResizeObserver | null = null;
   private measureFrame: number | null = null;
+  private spacer: HTMLElement | null = null;
 
   readonly scrolledIndexChange = new ScrolledIndexChange();
 
@@ -113,6 +128,11 @@ export class DynamicVirtualScrollStrategy {
     this.scrolledIndexChange.complete();
     this.viewport = null;
     this.heights = [];
+    this.measuredFlags = [];
+    this.measuredCount = 0;
+    this.measuredTotal = 0;
+    this.estimate = FALLBACK_ITEM_HEIGHT;
+    this.spacer = null;
     this.offsets = [0];
   }
 
@@ -152,10 +172,18 @@ export class DynamicVirtualScrollStrategy {
   private syncLengths(): void {
     const length = this.viewport?.getDataLength() ?? 0;
     if (this.heights.length > length) {
+      for (let i = length; i < this.heights.length; i++) {
+        if (this.measuredFlags[i]) {
+          this.measuredCount--;
+          this.measuredTotal -= this.heights[i];
+        }
+      }
       this.heights.length = length;
+      this.measuredFlags.length = length;
     }
     while (this.heights.length < length) {
-      this.heights.push(0);
+      this.heights.push(this.estimate);
+      this.measuredFlags.push(false);
     }
   }
 
@@ -170,22 +198,11 @@ export class DynamicVirtualScrollStrategy {
     const anchorIndex = Math.min(this.indexAt(scrollTop), Math.max(0, lengths - 1));
     const anchorDelta = scrollTop - (this.offsets[anchorIndex] ?? 0);
 
-    let measured = 0;
-    let measuredTotal = 0;
-    for (const height of this.heights) {
-      if (height > 0) {
-        measuredTotal += height;
-        measured++;
-      }
-    }
-    this.estimate = measured > 0 ? measuredTotal / measured : FALLBACK_ITEM_HEIGHT;
-
     const offsets = new Array<number>(lengths + 1);
     offsets[0] = 0;
     let accumulated = 0;
     for (let i = 0; i < lengths; i++) {
-      const height = this.heights[i];
-      accumulated += height > 0 ? height : this.estimate;
+      accumulated += this.heights[i];
       offsets[i + 1] = accumulated;
     }
     this.offsets = offsets;
@@ -198,6 +215,9 @@ export class DynamicVirtualScrollStrategy {
       const maxScroll = Math.max(0, this.contentSize() - viewport.getViewportSize());
       const clamped = Math.max(0, Math.min(target, maxScroll));
       if (Math.abs(clamped - scrollTop) > 0.5) {
+        // Grow the spacer first: otherwise the browser clamps the new
+        // scrollTop against the still-stale `scrollHeight`.
+        this.syncSpacerSize();
         viewport.scrollToOffset(clamped);
       }
     }
@@ -210,6 +230,41 @@ export class DynamicVirtualScrollStrategy {
 
   private updateContentSize(): void {
     this.viewport?.setTotalContentSize(this.contentSize());
+    this.syncSpacerSize();
+  }
+
+  /**
+   * Writes the spacer height synchronously instead of waiting for the CDK's
+   * `[style.height]` binding, which is only applied on the next change
+   * detection pass. Without this, `scrollToOffset` in `rebuild` would be
+   * clamped against a stale `scrollHeight` for one frame.
+   */
+  private syncSpacerSize(): void {
+    const viewport = this.viewport;
+    const spacer = this.spacer ?? viewport?.elementRef?.nativeElement.querySelector('.cdk-virtual-scroll-spacer');
+    if (!spacer) return;
+    this.spacer = spacer as HTMLElement;
+    const height = `${this.contentSize()}px`;
+    if (spacer.style.height !== height) {
+      spacer.style.height = height;
+    }
+  }
+
+  /**
+   * Writes the content transform synchronously instead of waiting for the
+   * CDK's `_doChangeDetection` pass (`scrolling.mjs` writes the very same
+   * string afterwards, so the two writes are idempotent). This keeps the
+   * `scrollTop` correction and the block offset in the same frame instead of
+   * letting them land on consecutive frames, which is what made expansions
+   * flicker.
+   */
+  private syncContentOffset(offset: number): void {
+    const wrapper = this.viewport?._contentWrapper?.nativeElement;
+    if (!wrapper) return;
+    const transform = `translateY(${Math.round(offset)}px)`;
+    if (wrapper.style.transform !== transform) {
+      wrapper.style.transform = transform;
+    }
   }
 
   private range(): Range {
@@ -217,7 +272,9 @@ export class DynamicVirtualScrollStrategy {
   }
 
   private applyContentOffset(offset: number): void {
-    this.viewport?.setRenderedContentOffset(Math.round(offset));
+    const rounded = Math.round(offset);
+    this.viewport?.setRenderedContentOffset(rounded);
+    this.syncContentOffset(rounded);
   }
 
   /**
@@ -296,13 +353,26 @@ export class DynamicVirtualScrollStrategy {
       } else {
         height = element.offsetHeight + this.gap;
       }
-      if (height > 0 && Math.abs(height - this.heights[index]) > 0.5) {
-        this.heights[index] = height;
-        changed = true;
+      if (height > 0) {
+        const previous = this.heights[index];
+        if (Math.abs(height - previous) > 0.5) {
+          if (this.measuredFlags[index]) {
+            this.measuredTotal += height - previous;
+          } else {
+            this.measuredFlags[index] = true;
+            this.measuredCount++;
+            this.measuredTotal += height;
+          }
+          this.heights[index] = height;
+          changed = true;
+        }
       }
     }
 
     if (changed) {
+      // Only feeds the seed of *future* items; existing heights (and therefore
+      // the offsets derived from them) are never re-estimated.
+      this.estimate = this.measuredCount > 0 ? this.measuredTotal / this.measuredCount : FALLBACK_ITEM_HEIGHT;
       this.rebuild();
       this.updateRenderedRange();
     }
