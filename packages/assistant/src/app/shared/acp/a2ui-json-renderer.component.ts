@@ -1,5 +1,7 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, output, ViewChild, effect, inject, input, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, TemplateRef, output, ViewChild, ViewContainerRef, effect, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
 import { SurfaceComponent } from '@a2ui/angular/v0_9';
 import { A2uiRendererService } from '@a2ui/angular/v0_9';
 import { A2uiClientAction } from '@a2ui/web_core/v0_9';
@@ -28,12 +30,16 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('surfacesContainer') surfacesContainer!: ElementRef<HTMLElement>;
   @ViewChild('previewRoot') previewRoot?: ElementRef<HTMLElement>;
+  @ViewChild('zoomOverlay') zoomOverlay?: TemplateRef<any>;
 
   protected renderer = inject(A2uiRendererService);
   private themeBridge = inject(A2uiThemeBridgeService);
   private themeService = inject(ThemeService);
   private themeLibrary = inject(ThemeLibraryService);
   private notification = inject(NotificationService);
+  private overlay = inject(Overlay);
+  private viewContainerRef = inject(ViewContainerRef);
+  private overlayRef: OverlayRef | null = null;
 
   private processedBlockCount = 0;
   private knownSurfaceIds = new Set<string>();
@@ -80,11 +86,42 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
     this.zoomedPreview.set(PREVIEW_VARIANTS[next]);
   }
 
+  /**
+   * Renders the zoomed preview into a CDK overlay attached to the body so the
+   * lightbox escapes the virtual scroll wrapper. That wrapper carries an
+   * inline `transform: translateY(...)` (dynamic-virtual-scroll.strategy.ts),
+   * which would otherwise become the containing block for this fixed-position
+   * overlay and pin it to the message list instead of the viewport.
+   */
+  private openZoomOverlay(): void {
+    if (!this.overlayRef) {
+      this.overlayRef = this.overlay.create({
+        scrollStrategy: this.overlay.scrollStrategies.block(),
+        disposeOnNavigation: true,
+      });
+    }
+    if (!this.overlayRef.hasAttached() && this.zoomOverlay) {
+      this.overlayRef.attach(new TemplatePortal(this.zoomOverlay, this.viewContainerRef));
+    }
+  }
+
+  private closeZoomOverlay(): void {
+    this.overlayRef?.detach();
+  }
+
   constructor() {
     effect(() => {
       const content = this.content();
       if (content) {
         this.tryProcessContent(content);
+      }
+    });
+
+    effect(() => {
+      if (this.zoomedPreview()) {
+        this.openZoomOverlay();
+      } else {
+        this.closeZoomOverlay();
       }
     });
 
@@ -258,6 +295,8 @@ export class A2uiJsonRendererComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.overlayRef?.dispose();
+    this.overlayRef = null;
     this.actionSubscription?.unsubscribe();
   }
 }

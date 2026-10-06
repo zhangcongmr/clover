@@ -94,8 +94,11 @@
  * Opt out of the viewport-level `contain: strict` and `transform: translateZ(0)`
  * that the CDK applies to `cdk-virtual-scroll-viewport`: both would turn this
  * scroll container into the containing block (and a stacking context) for
- * fixed-position overlays rendered inside messages — the screenshot lightbox in
- * a2ui-json-renderer would be pinned to the message list instead of the window.
+ * fixed-position UI rendered inside messages. The screenshot lightbox in
+ * a2ui-json-renderer used to rely on this and is now rendered through a CDK
+ * Overlay (TemplatePortal) on the body, but the wrapper still carries an inline
+ * `transform: translateY(...)` that no CSS opt-out can remove, and the rules
+ * below stay as a defensive measure for any other fixed-position child UI.
  *
  * The layout rules for `.cdk-virtual-scroll-content-wrapper` live in
  * styles.css: that element belongs to the CDK's template, so it never receives
