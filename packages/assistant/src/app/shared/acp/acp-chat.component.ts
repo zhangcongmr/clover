@@ -6,10 +6,9 @@ import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
 import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, buildChangedFiles, type ChangedFile } from './tool-call-info.pipe';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
+import { ScrollingModule } from '@angular/cdk/scrolling';
+import { DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER } from './dynamic-virtual-scroll.strategy';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp.model';
-
-const INITIAL_LOAD = 30;
-const LOAD_MORE = 50;
 
 export interface MessageGroup {
   type: 'user' | 'assistant' | 'intermediate';
@@ -20,22 +19,20 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, CopyCodeButtonDirective, A2uiJsonRendererComponent],
+  imports: [CommonModule, ScrollingModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, CopyCodeButtonDirective, A2uiJsonRendererComponent],
+  providers: [DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
 })
 export class AcpChatComponent implements OnDestroy {
-  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+  @ViewChild('messagesContainer', { read: ElementRef }) private messagesContainer?: ElementRef<HTMLElement>;
 
   themeApply = output<Record<string, any>>();
 
   protected acpService = inject(AcpService);
 
-  private isLoadingMore = false;
   isNearBottom = signal(true);
   private rafId: number | null = null;
-
-  visibleCount = signal(INITIAL_LOAD);
 
   /** Tracks which intermediate sections are collapsed (keyed by first message id). */
   private collapsedSections = new Set<string>();
@@ -81,21 +78,10 @@ export class AcpChatComponent implements OnDestroy {
 
   todosCollapsed = false;
 
-  readonly visibleMessages = computed<AcpMessage[]>(() => {
-    if (this.acpService.isReplayingHistory()) return [];
-    const all = this.acpService.messages();
-    return all.slice(-this.visibleCount());
-  });
-
-  readonly hasMoreMessages = computed(() => {
-    if (this.acpService.isReplayingHistory()) return false;
-    return this.acpService.messages().length > this.visibleCount();
-  });
-
   /** Grouped messages for rendering - recomputes only when messages or processing state changes. */
   readonly groupedMessages = computed<MessageGroup[]>(() => {
     if (this.acpService.isReplayingHistory()) return [];
-    const messages = this.visibleMessages();
+    const messages = this.acpService.messages();
     const processingStartTime = this.acpService.processingStartTime();
 
     if (this.acpService.isProcessing() && processingStartTime !== null) {
@@ -259,20 +245,6 @@ export class AcpChatComponent implements OnDestroy {
     this.isNearBottom.set(
       element.scrollHeight - element.scrollTop - element.clientHeight < threshold
     );
-
-    if (this.isLoadingMore || !this.hasMoreMessages()) return;
-
-    if (element.scrollTop < 50) {
-      this.isLoadingMore = true;
-      const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-      this.visibleCount.set(Math.min(this.visibleCount() + LOAD_MORE, this.acpService.messages().length));
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          element.scrollTop = element.scrollHeight - element.clientHeight - distanceFromBottom;
-          this.isLoadingMore = false;
-        });
-      });
-    }
   }
 
   private scheduleScrollToBottom(): void {

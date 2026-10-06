@@ -1,24 +1,26 @@
 <div class="acp-chat-container">
-  <div class="acp-chat-messages custom-scroll" [class.replaying]="acpService.isReplayingHistory()" #messagesContainer (scroll)="onScroll()" appCopyCodeButton>
-    @if (acpService.messages().length === 0) {
-      @if (acpService.isSwitchingSession()) {
-        <div class="acp-loading-screen">
-          <div class="loading-spinner"></div>
-          <p class="loading-text">{{ acpService.loadingText() || 'Loading...' }}</p>
-        </div>
-      } @else {
-        <div class="acp-chat-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <p>Start a conversation with the ACP agent</p>
-        </div>
-      }
+  @if (acpService.messages().length === 0) {
+    @if (acpService.isSwitchingSession()) {
+      <div class="acp-loading-screen">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">{{ acpService.loadingText() || 'Loading...' }}</p>
+      </div>
     } @else {
-      @if (hasMoreMessages()) {
-        <div class="load-more-hint">Scroll up to load older messages</div>
-      }
-      @for (group of groupedMessages(); track trackByGroupIndex($index, group)) {
+      <div class="acp-chat-empty">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <p>Start a conversation with the ACP agent</p>
+      </div>
+    }
+  } @else {
+    <cdk-virtual-scroll-viewport
+      #messagesContainer
+      class="acp-chat-messages custom-scroll"
+      [class.replaying]="acpService.isReplayingHistory()"
+      (scroll)="onScroll()"
+      appCopyCodeButton>
+      <ng-container *cdkVirtualFor="let group of groupedMessages(); trackBy: trackByGroupIndex">
         @if (group.type === 'intermediate') {
           @let sectionId = group.messages[0].id;
           <div class="intermediate-section" [class.collapsed]="isIntermediateSectionCollapsed(sectionId)">
@@ -144,9 +146,9 @@
             </div>
           }
         }
-      }
-    }
-  </div>
+      </ng-container>
+    </cdk-virtual-scroll-viewport>
+  }
 
   @if (!isNearBottom() && acpService.messages().length > 0) {
     <button class="scroll-to-bottom-btn" (click)="scrollToBottom()" title="Scroll to bottom">
