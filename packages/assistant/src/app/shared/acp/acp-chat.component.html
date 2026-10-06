@@ -40,6 +40,67 @@
               <div class="message-content">
                 @if (message.role === 'assistant') {
                   <app-a2ui-json-renderer [content]="message.content" (themeApply)="themeApply.emit($event)"></app-a2ui-json-renderer>
+                  @if (!acpService.isProcessing()) {
+                    @if (changedFilesFor(message); as files) {
+                      <div class="files-changed">
+                        <div class="files-changed-header">
+                          <span class="files-changed-title">{{ files.length }} 个文件已更改</span>
+                          <span class="files-changed-stats">
+                            <span class="diff-additions">+{{ totalAdditions(files) }}</span>
+                            <span class="diff-deletions">-{{ totalDeletions(files) }}</span>
+                          </span>
+                        </div>
+                        <div class="files-changed-list">
+                          @for (file of files; track file.key) {
+                            <div class="file-row" [class.expanded]="isFileExpanded(message.id, file.key)">
+                              <div class="file-row-header" (click)="toggleFileChange(message.id, file.key)">
+                                <span class="file-row-path" [title]="file.path">{{ file.path }}</span>
+                                <span class="file-row-stats">
+                                  <span class="diff-additions">+{{ file.additions }}</span>
+                                  <span class="diff-deletions">-{{ file.deletions }}</span>
+                                </span>
+                                <span class="diff-toggle-icon" [class.collapsed]="isFileExpanded(message.id, file.key)">▶</span>
+                              </div>
+                              @if (isFileExpanded(message.id, file.key)) {
+                                @if (file | fileDiffView; as view) {
+                                  <div class="tool-call-diff custom-scroll">
+                                    @for (row of view.rows; track $index) {
+                                      @switch (row.type) {
+                                        @case ('add') {
+                                          <div class="diff-line diff-line-add">
+                                            <span class="diff-line-num add">{{ row.lineNum }}</span>
+                                            <span class="diff-line-content">{{ row.content }}</span>
+                                          </div>
+                                        }
+                                        @case ('del') {
+                                          <div class="diff-line diff-line-del">
+                                            <span class="diff-line-num del">{{ row.oldLineNum }}</span>
+                                            <span class="diff-line-content">{{ row.content }}</span>
+                                          </div>
+                                        }
+                                        @case ('gap') {
+                                          <div class="diff-gap">⌄ {{ row.count }} unmodified lines</div>
+                                        }
+                                        @default {
+                                          <div class="diff-line">
+                                            <span class="diff-line-num">{{ row.lineNum }}</span>
+                                            <span class="diff-line-content">{{ row.content }}</span>
+                                          </div>
+                                        }
+                                      }
+                                    }
+                                    @if (view.tail) {
+                                      <div class="diff-gap">⌄ {{ view.tail }} unmodified lines</div>
+                                    }
+                                  </div>
+                                }
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
                 } @else {
                   <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
                 }
