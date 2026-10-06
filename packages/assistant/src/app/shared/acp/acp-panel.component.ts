@@ -105,7 +105,7 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
     const target = event.target as HTMLElement;
 
     // Check if the event target is inside a scrollable inner element
-    const scrollableParent = target.closest('pre, .tool-call-diff, textarea');
+    const scrollableParent = target.closest('app-acp-chat-input, pre, .tool-call-diff, textarea');
     if (scrollableParent) {
       return;
     }
