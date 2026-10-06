@@ -436,6 +436,35 @@ img, svg {
   border-radius: var(--vscode-radius-sm, 4px);
 }
 
+/*
+ * ACP chat virtual scroller.
+ *
+ * `.cdk-virtual-scroll-content-wrapper` is rendered by the CDK's own template,
+ * so it never carries the acp-chat component's `_ngcontent` attribute and a
+ * component-scoped selector cannot reach it — the rule has to be global.
+ *
+ * The wrapper is absolutely positioned at the top-left of the viewport, so it
+ * has to carry the flex column layout, the 16px gap between message groups and
+ * the 16px padding of the old scroll container. `width: 100%` keeps the
+ * shrink-to-fit width of absolutely positioned content from exceeding the
+ * viewport horizontally. The padding must stay in sync with WRAPPER_PADDING in
+ * shared/acp/dynamic-virtual-scroll.strategy.ts.
+ *
+ * `contain: none` opts out of the CDK's `contain: content`: layout/paint
+ * containment would make the wrapper the containing block *and* the clipping
+ * box for fixed-position overlays rendered inside messages (e.g. the screenshot
+ * lightbox in a2ui-json-renderer).
+ */
+.acp-chat-messages .cdk-virtual-scroll-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+  width: 100%;
+  contain: none;
+}
+
 .custom-scroll::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }

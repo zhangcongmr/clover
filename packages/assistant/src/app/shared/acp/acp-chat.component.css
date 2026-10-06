@@ -90,25 +90,29 @@
   white-space: nowrap;
 }
 
+/*
+ * Opt out of the viewport-level `contain: strict` and `transform: translateZ(0)`
+ * that the CDK applies to `cdk-virtual-scroll-viewport`: both would turn this
+ * scroll container into the containing block (and a stacking context) for
+ * fixed-position overlays rendered inside messages — the screenshot lightbox in
+ * a2ui-json-renderer would be pinned to the message list instead of the window.
+ *
+ * The layout rules for `.cdk-virtual-scroll-content-wrapper` live in
+ * styles.css: that element belongs to the CDK's template, so it never receives
+ * this component's `_ngcontent` attribute and a scoped selector cannot match it.
+ */
 .acp-chat-messages {
   flex: 1 1 0;
+  min-height: 0;
+  display: block;
   overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  padding: 0;
+  transform: none;
+  contain: none;
 }
 
 .acp-chat-messages.replaying {
   overflow-y: hidden !important;
-}
-
-.load-more-hint {
-  text-align: center;
-  color: var(--vscode-foreground);
-  opacity: 0.5;
-  font-size: 12px;
-  padding: 8px 0;
 }
 
 .acp-chat-empty {
