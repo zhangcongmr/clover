@@ -450,10 +450,12 @@ img, svg {
  * viewport horizontally. The padding must stay in sync with WRAPPER_PADDING in
  * shared/acp/dynamic-virtual-scroll.strategy.ts.
  *
- * `contain: none` opts out of the CDK's `contain: content`: layout/paint
- * containment would make the wrapper the containing block *and* the clipping
- * box for fixed-position overlays rendered inside messages (e.g. the screenshot
- * lightbox in a2ui-json-renderer).
+ * `contain: none` opts out of the CDK's `contain: content`: without it the
+ * wrapper would be the containing block and clipping box for fixed-position
+ * children. The screenshot lightbox in a2ui-json-renderer is now rendered
+ * through a CDK Overlay (TemplatePortal) on the body because the wrapper's
+ * inline `transform` cannot be opted out of, so this is kept defensively for
+ * any other fixed-position UI rendered inside messages.
  */
 .acp-chat-messages .cdk-virtual-scroll-content-wrapper {
   display: flex;
