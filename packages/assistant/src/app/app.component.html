@@ -2,6 +2,80 @@
   [attr.inert]="currentDisplayViewId === 5 || currentDisplayViewId === 6 ? '' : null">
     <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area">
       <div #upBtnlist data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
+        @if((agentPanelOpen && dockPosition() === 'left') || (agentPanelOpen && !astContentPanelOpen())) {
+          <div data-svg-wrapper="" data-layer="skills-btn" class="btn-svg SkillsBtn" title="Skills" (click)="toggleSkillsManager()">
+            <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16.8 7C16.8 4.28 14.72 3 12 3C9.28 3 7.2 4.28 7.2 6.84C7.2 8.92 8.64 10.04 12 11C15.36 11.96 16.8 13.08 16.8 15.16C16.8 17.72 14.72 19 12 19C9.28 19 7.2 17.72 7.2 15"/>
+            </svg>
+          </div>
+          <div data-svg-wrapper="" data-layer="mcp-btn" class="btn-svg McpServersBtn" title="MCP Servers" (click)="toggleMcpManager()">
+            <svg class="icon" width="24" height="24">
+              <use href="#icon-mcp"></use>
+            </svg>
+          </div>
+        }
+        @if(astContentPanelOpen() && dockPosition() === 'right') {
+          <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
+            <svg class="icon" width="26" height="25">
+              <use href="#icon-search"></use>
+            </svg>
+          </div>
+          <div data-svg-wrapper="" data-layer="community-manage" class="btn-svg CommunityManage" title="Community" (click)="toggleDisplayViewId(4)">
+            <svg class="icon" width="25" height="25">
+              <use href="#icon-community-manage-btn"></use>
+            </svg>
+          </div>
+        }
+        <!-- <div data-svg-wrapper="" data-layer="plugins-btn" class="btn-svg PluginsBtn" title="Plugins" (click)="toggleDisplayViewId(3)">
+          <svg class="icon" width="25" height="25">
+            <use href="#icon-plugin-btn"></use>
+          </svg>
+        </div> -->
+      </div>
+      <div class="ast-down-btnlist">
+        <!-- Dock 图标单一来源：触发按钮与菜单项都通过 ngTemplateOutlet 复用 -->
+        <ng-template #dockIcon let-id>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            @switch (id) {
+              @case ('dock-left') {
+                <rect x="1" y="3" width="20" height="18" rx="2"/>
+                <line x1="7" y1="3" x2="7" y2="21"/>
+              }
+              @case ('dock-right') {
+                <rect x="1" y="3" width="20" height="18" rx="2"/>
+                <line x1="13" y1="3" x2="13" y2="21"/>
+              }
+              @case ('agent-max') {
+                <path d="M7 11l3 3L20 4"/>
+                <path d="M19 12v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              }
+              @case ('content-max') {
+                <rect x="1" y="3" width="20" height="18" rx="2"/>
+                <path d="M7 9h6M7 12h6M7 15h4"/>
+              }
+              @default {
+                <use href="#icon-hori-more"></use>
+              }
+            }
+          </svg>
+        </ng-template>
+        <div class="acp-dock-wrapper" (click)="$event.stopPropagation()" (mouseleave)="closeDockMenu()">
+          <button class="acp-icon-button" (mouseenter)="openDockMenu()" title="Dock Position">
+            <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: activeDockItemId }"></ng-container>
+          </button>
+          @if (showDockMenu()) {
+            <div class="acp-dock-menu">
+              <div class="acp-dock-menu-title">Docking position</div>
+              <div class="acp-dock-menu-items">
+                @for (item of dockItems; track item.id) {
+                  <button class="acp-dock-item" [class.active]="item.id === activeDockItemId" (click)="item.activate()" [title]="item.title">
+                    <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: item.id }"></ng-container>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
         <div #menuBtn data-svg-wrapper="" data-layer="project-folder-btn"  class="btn-svg" (click)="toggleMenu($event)">
           <svg width="24" height="24">
             <use href="#icon-menu"></use>
@@ -142,86 +216,6 @@
             <span>About Clover <small>v{{version}}</small></span>
           </div>
         </div>
-        @if((agentPanelOpen && dockPosition() === 'left') || (agentPanelOpen && !astContentPanelOpen())) {
-          <div data-svg-wrapper="" data-layer="skills-btn" class="btn-svg SkillsBtn" title="Skills" (click)="toggleSkillsManager()">
-            <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16.8 7C16.8 4.28 14.72 3 12 3C9.28 3 7.2 4.28 7.2 6.84C7.2 8.92 8.64 10.04 12 11C15.36 11.96 16.8 13.08 16.8 15.16C16.8 17.72 14.72 19 12 19C9.28 19 7.2 17.72 7.2 15"/>
-            </svg>
-          </div>
-          <div data-svg-wrapper="" data-layer="mcp-btn" class="btn-svg McpServersBtn" title="MCP Servers" (click)="toggleMcpManager()">
-            <svg class="icon" width="24" height="24">
-              <use href="#icon-mcp"></use>
-            </svg>
-          </div>
-        }
-        @if(astContentPanelOpen() && !agentPanelOpen) {
-          <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
-            <svg class="icon" width="26" height="25">
-              <use href="#icon-search"></use>
-            </svg>
-          </div>
-          <div data-svg-wrapper="" data-layer="community-manage" class="btn-svg CommunityManage" title="Community" (click)="toggleDisplayViewId(4)">
-            <svg class="icon" width="25" height="25">
-              <use href="#icon-community-manage-btn"></use>
-            </svg>
-          </div>
-        }
-        <!-- <div data-svg-wrapper="" data-layer="plugins-btn" class="btn-svg PluginsBtn" title="Plugins" (click)="toggleDisplayViewId(3)">
-          <svg class="icon" width="25" height="25">
-            <use href="#icon-plugin-btn"></use>
-          </svg>
-        </div> -->
-      </div>
-      <div class="ast-down-btnlist">
-        <!-- Dock 图标单一来源：触发按钮与菜单项都通过 ngTemplateOutlet 复用 -->
-        <ng-template #dockIcon let-id>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            @switch (id) {
-              @case ('dock-left') {
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="9" y1="3" x2="9" y2="21"/>
-              }
-              @case ('dock-right') {
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="15" y1="3" x2="15" y2="21"/>
-              }
-              @case ('agent-max') {
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              }
-              @case ('content-max') {
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M9 9h6M9 12h6M9 15h4"/>
-              }
-              @default {
-                <use href="#icon-hori-more"></use>
-              }
-            }
-          </svg>
-        </ng-template>
-        <div class="acp-dock-wrapper" (click)="$event.stopPropagation()" (mouseleave)="closeDockMenu()">
-          <button class="acp-icon-button" (mouseenter)="openDockMenu()" title="Dock Position">
-            <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: activeDockItemId }"></ng-container>
-          </button>
-          @if (showDockMenu()) {
-            <div class="acp-dock-menu">
-              <div class="acp-dock-menu-title">Docking position</div>
-              <div class="acp-dock-menu-items">
-                @for (item of dockItems; track item.id) {
-                  <button class="acp-dock-item" [class.active]="item.id === activeDockItemId" (click)="item.activate()" [title]="item.title">
-                    <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: item.id }"></ng-container>
-                  </button>
-                }
-              </div>
-            </div>
-          }
-        </div>
-        <button class="acp-icon-button settings-btn" (click)="toggleDisplayViewId(5)" title="Settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </button>
       </div>
     </div>
     <div class="ast-panel-container" [class.dock-left]="dockPosition() === 'left'">
