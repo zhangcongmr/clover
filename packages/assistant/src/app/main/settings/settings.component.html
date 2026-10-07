@@ -41,7 +41,7 @@
                 placeholder="http(s)://{ip}:{port}"
                 [(ngModel)]="localAgentService.agentUrl"
               />
-              <button class="btn btn-primary" (click)="saveAgentUrl()">Save</button>
+              <button class="btn btn btn-secondary" (click)="saveAgentUrl()">Save</button>
             </div>
             @if (showSavedToast()) {
               <span class="toast-saved">Saved</span>

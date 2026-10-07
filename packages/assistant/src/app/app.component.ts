@@ -33,6 +33,22 @@ import { APP_VERSION } from '../app-version';
 /** Dock 菜单项标识，与模板中 #dockIcon 的 @case 分支一一对应 */
 type DockItemId = 'dock-left' | 'dock-right' | 'agent-max' | 'content-max';
 
+/** 每种布局特有的参数集，切换布局时 applyDockLayout 据此还原现场 */
+interface DockLayoutParams {
+  position: 'left' | 'right';
+  left: number;
+  previousLeftPct: number;
+  agentPanelOpen: boolean;
+  astContentPanelOpen: boolean;
+}
+
+interface DockItem {
+  id: DockItemId;
+  title: string;
+  activate: () => void;
+  params: DockLayoutParams;
+}
+
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
@@ -104,21 +120,33 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     return contentOpen ? 'content-max' : null;
   }
 
-  /** dock 菜单项，模板用 @for 渲染，标题与行为集中维护 */
-  protected readonly dockItems: { id: DockItemId; title: string; activate: () => void }[] = [
-    { id: 'dock-left', title: 'Agent Left, Content Right', activate: () => this.setDockPositionWithPanels('left') },
-    { id: 'dock-right', title: 'Content Left, Agent Right', activate: () => this.setDockPositionWithPanels('right') },
-    { id: 'agent-max', title: 'Maximize Agent', activate: () => this.maximizeAgentPanel() },
-    { id: 'content-max', title: 'Maximize Content', activate: () => this.maximizeContentPanel() },
+  /** dock 菜单项，模板用 @for 渲染，标题/行为/参数集集中维护 */
+  protected readonly dockItems: DockItem[] = [
+    {
+      id: 'dock-left', title: 'Agent Left, Content Right', activate: () => this.applyDockLayout('dock-left'),
+      params: { position: 'left', left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), agentPanelOpen: true, astContentPanelOpen: true },
+    },
+    {
+      id: 'dock-right', title: 'Content Left, Agent Right', activate: () => this.applyDockLayout('dock-right'),
+      params: { position: 'right', left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), agentPanelOpen: true, astContentPanelOpen: true },
+    },
+    {
+      id: 'agent-max', title: 'Maximize Agent', activate: () => this.applyDockLayout('agent-max'),
+      params: { position: 'left', left: 0, previousLeftPct: 0.75, agentPanelOpen: true, astContentPanelOpen: false },
+    },
+    {
+      id: 'content-max', title: 'Maximize Content', activate: () => this.applyDockLayout('content-max'),
+      params: { position: 'left', left: 0, previousLeftPct: 0.75, agentPanelOpen: false, astContentPanelOpen: true },
+    },
   ];
+
+  /** 当前激活的 dock 项，持久化时用于确定重启后的布局 */
+  private currentDockItemId: DockItemId | null = null;
   terminalPanelShow = false;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
   private readonly FILE_ICONS_KEY = 'vscode-file-icons';
-  private readonly ACP_PANEL_OPEN_KEY = 'clover_acp_panel_open';
-  private static readonly ACP_LEFT_PCT_KEY = 'clover_acp_left_pct';
-  private readonly ACP_PREVIOUS_LEFT_PCT_KEY = 'clover_acp_previous_left_pct';
-  private readonly ACP_DOCK_POSITION_KEY = 'clover_acp_dock_position';
+  private readonly ACP_DOCK_LAYOUTS_KEY = 'clover_acp_dock_layouts';
   /** Last theme style seed picked for the Generate Theme prompt (variety). */
   private lastThemeSeedLabel?: string;
 
@@ -259,27 +287,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       }
       // 从 localStorage 恢复文件图标
       this.loadSavedFileIcons();
-      const savedAstContentPanelOpen = localStorage.getItem(this.layoutService.AST_CONTENT_PANEL_OPEN_KEY);
-      if (savedAstContentPanelOpen !== null) {
-        this.layoutService.astContentPanelOpen.set(savedAstContentPanelOpen === 'true');
-      }
-
-      // 从 localStorage 恢复面板打开状态
-      const savedOpen = localStorage.getItem(this.ACP_PANEL_OPEN_KEY);
-      if (savedOpen !== null) {
-        this.agentPanelOpen = savedOpen === 'true';
-      }
-      // 从 localStorage 恢复停靠位置
-      const savedDock = localStorage.getItem(this.ACP_DOCK_POSITION_KEY);
-      if (savedDock === 'left' || savedDock === 'right') {
-        this.layoutService.dockPosition.set(savedDock);
-      }
-      // leftPct 已由 getDefaultLeftPct() 在组件构造阶段恢复（见 getDefaultLeftPct），此处无需重复赋值
-      // 从 localStorage 恢复 ACP 面板最大化前的宽度比例
-      const savedPreviousLeftPct = parseFloat(localStorage.getItem(this.ACP_PREVIOUS_LEFT_PCT_KEY) ?? '');
-      if (Number.isFinite(savedPreviousLeftPct) && savedPreviousLeftPct >= 0 && savedPreviousLeftPct <= 1) {
-        this.previousLeftPct = savedPreviousLeftPct;
-      }
+      // 从 dock 布局快照恢复面板状态与各 dockItem 参数集（无快照时保持默认值）
+      this.restoreDockLayouts();
     }
   }
 
@@ -665,7 +674,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     if (skill) {
       if (!this.agentPanelOpen) {
         this.agentPanelOpen = true;
-        localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+        this.onAgentLayoutChanged();
       }
       const seed = randomThemePromptSeed(this.lastThemeSeedLabel);
       this.lastThemeSeedLabel = seed.label;
@@ -687,26 +696,13 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     });
   }
 
+  /** editorToggle：在双面板与 Maximize Agent 之间往返切换 */
   toggleAstContentPanel() {
-    this.layoutService.toggleAstContentPanel();
-    if (!this.layoutService.astContentPanelOpen()) {
-      this.previousLeftPct = this.leftPct;
-      this.leftPct = 0;
+    if (this.layoutService.astContentPanelOpen()) {
+      this.applyDockLayout('agent-max');
     } else {
-      this.leftPct = this.previousLeftPct;
+      this.applyDockLayout(this.dockPosition() === 'left' ? 'dock-left' : 'dock-right');
     }
-    this.saveLeftPct();
-    this.refreshAgentPanelWidth();
-  }
-
-  toggleAgentPanel() {
-    this.agentPanelOpen = true;
-    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, String(this.agentPanelOpen));
-  }
-
-  closeAcpPanel() {
-    this.agentPanelOpen = false;
-    localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
   }
 
   /** 鼠标移入 dock 按钮即弹出菜单（移出整个 dock 区域时由 closeDockMenu 关闭） */
@@ -718,57 +714,36 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     this.showDockMenu.set(false);
   }
 
-  setDockPosition(position: 'left' | 'right'): void {
-    this.layoutService.dockPosition.set(position);
-    this.showDockMenu.set(false);
-    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
-  }
-
-  /** Maximize Agent panel: ensure agent is open, content is closed */
-  maximizeAgentPanel(): void {
-    if (!this.agentPanelOpen) {
-      this.agentPanelOpen = true;
-      localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
+  /** 统一切换入口：从对应 dockItem 的参数集读取值并应用到当前布局 */
+  private applyDockLayout(id: DockItemId): void {
+    const p = this.dockItems.find(i => i.id === id)?.params;
+    if (!p) return;
+    // position 只在双面板布局生效，避免 agent-max/content-max 把停靠侧改写掉（editorToggle 往返会翻侧）
+    if (id === 'dock-left' || id === 'dock-right') {
+      this.layoutService.dockPosition.set(p.position);
     }
-    if (this.layoutService.astContentPanelOpen()) {
-      // 同样走 toggleAstContentPanel()：收起内容面板时把当前比例存入 previousLeftPct，
-      // 这样再切回双面板布局时能恢复用户上一次拖动的分栏比例。
-      this.toggleAstContentPanel();
-    }
+    this.layoutService.astContentPanelOpen.set(p.astContentPanelOpen);
+    this.agentPanelOpen = p.agentPanelOpen;
+    this.previousLeftPct = p.previousLeftPct;
+    this.leftPct = p.left;
     this.showDockMenu.set(false);
+    this.onAgentLayoutChanged();
     this.refreshAgentPanelWidth();
   }
 
-  /** Maximize Content panel: ensure content is open, agent is closed */
-  maximizeContentPanel(): void {
-    if (this.agentPanelOpen) {
-      this.agentPanelOpen = false;
-      localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'false');
-    }
-    if (!this.layoutService.astContentPanelOpen()) {
-      this.layoutService.toggleAstContentPanel(true);
-    }
-    this.showDockMenu.set(false);
-  }
-
-  /** Set dock position and ensure both panels are open (two-panel layout) */
-  setDockPositionWithPanels(position: 'left' | 'right'): void {
-    this.layoutService.dockPosition.set(position);
-    localStorage.setItem(this.ACP_DOCK_POSITION_KEY, position);
-    // Ensure both panels are open for two-panel layout
-    if (!this.agentPanelOpen) {
-      this.agentPanelOpen = true;
-      localStorage.setItem(this.ACP_PANEL_OPEN_KEY, 'true');
-    }
-    if (!this.layoutService.astContentPanelOpen()) {
-      // 走 toggleAstContentPanel() 而不是直接改 service：max agent 时 leftPct 已被置 0，
-      // 直接置位 astContentPanelOpen 会让 refreshAgentPanelWidth() 按 (1 - 0) 算出整幅宽度。
-      this.toggleAstContentPanel();
+  /** 子组件直接通过 service 改变面板状态后（如 createNewTask），把实时状态同步进 dock 快照并持久化 */
+  protected onAgentLayoutChanged(): void {
+    if (this.agentPanelOpen && this.layoutService.astContentPanelOpen()) {
+      this.currentDockItemId = this.dockPosition() === 'left' ? 'dock-left' : 'dock-right';
+    } else if (this.agentPanelOpen) {
+      this.currentDockItemId = 'agent-max';
+    } else if (this.layoutService.astContentPanelOpen()) {
+      this.currentDockItemId = 'content-max';
     } else {
-      this.leftPct = this.previousLeftPct;
-      this.refreshAgentPanelWidth();
+      this.currentDockItemId = null;
     }
-    this.showDockMenu.set(false);
+    this.syncDockLayoutParams();
+    this.saveDockLayouts();
   }
 
   // Method to open a new terminal tab
@@ -1076,13 +1051,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   protected override getDefaultLeftPct(): number {
     // getDefaultLeftPct() 在基类构造函数（super()）期间即被调用，
-    // 此时实例字段尚未初始化，因此必须使用 static 常量 + 直接读 localStorage。
-    const saved = typeof localStorage !== 'undefined'
-      ? parseFloat(localStorage.getItem(AppComponent.ACP_LEFT_PCT_KEY) ?? '')
-      : NaN;
-    if (Number.isFinite(saved) && saved >= 0 && saved <= 1) {
-      return saved;
-    }
+    // 此时实例字段尚未初始化，因此只能返回常量；快照恢复会在 ngOnInit 里覆盖 leftPct。
     return 0.75;
   }
 
@@ -1090,14 +1059,64 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   override dragEnd(evt: any) {
     super.dragEnd(evt);
-    this.saveLeftPct();
+    this.saveDockLayouts();
   }
 
-  private saveLeftPct(): void {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(AppComponent.ACP_LEFT_PCT_KEY, String(this.leftPct));
-      localStorage.setItem(this.ACP_PREVIOUS_LEFT_PCT_KEY, String(this.previousLeftPct));
+  /** 拖动 EW 分隔条时，把实时分栏几何同步到 4 个 dockItem 的参数集（面板开关/停靠侧保持各自布局配置） */
+  private syncDockLayoutParams(): void {
+    for (const item of this.dockItems) {
+      item.params.left = this.leftPct;
+      item.params.previousLeftPct = this.previousLeftPct;
     }
+  }
+
+  /** 将 4 个 dockItem 整体（含参数集）与当前激活布局持久化到单一快照 key */
+  private saveDockLayouts(): void {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(this.ACP_DOCK_LAYOUTS_KEY, JSON.stringify({
+      activeId: this.currentDockItemId,
+      items: this.dockItems.map(({ id, params }) => ({ id, params })),
+    }));
+  }
+
+  /** 从快照恢复每个 dockItem 的参数集，并用 activeId 对应项还原全局面板/停靠状态 */
+  private restoreDockLayouts(): void {
+    if (typeof localStorage === 'undefined') return;
+    const raw = localStorage.getItem(this.ACP_DOCK_LAYOUTS_KEY);
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        for (const item of this.dockItems) {
+          const stored = data?.items?.find((s: any) => s?.id === item.id);
+          if (stored?.params && typeof stored.params.left === 'number') {
+            Object.assign(item.params, stored.params);
+          }
+        }
+        this.currentDockItemId = this.isDockItemId(data?.activeId) ? data.activeId : null;
+        const active = data?.items?.find((s: any) => s?.id === this.currentDockItemId);
+        if (active?.params) {
+          const p = active.params;
+          if (p.position === 'left' || p.position === 'right') {
+            this.layoutService.dockPosition.set(p.position);
+          }
+          this.layoutService.astContentPanelOpen.set(!!p.astContentPanelOpen);
+          this.agentPanelOpen = !!p.agentPanelOpen;
+          if (Number.isFinite(p.previousLeftPct)) {
+            this.previousLeftPct = p.previousLeftPct;
+          }
+          if (Number.isFinite(p.left)) {
+            this.leftPct = p.left;
+          }
+        }
+        return;
+      } catch {
+        // 快照损坏则忽略，保持默认布局与初始参数集
+      }
+    }
+  }
+
+  private isDockItemId(value: unknown): value is DockItemId {
+    return value === 'dock-left' || value === 'dock-right' || value === 'agent-max' || value === 'content-max';
   }
 
   override whenMouseMove(evt: any) {
@@ -1110,6 +1129,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       } else {
         // agent panel position calculation
         this.leftPct = this.getHorizontalPct(evt);
+        this.syncDockLayoutParams();
         this.refreshAgentPanelWidth();
       }
     }

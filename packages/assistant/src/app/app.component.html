@@ -14,7 +14,7 @@
             </svg>
           </div>
         }
-        @if(astContentPanelOpen() && dockPosition() === 'right') {
+        @if((astContentPanelOpen() && dockPosition() === 'right') || (astContentPanelOpen() && !agentPanelOpen)) {
           <div data-svg-wrapper="" data-layer="search-btn" class="btn-svg SearchBtn" title="Search" (click)="toggleDisplayViewId(2)">
             <svg class="icon" width="26" height="25">
               <use href="#icon-search"></use>
@@ -229,7 +229,7 @@
       }
 
       <!-- Docked Agent panel -->
-      <div *appKeepAlive="agentPanelOpen" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (themeApply)="onA2uiThemeApply($event)"></div>
+      <div *appKeepAlive="agentPanelOpen" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (layoutChanged)="onAgentLayoutChanged()" (themeApply)="onA2uiThemeApply($event)"></div>
 
       <!-- Middle panel -->
       <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
