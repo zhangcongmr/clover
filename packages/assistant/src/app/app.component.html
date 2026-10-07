@@ -131,6 +131,16 @@
             </svg>
             <span>Help</span>
           </div>
+          <!-- About -->
+          <div class="app-menu-item" (click)="onMenuAction('about')">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>About Clover <small>v{{version}}</small></span>
+          </div>
         </div>
         @if((agentPanelOpen && dockPosition() === 'left') || (agentPanelOpen && !astContentPanelOpen())) {
           <div data-svg-wrapper="" data-layer="skills-btn" class="btn-svg SkillsBtn" title="Skills" (click)="toggleSkillsManager()">

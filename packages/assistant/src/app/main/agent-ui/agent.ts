@@ -8,7 +8,6 @@ import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { LayoutService } from "../layout.service";
-import { APP_VERSION } from "../../../app-version";
 
 interface SessionWithAgent extends SessionInfo {
   agentId?: string;
@@ -44,7 +43,6 @@ function readCollapsedProjects(): Set<string> {
   imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent],
 })
 export class AgentComponent {
-  readonly version = APP_VERSION;
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
   private readonly platformId = inject(PLATFORM_ID);

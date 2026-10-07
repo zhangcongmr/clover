@@ -28,6 +28,7 @@ import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
 import { KeepAliveDirective } from './shared/keep-alive.directive';
 import { LayoutService } from './main/layout.service';
+import { APP_VERSION } from '../app-version';
 
 /** Dock 菜单项标识，与模板中 #dockIcon 的 @case 分支一一对应 */
 type DockItemId = 'dock-left' | 'dock-right' | 'agent-max' | 'content-max';
@@ -71,6 +72,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   }
   
   title = 'clover';
+  readonly version = APP_VERSION;
   cloverAppTabId: any;
   textArr: Array<String> = []
 
@@ -881,6 +883,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
         this.handleSignOut();
         break;
       case 'help':
+        break;
+      case 'about':
         break;
     }
   }

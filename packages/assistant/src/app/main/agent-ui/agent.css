@@ -36,12 +36,6 @@
   padding: 10px 10px 6px;
 }
 
-.sidebar-brand-name {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--vscode-foreground);
-}
-
 .sidebar-brand > .icon-btn {
   margin-left: auto;
 }
