@@ -76,6 +76,17 @@ export class AgentComponent {
       }));
   });
 
+  /** Tasks filtered by the sidebar search query (matches task title / id / path). */
+  protected filteredTasks = computed(() => {
+    const query = this.searchQuery().toLowerCase();
+    if (!query) return this.acpService.tasks();
+    return this.acpService.tasks().filter(task =>
+      (task.sessions[0]?.title || '').toLowerCase().includes(query) ||
+      (task.id || '').toLowerCase().includes(query) ||
+      task.path.toLowerCase().includes(query)
+    );
+  });
+
   /** A project's persisted sessions, with search applied. */
   protected sessionsOf(project: ProjectInfo): SessionWithAgent[] {
     const query = this.searchQuery().toLowerCase();
