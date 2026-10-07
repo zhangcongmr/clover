@@ -64,6 +64,8 @@ export class AgentComponent {
 
   /** Re-emitted upward so app.component can toggle the AST content (editor) panel. */
   editorToggle = output<void>();
+  /** Re-emitted upward when panel/layout state is changed directly through services (e.g. createNewTask). */
+  layoutChanged = output<void>();
   /** Re-emitted upward when user clicks "应用到项目UI" in A2UI theme preview. */
   themeApply = output<Record<string, any>>();
 
@@ -370,6 +372,8 @@ export class AgentComponent {
   async createNewTask(): Promise<void> {
     this.panelError.set(null);
     this.layoutService.toggleAstContentPanel(false);
+    // 通知父组件把关闭后的布局状态同步进 dock 快照，保证刷新后仍是 Maximize Agent
+    this.layoutChanged.emit();
     // 先清空 selectedProject，再设 isNewSession，
     // 防止 effect 在 selectedProject 仍指向 Task 时触发 loadTaskSession
     await this.acpService.saveSelectedSession(null);
