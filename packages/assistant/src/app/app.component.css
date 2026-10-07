@@ -58,6 +58,11 @@
   flex-shrink: 0;
 }
 
+.app-menu-dropdown .app-menu-item small {
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
 .app-menu-dropdown .app-menu-item > div {
   display: flex;
   align-items: center;
