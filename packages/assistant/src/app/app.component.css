@@ -166,16 +166,6 @@
   position: relative;
 }
 
-.acp-dock-wrapper .settings-btn {
-  width: 28px;
-  height: 28px;
-}
-
-.acp-dock-wrapper > .acp-icon-button svg {
-  width: 20px;
-  height: 20px;
-}
-
 .acp-dock-menu {
   position: absolute;
   bottom: 100%;
