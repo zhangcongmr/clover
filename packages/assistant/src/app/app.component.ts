@@ -21,6 +21,8 @@ import { AcpService } from './shared/acp/acp.service';
 import { BUILT_IN_SKILLS } from './shared/skill-manager/built-in-skills';
 import { buildThemePrompt, randomThemePromptSeed, THEME_SKILL_NAME } from './shared/skill-manager/built-in/theme-prompt-seeds';
 import { NotificationService } from './shared/notification/notification.service';
+import { McpManagerComponent } from './shared/mcp-manager/mcp-manager.component';
+import { SkillManagerComponent } from './shared/skill-manager/skill-manager.component';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
@@ -37,7 +39,7 @@ type DockItemId = 'dock-left' | 'dock-right' | 'agent-max' | 'content-max';
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
-        AgentComponent, KeepAliveDirective], // Add TerminalComponent to imports
+        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
@@ -79,6 +81,10 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   agentPanelOpen = true;
   dockPosition = computed(() => this.layoutService.dockPosition());
   protected showDockMenu = signal(false);
+  /** Whether the Skills Manager dialog is open. */
+  showSkillsManager = signal<boolean>(false);
+  /** Whether the MCP Manager dialog is open. */
+  showMcpManager = signal<boolean>(false);
 
   /**
    * 当前选中的 dock 项。四个分支互斥：
@@ -756,9 +762,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       // 走 toggleAstContentPanel() 而不是直接改 service：max agent 时 leftPct 已被置 0，
       // 直接置位 astContentPanelOpen 会让 refreshAgentPanelWidth() 按 (1 - 0) 算出整幅宽度。
       this.toggleAstContentPanel();
+    } else {
+      this.leftPct = this.previousLeftPct;
+      this.refreshAgentPanelWidth();
     }
     this.showDockMenu.set(false);
-    this.refreshAgentPanelWidth();
   }
 
   // Method to open a new terminal tab
@@ -871,6 +879,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
         break;
       case 'sign-out':
         this.handleSignOut();
+        break;
+      case 'help':
         break;
     }
   }
@@ -1074,19 +1084,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   private previousLeftPct: number = this.getDefaultLeftPct();
 
-  maximizeAcpPanel() {
-    this.previousLeftPct = this.leftPct;
-    this.leftPct = 0;
-    this.saveLeftPct();
-    this.refreshAgentPanelWidth();
-  }
-
-  restoreAcpPanel() {
-    this.leftPct = this.previousLeftPct;
-    this.saveLeftPct();
-    this.refreshAgentPanelWidth();
-  }
-
   override dragEnd(evt: any) {
     super.dragEnd(evt);
     this.saveLeftPct();
@@ -1134,5 +1131,21 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
    */
   toggleIndicatorDetailPanel(indicatorDetailType: number | 'none') {
     this.indicatorDetailType = indicatorDetailType;
+  }
+
+  toggleSkillsManager(): void {
+    this.showSkillsManager.update(v => !v);
+  }
+
+  closeSkillsManager(): void {
+    this.showSkillsManager.set(false);
+  }
+
+  toggleMcpManager(): void {
+    this.showMcpManager.update(v => !v);
+  }
+
+  closeMcpManager(): void {
+    this.showMcpManager.set(false);
   }
 }
