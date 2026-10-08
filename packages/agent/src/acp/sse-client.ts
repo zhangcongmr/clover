@@ -2,9 +2,6 @@ import { client, type ClientApp, type ClientConnection, type ActiveSession, PROT
 import type * as acp from '@agentclientprotocol/sdk';
 import { AgentProcess } from './agent-process.js';
 import { RedisClient } from '../redis/client.js';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
-import { mkdirSync } from 'node:fs';
 
 export interface SseAcpClientConfig {
   agentCommand?: string;
@@ -563,14 +560,9 @@ export class SseAcpClient {
       throw new Error('Not connected to agent');
     }
 
-    // 前端未传 cwd（New Task）时，按原始规则生成新的时间戳目录，而不是复用内部 session 的默认 cwd。
-    let cwd = params.cwd;
+    const cwd = params.cwd;
     if (!cwd || !String(cwd).trim()) {
-      const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, '0');
-      const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-      cwd = join(homedir(), '.clover', ts);
-      mkdirSync(cwd, { recursive: true });
+      throw new Error('cwd is required to create an ACP session');
     }
 
     // Dispose the previous session of THIS wrapper only
