@@ -20,10 +20,6 @@ import {
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 
-/** Fixed working directory for internal prefetch sessions, so they don't
- *  accumulate timestamped directories under ~/.clover. Expanded server-side. */
-const INTERNAL_SESSION_CWD = '~/.clover/.internal';
-
 const AGENT_STORAGE_KEY = 'clover_selected_agent';
 
 function getInitialAgent(): AgentConfig {
@@ -186,11 +182,6 @@ export class AcpService {
    *  agent changes so a stale wrapper is not reused. */
   private wrapperAgentId: string | null = null;
 
-  /** Whether the current wrapper session is an internal prefetch session used
-   *  only to obtain configOptions before a real chat session is created. When
-   *  true, onSessionCreated skips task/session record creation. */
-  private isInternalSession = false;
-
   /** Whether `sessionState().title` is a local placeholder (first user message)
    *  still awaiting the agent's own (LLM) title. Cleared once an agent title is
    *  adopted via `applySessionTitle`. */
@@ -288,12 +279,6 @@ export class AcpService {
         configOptions: payload?.configOptions,
         cwd: payload?.cwd ?? s.cwd,
       }));
-
-      // 内部 session：只取 configOptions，不创建 task/session 记录
-      if (this.isInternalSession) {
-        this.isInternalSession = false;
-        return;
-      }
 
       // Create task (task creation = isNewSession && no selected project)
       if (this.isNewSession() && !this.selectedProjectPath()) {
@@ -464,20 +449,6 @@ export class AcpService {
   }
 
   /**
-   * Create an internal session to prefetch configOptions from the agent before
-   * the user sends a message. The created wrapper is reused by ensureChatSession
-   * when the user chats. onSessionCreated skips task/session record creation
-   * while isInternalSession is true.
-   */
-  async createInternalSession(cwd?: string): Promise<void> {
-    const { sessionId, cwd: actualCwd } = await this.createWrapperSession(cwd?.trim() ? cwd : INTERNAL_SESSION_CWD);
-    this.isInternalSession = true;
-    await this.sseService.createAcpSession(sessionId, actualCwd);
-    // onSessionCreated 回调触发，isInternalSession=true 会跳过 task/session 创建
-    // configOptions 已写入 sessionState
-  }
-
-  /**
    * Ensures there is an active wrapper with an underlying ACP session before
    * chatting. Reuses the existing wrapper (created by connect() or history
    * load/resume) when possible; only falls back to creating a new wrapper when
@@ -488,7 +459,7 @@ export class AcpService {
     const existing = this.sessionState().sessionId;
     const agentChanged = this.wrapperAgentId !== (this.selectedAgent()?.id ?? null);
     if (existing && this.sessionState().isConnected && !agentChanged) {
-      const acpResult = await this.sseService.createAcpSession(existing, cwd, mcpServers);
+      const acpResult = await this.sseService.createAcpSession(existing, cwd ?? this.sessionState().cwd, mcpServers);
       this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
       const resolvedCwd = acpResult?.cwd || cwd;
       if (resolvedCwd) {

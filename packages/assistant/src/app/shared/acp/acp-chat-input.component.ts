@@ -1154,10 +1154,6 @@ export class AcpChatInputComponent {
   selectAgent(agent: AgentConfig): void {
     this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
-    // agent 变了，重建内部 session 以获取新 agent 的 configOptions
-    if (this.acpService.isNewSession()) {
-      this.acpService.createInternalSession().catch(() => {});
-    }
     this.messageInput?.nativeElement?.focus();
   }
 
