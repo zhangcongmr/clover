@@ -7,6 +7,7 @@ import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp.model";
+import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
 import { LayoutService } from "../layout.service";
 
 interface SessionWithAgent extends SessionInfo {
@@ -40,7 +41,7 @@ function readCollapsedProjects(): Set<string> {
   templateUrl: "./agent.html",
   styleUrls: ["./agent.css"],
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, AstMenuComponent],
 })
 export class AgentComponent {
   protected acpService = inject(AcpService);
@@ -57,6 +58,11 @@ export class AgentComponent {
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
+
+  /** Session right-click context menu: open flag, cursor anchor, and the targeted session. */
+  sessionMenuOpen = false;
+  sessionMenuInitiator: DOMRect | undefined;
+  private contextSession: SessionWithAgent | null = null;
   /** Whether the ACP panel is waiting for a session load/resume to complete. */
   panelLoading = signal<boolean>(false);
   /** Load/resume failure message shown inside the panel. */
@@ -348,6 +354,42 @@ export class AgentComponent {
         }
       }
       await this.acpService.deleteSession(sessionId);
+    }
+  }
+
+  /** Opens the custom context menu on a session row (suppresses the browser's native menu). */
+  showSessionContextMenu(evt: MouseEvent, session: SessionWithAgent): void {
+    evt.preventDefault();
+    evt.stopPropagation();
+    this.contextSession = session;
+    // 伪 DOMRect：以右键光标位置为锚点，供 ast-menu 定位与视口边缘翻转
+    this.sessionMenuInitiator = {
+      x: evt.clientX,
+      y: evt.clientY,
+      left: evt.clientX,
+      top: evt.clientY,
+      bottom: evt.clientY,
+      right: evt.clientX,
+      width: 0,
+      height: 0,
+      toJSON: () => { },
+    };
+    this.sessionMenuOpen = true;
+  }
+
+  /** Menu item click: always close first, then dispatch to the existing session actions. */
+  onSessionMenuAction(action: 'load' | 'resume' | 'delete', evt: MouseEvent): void {
+    this.sessionMenuOpen = false;
+    const session = this.contextSession;
+    this.contextSession = null;
+    if (!session || this.sessionLoadingId()) return;
+
+    if (action === 'load') {
+      void this.loadSession(session.sessionId);
+    } else if (action === 'resume') {
+      void this.resumeSession(session.sessionId);
+    } else {
+      void this.deleteSession(evt, session.sessionId);
     }
   }
 

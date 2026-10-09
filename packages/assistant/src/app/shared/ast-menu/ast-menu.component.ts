@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, effect, input, model } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, effect, input, model } from '@angular/core';
 
 @Component({
   selector: 'div[ast-menu]',
@@ -14,7 +14,8 @@ import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, 
 })
 export class AstMenuComponent implements OnInit, OnDestroy {
   isOpen = model<boolean>(false); // 菜单打开状态
-  @Input() menuInitiator?: DOMRect; // 菜单触发元素位置信息
+  // 菜单触发元素位置信息（信号输入：菜单已打开时再次右键，effect 能感知新坐标并重新定位）
+  menuInitiator = input<DOMRect | undefined>(undefined);
   @Output() mouseentermenu = new EventEmitter<MouseEvent>();
   @Output() mouseleavemenu = new EventEmitter<MouseEvent>();
 
@@ -64,7 +65,7 @@ export class AstMenuComponent implements OnInit, OnDestroy {
     effect(() => {
       const open = this.isOpen();
       if (open) {
-        const menuInitiator = this.menuInitiator;
+        const menuInitiator = this.menuInitiator();
         if (!menuInitiator) {
           return;
         }

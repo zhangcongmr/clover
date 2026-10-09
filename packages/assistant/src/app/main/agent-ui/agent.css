@@ -712,3 +712,13 @@
 .session-action-btn--delete:hover {
   color: var(--vscode-foreground);
 }
+
+/* ===== Session Context Menu ===== */
+.session-context-menu .ast-menu-every-item.disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.session-context-menu .ast-menu-every-item.disabled:hover {
+  background-color: transparent;
+}
