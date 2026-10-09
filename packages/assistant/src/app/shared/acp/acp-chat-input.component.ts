@@ -479,7 +479,14 @@ interface McpServerOption {
       cursor: pointer;
       font-size: 12px;
       opacity: 0.7;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: opacity 0.15s, background-color 0.15s;
+    }
+    .toolbar-tag-btn > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .toolbar-tag-btn:hover {
       opacity: 1;
