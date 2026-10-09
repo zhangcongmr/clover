@@ -18,6 +18,7 @@ const PROJECTS_DIR = join(homedir(), '.clover');
 const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
 const TASKS_FILE = join(PROJECTS_DIR, 'tasks.json');
 const SELECTED_FILE = join(PROJECTS_DIR, 'selected.json');
+const AGENT_CONFIG_FILE = join(PROJECTS_DIR, 'agent-config.json');
 
 interface ProjectSession {
   sessionId: string;
@@ -85,6 +86,29 @@ function writeTasks(tasks: ProjectInfo[]): void {
     createdAt: t.createdAt,
   }));
   writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
+}
+
+/** Agent 配置持久化条目：按 agentId 保存 configOptions（mode/model 选择器）。 */
+interface AgentConfigEntry {
+  configOptions: acp.SessionConfigOption[];
+  updatedAt?: string;
+}
+
+type AgentConfigFile = Record<string, AgentConfigEntry>;
+
+function readAgentConfigFile(): AgentConfigFile {
+  if (!existsSync(AGENT_CONFIG_FILE)) return {};
+  try {
+    const raw = JSON.parse(readFileSync(AGENT_CONFIG_FILE, 'utf-8'));
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as AgentConfigFile : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeAgentConfigFile(data: AgentConfigFile): void {
+  mkdirSync(PROJECTS_DIR, { recursive: true });
+  writeFileSync(AGENT_CONFIG_FILE, JSON.stringify(data, null, 2));
 }
 
 export interface AcpRouteOptions {
@@ -509,6 +533,53 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({ success: true, ...result });
     } catch (error) {
       console.error('[ACP Routes] Set config option error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * GET /api/acp/agent-config?agentId=xxx
+   * 读取指定 agent 持久化的 configOptions，页面加载后无需真实会话即可渲染选择器
+   */
+  app.get('/api/acp/agent-config', (req: Request, res: Response) => {
+    const agentId = String(req.query.agentId || '').trim();
+    if (!agentId) {
+      res.status(400).json({ error: 'agentId is required' });
+      return;
+    }
+    res.json({ success: true, configOptions: readAgentConfigFile()[agentId]?.configOptions ?? null });
+  });
+
+  /**
+   * POST /api/acp/agent-config
+   * 保存指定 agent 的 configOptions 到 ~/.clover/agent-config.json（按 agentId 为 key）
+   */
+  app.post('/api/acp/agent-config', (req: Request, res: Response) => {
+    const { agentId, configOptions } = req.body;
+    if (!agentId || typeof agentId !== 'string') {
+      res.status(400).json({ error: 'agentId is required' });
+      return;
+    }
+    if (!Array.isArray(configOptions)) {
+      res.status(400).json({ error: 'configOptions must be an array' });
+      return;
+    }
+
+    try {
+      const data = readAgentConfigFile();
+      const prev = data[agentId];
+      if (prev && JSON.stringify(prev.configOptions) === JSON.stringify(configOptions)) {
+        res.json({ success: true, unchanged: true });
+        return;
+      }
+      data[agentId] = {
+        configOptions,
+        updatedAt: new Date().toISOString(),
+      };
+      writeAgentConfigFile(data);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[ACP Routes] Save agent config error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });

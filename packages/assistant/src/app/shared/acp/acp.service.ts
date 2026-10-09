@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject, effect } from '@angular/core';
+import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
 import {
   AcpSseService,
   ConnectionState as SseConnectionState,
@@ -187,6 +187,10 @@ export class AcpService {
    *  adopted via `applySessionTitle`. */
   private provisionalTitle = false;
 
+  /** 用户在无会话状态下（New Task 页面，configOptions 由持久化文件恢复）
+   *  选择的配置项，待 ensureChatSession 建立 ACP 会话后下发给 agent。 */
+  private pendingConfigSelection: { configId: string; type: 'id' | 'boolean'; value: string | boolean } | null = null;
+
   /** Timer for the delayed agent-title refresh after a prompt completes. */
   private titleRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -207,6 +211,13 @@ export class AcpService {
         if (agent) localStorage.setItem(AGENT_STORAGE_KEY, agent.id);
         else localStorage.removeItem(AGENT_STORAGE_KEY);
       }
+      // 启动（effect 首次运行）与切换 agent 时，从服务端读取该 agentId
+      // 持久化的 configOptions，恢复 mode/model 选择器。
+      // 必须 untracked：reloadConfigOptions 会同步读 sessionState，
+      // 否则 sessionState 变化会反过来触发本 effect，形成请求死循环
+      untracked(() => {
+        void this.reloadConfigOptions();
+      });
     });
     this.setupSseCallbacks();
   }
@@ -247,11 +258,48 @@ export class AcpService {
     return null;
   }
 
+  /** 按当前 agentId 把最新 configOptions 持久化到服务端
+   *  （~/.clover/agent-config.json），页面刷新后无需真实会话即可恢复选择器。
+   *  写入失败静默，不影响会话流程。 */
+  private persistConfigOptions(options?: ConfigOption[]): void {
+    const agentId = this.selectedAgent()?.id;
+    if (!agentId || !options?.length) return;
+    this.sseService.saveAgentConfig(agentId, options).catch(() => {});
+  }
+
+  /** 从服务端读取当前 agentId 持久化的 configOptions 并回填 sessionState。
+   *  agent-config.json 仅对 New Task 生效（constructor effect 启动时、
+   *  切换 agent 时、createNewTask 调用）；已加载/恢复的历史会话只认
+   *  session/load、session/resume 返回的 configOptions。
+   *  - 非 New Task 状态 → 不读取（含 await 期间进入历史会话的情况）
+   *  - 拉取期间已有真实会话写入配置、或 agent 已再次切换 → 丢弃结果
+   *  - 该 agent 无缓存 → 清空，避免残留上一个 agent 的配置 */
+  async reloadConfigOptions(): Promise<void> {
+    if (!this.isNewSession()) return;
+    const agentId = this.selectedAgent()?.id;
+    if (!agentId) return;
+    const before = this.sessionState().configOptions;
+    try {
+      const options = await this.sseService.getAgentConfig(agentId);
+      if (!this.isNewSession()) return;
+      if (this.selectedAgent()?.id !== agentId) return;
+      if (this.sessionState().configOptions !== before) return;
+      const next = options?.length ? options : undefined;
+      // 内容未变化时不写入，避免无意义的 signal 更新
+      if (JSON.stringify(next ?? null) === JSON.stringify(before ?? null)) return;
+      this.sessionState.update(s => ({
+        ...s,
+        configOptions: next,
+      }));
+    } catch {
+      // 读取失败保持现状
+    }
+  }
+
   private setupSseCallbacks(): void {
     this.sseService.onSessionUpdate((update) => {
       this.handleSessionUpdate(update);
     });
-
     this.sseService.onPermissionRequest((request) => {
       this.handlePermissionRequest(request);
     });
@@ -279,6 +327,7 @@ export class AcpService {
         configOptions: payload?.configOptions,
         cwd: payload?.cwd ?? s.cwd,
       }));
+      this.persistConfigOptions(payload?.configOptions);
 
       // Create task (task creation = isNewSession && no selected project)
       if (this.isNewSession() && !this.selectedProjectPath()) {
@@ -465,9 +514,11 @@ export class AcpService {
       if (resolvedCwd) {
         this.sessionState.update(s => ({ ...s, cwd: resolvedCwd }));
       }
+      await this.applyPendingConfigSelection();
       return;
     }
     await this.createSession(cwd, mcpServers);
+    await this.applyPendingConfigSelection();
   }
 
   async sendPrompt(content: ContentBlock[]): Promise<void> {
@@ -862,7 +913,9 @@ export class AcpService {
         ...s,
         isConnected: true,
         isConnecting: false,
-        configOptions: result?.configOptions ?? s.configOptions,
+        // 仅使用 session/load 返回的 configOptions：不沿用上一个会话的值，
+        // 也不写入 agent-config.json（持久化文件只服务 New Task）
+        configOptions: result?.configOptions,
       }));
     } finally {
       this.isReplayingHistory.set(false);
@@ -921,7 +974,7 @@ export class AcpService {
     this.loadingText.set('Loading session history...');
     this.isReplayingHistory.set(true);
     try {
-      await this.sseService.resumeSession(
+      const result = await this.sseService.resumeSession(
         currentSessionId, sessionId, cwd || undefined, mcpServers,
       );
 
@@ -930,6 +983,8 @@ export class AcpService {
         ...s,
         isConnected: true,
         isConnecting: false,
+        // 仅使用 session/resume 返回的 configOptions（不沿用上一个会话的值）
+        configOptions: result?.configOptions,
       }));
     } finally {
       this.isReplayingHistory.set(false);
@@ -990,7 +1045,17 @@ export class AcpService {
   async setConfigOption(configId: string, type: 'id' | 'boolean', value: string | boolean): Promise<void> {
     const sessionId = this.sessionState().sessionId;
     if (!sessionId) {
-      throw new Error('No active session');
+      // 无会话（New Task 页面，configOptions 由持久化文件恢复）：
+      // 本地乐观更新 + 持久化，并记为待下发，ensureChatSession 建立会话后再发给 agent
+      this.pendingConfigSelection = { configId, type, value };
+      this.sessionState.update(s => ({
+        ...s,
+        configOptions: s.configOptions?.map(o =>
+          o.id === configId ? { ...o, currentValue: value } : o
+        ),
+      }));
+      this.persistConfigOptions(this.sessionState().configOptions);
+      return;
     }
     const result = await this.sseService.setConfigOption(sessionId, configId, type, value);
     if (result?.configOptions) {
@@ -998,6 +1063,24 @@ export class AcpService {
         ...s,
         configOptions: result.configOptions,
       }));
+    }
+  }
+
+  /** 把无会话期间记录的配置选择下发给刚建立的 ACP 会话
+   *  （New Task 页面先选 mode/model、后发消息的场景）。无待下发项时为 no-op。 */
+  private async applyPendingConfigSelection(): Promise<void> {
+    const pending = this.pendingConfigSelection;
+    const sessionId = this.sessionState().sessionId;
+    if (!pending || !sessionId) return;
+    this.pendingConfigSelection = null;
+    try {
+      const result = await this.sseService.setConfigOption(sessionId, pending.configId, pending.type, pending.value);
+      if (result?.configOptions) {
+        this.sessionState.update(s => ({ ...s, configOptions: result.configOptions }));
+        this.persistConfigOptions(result.configOptions);
+      }
+    } catch {
+      // 下发失败静默：选择仍保留在本地 state 与持久化文件中
     }
   }
 
@@ -1043,15 +1126,17 @@ export class AcpService {
         this.handlePlanUpdate(update);
         break;
 
-      case 'current_mode_update':
+      case 'current_mode_update': {
         // Deprecated: convert to configOptions update for backward compatibility
+        const nextModeOptions = this.sessionState().configOptions?.map(o =>
+          o.category === 'mode' ? { ...o, currentValue: update.currentModeId } : o
+        );
         this.sessionState.update(s => ({
           ...s,
-          configOptions: s.configOptions?.map(o =>
-            o.category === 'mode' ? { ...o, currentValue: update.currentModeId } : o
-          ),
+          configOptions: nextModeOptions,
         }));
         break;
+      }
 
       case 'session_info_update':
         if (update.title) {

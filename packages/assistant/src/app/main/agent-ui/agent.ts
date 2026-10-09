@@ -362,6 +362,9 @@ export class AgentComponent {
     await this.acpService.saveSelectedProject(null);
     await this.acpService.disconnect();
     this.acpService.isNewSession.set(true);
+    // disconnect 重置了 sessionState（含 configOptions），重新拉取
+    // 当前 agent 持久化的配置，恢复 mode/model 选择器
+    void this.acpService.reloadConfigOptions();
   }
 
   async deleteTask(event: MouseEvent, taskId: string): Promise<void> {
