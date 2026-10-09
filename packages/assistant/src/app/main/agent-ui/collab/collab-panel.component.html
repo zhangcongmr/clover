@@ -1,0 +1,147 @@
+<div class="card-base">
+  <div class="collab-header">
+    <div class="collab-title">
+      <svg class="collab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="5" r="2.5" />
+        <circle cx="5" cy="19" r="2.5" />
+        <circle cx="19" cy="19" r="2.5" />
+        <path d="M10.5 7 6.5 16.5M13.5 7l4 9.5M7.5 19h9" />
+      </svg>
+      <span class="collab-heading">Multi-Agent Collaboration</span>
+      @if (collab.project(); as project) {
+        <span class="collab-project">{{ project.name }}</span>
+      }
+    </div>
+    <div class="collab-actions">
+      <button class="collab-icon-btn" title="Close" (click)="close.emit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  @if (collab.error(); as errorMessage) {
+    <div class="collab-error">
+      <span>{{ errorMessage }}</span>
+      <button class="collab-error-dismiss" (click)="collab.error.set(null)">Dismiss</button>
+    </div>
+  }
+
+  <!-- ============ No space yet: pick agents ============ -->
+  @if (!collab.space()) {
+    <div class="collab-picker">
+      <div class="collab-picker-intro">
+        <h3>Select agents to collaborate</h3>
+        <p>Each selected agent gets its own ACP session inside the shared project workspace. Prompts are routed by the orchestrator (explicit target, keyword match, or first agent).</p>
+      </div>
+
+      <div class="collab-agent-list">
+        @for (agent of collab.availableAgents(); track agent.id) {
+          <label class="collab-agent-option" [class.selected]="collab.selectedAgentIds().includes(agent.id)">
+            <input
+              type="checkbox"
+              [checked]="collab.selectedAgentIds().includes(agent.id)"
+              (change)="collab.toggleAgent(agent.id)" />
+            <span class="agent-name">{{ agent.name }}</span>
+            <span class="agent-id">{{ agent.id }}</span>
+            <span class="agent-status" [class]="'agent-status ' + agent.status">
+              {{ agent.status }}
+            </span>
+          </label>
+        } @empty {
+          <div class="collab-empty">No agents found. Check the agent registry.</div>
+        }
+      </div>
+
+      <div class="collab-picker-footer">
+        <button class="collab-btn ghost" (click)="collab.refreshAgents()" [disabled]="collab.creating()">
+          Refresh
+        </button>
+        <button
+          class="collab-btn primary"
+          [disabled]="collab.selectedAgentIds().length === 0 || collab.creating()"
+          (click)="collab.createSpace()">
+          {{ collab.creating() ? 'Creating space…' : 'Create Collaboration Space' }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <!-- ============ Active space: chat ============ -->
+    <div class="collab-space">
+      <div class="collab-participants">
+        <span class="participants-label">Agents:</span>
+        @for (participant of collab.space()!.agents; track participant.agentId) {
+          <span
+            class="participant-chip"
+            [class.target]="collab.targetAgentId() === participant.agentId">
+            {{ participant.agentId }}
+          </span>
+        }
+        <span class="participants-spacer"></span>
+        <label class="target-label">
+          Route to
+          <select
+            class="target-select"
+            [ngModel]="collab.targetAgentId()"
+            (ngModelChange)="collab.targetAgentId.set($event)">
+            <option value="">Auto</option>
+            @for (participant of collab.space()!.agents; track participant.agentId) {
+              <option [value]="participant.agentId">{{ participant.agentId }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div class="collab-messages custom-scroll" #messageScroll>
+        @for (message of collab.messages(); track trackMessage($index, message)) {
+          <div class="collab-message" [class.user]="message.role === 'user'" [class.agent]="message.role === 'agent'">
+            <div class="message-meta">
+              <span class="message-role">{{ message.role === 'user' ? 'You' : (statusLabel(message) || 'Agent') }}</span>
+              <span class="message-time">{{ message.time | date: 'HH:mm:ss' }}</span>
+            </div>
+            <div class="message-body">
+              @if (message.text) {
+                <div class="message-text">{{ message.text }}</div>
+              } @else if (message.status === 'streaming') {
+                <div class="message-typing"><span></span><span></span><span></span></div>
+              }
+              @if (message.statusText) {
+                <div class="message-status" [class.failed]="message.status === 'failed'" [class.canceled]="message.status === 'canceled'">
+                  {{ message.statusText }}
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="collab-messages-empty">
+            Send a prompt to start the collaboration. The orchestrator routes it to one of the space agents.
+          </div>
+        }
+      </div>
+
+      <div class="collab-input-row">
+        <textarea
+          class="collab-input custom-scroll"
+          rows="3"
+          placeholder="Ask the agents… (@agentId to address one directly)"
+          [ngModel]="draft()"
+          (ngModelChange)="setDraft($event)"
+          (keydown)="onKeydown($event)"
+          [disabled]="collab.sending()">
+        </textarea>
+        <div class="collab-input-actions">
+          @if (collab.sending()) {
+            <button class="collab-btn danger" (click)="collab.cancel()">Stop</button>
+          } @else {
+            <button class="collab-btn primary" [disabled]="!draft().trim()" (click)="send()">Send</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Shared permission dialog (listens on the window 'acp-permission-request' event). -->
+  <app-acp-permission-dialog />
+</div>

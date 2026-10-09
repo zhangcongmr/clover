@@ -36,6 +36,7 @@
     "url": "git+https://github.com/zhangcongmr/clover.git"
   },
   "dependencies": {
+    "@a2a-js/sdk": "^1.2.0",
     "@a2ui/angular": "^0.10.7",
     "@a2ui/markdown-it": "^0.1.2",
     "@a2ui/web_core": "^0.11.0",

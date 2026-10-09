@@ -334,7 +334,7 @@
   flex: 1;
 }
 
-.project-delete-btn {
+.project-more-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -351,18 +351,18 @@
   transition: opacity 0.12s, background-color 0.12s;
 }
 
-.project-item:hover .project-delete-btn {
+.project-item:hover .project-more-btn {
   opacity: 0.6;
 }
 
-.project-delete-btn:hover {
+.project-more-btn:hover {
   opacity: 1 !important;
   background: var(--vscode-hover-background);
 }
 
-.project-delete-btn svg {
-  width: 12px;
-  height: 12px;
+.project-more-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .project-item .sidebar-chevron {
