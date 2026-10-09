@@ -26,6 +26,8 @@ export interface CollabSpace {
   spaceId: string;
   cwd: string;
   agents: CollabSpaceAgent[];
+  /** Member agent that routes each prompt to the answering agent (optional). */
+  orchestratorAgentId?: string | null;
 }
 
 export type CollabMessageStatus = 'streaming' | 'completed' | 'failed' | 'canceled';
@@ -55,6 +57,8 @@ export class CollabService {
   readonly availableAgents = signal<AgentStatusInfo[]>([]);
   /** Agents chosen for the space (before it is created). */
   readonly selectedAgentIds = signal<string[]>([]);
+  /** Chosen orchestrator agent (must be a selected agent; empty = none). */
+  readonly orchestratorAgentId = signal<string>('');
   readonly space = signal<CollabSpace | null>(null);
   readonly messages = signal<CollabMessage[]>([]);
   readonly sending = signal(false);
@@ -108,6 +112,15 @@ export class CollabService {
     this.selectedAgentIds.update(ids =>
       ids.includes(agentId) ? ids.filter(id => id !== agentId) : [...ids, agentId],
     );
+    if (!this.selectedAgentIds().includes(agentId) && this.orchestratorAgentId() === agentId) {
+      this.orchestratorAgentId.set('');
+    }
+  }
+
+  /** Toggles the orchestrator role for a selected agent (clicking again clears it). */
+  setOrchestrator(agentId: string): void {
+    if (!this.selectedAgentIds().includes(agentId)) return;
+    this.orchestratorAgentId.update(current => (current === agentId ? '' : agentId));
   }
 
   async createSpace(): Promise<void> {
@@ -125,7 +138,11 @@ export class CollabService {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ cwd: project.path, agentIds }),
+        body: JSON.stringify({
+          cwd: project.path,
+          agentIds,
+          orchestratorAgentId: this.orchestratorAgentId() || undefined,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.success) {
@@ -135,6 +152,7 @@ export class CollabService {
         spaceId: data.spaceId,
         cwd: data.cwd,
         agents: Array.isArray(data.agents) ? data.agents : [],
+        orchestratorAgentId: data.orchestratorAgentId ?? null,
       };
       this.space.set(space);
       this.openWrapperSse(space, token);

@@ -12,7 +12,7 @@ import {
 import type * as acp from '@agentclientprotocol/sdk';
 import type { AcpSessionManager, AcpWrapperEvent } from '../../acp/session-manager.js';
 import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
-import type { CollabSpaceStore } from './spaces.js';
+import type { CollabSpaceStore, CollabSpace } from './spaces.js';
 
 /** `metadata.collab` contract shared with the frontend. */
 export interface CollabMetadata {
@@ -91,20 +91,25 @@ function readCollabMetadata(input: RunTaskInput): CollabMetadata | undefined {
 }
 
 /**
- * Picks the target agent: explicit `targetAgentId` → keyword match against
- * the prompt → first agent of the space.
+ * Deterministic tiers of target resolution:
+ * explicit `targetAgentId` → first agent of the space.
+ * (Forced ids and the orchestrator LLM step are handled by the caller.)
  */
-function resolveTargetAgent(
-  collab: CollabMetadata,
-  promptText: string,
-  forcedAgentId?: string,
-): string | undefined {
+function explicitTarget(collab: CollabMetadata, forcedAgentId?: string): string | undefined {
   if (forcedAgentId) return forcedAgentId;
 
   const agentIds = (collab.agentIds ?? []).map(String).filter(Boolean);
   if (collab.targetAgentId && (agentIds.length === 0 || agentIds.includes(collab.targetAgentId))) {
     return collab.targetAgentId;
   }
+  return undefined;
+}
+
+/**
+ * Fallback tiers: keyword match against the prompt → first agent of the space.
+ */
+function keywordTarget(collab: CollabMetadata, promptText: string): string | undefined {
+  const agentIds = (collab.agentIds ?? []).map(String).filter(Boolean);
   if (agentIds.length === 0) return undefined;
 
   const normalized = promptText.toLowerCase();
@@ -116,6 +121,65 @@ function resolveTargetAgent(
     }
   }
   return agentIds[0];
+}
+
+/** Routing instruction sent to the orchestrator agent's wrapper session. */
+function buildRoutingPrompt(memberIds: string[], question: string): string {
+  const catalog = memberIds
+    .map(id => {
+      const config = AVAILABLE_AGENTS.find(agent => agent.id === id);
+      const description = config?.description ? ` — ${config.description}` : '';
+      return `- ${id}: ${config?.name ?? id}${description}`;
+    })
+    .join('\n');
+  return [
+    'You are the orchestrator of a multi-agent collaboration.',
+    'Decide which single agent should answer the user question below.',
+    '',
+    'Available agents:',
+    catalog,
+    '',
+    'Rules:',
+    '- Reply with ONLY a JSON object, no markdown fences and no explanation:',
+    '  {"agentId":"<id>"}',
+    `- agentId must be exactly one of: ${memberIds.join(', ')}`,
+    '- You may pick yourself if you are the best fit.',
+    '- Pick the single best fit; never list multiple agents.',
+    '',
+    'User question:',
+    question,
+  ].join('\n');
+}
+
+/**
+ * Extracts a target agent from the orchestrator's reply.
+ *  1. strict `{"agentId":"..."}` field, 2. exactly one known id/name
+ * mentioned anywhere in the reply. Ambiguous or empty replies → undefined
+ * so the caller can fall back to rule-based routing.
+ */
+function parseRoutingReply(reply: string, memberIds: string[]): string | undefined {
+  const text = reply.trim();
+  if (!text) return undefined;
+
+  const known = new Map<string, string>();
+  for (const id of memberIds) {
+    known.set(id.toLowerCase(), id);
+    const config = AVAILABLE_AGENTS.find(agent => agent.id === id);
+    if (config?.name) known.set(config.name.toLowerCase(), id);
+  }
+
+  const match = text.match(/"agentId"\s*:\s*"([^"]+)"/i);
+  if (match) {
+    const hit = known.get(match[1].trim().toLowerCase());
+    if (hit) return hit;
+  }
+
+  const lower = text.toLowerCase();
+  const found = new Set<string>();
+  for (const [key, id] of known) {
+    if (lower.includes(key)) found.add(id);
+  }
+  return found.size === 1 ? [...found][0] : undefined;
 }
 
 function withTimeout<T>(
@@ -146,7 +210,8 @@ function withTimeout<T>(
  * per-agent A2A servers:
  *
  *  1. publish the task snapshot (A2A streams must start with a Task),
- *  2. resolve the target agent from `metadata.collab`,
+ *  2. resolve the target agent: forced/explicit → orchestrator LLM routing →
+ *     keyword/first-member rules,
  *  3. serialize prompts per wrapper session (ACP allows one prompt at a time),
  *  4. run the ACP prompt, forwarding `agent_message_chunk` events as
  *     appending A2A artifact updates,
@@ -161,6 +226,7 @@ export class BridgeRunner {
     private readonly sessionManager: AcpSessionManager,
     private readonly spaces: CollabSpaceStore,
     private readonly timeoutMs: number,
+    private readonly routeTimeoutMs: number,
   ) {}
 
   cancel = async (taskId: string): Promise<void> => {
@@ -171,6 +237,64 @@ export class BridgeRunner {
       await this.sessionManager.cancelPrompt(run.wrapperId);
     }
   };
+
+  /**
+   * Asks the space's orchestrator agent (an ordinary ACP agent session) which
+   * member should answer the prompt. Returns the chosen agent id, or
+   * `undefined` on parse failure / timeout / cancel so the caller can fall
+   * back to rule-based routing. The orchestrator may choose itself.
+   */
+  private async routeViaOrchestrator(
+    runState: ActiveRun,
+    space: CollabSpace,
+    promptText: string,
+    setStatus: (state: TaskState, text?: string) => void,
+  ): Promise<string | undefined> {
+    const orchestratorAgentId = space.orchestratorAgentId;
+    if (!orchestratorAgentId) return undefined;
+    const wrapperId = space.wrappers.get(orchestratorAgentId);
+    if (!wrapperId) return undefined;
+
+    setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator 正在选择目标 Agent…');
+
+    let reply = '';
+    try {
+      await this.withLock(wrapperId, async () => {
+        if (runState.cancelled) return;
+        runState.wrapperId = wrapperId;
+        try {
+          await this.sessionManager.ensureAgentSession(wrapperId);
+          await withTimeout(
+            this.sessionManager.promptAndWait(
+              wrapperId,
+              [{ type: 'text', text: buildRoutingPrompt(space.agentIds, promptText) }] as acp.ContentBlock[],
+              event => {
+                const delta = extractAgentChunk(event);
+                if (delta) reply += delta;
+              },
+            ),
+            this.routeTimeoutMs,
+            () => this.sessionManager.cancelPrompt(wrapperId),
+          );
+        } finally {
+          runState.wrapperId = undefined;
+        }
+      });
+    } catch (error) {
+      console.warn('[A2A Collab] Orchestrator routing failed, falling back to rules:', error);
+      return undefined;
+    }
+
+    if (runState.cancelled) return undefined;
+
+    const target = parseRoutingReply(reply, space.agentIds);
+    if (target) {
+      console.log(`[A2A Collab] Orchestrator selected ${target} for: ${promptText.slice(0, 120)}`);
+      return target;
+    }
+    console.warn('[A2A Collab] Orchestrator reply unparsable, falling back to rules:', reply.slice(0, 200));
+    return undefined;
+  }
 
   async run(input: RunTaskInput): Promise<void> {
     const { taskId, contextId, eventBus, userMessage } = input;
@@ -246,7 +370,24 @@ export class BridgeRunner {
         return;
       }
 
-      const targetAgentId = resolveTargetAgent(collab, promptText, input.forcedAgentId);
+      let targetAgentId = explicitTarget(collab, input.forcedAgentId);
+      let routedByOrchestrator = false;
+      if (!targetAgentId && space.orchestratorAgentId) {
+        const routed = await this.routeViaOrchestrator(runState, space, promptText, setStatus);
+        if (runState.cancelled) {
+          setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+          return;
+        }
+        if (routed) {
+          targetAgentId = routed;
+          routedByOrchestrator = true;
+        } else {
+          setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator 路由未命中，改用规则路由…');
+        }
+      }
+      if (!targetAgentId) {
+        targetAgentId = keywordTarget(collab, promptText);
+      }
       if (!targetAgentId) {
         setStatus(
           TaskState.TASK_STATE_FAILED,
@@ -262,7 +403,10 @@ export class BridgeRunner {
       }
 
       const label = agentLabel(targetAgentId);
-      setStatus(TaskState.TASK_STATE_WORKING, `已路由到 ${label}，正在调用…`);
+      setStatus(
+        TaskState.TASK_STATE_WORKING,
+        `${routedByOrchestrator ? 'Orchestrator 已选择' : '已路由到'} ${label}，正在调用…`,
+      );
 
       const artifactId = `${taskId}-reply`;
       await this.withLock(wrapperId, async () => {
