@@ -434,6 +434,21 @@ export class AcpSseService {
   }
 
   /**
+   * 读取指定 agent 持久化的 configOptions（~/.clover/agent-config.json）
+   */
+  async getAgentConfig(agentId: string): Promise<any[] | null> {
+    const result = await this.get(`/api/acp/agent-config?agentId=${encodeURIComponent(agentId)}`);
+    return Array.isArray(result?.configOptions) ? result.configOptions : null;
+  }
+
+  /**
+   * 按 agentId 持久化 configOptions 到服务端
+   */
+  async saveAgentConfig(agentId: string, configOptions: any[]): Promise<void> {
+    await this.post('/api/acp/agent-config', { agentId, configOptions });
+  }
+
+  /**
    * Ping 检测连接
    */
   async ping(sessionId: string): Promise<void> {
