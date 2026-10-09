@@ -185,6 +185,39 @@
   color: var(--vscode-badge-foreground);
 }
 
+/* ===== Orchestrator selection ===== */
+.orchestrator-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 2px 10px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.orchestrator-option:hover {
+  background: var(--vscode-hover-background);
+}
+
+.orchestrator-option.active {
+  border-color: var(--vscode-accent-color);
+  color: var(--vscode-accent-color);
+  background: var(--vscode-list-activeSelectionBackground, rgba(128, 128, 128, 0.15));
+}
+
+.orchestrator-option input[type='radio'] {
+  margin: 0;
+  accent-color: var(--vscode-accent-color);
+  pointer-events: none;
+}
+
 .agent-status.connected {
   background: rgba(76, 175, 80, 0.18);
   color: #4caf50;
@@ -283,6 +316,17 @@
 .participant-chip.target {
   border-color: var(--vscode-accent-color);
   color: var(--vscode-accent-color);
+}
+
+.orch-badge {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #fff);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
 }
 
 .participants-spacer {

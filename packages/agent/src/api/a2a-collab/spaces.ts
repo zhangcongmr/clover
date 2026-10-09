@@ -8,12 +8,15 @@ export interface CollabSpace {
   agentIds: string[];
   /** agentId → wrapper session id (one wrapper session per participating agent). */
   wrappers: Map<string, string>;
+  /** Optional member agent that routes each prompt to the answering agent. */
+  orchestratorAgentId?: string;
   createdAt: number;
 }
 
 export interface CreateSpaceOptions {
   cwd: string;
   agentIds: string[];
+  orchestratorAgentId?: string;
 }
 
 /**
@@ -44,11 +47,17 @@ export class CollabSpaceStore {
       }
     }
 
+    const orchestratorAgentId = String(options.orchestratorAgentId ?? '').trim();
+    if (orchestratorAgentId && !agentIds.includes(orchestratorAgentId)) {
+      throw new Error('orchestratorAgentId must be a member of the collaboration space');
+    }
+
     const space: CollabSpace = {
       id: uuidv4(),
       cwd,
       agentIds,
       wrappers: new Map(),
+      orchestratorAgentId: orchestratorAgentId || undefined,
       createdAt: Date.now(),
     };
     const created: string[] = [];
@@ -79,7 +88,10 @@ export class CollabSpaceStore {
     }
 
     this.spaces.set(space.id, space);
-    console.log(`[A2A Collab] Space created: ${space.id} (agents: ${agentIds.join(', ')}, cwd: ${cwd})`);
+    console.log(
+      `[A2A Collab] Space created: ${space.id} (agents: ${agentIds.join(', ')}` +
+        `${orchestratorAgentId ? `, orchestrator: ${orchestratorAgentId}` : ''}, cwd: ${cwd})`,
+    );
     return space;
   }
 

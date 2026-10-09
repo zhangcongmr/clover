@@ -58,7 +58,8 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
 
   const spaces = new CollabSpaceStore(sessionManager);
   const timeoutMs = Number(process.env.A2A_BRIDGE_TIMEOUT_MS) || 10 * 60 * 1000;
-  const runner = new BridgeRunner(sessionManager, spaces, timeoutMs);
+  const routeTimeoutMs = Number(process.env.A2A_ROUTE_TIMEOUT_MS) || 30 * 1000;
+  const runner = new BridgeRunner(sessionManager, spaces, timeoutMs, routeTimeoutMs);
 
   app.use('/api/a2a', requireAuth);
 
@@ -70,11 +71,14 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
     try {
       const cwd = typeof req.body?.cwd === 'string' ? req.body.cwd : '';
       const agentIds = Array.isArray(req.body?.agentIds) ? req.body.agentIds : [];
-      const space = await spaces.create({ cwd, agentIds });
+      const orchestratorAgentId =
+        typeof req.body?.orchestratorAgentId === 'string' ? req.body.orchestratorAgentId : undefined;
+      const space = await spaces.create({ cwd, agentIds, orchestratorAgentId });
       res.json({
         success: true,
         spaceId: space.id,
         cwd: space.cwd,
+        orchestratorAgentId: space.orchestratorAgentId ?? null,
         agents: space.agentIds.map(agentId => ({
           agentId,
           sessionId: space.wrappers.get(agentId)!,

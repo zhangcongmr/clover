@@ -34,22 +34,38 @@
     <div class="collab-picker">
       <div class="collab-picker-intro">
         <h3>Select agents to collaborate</h3>
-        <p>Each selected agent gets its own ACP session inside the shared project workspace. Prompts are routed by the orchestrator (explicit target, keyword match, or first agent).</p>
+        <p>Each selected agent gets its own ACP session inside the shared project workspace. Prompts are routed by the orchestrator (explicit target, keyword match, or first agent). Optionally designate one selected agent as the <strong>orchestrator</strong>: it receives each message first and decides which member answers.</p>
       </div>
 
       <div class="collab-agent-list">
         @for (agent of collab.availableAgents(); track agent.id) {
-          <label class="collab-agent-option" [class.selected]="collab.selectedAgentIds().includes(agent.id)">
+          <div class="collab-agent-option" [class.selected]="collab.selectedAgentIds().includes(agent.id)"
+            (click)="collab.toggleAgent(agent.id)">
             <input
               type="checkbox"
               [checked]="collab.selectedAgentIds().includes(agent.id)"
+              (click)="$event.stopPropagation()"
               (change)="collab.toggleAgent(agent.id)" />
             <span class="agent-name">{{ agent.name }}</span>
             <span class="agent-id">{{ agent.id }}</span>
             <span class="agent-status" [class]="'agent-status ' + agent.status">
               {{ agent.status }}
             </span>
-          </label>
+            @if (collab.selectedAgentIds().includes(agent.id)) {
+              <span
+                class="orchestrator-option"
+                [class.active]="collab.orchestratorAgentId() === agent.id"
+                title="Send each message to this agent first; it decides who answers"
+                (click)="$event.stopPropagation(); collab.setOrchestrator(agent.id)">
+                <input
+                  type="radio"
+                  name="collab-orchestrator"
+                  [checked]="collab.orchestratorAgentId() === agent.id"
+                  tabindex="-1" />
+                Orchestrator
+              </span>
+            }
+          </div>
         } @empty {
           <div class="collab-empty">No agents found. Check the agent registry.</div>
         }
@@ -77,6 +93,9 @@
             class="participant-chip"
             [class.target]="collab.targetAgentId() === participant.agentId">
             {{ participant.agentId }}
+            @if (collab.space()!.orchestratorAgentId === participant.agentId) {
+              <span class="orch-badge" title="Orchestrator: routes each message first">ORCH</span>
+            }
           </span>
         }
         <span class="participants-spacer"></span>
