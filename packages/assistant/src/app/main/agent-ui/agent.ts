@@ -9,6 +9,8 @@ import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
 import { LayoutService } from "../layout.service";
+import { CollabPanelComponent } from "./collab/collab-panel.component";
+import { CollabService } from "./collab/collab.service";
 
 interface SessionWithAgent extends SessionInfo {
   agentId?: string;
@@ -41,11 +43,12 @@ function readCollapsedProjects(): Set<string> {
   templateUrl: "./agent.html",
   styleUrls: ["./agent.css"],
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, AstMenuComponent],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, CollabPanelComponent, AstMenuComponent],
 })
 export class AgentComponent {
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
+  protected collabService = inject(CollabService);
   private readonly platformId = inject(PLATFORM_ID);
   /** True only in the browser; used to skip rendering the ACP panel during SSR. */
   protected readonly isBrowser = computed(() => isPlatformBrowser(this.platformId));
@@ -63,6 +66,11 @@ export class AgentComponent {
   sessionMenuOpen = false;
   sessionMenuInitiator: DOMRect | undefined;
   private contextSession: SessionWithAgent | null = null;
+
+  /** Project ⋯ dropdown menu: open flag, anchor, and the targeted project. */
+  projectMenuOpen = false;
+  projectMenuInitiator: DOMRect | undefined;
+  contextProject: ProjectInfo | null = null;
   /** Whether the ACP panel is waiting for a session load/resume to complete. */
   panelLoading = signal<boolean>(false);
   /** Load/resume failure message shown inside the panel. */
@@ -302,7 +310,7 @@ export class AgentComponent {
 
   async loadSession(sessionId: string): Promise<void> {
     if (this.sessionLoadingId()) return;
-
+    this.leaveCollab();
     const { cwd, agentId } = this.acpService.findSessionInfo(sessionId, this.selectedProject());
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
@@ -324,7 +332,7 @@ export class AgentComponent {
 
   async resumeSession(sessionId: string): Promise<void> {
     if (this.sessionLoadingId()) return;
-
+    this.leaveCollab();
     const { cwd, agentId } = this.acpService.findSessionInfo(sessionId, this.selectedProject());
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
@@ -361,19 +369,10 @@ export class AgentComponent {
   showSessionContextMenu(evt: MouseEvent, session: SessionWithAgent): void {
     evt.preventDefault();
     evt.stopPropagation();
+    // 同一时间只显示一个自定义菜单
+    this.projectMenuOpen = false;
     this.contextSession = session;
-    // 伪 DOMRect：以右键光标位置为锚点，供 ast-menu 定位与视口边缘翻转
-    this.sessionMenuInitiator = {
-      x: evt.clientX,
-      y: evt.clientY,
-      left: evt.clientX,
-      top: evt.clientY,
-      bottom: evt.clientY,
-      right: evt.clientX,
-      width: 0,
-      height: 0,
-      toJSON: () => { },
-    };
+    this.sessionMenuInitiator = this.cursorDomRect(evt);
     this.sessionMenuOpen = true;
   }
 
@@ -393,7 +392,87 @@ export class AgentComponent {
     }
   }
 
+  /** ⋯ button click: open the custom dropdown anchored at the button (re-click closes it). */
+  showProjectMenu(evt: MouseEvent, project: ProjectInfo): void {
+    evt.stopPropagation();
+    if (this.projectMenuOpen && this.contextProject?.name === project.name) {
+      this.projectMenuOpen = false;
+      this.contextProject = null;
+      return;
+    }
+    const anchor = ((evt.currentTarget as HTMLElement | null) || evt.target) as HTMLElement;
+    this.openProjectMenu(project, anchor.getBoundingClientRect());
+  }
+
+  /** ⋯ button right-click: open the same menu as a context menu at the cursor. */
+  showProjectContextMenu(evt: MouseEvent, project: ProjectInfo): void {
+    evt.preventDefault();
+    evt.stopPropagation();
+    this.openProjectMenu(project, this.cursorDomRect(evt));
+  }
+
+  private openProjectMenu(project: ProjectInfo, initiator: DOMRect): void {
+    // 同一时间只显示一个自定义菜单
+    this.sessionMenuOpen = false;
+    this.contextProject = project;
+    this.projectMenuInitiator = initiator;
+    this.projectMenuOpen = true;
+  }
+
+  /** Menu item click: always close first, then dispatch to the existing project actions. */
+  onProjectMenuAction(action: 'toggle-collapse' | 'delete' | 'collab', evt: MouseEvent): void {
+    this.projectMenuOpen = false;
+    const project = this.contextProject;
+    this.contextProject = null;
+    if (!project) return;
+
+    if (action === 'toggle-collapse') {
+      this.toggleProjectCollapse(project.name);
+    } else if (action === 'collab') {
+      void this.openCollab(project);
+    } else {
+      void this.deleteProject(evt, project.name);
+    }
+  }
+
+  /** Opens the multi-agent collaboration panel for the project. */
+  async openCollab(project: ProjectInfo): Promise<void> {
+    try {
+      await this.collabService.open(project);
+    } catch (error) {
+      console.error('[Agent] Failed to open collaboration panel:', error);
+    }
+  }
+
+  /** Closes the collaboration panel and releases its space/sessions. */
+  closeCollab(): void {
+    this.collabService.close();
+  }
+
+  /** Leaving the collaboration view for a regular session/task flow. */
+  private leaveCollab(): void {
+    if (this.collabService.panelOpen()) {
+      this.collabService.close();
+    }
+  }
+
+  /** Pseudo DOMRect anchored at the cursor, for ast-menu positioning/viewport flipping. */
+  private cursorDomRect(evt: MouseEvent): DOMRect {
+    return {
+      x: evt.clientX,
+      y: evt.clientY,
+      left: evt.clientX,
+      top: evt.clientY,
+      bottom: evt.clientY,
+      right: evt.clientX,
+      width: 0,
+      height: 0,
+      toJSON: () => { },
+    };
+  }
+
   async createNewTask(): Promise<void> {
+    this.leaveCollab();
     this.panelError.set(null);
     this.layoutService.toggleAstContentPanel(false);
     // 通知父组件把关闭后的布局状态同步进 dock 快照，保证刷新后仍是 Maximize Agent
@@ -425,7 +504,7 @@ export class AgentComponent {
     const task = this.acpService.tasks().find(t => t.id === taskId);
     if (!task) return;
     if (this.sessionLoadingId()) return;
-
+    this.leaveCollab();
     this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.saveSelectedProject(task.path || null);

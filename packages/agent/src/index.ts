@@ -31,6 +31,14 @@ export type { AcpRouteOptions } from './api/acp-routes.js';
 export { setupA2ARoute } from './api/a2a.js';
 export type { A2AOptions } from './api/a2a.js';
 
+// A2A collaboration (multi-agent orchestrator + per-agent bridges)
+export { setupA2aCollabRoutes } from './api/a2a-collab/routes.js';
+export type { A2aCollabRouteOptions } from './api/a2a-collab/routes.js';
+export { CollabSpaceStore } from './api/a2a-collab/spaces.js';
+export type { CollabSpace, CreateSpaceOptions } from './api/a2a-collab/spaces.js';
+export { BridgeRunner, BridgeTimeoutError } from './api/a2a-collab/bridge-runner.js';
+export type { CollabMetadata, RunTaskInput } from './api/a2a-collab/bridge-runner.js';
+
 // Middleware
 export { createCORSMiddleware, createRequireAuth } from './api/middleware.js';
 
@@ -59,7 +67,7 @@ export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './ser
 export { SseManager } from './acp/sse-manager.js';
 export type { SseConnection, ServerEvent } from './acp/sse-manager.js';
 export { AcpSessionManager } from './acp/session-manager.js';
-export type { AcpSession, SessionCreateOptions, SessionMessage } from './acp/session-manager.js';
+export type { AcpSession, SessionCreateOptions, SessionMessage, AcpWrapperEvent } from './acp/session-manager.js';
 export { SseAcpClient } from './acp/sse-client.js';
 export type { SseAcpClientConfig } from './acp/sse-client.js';
 export { AgentRegistry } from './acp/agent-registry.js';

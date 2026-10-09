@@ -14,6 +14,7 @@ import { setupAgentRoutes } from './api/routes.js';
 import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
 import { setupAcpRoutes } from './api/acp-routes.js';
+import { setupA2aCollabRoutes } from './api/a2a-collab/routes.js';
 import { createMcpRoutes } from './api/mcp-routes.js';
 import { createSkillRoutes } from './api/skill-routes.js';
 import { RedisClient } from './redis/client.js';
@@ -104,6 +105,9 @@ export function setupAgentMiddleware(
   const agentRegistry = new AgentRegistry(AVAILABLE_AGENTS);
   const sessionManager = new AcpSessionManager(redis, agentRegistry);
   setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry, registry: agentRegistry });
+
+  // A2A collaboration routes (orchestrator + per-agent bridges + spaces)
+  setupA2aCollabRoutes(app, { tokenManager, sessionManager });
 
   // MCP routes
   app.use('/api/mcp', createMcpRoutes(mcpRegistry));

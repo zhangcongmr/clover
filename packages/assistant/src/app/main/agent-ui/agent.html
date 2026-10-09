@@ -100,10 +100,11 @@
             </svg>
             <span class="project-icon" [style.background]="project.color">{{ getInitial(project.name) }}</span>
             <span class="project-name">{{ project.name }}</span>
-            <button class="project-delete-btn" title="Delete project" (click)="deleteProject($event, project.name)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button class="project-more-btn" title="More actions"
+              (click)="showProjectMenu($event, project)"
+              (contextmenu)="showProjectContextMenu($event, project)">
+              <svg aria-hidden="true">
+                <use href="#icon-hori-more"></use>
               </svg>
             </button>
           </div>
@@ -164,15 +165,56 @@
   <!-- Right: ACP panel (always occupies the right panel) -->
   <div class="agent-main">
     @if (isBrowser()) {
-      <app-acp-panel class="custom-scroll"
-        (editorToggle)="editorToggle.emit()"
-        (sidebarExpand)="layoutService.expandSidebar()"
-        (themeApply)="themeApply.emit($event)"
-        [sidebarCollapsed]="layoutService.sidebarCollapsed()"
-      />
+      @if (collabService.panelOpen()) {
+        <app-collab-panel class="custom-scroll" (close)="closeCollab()" />
+      } @else {
+        <app-acp-panel class="custom-scroll"
+          (editorToggle)="editorToggle.emit()"
+          (sidebarExpand)="layoutService.expandSidebar()"
+          (themeApply)="themeApply.emit($event)"
+          [sidebarCollapsed]="layoutService.sidebarCollapsed()"
+        />
+      }
     }
   </div>
 </div>
+
+<!-- Project ⋯ dropdown menu (kept outside .project-item so its clicks don't trigger row selection) -->
+@if (projectMenuOpen) {
+  <div ast-menu [(isOpen)]="projectMenuOpen" [menuInitiator]="projectMenuInitiator"
+    [menuWidth]="300"
+    class="more-btn-dropdown-content ast-right-menu project-context-menu">
+    <div class="ast-menu-every-item" (click)="onProjectMenuAction('toggle-collapse', $event)">
+      @if (contextProject && isProjectCollapsed(contextProject.name)) {
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+        <span>Expand Project</span>
+      } @else {
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+        <span>Collapse Project</span>
+      }
+    </div>
+    <div class="ast-menu-every-item" (click)="onProjectMenuAction('collab', $event)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="5" r="2.5" />
+        <circle cx="5" cy="19" r="2.5" />
+        <circle cx="19" cy="19" r="2.5" />
+        <path d="M10.5 7 6.5 16.5M13.5 7l4 9.5M7.5 19h9" />
+      </svg>
+      <span>Multi-Agent Collaboration</span>
+    </div>
+    <div class="ast-menu-every-item" (click)="onProjectMenuAction('delete', $event)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+      <span>Delete Project</span>
+    </div>
+  </div>
+}
 
 <!-- Session right-click context menu (kept outside .session-item so its clicks don't bubble into row click) -->
 @if (sessionMenuOpen) {

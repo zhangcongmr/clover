@@ -23,10 +23,14 @@ export class AstMenuComponent implements OnInit, OnDestroy {
   verticalOffset = input<number | undefined>(undefined);
 
   positionStyle: string = '';
-  // 宽336px, 参考 .ast-right-menu
   // 高36px，参考 .ast-menu-every-item
-  width: number = 240; // 菜单宽度
+  /** 菜单宽度（px），默认 240；菜单项文案较长时可传入更大的值避免换行。 */
+  menuWidth = input<number | undefined>(undefined);
   display: string | null = null;
+
+  get width(): number {
+    return this.menuWidth() ?? 240;
+  }
 
   documentClickHandler = (e: any) => {
     if (this.isOpen()) {

@@ -42,6 +42,15 @@ export interface SessionMessage {
   timestamp: number;
 }
 
+/** Event published to `acp:events:{wrapperId}` (may omit `sessionId`). */
+export interface AcpWrapperEvent {
+  type: string;
+  sessionId?: string;
+  payload?: any;
+  requestId?: string;
+  timestamp?: number;
+}
+
 export class AcpSessionManager {
   private sessions: Map<string, AcpSession> = new Map();
   private redis: RedisClient;
@@ -214,6 +223,87 @@ export class AcpSessionManager {
   async publishEvent(sessionId: string, event: any): Promise<void> {
     const channel = `acp:events:${sessionId}`;
     await this.redis.publish(channel, JSON.stringify(event));
+  }
+
+  // ==========================================================================
+  // Direct in-process prompt (A2A bridge)
+  // ==========================================================================
+
+  /**
+   * Send a prompt directly (bypassing the Redis prompt channel) and wait until
+   * the agent finishes. Wrapper events (`session_update` chunks, permission
+   * requests, …) are forwarded to `onEvent` for the duration of the prompt, so
+   * callers can stream ACP message chunks without opening an SSE connection.
+   *
+   * Callers are responsible for serializing prompts per wrapper session —
+   * ACP allows only one in-flight prompt per session.
+   */
+  async promptAndWait(
+    sessionId: string,
+    content: acp.ContentBlock[],
+    onEvent?: (event: AcpWrapperEvent) => void,
+  ): Promise<{ stopReason: string }> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Session ${sessionId} not found`);
+    }
+
+    // Ensure connection + active ACP session (lazy recovery after crash)
+    await this.ensureAgentSession(sessionId);
+
+    let unsub: (() => void) | undefined;
+    if (onEvent) {
+      const listener = (raw: string) => {
+        try {
+          onEvent(JSON.parse(raw) as AcpWrapperEvent);
+        } catch {
+          /* malformed event — ignore */
+        }
+      };
+      unsub = this.redis.subscribe(`acp:events:${sessionId}`, listener);
+    }
+
+    try {
+      session.lastActivity = Date.now();
+      await this.publishEvent(sessionId, {
+        type: 'prompt_processing',
+        payload: {},
+        timestamp: Date.now(),
+      });
+
+      const result = await session.client.handlePrompt(sessionId, content);
+
+      await this.publishEvent(sessionId, {
+        type: 'prompt_complete',
+        payload: result,
+        timestamp: Date.now(),
+      });
+      return result;
+    } catch (error) {
+      console.error(`[ACP Session] promptAndWait error:`, error);
+      await this.publishEvent(sessionId, {
+        type: 'error',
+        payload: { message: (error as Error).message },
+        timestamp: Date.now(),
+      });
+      throw error;
+    } finally {
+      session.lastActivity = Date.now();
+      unsub?.();
+    }
+  }
+
+  /**
+   * Cancel the in-flight prompt of a wrapper session (fire-and-forget).
+   */
+  async cancelPrompt(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+    try {
+      await session.client.handleCancel(sessionId);
+    } catch (error) {
+      console.error(`[ACP Session] cancelPrompt error:`, error);
+    }
   }
 
   // ==========================================================================
