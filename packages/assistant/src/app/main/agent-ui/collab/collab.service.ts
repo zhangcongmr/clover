@@ -154,7 +154,10 @@ export class CollabService {
       const space: CollabSpace = {
         spaceId: data.spaceId,
         cwd: data.cwd,
-        agents: Array.isArray(data.agents) ? data.agents : [],
+        agents: (Array.isArray(data.agents) ? data.agents : []).map((agent: CollabSpaceAgent) => ({
+          ...agent,
+          configOptions: this.sortConfigOptions(agent.configOptions),
+        })),
         orchestratorAgentId: data.orchestratorAgentId ?? null,
       };
       this.space.set(space);
@@ -198,12 +201,13 @@ export class CollabService {
       const result = await this.sseService.setConfigOption(agent.sessionId, configId, type, value);
       const nextOptions = result?.configOptions;
       if (Array.isArray(nextOptions)) {
+        const sorted = this.sortConfigOptions(nextOptions as ConfigOption[]);
         this.space.update(current =>
           current
             ? {
                 ...current,
                 agents: current.agents.map(a =>
-                  a.agentId === agentId ? { ...a, configOptions: nextOptions as ConfigOption[] } : a,
+                  a.agentId === agentId ? { ...a, configOptions: sorted } : a,
                 ),
               }
             : current,
@@ -213,6 +217,28 @@ export class CollabService {
       console.error(`[Collab] Failed to set ${configId} on ${agentId}:`, error);
       this.error.set((error as Error)?.message || `Failed to update ${configId}`);
     }
+  }
+
+  /**
+   * Orders config options mode → model → effort once at write time (space
+   * creation / config update), so change detection iterates a ready-made
+   * array without re-sorting. Stable sort keeps the agent's original order
+   * for everything else.
+   */
+  private sortConfigOptions(options: ConfigOption[] | undefined): ConfigOption[] | undefined {
+    if (!options || options.length <= 1) return options;
+    return [...options].sort((a, b) => this.optionRank(a) - this.optionRank(b));
+  }
+
+  private optionRank(option: ConfigOption): number {
+    const category = (option.category ?? '').toLowerCase();
+    const id = (option.id ?? '').toLowerCase();
+    const name = (option.name ?? '').toLowerCase();
+
+    if (category === 'mode' || id === 'mode') return 0;
+    if (category === 'model' || category === 'model_config' || id === 'model') return 1;
+    if (category === 'thought_level' || category === 'effort' || id === 'effort' || name === 'effort') return 2;
+    return 3;
   }
 
   // ==========================================================================
