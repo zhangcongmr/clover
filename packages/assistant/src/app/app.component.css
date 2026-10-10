@@ -41,16 +41,16 @@
   gap: 8px;
   padding: 8px 12px;
   cursor: pointer;
-  color: var(--vscode-foreground);
-  background: var(--vscode-background);
+  color: var(--vscode-dropdown-foreground);
+  background: transparent;
+  font-weight: 500;
   width: 100%;
   box-sizing: border-box;
-  transition: background 0.15s ease, box-shadow 0.2s ease;
+  transition: background-color 0.15s;
 }
 
 .app-menu-dropdown .app-menu-item:hover {
   background: var(--vscode-hover-background);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .app-menu-dropdown .app-menu-item .icon {
@@ -71,7 +71,7 @@
 
 .app-menu-separator {
   height: 1px;
-  background: var(--borderless-item-bg, rgba(0, 0, 0, 0.04));
+  background: var(--vscode-menu-separatorBackground, var(--vscode-dropdown-border, #454545));
   margin: 4px 0;
 }
 

@@ -14,7 +14,6 @@
     /* 关键：允许鼠标事件穿透到下层元素 */
     /* 背景颜色 */
     background-color: transparent;
-    box-shadow: var(--vscode-shadow-lg, 0 18px 50px rgba(0, 0, 0, 0.22));
 }
 
 .ast-modal-container.ast-modal-small {
@@ -48,13 +47,15 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    background-color: var(--vscode-background);
+    background-color: var(--vscode-dropdown-background);
     pointer-events: auto;
     /* 关键：对话框内部可以响应鼠标事件 */
     max-height: 100%;
-    /* 无边框 + 圆角 */
-    border: none;
-    border-radius: var(--vscode-radius-lg, 16px);
+    /* 与下拉/菜单统一的表面：1px 描边 + 8px 圆角 + 紧凑阴影 */
+    border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+    border-radius: var(--borderless-item-radius, 8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: var(--vscode-dropdown-foreground);
     height: 100%;
 }
 
@@ -72,9 +73,9 @@
 }
 
 .ast-title {
-    color: var(--vscode-foreground);
+    color: var(--vscode-dropdown-foreground);
     font-size: 20px;
-    font-weight: 400;
+    font-weight: 500;
     word-wrap: break-word;
     padding-left: 10px;
 }
@@ -85,7 +86,7 @@
     align-self: stretch;
     align-items: center;
     border-radius: var(--borderless-item-radius, 8px);
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s;
 }
 
 .close-button:hover {
@@ -123,18 +124,18 @@ ast-modal .ast-describe-btns {
 .ast-confirm-btn {
     border: none;
     align-items: center;
-    background: var(--borderless-accent, #0D99FF);
+    background: var(--borderless-accent, #0066cc);
     display: flex;
     gap: 10px;
     justify-content: center;
     padding: 6px 12px;
     border-radius: var(--borderless-item-radius, 8px);
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s;
 }
 
 .ast-confirm {
     color: white;
-    font-weight: 400;
+    font-weight: 500;
     word-wrap: break-word
 }
 
@@ -147,12 +148,12 @@ ast-modal .ast-describe-btns {
     justify-content: center;
     padding: 6px 12px;
     border-radius: var(--borderless-item-radius, 8px);
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s;
 }
 
 .ast-cancel {
     color: var(--vscode-foreground);
-    font-weight: 400;
+    font-weight: 500;
     word-wrap: break-word
 }
 

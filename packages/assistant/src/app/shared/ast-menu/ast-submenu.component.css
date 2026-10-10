@@ -2,12 +2,13 @@
   position: fixed;
   z-index: 1001;
   display: none;
-  background: var(--vscode-background);
-  border: none;
-  box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: var(--borderless-item-radius, 8px);
-  min-width: 160px;
+  min-width: 200px;
+  max-height: 400px;
+  overflow-x: hidden;
   font-size: var(--vscode-menu-font-size, 13px);
-  color: var(--vscode-foreground);
-  transition: box-shadow 0.2s ease;
+  color: var(--vscode-dropdown-foreground);
 }
