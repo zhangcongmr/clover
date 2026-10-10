@@ -82,6 +82,7 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
         agents: space.agentIds.map(agentId => ({
           agentId,
           sessionId: space.wrappers.get(agentId)!,
+          configOptions: space.configOptions.get(agentId) ?? [],
         })),
       });
     } catch (error) {

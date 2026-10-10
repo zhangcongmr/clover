@@ -111,7 +111,56 @@
             }
           </select>
         </label>
+        <button
+          class="collab-icon-btn settings-toggle"
+          [class.active]="showAgentSettings()"
+          title="Agent mode / model settings"
+          (click)="showAgentSettings.update(v => !v)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
       </div>
+
+      @if (showAgentSettings()) {
+        <div class="collab-agent-settings custom-scroll">
+          @for (participant of collab.space()!.agents; track participant.agentId) {
+            <div class="settings-agent">
+              <span class="settings-agent-name">{{ participant.agentId }}</span>
+              <div class="settings-options">
+                @for (option of participant.configOptions ?? []; track option.id) {
+                  @if (option.type === 'select' && (option.options?.length ?? 0) > 0) {
+                    <label class="settings-option">
+                      <span class="settings-option-label">{{ option.name || option.id }}</span>
+                      <select
+                        class="settings-select"
+                        [ngModel]="option.currentValue"
+                        [disabled]="collab.sending()"
+                        (ngModelChange)="onConfigChange(participant.agentId, option, $event)">
+                        @for (item of option.options ?? []; track item.value) {
+                          <option [value]="item.value">{{ item.name }}</option>
+                        }
+                      </select>
+                    </label>
+                  } @else if (option.type === 'boolean') {
+                    <label class="settings-option boolean">
+                      <input
+                        type="checkbox"
+                        [ngModel]="option.currentValue === true"
+                        [disabled]="collab.sending()"
+                        (ngModelChange)="onConfigChange(participant.agentId, option, $event)" />
+                      <span>{{ option.name || option.id }}</span>
+                    </label>
+                  }
+                } @empty {
+                  <span class="settings-empty">No configurable options</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
 
       <div class="collab-messages custom-scroll" #messageScroll>
         @for (message of collab.messages(); track trackMessage($index, message)) {

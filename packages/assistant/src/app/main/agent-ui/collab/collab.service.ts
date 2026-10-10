@@ -14,12 +14,15 @@ import {
 } from '@a2a-js/sdk';
 import { LocalAgentService } from '../../../shared/local-agent/local-agent.service';
 import { AcpSseService, type AgentStatusInfo } from '../../../shared/acp/acp-sse.service';
+import type { ConfigOption } from '../../../shared/acp/acp.model';
 import type { ProjectInfo } from '../../../shared/acp/acp.service';
 
 /** One wrapper session inside a collaboration space (backend response). */
 export interface CollabSpaceAgent {
   agentId: string;
   sessionId: string;
+  /** mode/model selectors from session/new; live values updated via set_config_option. */
+  configOptions?: ConfigOption[];
 }
 
 export interface CollabSpace {
@@ -170,6 +173,46 @@ export class CollabService {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
+  }
+
+  // ==========================================================================
+  // Agent config (mode/model) — session-level state applied to later prompts
+  // ==========================================================================
+
+  /**
+   * Applies a config option (mode/model/…) to one space agent's ACP session.
+   * The new value takes effect on that agent's next prompt; updating between
+   * turns is race-free because prompts are serialized per wrapper (FIFO lock).
+   */
+  async setAgentConfigOption(
+    agentId: string,
+    configId: string,
+    type: 'id' | 'boolean',
+    value: string | boolean,
+  ): Promise<void> {
+    const space = this.space();
+    const agent = space?.agents.find(a => a.agentId === agentId);
+    if (!space || !agent) return;
+
+    try {
+      const result = await this.sseService.setConfigOption(agent.sessionId, configId, type, value);
+      const nextOptions = result?.configOptions;
+      if (Array.isArray(nextOptions)) {
+        this.space.update(current =>
+          current
+            ? {
+                ...current,
+                agents: current.agents.map(a =>
+                  a.agentId === agentId ? { ...a, configOptions: nextOptions as ConfigOption[] } : a,
+                ),
+              }
+            : current,
+        );
+      }
+    } catch (error) {
+      console.error(`[Collab] Failed to set ${configId} on ${agentId}:`, error);
+      this.error.set((error as Error)?.message || `Failed to update ${configId}`);
+    }
   }
 
   // ==========================================================================
