@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CollabService, type CollabMessage } from './collab.service';
 import { AcpPermissionDialogComponent } from '../../../shared/acp/acp-permission-dialog.component';
+import type { ConfigOption } from '../../../shared/acp/acp.model';
 
 @Component({
   selector: 'app-collab-panel',
@@ -18,6 +19,8 @@ export class CollabPanelComponent {
   @ViewChild('messageScroll') private messageScroll?: ElementRef<HTMLElement>;
 
   protected draft = signal('');
+  /** Whether the per-agent mode/model settings block is expanded. */
+  protected showAgentSettings = signal(false);
 
   constructor() {
     // Keep the transcript pinned to the bottom while chunks stream in.
@@ -29,6 +32,12 @@ export class CollabPanelComponent {
 
   protected setDraft(value: string): void {
     this.draft.set(value);
+  }
+
+  /** Applies a mode/model change to one space agent's session. */
+  protected onConfigChange(agentId: string, option: ConfigOption, value: string | boolean): void {
+    if (option.currentValue === value) return;
+    void this.collab.setAgentConfigOption(agentId, option.id, option.type === 'boolean' ? 'boolean' : 'id', value);
   }
 
   /** Enter sends; Shift+Enter keeps the default newline. */

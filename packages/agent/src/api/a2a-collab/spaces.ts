@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import type * as acp from '@agentclientprotocol/sdk';
 import type { AcpSessionManager } from '../../acp/session-manager.js';
 import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
 
@@ -8,6 +9,8 @@ export interface CollabSpace {
   agentIds: string[];
   /** agentId → wrapper session id (one wrapper session per participating agent). */
   wrappers: Map<string, string>;
+  /** agentId → configOptions returned by session/new (mode/model selectors). */
+  configOptions: Map<string, acp.SessionConfigOption[]>;
   /** Optional member agent that routes each prompt to the answering agent. */
   orchestratorAgentId?: string;
   createdAt: number;
@@ -57,6 +60,7 @@ export class CollabSpaceStore {
       cwd,
       agentIds,
       wrappers: new Map(),
+      configOptions: new Map(),
       orchestratorAgentId: orchestratorAgentId || undefined,
       createdAt: Date.now(),
     };
@@ -72,8 +76,12 @@ export class CollabSpaceStore {
         });
         created.push(wrapperId);
         await this.sessionManager.connectSession(wrapperId);
-        await this.sessionManager.createAcpSession(wrapperId, cwd);
+        const newSession = await this.sessionManager.createAcpSession(wrapperId, cwd);
         space.wrappers.set(agentId, wrapperId);
+        space.configOptions.set(
+          agentId,
+          Array.isArray(newSession?.configOptions) ? newSession.configOptions : [],
+        );
       }
     } catch (error) {
       // Roll back partially created wrapper sessions
