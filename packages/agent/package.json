@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./acp": {
+      "types": "./dist/acp/acp-agent.types.d.ts",
+      "import": "./dist/acp/acp-agent.types.js",
+      "require": "./dist/acp/acp-agent.types.cjs"
     }
   },
   "files": [
