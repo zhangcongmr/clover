@@ -188,7 +188,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/acp/session
-   * 创建新的 ACP 会话
+   * 创建新的wrapper会话
    */
   app.post('/api/acp/session', async (req: Request, res: Response) => {
     try {

@@ -58,9 +58,9 @@ export class AcpSessionManager {
   private publishCallbacks: Map<string, (event: any) => void> = new Map();
 
   constructor(
+    /** Required registry providing pre-warmed shared agent connections. */
+    private registry: AgentRegistry,
     redis?: RedisClient,
-    /** Optional registry providing pre-warmed shared agent connections. */
-    private registry?: AgentRegistry,
   ) {
     this.redis = redis || RedisClient.getInstance();
     this.startCleanupInterval();
@@ -81,8 +81,8 @@ export class AcpSessionManager {
       agentEnv: options.agentEnv,
     };
 
-    // 占位客户端：实际连接在 ensureConnected 时绑定到预热共享连接
-    // （或在无 registry 时于本地建立）。运行期的 wrapper 包装流程保持不变。
+    // 占位客户端：实际连接在 ensureConnected 时绑定到预热共享连接。
+    // 运行期的 wrapper 包装流程保持不变。
     const client = new SseAcpClient(sessionId, config, this.redis);
 
     // 订阅 Redis 频道接收客户端消息
@@ -307,7 +307,7 @@ export class AcpSessionManager {
   }
 
   // ==========================================================================
-  // Connection management (预热复用 + 检查逻辑 + 兜底)
+  // Connection management (预热复用 + 检查逻辑)
   // ==========================================================================
 
   /**
@@ -316,38 +316,21 @@ export class AcpSessionManager {
    * 检查逻辑：
    *  1. 已连接（且由 registry 拥有）→ 直接复用，跳过 spawn+initialize；
    *  2. 否则从 AgentRegistry 预热池取共享连接（预热未就绪时由
-   *     getOrCreate 内部兜底 spawn+initialize）；
-   *  3. 无 registry（兼容旧用法）→ 走原有的本地 spawn+initialize 路径。
+   *     getOrCreate 内部兜底 spawn+initialize）。
    */
   private async ensureConnected(session: AcpSession): Promise<void> {
-    const registry = this.registry;
-
     if (
       session.client?.isConnected() &&
       session.callbacksBound &&
-      (!registry || registry.owns(session.client))
+      this.registry.owns(session.client)
     ) {
       session.client.attach(session.sessionId);
       return;
     }
 
-    let newlyBound = false;
-
-    if (registry) {
-      // 预热已就绪 → 直接复用；未就绪/已死 → 内部兜底 spawn+initialize
-      const conn = await registry.getOrCreate(session.config);
-      newlyBound = this.bindConnection(session, conn);
-    } else {
-      const conn = session.client;
-      if (!conn.isConnected()) {
-        await conn.connect({
-          command: session.config.agentCommand || 'opencode',
-          args: session.config.agentArgs || ['acp'],
-          env: session.config.agentEnv,
-        });
-      }
-      newlyBound = this.bindConnection(session, conn);
-    }
+    // 预热已就绪 → 直接复用；未就绪/已死 → 内部兜底 spawn+initialize
+    const conn = await this.registry.getOrCreate(session.config);
+    const newlyBound = this.bindConnection(session, conn);
 
     session.status = 'active';
     session.lastActivity = Date.now();
@@ -474,40 +457,20 @@ export class AcpSessionManager {
   /**
    * 列出指定 agent 的会话（无需创建 wrapper session）。
    *
-   * `session/list` 是连接级请求：有 registry 时直接复用预热共享连接，
-   * 省去 wrapper 的 uuid / 占位客户端 / Redis 订阅 / 监听器绑定开销；
-   * 无 registry 时兜底走原有的 create → connect → list → remove 流程。
+   * `session/list` 是连接级请求：直接复用 registry 预热共享连接，
+   * 省去 wrapper 的 uuid / 占位客户端 / Redis 订阅 / 监听器绑定开销。
    */
   async listAgentSessions(
     agent: { command: string; args?: string[]; env?: Record<string, string> },
     cwd: string,
     cursor?: string,
   ): Promise<any> {
-    if (this.registry) {
-      const conn = await this.registry.getOrCreate({
-        agentCommand: agent.command,
-        agentArgs: agent.args,
-        agentEnv: agent.env,
-      });
-      return conn.handleListSessions({ cwd, cursor });
-    }
-
-    // 兜底（无 registry）：保持原 wrapper 流程
-    const sessionId = await this.createSession({
+    const conn = await this.registry.getOrCreate({
       agentCommand: agent.command,
       agentArgs: agent.args,
       agentEnv: agent.env,
     });
-    try {
-      await this.connectSession(sessionId);
-      return await this.listAcpSessions(sessionId, cwd, cursor);
-    } finally {
-      try {
-        await this.removeSession(sessionId);
-      } catch (cleanupError) {
-        console.warn(`[ACP Session] Failed to clean up wrapper session ${sessionId}:`, cleanupError);
-      }
-    }
+    return conn.handleListSessions({ cwd, cursor });
   }
 
   async loadAcpSession(sessionId: string, loadSessionId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
@@ -655,7 +618,7 @@ export class AcpSessionManager {
     const session = this.sessions.get(sessionId);
     if (session) {
       try {
-        if (this.registry?.owns(session.client)) {
+        if (this.registry.owns(session.client)) {
           // 归还共享预热连接：只解绑，不杀进程
           session.client.detach(sessionId);
         } else {
@@ -709,7 +672,7 @@ export class AcpSessionManager {
       try {
         session.detachFns?.forEach(fn => fn());
         session.redisUnsubs?.forEach(unsub => unsub());
-        if (!this.registry?.owns(session.client)) {
+        if (!this.registry.owns(session.client)) {
           session.client.disconnect();
         }
       } catch (error) {

@@ -103,7 +103,7 @@ export function setupAgentMiddleware(
   const sseManager = new SseManager(redis);
   // Agent 预热注册表：持有每个 Agent 的共享连接（预热 + 复用 + 状态跟踪）
   const agentRegistry = new AgentRegistry(AVAILABLE_AGENTS);
-  const sessionManager = new AcpSessionManager(redis, agentRegistry);
+  const sessionManager = new AcpSessionManager(agentRegistry, redis);
   setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry, registry: agentRegistry });
 
   // A2A collaboration routes (orchestrator + per-agent bridges + spaces)
