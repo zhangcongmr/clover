@@ -5,6 +5,7 @@ import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, effect,
   templateUrl: './ast-menu.component.html',
   styleUrls: ['./ast-menu.component.css'],
   host: {
+    'class': 'custom-scroll',
     '[style.display]': 'display',
     '[style]': 'positionStyle',
     '[style.width.px]': 'width',

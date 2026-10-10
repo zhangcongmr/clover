@@ -5,23 +5,39 @@
 }
 :host(.ast-right-menu) {
   align-items: flex-start;
-  background: var(--vscode-background);
-  border: none;
-  box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: var(--borderless-item-radius, 8px);
-  min-width: 160px;
+  min-width: 200px;
+  max-height: 400px;
+  /* 仅在内容超出 400px 时才出现滚动条：若强制 overflow-y: scroll，
+     菜单右侧会常驻一条滚动条槽，子菜单贴着槽外侧定位，鼠标从父项移向
+     子菜单时会先经过该槽（属于面板而非菜单项），触发父项 mouseleave
+     导致子菜单瞬间消失。 */
+  overflow: hidden auto;
   font-size: var(--vscode-menu-font-size, 13px);
-  color: var(--vscode-foreground);
+  color: var(--vscode-dropdown-foreground);
   z-index: 1000;
-  transition: box-shadow 0.2s ease;
 }
 
 :host(.ast-right-menu) .ast-menu-every-item {
+  display: flex;
+  width: 100%;
+  gap: 8px;
   background: transparent;
-  border-radius: var(--borderless-item-radius, 8px);
+  border-radius: 0;
   margin: 0;
   padding: 8px 12px;
-  height: auto;
+  height: 36px;
+  font-weight: 500;
+  color: var(--vscode-dropdown-foreground);
+  transition: background-color 0.15s;
+}
+
+:host(.ast-right-menu) .ast-menu-every-item svg,
+:host(.ast-right-menu) .ast-menu-every-item img {
+  margin-right: 0;
 }
 
 :host(.ast-right-menu) .ast-menu-every-item:hover {
@@ -29,8 +45,8 @@
 }
 
 :host(.ast-right-menu) .ast-menu-every-item.active {
-  background: var(--vscode-item-active-background, rgba(0, 102, 204, 0.12));
-  color: var(--borderless-accent, #0066cc);
+  background: var(--vscode-hover-background);
+  color: var(--vscode-dropdown-foreground);
 }
 
 :host(.ast-right-menu) .has-submenu {
@@ -59,13 +75,14 @@
 }
 
 :host(.ast-right-menu) .submenu-container {
-  background: var(--vscode-background);
-  border: none;
-  box-shadow: var(--vscode-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: var(--borderless-item-radius, 8px);
-  min-width: 160px;
+  min-width: 200px;
+  max-height: 400px;
+  overflow-x: hidden;
   font-size: var(--vscode-menu-font-size, 13px);
-  color: var(--vscode-foreground);
+  color: var(--vscode-dropdown-foreground);
   z-index: 1001;
-  transition: box-shadow 0.2s ease;
 }

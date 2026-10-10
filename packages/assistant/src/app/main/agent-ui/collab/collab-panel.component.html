@@ -131,18 +131,36 @@
               <div class="settings-options">
                 @for (option of participant.configOptions ?? []; track option.id) {
                   @if (option.type === 'select' && (option.options?.length ?? 0) > 0) {
-                    <label class="settings-option">
+                    <div class="settings-option">
                       <span class="settings-option-label">{{ option.name || option.id }}</span>
-                      <select
-                        class="settings-select"
-                        [ngModel]="option.currentValue"
+                      <button
+                        type="button"
+                        class="settings-select-trigger"
                         [disabled]="collab.sending()"
-                        (ngModelChange)="onConfigChange(participant.agentId, option, $event)">
-                        @for (item of option.options ?? []; track item.value) {
-                          <option [value]="item.value">{{ item.name }}</option>
-                        }
-                      </select>
-                    </label>
+                        (click)="toggleSelect(participant.agentId, option, $event)">
+                        <span>{{ optionLabel(option) }}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </button>
+                      @if (isSelectOpen(participant.agentId, option)) {
+                        <div
+                          class="settings-select-dropdown custom-scroll"
+                          [style.left.px]="openSelectPos()?.left"
+                          [style.top.px]="openSelectPos()?.top"
+                          [style.min-width.px]="openSelectPos()?.width">
+                          @for (item of option.options ?? []; track item.value) {
+                            <button
+                              type="button"
+                              class="settings-select-option"
+                              [class.active]="item.value === option.currentValue"
+                              (click)="chooseOption(participant.agentId, option, item.value)">
+                              {{ item.name }}
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
                   } @else if (option.type === 'boolean') {
                     <label class="settings-option boolean">
                       <input
