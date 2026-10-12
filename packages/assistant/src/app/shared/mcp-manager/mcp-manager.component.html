@@ -1,6 +1,30 @@
 <div class="mcp-manager">
   <div class="toolbar">
-    <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Server</button>
+    <div class="tabs" role="tablist" aria-label="MCP server sources">
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="tab === 'configured'"
+        [attr.aria-selected]="tab === 'configured'"
+        (click)="switchTab('configured')"
+      >
+        Configured
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="tab === 'registry'"
+        [attr.aria-selected]="tab === 'registry'"
+        (click)="switchTab('registry')"
+      >
+        Official Registry
+      </button>
+    </div>
+    @if (tab === 'configured') {
+      <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Server</button>
+    }
   </div>
 
   @if (error) {
@@ -10,35 +34,143 @@
     </div>
   }
 
-  @if (loading) {
-    <div class="status-line">Loading…</div>
-  } @else if (servers.length === 0) {
-    <div class="status-line">No MCP servers configured.</div>
-  } @else {
-    <ul class="item-list">
-      @for (server of servers; track server.name) {
-        <li class="item-row">
-          <div class="item-main">
-            <div class="item-title">
-              <span class="item-name">{{ server.name }}</span>
-              <span class="item-type">{{ server.type }}</span>
+  @if (tab === 'configured') {
+    @if (loading) {
+      <div class="status-line">Loading…</div>
+    } @else if (servers.length === 0) {
+      <div class="status-line">No MCP servers configured.</div>
+    } @else {
+      <ul class="item-list">
+        @for (server of servers; track server.name) {
+          <li class="item-row">
+            <div class="item-main">
+              <div class="item-title">
+                <span class="item-name">{{ server.name }}</span>
+                <span class="item-type">{{ server.type }}</span>
+              </div>
+              @if (server.description) {
+                <div class="item-desc">{{ server.description }}</div>
+              }
+              @if (server.type === 'stdio') {
+                <div class="item-meta">{{ server.command }}@if (server.args?.length) { {{ server.args!.join(' ') }} }</div>
+              } @else {
+                <div class="item-meta">{{ server.url }}</div>
+              }
             </div>
-            @if (server.description) {
-              <div class="item-desc">{{ server.description }}</div>
-            }
-            @if (server.type === 'stdio') {
-              <div class="item-meta">{{ server.command }}@if (server.args?.length) { {{ server.args!.join(' ') }} }</div>
-            } @else {
-              <div class="item-meta">{{ server.url }}</div>
-            }
+            <div class="item-actions">
+              <button type="button" class="btn btn-ghost" (click)="openEditForm(server)">Edit</button>
+              <button type="button" class="btn btn-ghost btn-danger" (click)="deleteServer(server.name)">Delete</button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <!-- 聚合：官方 MCP Registry 浏览 -->
+    <div class="registry-panel">
+      <div class="search-row">
+        <input
+          type="search"
+          class="registry-search"
+          placeholder="Search official registry (e.g. filesystem)"
+          [ngModel]="registrySearch"
+          (ngModelChange)="onRegistrySearchChange($event)"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search official MCP registry"
+        />
+      </div>
+
+      @if (registryLoading && registryItems.length === 0) {
+        <div class="status-line">Loading registry…</div>
+      } @else if (registryItems.length === 0) {
+        <div class="status-line">
+          @if (registryError) {
+            {{ registryError }}
+          } @else {
+            No servers found in the official registry.
+          }
+        </div>
+      } @else {
+        @if (registryError) {
+          <div class="registry-error" role="alert">{{ registryError }}</div>
+        }
+        <ul class="item-list">
+          @for (item of registryItems; track item.key) {
+            <li class="item-row">
+              <div class="item-main">
+                <div class="item-title">
+                  <span class="item-name">{{ item.server.title || item.server.name }}</span>
+                  @if (item.server.version) {
+                    <span class="badge badge-version">v{{ item.server.version }}</span>
+                  }
+                  @if (item.status === 'deprecated') {
+                    <span class="badge badge-deprecated" title="This server version is deprecated">deprecated</span>
+                  }
+                </div>
+                @if (item.server.title && item.server.title !== item.server.name) {
+                  <div class="item-name-sub">{{ item.server.name }}</div>
+                }
+                @if (item.server.description) {
+                  <div class="item-desc">{{ item.server.description }}</div>
+                }
+                @if (registryPreview(item); as preview) {
+                  <div class="item-meta">{{ preview }}</div>
+                }
+              </div>
+              <div class="item-actions">
+                @if (installedLocalName(item)) {
+                  <span class="badge badge-installed" title="A local server with this name already exists">installed</span>
+                } @else if (canInstall(item)) {
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-install"
+                    [disabled]="!!installingKey"
+                    (click)="installRegistryServer(item)"
+                  >
+                    @if (installingKey === item.key) {
+                      Installing…
+                    } @else {
+                      Install
+                    }
+                  </button>
+                }
+                @if (registryLink(item); as link) {
+                  <a
+                    class="btn btn-ghost"
+                    [href]="link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open project page"
+                  >Open ↗</a>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+        @if (registryCursor) {
+          <div class="load-more-row">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              [disabled]="registryLoading"
+              (click)="loadRegistry(false)"
+            >
+              @if (registryLoading) {
+                Loading…
+              } @else {
+                Load more
+              }
+            </button>
           </div>
-          <div class="item-actions">
-            <button type="button" class="btn btn-ghost" (click)="openEditForm(server)">Edit</button>
-            <button type="button" class="btn btn-ghost btn-danger" (click)="deleteServer(server.name)">Delete</button>
-          </div>
-        </li>
+        }
       }
-    </ul>
+      <p class="registry-hint">
+        Data from the
+        <a href="https://registry.modelcontextprotocol.io/docs" target="_blank" rel="noopener noreferrer">official MCP registry</a>
+        (v0.1 API). Deprecated entries remain installable.
+      </p>
+    </div>
   }
 
   @if (showForm) {
