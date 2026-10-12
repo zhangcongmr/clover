@@ -44,6 +44,63 @@ export { createCORSMiddleware, createRequireAuth } from './api/middleware.js';
 
 // Skills
 export { SkillRegistry } from './skills/index.js';
+export type { SkillRegistryOptions } from './skills/index.js';
+export {
+  collectSkillSources,
+  directoryExists,
+  discoverSkills,
+  deriveSkillId,
+  isNestedSkillFile,
+  isRootSkillFile,
+  parseFrontMatter,
+  scanSkillSource,
+} from './skills/index.js';
+export type {
+  DiscoverOptions,
+  DiscoveredSkill,
+  ScanResult,
+  SkillDiscovery,
+  SkillSource,
+  SourceReport,
+} from './skills/index.js';
+export {
+  CONFIG_FILE_NAMES,
+  collectConfigSkillEntries,
+  parseOpencodeConfig,
+  stripJsonComments,
+  stripTrailingCommas,
+} from './skills/index.js';
+export type {
+  ConfigScanOptions,
+  ConfigScanResult,
+  ConfigSkillEntry,
+} from './skills/index.js';
+export {
+  catalogCacheKey,
+  catalogCacheRoot,
+  defaultCatalogCacheDir,
+  loadCachedCatalogDirs,
+  normalizeIndex,
+  refreshCatalog,
+  refreshCatalogs,
+  resolveCatalogFileUrl,
+  resolveDiscoveryUrl,
+  extractTarGz,
+} from './skills/index.js';
+export type {
+  CachedCatalogSkill,
+  CatalogArchiveEntry,
+  CatalogEntry,
+  CatalogFilesEntry,
+  CatalogRefreshOptions,
+  CatalogRefreshResult,
+  CatalogSkillMdEntry,
+  FetchLike,
+  TarExtractLimits,
+  TarExtractResult,
+  TarFile,
+} from './skills/index.js';
+export { resolveUserPath } from './skills/index.js';
 export type { Skill, SkillsStore } from './skills/index.js';
 export { createSkillRoutes } from './api/skill-routes.js';
 

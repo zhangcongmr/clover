@@ -112,8 +112,9 @@ export function setupAgentMiddleware(
   // MCP routes
   app.use('/api/mcp', createMcpRoutes(mcpRegistry));
 
-  // Skills routes
-  const skillRegistry = new SkillRegistry();
+  // Skills routes（autoRefresh: 启动后后台刷新一次 HTTP catalog 缓存，按 version 增量下载；
+  // 加载本身始终基于磁盘缓存同步完成，不受网络影响）
+  const skillRegistry = new SkillRegistry({ autoRefresh: true });
   app.use('/api/skills', createSkillRoutes(skillRegistry));
 
   return { tokenManager, fileService, ptyManager, mcpRegistry, skillRegistry, agentRegistry };
