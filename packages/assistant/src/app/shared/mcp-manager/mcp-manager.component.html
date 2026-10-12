@@ -81,7 +81,7 @@
         />
       </div>
 
-      @if (registryLoading && registryItems.length === 0) {
+      @if (registryLoading() && registryItems.length === 0) {
         <div class="status-line">Loading registry…</div>
       } @else if (registryItems.length === 0) {
         <div class="status-line">
@@ -153,10 +153,10 @@
             <button
               type="button"
               class="btn btn-secondary"
-              [disabled]="registryLoading"
+              [disabled]="registryLoading()"
               (click)="loadRegistry(false)"
             >
-              @if (registryLoading) {
+              @if (registryLoading()) {
                 Loading…
               } @else {
                 Load more
