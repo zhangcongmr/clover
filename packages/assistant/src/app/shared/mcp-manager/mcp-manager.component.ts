@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -50,7 +50,7 @@ export class McpManagerComponent implements OnDestroy {
   tab: ManagerTab = 'configured';
   registryItems: RegistryListItem[] = [];
   registryCursor: string | null = null;
-  registryLoading = false;
+  registryLoading = signal(false);
   registryError: string | null = null;
   registrySearch = '';
   /** 正在安装的 registry 条目 key（用于按钮态）。 */
@@ -94,7 +94,7 @@ export class McpManagerComponent implements OnDestroy {
 
   switchTab(tab: ManagerTab): void {
     this.tab = tab;
-    if (tab === 'registry' && this.registryItems.length === 0 && !this.registryLoading) {
+    if (tab === 'registry' && this.registryItems.length === 0 && !this.registryLoading()) {
       this.loadRegistry(true);
     }
   }
@@ -119,7 +119,7 @@ export class McpManagerComponent implements OnDestroy {
     const cursor = this.registryCursor;
     const search = this.registrySearch.trim();
 
-    this.registryLoading = true;
+    this.registryLoading.set(true);
     this.registryError = null;
 
     this.registryService
@@ -136,7 +136,7 @@ export class McpManagerComponent implements OnDestroy {
           ];
         }
         this.registryCursor = page.nextCursor;
-        this.registryLoading = false;
+        this.registryLoading.set(false);
       })
       .catch(err => {
         if (requestId !== this.registryRequestSeq) return;
@@ -144,7 +144,7 @@ export class McpManagerComponent implements OnDestroy {
           err instanceof Error && err.message
             ? err.message
             : 'Failed to reach the official MCP registry';
-        this.registryLoading = false;
+        this.registryLoading.set(false);
         console.error('Failed to load official MCP registry:', err);
       });
   }
