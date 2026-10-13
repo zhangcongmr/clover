@@ -1,53 +1,92 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import type { Skill, SkillsStore } from './types.js';
 import { discoverSkills, type DiscoverOptions, type SkillDiscovery } from './discovery.js';
-import { collectConfigSkillEntries } from './config.js';
-import { defaultCatalogCacheDir, refreshCatalogs } from './catalog.js';
 
-const STORE_DIR = join(homedir(), '.clover');
-const STORE_FILE = join(STORE_DIR, 'skills.json');
+/** 目录 store 内附属文件数量上限。 */
+const MAX_FILES_PER_SKILL = 100;
+/** 单个附属文件大小上限（512KB）。 */
+const MAX_FILE_BYTES = 512 * 1024;
+/** 附属文件总大小上限（4MB）。 */
+const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+/** skill 名（同时是目录名）。 */
+const SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 
 export interface SkillRegistryOptions extends DiscoverOptions {
-  /** 为 false 时只读取 `~/.clover/skills.json`，不扫描磁盘来源。 */
+  /** 为 false 时只读取 store，不扫描磁盘来源。 */
   discovery?: boolean;
-  /**
-   * 构造完成后后台刷新一次 HTTP catalog 缓存（只联网更新 `version` 变化的条目）。
-   * 无论成败，加载本身都基于磁盘缓存同步完成，不受网络影响。默认 false。
-   */
-  autoRefresh?: boolean;
+}
+
+/** 校验 skill 名，同时防御路径穿越。 */
+export function isValidSkillName(name: string): boolean {
+  return SKILL_NAME_RE.test(name);
+}
+
+/** 校验附属文件映射：安全相对路径、数量与体积上限；返回错误信息或 null。 */
+export function validateSkillFiles(files: Record<string, string> | undefined): string | null {
+  if (!files) return null;
+  const entries = Object.entries(files);
+  if (entries.length > MAX_FILES_PER_SKILL) {
+    return `too many supporting files (>${MAX_FILES_PER_SKILL})`;
+  }
+  let total = 0;
+  for (const [path, content] of entries) {
+    if (typeof content !== 'string') return `supporting file "${path}" must be a string`;
+    if (!isSafeRelativePath(path)) return `unsafe supporting file path "${path}"`;
+    const bytes = Buffer.byteLength(content, 'utf-8');
+    if (bytes > MAX_FILE_BYTES) return `supporting file "${path}" too large (>${MAX_FILE_BYTES} bytes)`;
+    total += bytes;
+  }
+  if (total > MAX_TOTAL_BYTES) return `supporting files too large in total (>${MAX_TOTAL_BYTES} bytes)`;
+  return null;
+}
+
+/** 安全的相对路径：无绝对路径/盘符/`..`/反斜杠，段非空且不以点开头。 */
+function isSafeRelativePath(path: string): boolean {
+  if (!path || path.startsWith('/') || path.includes('\\') || /^[a-zA-Z]:/.test(path)) return false;
+  const segments = path.split('/');
+  return segments.every((seg) => seg.length > 0 && seg !== '.' && seg !== '..' && !seg.startsWith('.'));
+}
+
+/** 把 description 写成安全的 YAML 双引号标量。 */
+function yamlQuote(value: string): string {
+  return `"${value.replace(/[\r\n]+/g, ' ').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/** 组装带 frontmatter 的 SKILL.md 内容。 */
+function renderSkillMarkdown(skill: Pick<Skill, 'name' | 'description'>, body: string): string {
+  return `---\nname: ${yamlQuote(skill.name)}\ndescription: ${yamlQuote(skill.description ?? '')}\n---\n\n${body.trim()}\n`;
 }
 
 export class SkillRegistry {
-  /** `~/.clover/skills.json` 的内容，是唯一可写入的存储。 */
+  /** legacy `~/.clover/skills.json`：只读 fallback + remove 时同步删除。 */
   private persisted: SkillsStore = { skills: {} };
   /** 聚合后的视图：store + 所有磁盘来源。 */
   private store: SkillsStore = { skills: {} };
-  /** 允许通过 API 修改（存在于 `skills.json` 中）的 skill ID。 */
+  /** 允许通过 API 修改的 skill ID（目录 store 写入 + legacy store 条目）。 */
   private writable = new Set<string>();
   private discovery: SkillDiscovery | null = null;
   private readonly options: SkillRegistryOptions;
-  /** 进行中的 catalog 刷新（并发调用复用同一个 Promise）。 */
-  private refreshPromise: Promise<SkillDiscovery | null> | null = null;
+  /** legacy JSON 文件位置（跟随 options.home，便于测试）。 */
+  private readonly storeFile: string;
+  /** 目录 store 根：`<home>/.clover/skills`（本身已是发现来源）。 */
+  private readonly storeRoot: string;
 
   constructor(options: SkillRegistryOptions = {}) {
     this.options = options;
+    const home = options.home ?? homedir();
+    this.storeFile = join(home, '.clover', 'skills.json');
+    this.storeRoot = join(home, '.clover', 'skills');
     this.loadStore();
-
-    if (options.autoRefresh && options.discovery !== false) {
-      void this.refreshRemote().catch((error) => {
-        console.error('[Skill Registry] Background catalog refresh failed:', error);
-      });
-    }
   }
 
   /**
-   * 载入 skill：先读 `~/.clover/skills.json`，再扫描
+   * 载入 skill：legacy `skills.json` 作为最低优先级 fallback，再扫描
    * 1. 全局目录（`~/.claude/skills`、`~/.agents/skills`、`~/.config/opencode/skills`、
-   *    `~/.clover/skills`，见 `collectSkillSources`；项目级来源永远不纳入发现）
+   *    `~/.clover/skills`；项目级来源永远不纳入发现）
    * 2. 全局 `opencode.json(c)` 与显式 `configFiles` 的 `skills` 条目
-   *    （本地路径与 HTTP catalog 缓存）
+   *    （本地路径原样作为来源；HTTP catalog 由前端直连查询，不参与发现）
    * 最后按优先级聚合为同一个视图。
    */
   private loadStore(): void {
@@ -72,13 +111,17 @@ export class SkillRegistry {
 
       this.discovery = discovery;
       this.store = { skills: discovery.skills };
-      this.writable = new Set(discovery.writable);
+
+      // 可写 = legacy store 独有条目 + 目录 store（`~/.clover/skills`）里的 skill
+      const writable = new Set(discovery.writable);
+      for (const [id, skill] of Object.entries(discovery.skills)) {
+        if (skill.source === DIR_STORE_LABEL) writable.add(id);
+      }
+      this.writable = writable;
 
       const total = Object.keys(discovery.skills).length;
-      const fromDisk = total - this.writable.size;
       console.log(
-        `[Skill Registry] Aggregated ${total} skill(s) from ${discovery.sources.length} source(s)` +
-          (fromDisk > 0 ? `, ${fromDisk} loaded from disk` : ''),
+        `[Skill Registry] Aggregated ${total} skill(s) from ${discovery.sources.length} source(s)`,
       );
     } catch (error) {
       console.error('[Skill Registry] Skill discovery failed:', error);
@@ -86,7 +129,7 @@ export class SkillRegistry {
     }
   }
 
-  /** 发现失败/被禁用时的兜底：只用 store 里的内容。 */
+  /** 发现失败/被禁用时的兜底：只用 legacy store 里的内容。 */
   private adoptStoreOnly(): void {
     this.discovery = null;
     this.store = { skills: { ...this.persisted.skills } };
@@ -94,22 +137,20 @@ export class SkillRegistry {
   }
 
   private readPersistedStore(): SkillsStore {
-    if (!existsSync(STORE_FILE)) return { skills: {} };
-    const data = readFileSync(STORE_FILE, 'utf-8');
+    if (!existsSync(this.storeFile)) return { skills: {} };
+    const data = readFileSync(this.storeFile, 'utf-8');
     const parsed = JSON.parse(data) as SkillsStore;
     if (!parsed || typeof parsed !== 'object' || !parsed.skills) return { skills: {} };
     return parsed;
   }
 
-  /** 只把 `skills.json` 里的内容写回磁盘，磁盘来源的 skill 不会被写入。 */
-  private saveStore(): void {
+  /** legacy JSON 仅在 remove 删除条目时重写（upsert 已迁移到目录 store）。 */
+  private savePersistedStore(): void {
     try {
-      if (!existsSync(STORE_DIR)) {
-        mkdirSync(STORE_DIR, { recursive: true });
-      }
-      writeFileSync(STORE_FILE, JSON.stringify(this.persisted, null, 2));
+      mkdirSync(dirname(this.storeFile), { recursive: true });
+      writeFileSync(this.storeFile, JSON.stringify(this.persisted, null, 2));
     } catch (error) {
-      console.error('[Skill Registry] Failed to save store:', error);
+      console.error('[Skill Registry] Failed to save legacy store:', error);
     }
   }
 
@@ -119,79 +160,80 @@ export class SkillRegistry {
     return this.discovery;
   }
 
-  /**
-   * 联网刷新配置中声明的 HTTP catalog 缓存，然后重新加载。
-   * - 并发调用会复用同一次刷新
-   * - 网络失败时保留旧缓存，加载不受影响
-   * - 只下载 `version` 变化或文件缺失的条目
-   */
-  async refreshRemote(): Promise<SkillDiscovery | null> {
-    if (this.options.discovery === false) return this.reload();
-    if (this.refreshPromise) return this.refreshPromise;
-
-    const promise = (async () => {
-      try {
-        const config = collectConfigSkillEntries({
-          home: this.options.home,
-          includeGlobal: this.options.includeGlobal,
-          configFiles: this.options.configFiles,
-        });
-        const urls = config.entries.filter((entry) => entry.kind === 'url').map((entry) => entry.value);
-
-        if (urls.length > 0) {
-          const cacheDir = this.options.cacheDir ?? defaultCatalogCacheDir(this.options.home);
-          const { errors } = await refreshCatalogs(urls, cacheDir, { fetchImpl: this.options.fetchImpl });
-          for (const error of errors) {
-            console.error('[Skill Registry] Catalog refresh:', error);
-          }
-        }
-      } catch (error) {
-        console.error('[Skill Registry] Catalog refresh failed:', error);
-      }
-
-      return this.reload();
-    })();
-
-    // 先同步赋值再等待，避免无 catalog 时 IIFE 同步跑完导致的状态残留
-    this.refreshPromise = promise;
-    try {
-      return await promise;
-    } finally {
-      if (this.refreshPromise === promise) this.refreshPromise = null;
-    }
-  }
-
   /** 最近一次发现的结果（来源列表、错误），未启用发现时为 null。 */
   getDiscovery(): SkillDiscovery | null {
     return this.discovery;
   }
 
   /**
-   * skill 是否可修改：只有存在于 `~/.clover/skills.json` 的条目可以。
-   * 扫描得到的 skill 每次启动都会重新读取，API 写入会被拒绝。
+   * skill 是否可修改：目录 store（`~/.clover/skills`）里的 skill，
+   * 以及 legacy `skills.json` 独有（未被目录来源覆盖）的条目。
+   * 扫描自其它来源（`~/.claude` 等）的 skill 只读。
    */
   canModify(name: string): boolean {
     return this.writable.has(name);
   }
 
-  upsert(name: string, skill: Omit<Skill, 'name'>): void {
-    const cleanName = name.trim();
-    const existing = this.persisted.skills[cleanName];
-    const next: Skill = { ...existing, ...skill, name: cleanName };
-    this.persisted.skills[cleanName] = next;
-    this.writable.add(cleanName);
-    // 覆盖可能来自磁盘来源的同名 skill，让写入立即可见
-    this.store.skills[cleanName] = { ...next };
-    this.saveStore();
-    console.log(`[Skill Registry] Skill "${cleanName}" saved`);
+  /** skill 的目录 store 路径。 */
+  private skillDir(name: string): string {
+    return join(this.storeRoot, name);
   }
 
+  /**
+   * 新增/更新 skill：写入目录 store `<home>/.clover/skills/<name>/`（SKILL.md +
+   * 附属文件），该目录本身是发现来源，写入即进入聚合视图。
+   * legacy `skills.json` 里的同名条目保留为备份（目录来源优先级更高，自动覆盖）。
+   */
+  upsert(name: string, skill: Omit<Skill, 'name'>, files?: Record<string, string>): void {
+    const cleanName = name.trim();
+    if (!isValidSkillName(cleanName)) {
+      throw new Error('name may only contain letters, numbers, hyphens and underscores');
+    }
+    const filesError = validateSkillFiles(files);
+    if (filesError) throw new Error(filesError);
+
+    const dir = this.skillDir(cleanName);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'SKILL.md'), renderSkillMarkdown({ name: cleanName, description: skill.description ?? '' }, skill.content ?? ''));
+
+    let fileCount = 0;
+    for (const [path, content] of Object.entries(files ?? {})) {
+      if (path === 'SKILL.md') continue; // 正文以 content 字段为准
+      const target = join(dir, path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, content);
+      fileCount++;
+    }
+
+    // 立即可见（source 标记为目录 store，canModify 据此放行）
+    const next: Skill = {
+      ...skill,
+      name: cleanName,
+      displayName: cleanName,
+      source: DIR_STORE_LABEL,
+      path: join(dir, 'SKILL.md'),
+      autoinvoke: true,
+    };
+    this.store.skills[cleanName] = next;
+    this.writable.add(cleanName);
+    console.log(
+      `[Skill Registry] Skill "${cleanName}" saved to directory store` +
+        (fileCount > 0 ? ` (${fileCount} supporting file(s))` : ''),
+    );
+  }
+
+  /** 删除 skill：目录 store 删目录，legacy JSON 有同名条目则一并删除（防复活）。 */
   remove(name: string): boolean {
-    if (!this.store.skills[name]) return false;
-    delete this.persisted.skills[name];
+    if (!isValidSkillName(name) || !this.store.skills[name]) return false;
+
+    if (this.persisted.skills[name]) {
+      delete this.persisted.skills[name];
+      this.savePersistedStore();
+    }
+    rmSync(this.skillDir(name), { recursive: true, force: true });
+
     this.writable.delete(name);
     delete this.store.skills[name];
-    this.saveStore();
     console.log(`[Skill Registry] Skill "${name}" removed`);
     return true;
   }
@@ -204,35 +246,76 @@ export class SkillRegistry {
     return Object.values(this.store.skills);
   }
 
+  /** 附属文件数量（目录 store 里的 skill；不含 SKILL.md 正文）。 */
+  fileCount(name: string): number {
+    return Object.keys(this.listSkillFiles(name)).length;
+  }
+
+  /** 按需读取附属文件映射（相对路径 → 内容；不含 SKILL.md）。 */
+  listSkillFiles(name: string): Record<string, string> {
+    const out: Record<string, string> = {};
+    if (!isValidSkillName(name)) return out;
+    const dir = this.skillDir(name);
+
+    const walk = (current: string, prefix: string): void => {
+      let dirents;
+      try {
+        dirents = readdirSync(current, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const dirent of dirents) {
+        if (Object.keys(out).length >= MAX_FILES_PER_SKILL) return;
+        const rel = prefix ? `${prefix}/${dirent.name}` : dirent.name;
+        const full = join(current, dirent.name);
+        if (dirent.isDirectory()) {
+          walk(full, rel);
+        } else if (dirent.isFile() && rel !== 'SKILL.md') {
+          try {
+            out[rel] = readFileSync(full, 'utf-8');
+          } catch {
+            // 跳过不可读文件
+          }
+        }
+      }
+    };
+
+    try {
+      if (statSync(dir).isDirectory()) walk(dir, '');
+    } catch {
+      // 目录不存在：无附属文件
+    }
+    return out;
+  }
+
   /**
-   * Duplicate a skill and insert the copy immediately after the source
-   * in the store (so list order reflects it).
+   * 复制 skill，副本插入到原 skill 之后（列表顺序可见）。
+   * 源为目录 store skill 时连同附属文件一起复制。
    */
   duplicate(name: string): Skill | null {
     const source = this.store.skills[name];
-    if (!source) return null;
+    if (!source || !isValidSkillName(name)) return null;
 
     const newName = this.uniqueCopyName(name);
-    const copy: Skill = { ...source, name: newName };
+    const sourceFiles = this.listSkillFiles(name);
+    this.upsert(newName, { description: source.description, content: source.content }, sourceFiles);
+
+    const copy = this.store.skills[newName]!;
 
     const entries = Object.entries(this.store.skills);
     const next: Record<string, Skill> = {};
     let inserted = false;
     for (const [key, value] of entries) {
+      if (key === newName) continue; // 先摘掉 upsert 追加到末尾的副本
       next[key] = value;
       if (key === name) {
         next[newName] = copy;
         inserted = true;
       }
     }
-    if (!inserted) {
-      next[newName] = copy;
-    }
-
+    if (!inserted) next[newName] = copy;
     this.store.skills = next;
-    this.persisted.skills[newName] = copy;
-    this.writable.add(newName);
-    this.saveStore();
+
     console.log(`[Skill Registry] Skill "${name}" duplicated as "${newName}"`);
     return copy;
   }
@@ -247,3 +330,6 @@ export class SkillRegistry {
     return candidate;
   }
 }
+
+/** 目录 store 在发现结果里的来源标签（与 `collectSkillSources` 保持一致）。 */
+const DIR_STORE_LABEL = '~/.clover/skills';

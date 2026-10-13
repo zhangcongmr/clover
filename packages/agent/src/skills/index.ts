@@ -1,4 +1,4 @@
-export { SkillRegistry } from './registry.js';
+export { SkillRegistry, isValidSkillName, validateSkillFiles } from './registry.js';
 export type { SkillRegistryOptions } from './registry.js';
 export {
   collectSkillSources,
@@ -31,29 +31,5 @@ export type {
   ConfigSkillEntry,
   ConfigSkillEntryKind,
 } from './config.js';
-export {
-  catalogCacheKey,
-  catalogCacheRoot,
-  defaultCatalogCacheDir,
-  loadCachedCatalogDirs,
-  normalizeIndex,
-  refreshCatalog,
-  refreshCatalogs,
-  resolveCatalogFileUrl,
-  resolveDiscoveryUrl,
-} from './catalog.js';
-export type {
-  CachedCatalogSkill,
-  CatalogArchiveEntry,
-  CatalogEntry,
-  CatalogFilesEntry,
-  CatalogRefreshOptions,
-  CatalogRefreshResult,
-  CatalogSkillMdEntry,
-  FetchLike,
-  FetchLikeResponse,
-} from './catalog.js';
-export { extractTarGz } from './tar.js';
-export type { TarExtractLimits, TarExtractResult, TarFile } from './tar.js';
 export { resolveUserPath } from './paths.js';
 export type { Skill, SkillsStore } from './types.js';

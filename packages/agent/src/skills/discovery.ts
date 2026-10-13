@@ -4,7 +4,6 @@ import { homedir } from 'node:os';
 import type { Skill } from './types.js';
 import { directoryExists, resolveUserPath } from './paths.js';
 import { collectConfigSkillEntries } from './config.js';
-import { defaultCatalogCacheDir, loadCachedCatalogDirs, type FetchLike } from './catalog.js';
 
 export { directoryExists } from './paths.js';
 
@@ -16,10 +15,13 @@ export { directoryExists } from './paths.js';
  *   - 任意深度的 `SKILL.md`：`<source>/team/release/SKILL.md`  -> ID `release`
  * 来源目录名本身（如 `skills`）不参与 ID 计算。
  *
- * 发现范围刻意收窄为**用户级**来源：全局目录（`~/.claude/skills` 等）、
- * 全局 `opencode.json(c)` 的 `skills` 条目、HTTP catalog 缓存，以及调用方
- * 显式传入的 `extraRoots` / `configFiles`。项目内的 `.claude` / `.agents` /
- * `.opencode` 目录与项目配置文件**永远不纳入发现**，详见 `collectSkillSources`。
+ * 发现范围刻意收窄为**用户级**来源：全局目录（`~/.claude/skills` 等，
+ * 含可写的目录 store `~/.clover/skills`）、全局 `opencode.json(c)` 的本地
+ * 路径条目，以及调用方显式传入的 `extraRoots` / `configFiles`。项目内的
+ * `.claude` / `.agents` / `.opencode` 目录与项目配置文件**永远不纳入发现**。
+ *
+ * HTTP catalog URL 仅收集进 `report.catalogs`（由前端浏览器直连查询），
+ * 后端不下载、不缓存。
  */
 
 /** 旧的 JSON store 位置，作为最低优先级来源。 */
@@ -56,13 +58,6 @@ export interface SkillSource {
   label: string;
   /** 该来源的扫描深度上限。 */
   maxDepth: number;
-  /** `catalog` 表示来自 HTTP catalog 的磁盘缓存。 */
-  kind?: 'dir' | 'catalog';
-  /**
-   * catalog 条目名：存在时该来源只产出一个 skill——只认根层的
-   * `<entryName>.md` 或 `SKILL.md`，ID 强制为条目名，其余文件视为支持文件。
-   */
-  entryName?: string;
 }
 
 export interface DiscoverOptions {
@@ -80,10 +75,6 @@ export interface DiscoverOptions {
   includeConfig?: boolean;
   /** 额外指定的配置文件（追加在全局配置之后）。 */
   configFiles?: string[];
-  /** HTTP catalog 磁盘缓存目录，默认 `<home>/.clover/skills-cache`。 */
-  cacheDir?: string;
-  /** 注入的 fetch 实现（测试用），默认全局 `fetch`。 */
-  fetchImpl?: FetchLike;
   maxDepth?: number;
 }
 
@@ -233,38 +224,8 @@ export interface ScanResult {
   errors: string[];
 }
 
-/**
- * catalog 条目来源的单技能扫描：只认根层的 `<entryName>.md` 或 `SKILL.md`，
- * ID 强制为条目名（不走路径推导），其余文件（references/ 等）视为支持文件。
- */
-function scanEntrySource(source: SkillSource, entryName: string): ScanResult {
-  const errors: string[] = [];
-
-  const candidates = [join(source.dir, `${entryName}.md`)];
-  try {
-    for (const dirent of readdirSync(source.dir, { withFileTypes: true })) {
-      if (dirent.isFile() && dirent.name.toLowerCase() === 'skill.md') {
-        candidates.push(join(source.dir, dirent.name));
-      }
-    }
-  } catch (error) {
-    errors.push(`Failed to read skill directory ${source.dir}: ${messageOf(error)}`);
-    return { entries: [], errors };
-  }
-
-  for (const candidate of candidates) {
-    if (!existsSync(candidate)) continue;
-    const skill = readSkillFile(candidate, entryName, source, errors);
-    return { entries: skill ? [skill] : [], errors };
-  }
-
-  return { entries: [], errors };
-}
-
 /** 扫描单个来源目录：根层 markdown + 任意深度（有上限）的 `SKILL.md`。 */
 export function scanSkillSource(source: SkillSource): ScanResult {
-  if (source.entryName) return scanEntrySource(source, source.entryName);
-
   const entries: DiscoveredSkill[] = [];
   const errors: string[] = [];
 
@@ -330,13 +291,13 @@ function sourceKey(dir: string): string {
  *
  *  1. `~/.claude/skills`
  *  2. `~/.agents/skills`
- *  3. `~/.config/opencode/skills`、`~/.clover/skills`
+ *  3. `~/.config/opencode/skills`、`~/.clover/skills`（后者是目录 store）
  *  4. `extraRoots`（调用方显式指定）
- *  5. `opencode.json(c)` 的 `skills` 条目（最高优先级）：按 全局配置 ->
- *    显式 `configFiles`、文件内数组顺序；本地路径与 HTTP catalog 缓存
- *    的来源根在同一遍历中保持原有交错顺序。
+ *  5. `opencode.json(c)` 的本地路径条目（最高优先级）：按 全局配置 ->
+ *    显式 `configFiles`、文件内数组顺序。
  *
- * 同一个目录只会注册一次（先出现的标签保留）。
+ * HTTP catalog URL（`http(s)://…`）不产生来源目录，只收集进 `report.catalogs`
+ * 供前端直连查询。同一个目录只会注册一次（先出现的标签保留）。
  */
 export function collectSkillSources(options: DiscoverOptions = {}, report?: SourceReport): SkillSource[] {
   const out: SourceReport = report ?? { errors: [], configFiles: [], catalogs: [] };
@@ -348,17 +309,12 @@ export function collectSkillSources(options: DiscoverOptions = {}, report?: Sour
   const sources: SkillSource[] = [];
   const seen = new Set<string>();
 
-  const push = (
-    dir: string,
-    label: string,
-    kind: SkillSource['kind'] = 'dir',
-    entryName?: string,
-  ): void => {
+  const push = (dir: string, label: string): void => {
     const absolute = resolve(dir);
     const key = sourceKey(absolute);
     if (seen.has(key)) return;
     seen.add(key);
-    sources.push({ dir: absolute, label, maxDepth, kind, entryName });
+    sources.push({ dir: absolute, label, maxDepth });
   };
 
   // 1. 全局兼容性目录
@@ -367,7 +323,7 @@ export function collectSkillSources(options: DiscoverOptions = {}, report?: Sour
   // 2. 全局兼容性目录
   if (includeGlobal) push(join(home, '.agents', 'skills'), '~/.agents/skills');
 
-  // 3. 全局 opencode 目录（含与 skills.json 并列的 ~/.clover/skills）
+  // 3. 全局 opencode 目录（含目录 store ~/.clover/skills）
   if (includeGlobal) {
     push(join(home, '.config', 'opencode', 'skills'), '~/.config/opencode/skills');
     push(join(home, '.clover', 'skills'), '~/.clover/skills');
@@ -379,7 +335,7 @@ export function collectSkillSources(options: DiscoverOptions = {}, report?: Sour
     push(resolveUserPath(root.trim(), cwd, home), root.trim());
   }
 
-  // 5. opencode.json(c) 的 skills 条目：本地路径与 HTTP catalog 缓存
+  // 5. opencode.json(c) 的 skills 条目：本地路径成为来源；URL 仅上报给前端
   if (options.includeConfig !== false) {
     const config = collectConfigSkillEntries({
       home,
@@ -389,16 +345,11 @@ export function collectSkillSources(options: DiscoverOptions = {}, report?: Sour
     out.errors.push(...config.errors);
     out.configFiles.push(...config.files);
 
-    const cacheDir = options.cacheDir ?? defaultCatalogCacheDir(home);
-
     for (const entry of config.entries) {
       if (entry.kind === 'path') {
         push(resolveUserPath(entry.value, cwd, home), entry.value);
-      } else {
-        if (!out.catalogs.includes(entry.value)) out.catalogs.push(entry.value);
-        for (const cached of loadCachedCatalogDirs(entry.value, cacheDir)) {
-          push(cached.dir, entry.value, 'catalog', cached.entryName);
-        }
+      } else if (!out.catalogs.includes(entry.value)) {
+        out.catalogs.push(entry.value);
       }
     }
   }
