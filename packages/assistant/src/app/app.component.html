@@ -347,7 +347,7 @@
 
 <!-- Skills Manager Dialog -->
 @if (showSkillsManager()) {
-  <div class="modal-overlay" (click)="closeSkillsManager()">
+  <div class="modal-overlay" (mousedown)="onOverlayMouseDown($event)" (click)="onSkillsOverlayClick($event)">
     <div class="modal skill-manager-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Skills</h3>
@@ -362,7 +362,7 @@
 
 <!-- MCP Manager Dialog -->
 @if (showMcpManager()) {
-  <div class="modal-overlay" (click)="closeMcpManager()">
+  <div class="modal-overlay" (mousedown)="onOverlayMouseDown($event)" (click)="onMcpOverlayClick($event)">
     <div class="modal mcp-manager-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>MCP Servers</h3>
