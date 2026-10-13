@@ -10,7 +10,13 @@ import { AfterViewInit, Component, OnChanges, OnInit, SimpleChanges, ViewEncapsu
 export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
   visible = input(false);
   readonly title = input("");
-  readonly modalSize = input<"small" | "medium" | "large" | "">("");
+  readonly modalSize = input<"small" | "medium" | "large" | "xlarge" | "">("");
+  /** 是否渲染背景遮罩（压暗 + 点遮罩关闭）。默认关闭，避免影响已有 ast-modal 调用方；管理器显式开启。 */
+  readonly backdrop = input(false);
+  /** 是否允许拖动标题栏移动对话框。默认开启。 */
+  readonly draggable = input(true);
+  /** 内容区是否可滚动（overflow-y:auto）。默认开启。 */
+  readonly scrollable = input(true);
   readonly close = output<any>();
   readonly visibleChange = output<any>();
 
@@ -45,6 +51,21 @@ export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
     this.close.emit('c');
   }
 
+  // 遮罩关闭：仅在“主键从遮罩上按下、且松开也落在遮罩上”时关闭，
+  // 以避免从对话框内拖动到遮罩松开时误关（与旧 app.component 的判定等价）。
+  backdropPressed = false;
+
+  onBackdropMouseDown(event: MouseEvent): void {
+    this.backdropPressed = event.button === 0 && event.target === event.currentTarget;
+  }
+
+  onBackdropClick(event: MouseEvent): void {
+    if (this.backdropPressed && event.target === event.currentTarget) {
+      this.closeDlg();
+    }
+    this.backdropPressed = false;
+  }
+
   // 拖动功能实现
   dragHandle: any;
   dialogContainer: any;
@@ -53,6 +74,7 @@ export class AstModalComponent implements OnInit, OnChanges, AfterViewInit {
   offsetY = 0;
 
   startDrag(e: any) {
+    if (!this.draggable()) return;
     this.dragHandle = e.currentTarget;
     this.dialogContainer = this.dragHandle.parentElement.parentElement;
 

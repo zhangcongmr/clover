@@ -1,20 +1,26 @@
 @if (visible()) {
-<div [attr.id]="elementId" class="ast-modal-container"
-  [class.ast-modal-small]="modalSize() === 'small'"
-  [class.ast-modal-medium]="modalSize() === 'medium'"
-  [class.ast-modal-large]="modalSize() === 'large'">
-  <div data-layer="ast-modal" class="AstModal ast-modal">
-    <div data-layer="ast-modal-header" class="AstModalHeader ast-modal-header" (mousedown)="startDrag($event)">
-      <div data-layer="title" class="Title ast-title">{{title()}}</div>
-      <div data-svg-wrapper="" data-layer="close-btn" class="close-button" (click)="closeDlg()"
-        (mousedown)="$event.stopPropagation()">
-        <svg class="icon ast-modal-close-icon" width="18" height="18">
-          <use href="#icon-close-icon"></use>
-        </svg>
+  @if (backdrop()) {
+    <div class="ast-modal-backdrop" (mousedown)="onBackdropMouseDown($event)" (click)="onBackdropClick($event)"></div>
+  }
+  <div [attr.id]="elementId" class="ast-modal-container"
+    [class.ast-modal-small]="modalSize() === 'small'"
+    [class.ast-modal-medium]="modalSize() === 'medium'"
+    [class.ast-modal-large]="modalSize() === 'large'"
+    [class.ast-modal-xlarge]="modalSize() === 'xlarge'"
+    [class.ast-modal-scrollable]="scrollable()">
+    <div data-layer="ast-modal" class="AstModal ast-modal">
+      <div data-layer="ast-modal-header" class="AstModalHeader ast-modal-header"
+        [class.ast-modal-nodrag]="!draggable()" (mousedown)="startDrag($event)">
+        <div data-layer="title" class="Title ast-title">{{title()}}</div>
+        <div data-svg-wrapper="" data-layer="close-btn" class="close-button" (click)="closeDlg()"
+          (mousedown)="$event.stopPropagation()">
+          <svg class="icon ast-modal-close-icon" width="18" height="18">
+            <use href="#icon-close-icon"></use>
+          </svg>
+        </div>
       </div>
+      <ng-content select=".ast-modal-body"></ng-content>
+      <ng-content select=".ast-describe-btns"></ng-content>
     </div>
-    <ng-content select=".ast-modal-body"></ng-content>
-    <ng-content select=".ast-describe-btns"></ng-content>
   </div>
-</div>
 }

@@ -31,6 +31,21 @@
     height: 400px;
 }
 
+.ast-modal-container.ast-modal-xlarge {
+    width: min(880px, 92vw);
+    height: min(680px, 88vh);
+    max-width: none;
+    max-height: none;
+}
+
+/* 背景遮罩：压暗页面，点遮罩可关闭（防误触判定在组件内）。 */
+.ast-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    z-index: 999;
+}
+
 
 .ast-modal-content {
     height: 24rem;
@@ -64,12 +79,17 @@
     align-self: stretch;
     border-bottom: none;
     display: inline-flex;
-    height: 30px;
+    height: 48px;
     justify-content: space-between;
     cursor: move;
     /* 显示可拖动光标 */
     user-select: none;
     /* 禁止文本选中 */
+}
+
+/* 当不可拖动时（draggable=false），标题栏不显示拖动光标 */
+.ast-modal-header.ast-modal-nodrag {
+    cursor: default;
 }
 
 .ast-title {
@@ -81,7 +101,8 @@
 }
 
 .close-button {
-    width: 2rem;
+    width: 32px;
+    height: 32px;
     align-content: center;
     align-self: stretch;
     align-items: center;
@@ -99,12 +120,16 @@
 }
 
 ast-modal .ast-modal-body {
-    align-items: center;
     align-self: stretch;
-    display: inline-flex;
+    display: block;
     flex: 1 1 0;
-    justify-content: flex-start;
+    min-height: 0;
+    padding: 16px;
     overflow-y: hidden;
+}
+
+.ast-modal-container.ast-modal-scrollable .ast-modal-body {
+    overflow-y: auto;
 }
 
 

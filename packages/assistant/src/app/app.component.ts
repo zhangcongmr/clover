@@ -24,6 +24,7 @@ import { NotificationService } from './shared/notification/notification.service'
 import { McpManagerComponent } from './shared/mcp-manager/mcp-manager.component';
 import { SkillManagerComponent } from './shared/skill-manager/skill-manager.component';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
+import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
 import { KeepAliveDirective } from './shared/keep-alive.directive';
@@ -56,7 +57,7 @@ interface DockItem {
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
-        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent], // Add TerminalComponent to imports
+        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, AstModalComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
@@ -1155,35 +1156,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
    */
   toggleIndicatorDetailPanel(indicatorDetailType: number | 'none') {
     this.indicatorDetailType = indicatorDetailType;
-  }
-
-  /**
-   * 遮罩关闭手势的起点标记。
-   *
-   * mousedown 与 mouseup 落在不同元素时，click 会派发到两者的最近共同祖先
-   * （例如“在 modal 内按下、移到 overlay/窗外松开”时 click 直接派发在遮罩上，
-   * 根本不经过 modal，内层 stopPropagation 无效）。因此不能只看 click 的落点，
-   * 还必须确认手势是从遮罩本身开始按下（mousedown 精确派发在按下元素上），
-   * 才允许关闭。
-   */
-  private overlayPressedOnBackdrop = false;
-
-  onOverlayMouseDown(event: MouseEvent): void {
-    this.overlayPressedOnBackdrop =
-      event.button === 0 && event.target === event.currentTarget;
-  }
-
-  onSkillsOverlayClick(event: MouseEvent): void {
-    if (this.isBackdropClick(event)) this.closeSkillsManager();
-  }
-
-  onMcpOverlayClick(event: MouseEvent): void {
-    if (this.isBackdropClick(event)) this.closeMcpManager();
-  }
-
-  /** 遮罩关闭判定：主键从遮罩上按下，且 click 也落在遮罩上。 */
-  private isBackdropClick(event: MouseEvent): boolean {
-    return this.overlayPressedOnBackdrop && event.target === event.currentTarget;
   }
 
   toggleSkillsManager(): void {
