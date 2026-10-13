@@ -1459,7 +1459,7 @@ export class AcpChatInputComponent {
     }
 
     // Expand leading local skill (/name ...) into its content for the agent
-    const text = this.expandSkillText(rawText);
+    const text = await this.expandSkillText(rawText);
 
     // Build content blocks
     const content: ContentBlock[] = [];
@@ -1506,15 +1506,48 @@ export class AcpChatInputComponent {
   /**
    * If the message starts with a local skill slash (`/name ...`), replace the
    * leading token with the skill's content. ACP native commands are left as-is.
+   *
+   * Skills installed from a catalog may carry supporting files (references/,
+   * assets/); those are inlined as an appendix so the agent can read them
+   * without filesystem access. The appendix is capped so a single skill cannot
+   * blow up the prompt.
    */
-  private expandSkillText(text: string): string {
+  private async expandSkillText(text: string): Promise<string> {
     if (!text.startsWith('/')) return text;
     const match = text.match(/^\/([^\s]+)(?:\s+([\s\S]*))?$/);
     if (!match) return text;
     const skill = this.skillService.getByName(match[1]);
     if (!skill) return text;
+
+    let body = skill.content;
+    const files = await this.skillService.loadFiles(skill.name);
+    const appendix = this.renderSupportingFiles(files);
+    if (appendix) body = `${body}\n${appendix}`;
+
     const rest = (match[2] || '').trim();
-    return rest ? `${skill.content}\n\n${rest}` : skill.content;
+    return rest ? `${body}\n\n${rest}` : body;
+  }
+
+  /** 附属文件附录的总大小上限（字符）。 */
+  private static readonly SUPPORTING_FILES_CHAR_BUDGET = 200_000;
+
+  /** 把附属文件渲染成附录（路径标题 + fenced block），超出预算即截断。 */
+  private renderSupportingFiles(files: Record<string, string>): string {
+    const entries = Object.entries(files);
+    if (entries.length === 0) return '';
+
+    const parts: string[] = ['\n---\n## Supporting files'];
+    let used = 0;
+    for (const [path, content] of entries) {
+      const block = `\n### ${path}\n\`\`\`\n${content}\n\`\`\`\n`;
+      if (used + block.length > AcpChatInputComponent.SUPPORTING_FILES_CHAR_BUDGET) {
+        parts.push(`\n_(supporting files truncated: ${path} omitted)_`);
+        break;
+      }
+      parts.push(block);
+      used += block.length;
+    }
+    return parts.join('');
   }
 
   onInput(): void {

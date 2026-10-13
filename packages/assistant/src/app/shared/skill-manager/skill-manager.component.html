@@ -1,6 +1,30 @@
 <div class="skill-manager">
   <div class="toolbar">
-    <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Skill</button>
+    <div class="tabs" role="tablist" aria-label="Skill sources">
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="tab === 'configured'"
+        [attr.aria-selected]="tab === 'configured'"
+        (click)="switchTab('configured')"
+      >
+        Configured
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.active]="tab === 'catalog'"
+        [attr.aria-selected]="tab === 'catalog'"
+        (click)="switchTab('catalog')"
+      >
+        HTTP Catalog
+      </button>
+    </div>
+    @if (tab === 'configured') {
+      <button type="button" class="btn btn-primary" (click)="openAddForm()">Add Skill</button>
+    }
   </div>
 
   @if (error) {
@@ -10,40 +34,114 @@
     </div>
   }
 
-  @if (loading) {
-    <div class="status-line">Loading…</div>
-  } @else if (skills.length === 0) {
-    <div class="status-line">No skills yet.</div>
-  } @else {
-    <ul class="item-list">
-      @for (skill of skills; track skill.name) {
-        <li class="item-row">
-          <div class="item-main">
-            <div class="item-name">
-              {{ skill.name }}
+  @if (tab === 'configured') {
+    @if (loading) {
+      <div class="status-line">Loading…</div>
+    } @else if (skills.length === 0) {
+      <div class="status-line">No skills yet.</div>
+    } @else {
+      <ul class="item-list">
+        @for (skill of skills; track skill.name) {
+          <li class="item-row">
+            <div class="item-main">
+              <div class="item-name">
+                {{ skill.name }}
+                @if (isBuiltIn(skill.name)) {
+                  <span class="badge-builtin">Built-in</span>
+                }
+              </div>
+              @if (skill.description) {
+                <div class="item-desc">{{ skill.description }}</div>
+              }
+              <div class="item-preview">{{ skill.content }}</div>
+            </div>
+            <div class="item-actions">
               @if (isBuiltIn(skill.name)) {
-                <span class="badge-builtin">Built-in</span>
+                <button type="button" class="btn btn-ghost" (click)="openViewForm(skill)">View</button>
+              } @else {
+                <button type="button" class="btn btn-ghost" (click)="openEditForm(skill)">Edit</button>
+              }
+              <button type="button" class="btn btn-ghost" (click)="copySkill(skill.name)">Copy</button>
+              @if (!isBuiltIn(skill.name)) {
+                <button type="button" class="btn btn-ghost btn-danger" (click)="deleteSkill(skill.name)">Delete</button>
               }
             </div>
-            @if (skill.description) {
-              <div class="item-desc">{{ skill.description }}</div>
-            }
-            <div class="item-preview">{{ skill.content }}</div>
-          </div>
-          <div class="item-actions">
-            @if (isBuiltIn(skill.name)) {
-              <button type="button" class="btn btn-ghost" (click)="openViewForm(skill)">View</button>
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <!-- HTTP Catalog：浏览器直连各 catalog 的 index.json（后端不缓存） -->
+    <div class="registry-panel">
+      <div class="search-row">
+        <input
+          type="search"
+          class="registry-search"
+          placeholder="Filter skills by name or description…"
+          [(ngModel)]="catalogSearch"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Filter catalog skills"
+        />
+      </div>
+
+      @if (catalogLoading) {
+        <div class="status-line">Loading catalogs…</div>
+      } @else {
+        @for (source of catalogSources; track source.url) {
+          @if (source.error) {
+            <div class="registry-error" role="alert">{{ source.error }}</div>
+          }
+        }
+        @if (filteredCatalogItems.length === 0) {
+          <div class="status-line">
+            @if (catalogSearch.trim()) {
+              No skills match "{{ catalogSearch.trim() }}".
             } @else {
-              <button type="button" class="btn btn-ghost" (click)="openEditForm(skill)">Edit</button>
-            }
-            <button type="button" class="btn btn-ghost" (click)="copySkill(skill.name)">Copy</button>
-            @if (!isBuiltIn(skill.name)) {
-              <button type="button" class="btn btn-ghost btn-danger" (click)="deleteSkill(skill.name)">Delete</button>
+              No skills found in any catalog.
             }
           </div>
-        </li>
+        } @else {
+          <ul class="item-list">
+            @for (row of filteredCatalogItems; track row.item.key) {
+              <li class="item-row">
+                <div class="item-main">
+                  <div class="item-name">
+                    {{ row.item.name }}
+                    <span class="badge badge-source" [title]="row.item.catalogUrl">{{ sourceLabel(row.source) }}</span>
+                  </div>
+                  @if (row.item.description) {
+                    <div class="item-desc">{{ row.item.description }}</div>
+                  }
+                </div>
+                <div class="item-actions">
+                  @if (isInstalled(row.item)) {
+                    <span class="badge badge-installed" title="A local skill with this name already exists">installed</span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-install"
+                      [disabled]="!!installingKey"
+                      (click)="installSkill(row.item)"
+                    >
+                      @if (installingKey === row.item.key) {
+                        Installing…
+                      } @else {
+                        Install
+                      }
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
       }
-    </ul>
+      <p class="registry-hint">
+        Skills are fetched live from each catalog's <code>index.json</code> (config + built-in defaults).
+        Installed skills appear under <strong>Configured</strong>.
+      </p>
+    </div>
   }
 
   @if (showForm) {

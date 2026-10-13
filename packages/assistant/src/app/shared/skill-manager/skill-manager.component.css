@@ -8,7 +8,137 @@
 
 .toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ===== Tab 切换（Configured / HTTP Catalog） ===== */
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--vscode-sideBar-background, var(--vscode-background));
+  border: 1px solid var(--vscode-border-color);
+  border-radius: var(--vscode-radius-sm, 4px);
+}
+
+.tab {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 6px 12px;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.tab:hover {
+  background: var(--vscode-hover-background);
+  color: var(--vscode-foreground);
+}
+
+.tab.active {
+  background: var(--vscode-button-background, var(--vscode-primary-background));
+  color: var(--vscode-button-foreground, #ffffff);
+}
+
+.tab.active:hover {
+  background: var(--vscode-button-background, var(--vscode-primary-background));
+  color: var(--vscode-button-foreground, #ffffff);
+}
+
+/* ===== HTTP Catalog 浏览 ===== */
+.registry-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-row {
+  display: flex;
+}
+
+.registry-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  background: var(--vscode-input-background, var(--vscode-background));
+  border: 1px solid var(--vscode-border-color);
+  color: var(--vscode-foreground);
+  font-family: inherit;
+  font-size: var(--vscode-font-size, 13px);
+  border-radius: var(--vscode-radius-sm, 4px);
+  outline: none;
+}
+
+.registry-search:focus {
+  border-color: var(--vscode-inputValidation-infoBorder, var(--vscode-focusBorder));
+}
+
+.registry-search::placeholder {
+  color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
+}
+
+.registry-error {
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #f44336);
+  background: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.15));
+  color: var(--vscode-errorForeground, #f48771);
+  border-radius: var(--vscode-radius-sm, 4px);
+  font-size: 12px;
+}
+
+.registry-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.registry-hint code {
+  font-family: var(--vscode-font-mono, monospace);
+  font-size: 10px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.badge-source {
+  font-family: var(--vscode-font-mono, monospace);
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-sideBar-background, var(--vscode-background));
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-installed {
+  text-transform: uppercase;
+  color: var(--vscode-testing-iconPassed, #3ba55d);
+  border-color: var(--vscode-testing-iconPassed, #3ba55d);
+}
+
+.btn-install {
+  min-width: 72px;
+}
+
+.btn-install:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .error-banner {

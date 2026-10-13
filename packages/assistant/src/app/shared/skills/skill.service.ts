@@ -5,17 +5,25 @@ export interface SkillInfo {
   name: string;
   description: string;
   content: string;
+  /** 目录 store skill 的附属文件数量（列表接口下发；0 表示无附属文件）。 */
+  fileCount?: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class SkillService {
   readonly skills = signal<SkillInfo[]>([]);
+  /** 后端配置的 HTTP catalog URL（供 skill 管理器直连查询）。 */
+  readonly catalogs = signal<string[]>([]);
+
+  /** 附属文件缓存：name → 相对路径 → 内容。 */
+  private readonly filesCache = new Map<string, Promise<Record<string, string>>>();
 
   refresh(): Promise<void> {
     return fetch('/api/skills')
       .then(res => res.json())
       .then(async data => {
         const skills: SkillInfo[] = data.skills || [];
+        this.catalogs.set(Array.isArray(data.catalogs) ? data.catalogs : []);
         await this.registerMissingBuiltIns(skills);
         this.skills.set(skills);
       })
@@ -23,6 +31,42 @@ export class SkillService {
         console.error('Failed to load skills:', err);
         this.skills.set([]);
       });
+  }
+
+  /**
+   * 按需拉取并缓存 skill 的附属文件（`GET /api/skills/:name` 的 files 字段）。
+   * 无附属文件（fileCount 为 0/缺失）或拉取失败时返回空映射。
+   * 并发调用共享同一个 Promise；编辑/删除后由 `invalidateFiles` 丢弃缓存。
+   */
+  loadFiles(name: string): Promise<Record<string, string>> {
+    const cached = this.filesCache.get(name);
+    if (cached) return cached;
+
+    const skill = this.skills().find(s => s.name === name);
+    if (!skill || !skill.fileCount) {
+      return Promise.resolve({});
+    }
+
+    const promise = fetch(`/api/skills/${encodeURIComponent(name)}`)
+      .then(res => (res.ok ? res.json() : { files: {} }))
+      .then(data =>
+        data && typeof data.files === 'object' && data.files
+          ? (data.files as Record<string, string>)
+          : {},
+      )
+      .catch(err => {
+        this.filesCache.delete(name); // 失败不缓存，下次重试
+        console.error(`Failed to load files for skill "${name}":`, err);
+        return {} as Record<string, string>;
+      });
+
+    this.filesCache.set(name, promise);
+    return promise;
+  }
+
+  /** 丢弃某个 skill 的附属文件缓存（编辑或删除后调用）。 */
+  invalidateFiles(name: string): void {
+    this.filesCache.delete(name);
   }
 
   /**

@@ -43,7 +43,7 @@ export type { CollabMetadata, RunTaskInput } from './api/a2a-collab/bridge-runne
 export { createCORSMiddleware, createRequireAuth } from './api/middleware.js';
 
 // Skills
-export { SkillRegistry } from './skills/index.js';
+export { SkillRegistry, isValidSkillName, validateSkillFiles } from './skills/index.js';
 export type { SkillRegistryOptions } from './skills/index.js';
 export {
   collectSkillSources,
@@ -74,31 +74,6 @@ export type {
   ConfigScanOptions,
   ConfigScanResult,
   ConfigSkillEntry,
-} from './skills/index.js';
-export {
-  catalogCacheKey,
-  catalogCacheRoot,
-  defaultCatalogCacheDir,
-  loadCachedCatalogDirs,
-  normalizeIndex,
-  refreshCatalog,
-  refreshCatalogs,
-  resolveCatalogFileUrl,
-  resolveDiscoveryUrl,
-  extractTarGz,
-} from './skills/index.js';
-export type {
-  CachedCatalogSkill,
-  CatalogArchiveEntry,
-  CatalogEntry,
-  CatalogFilesEntry,
-  CatalogRefreshOptions,
-  CatalogRefreshResult,
-  CatalogSkillMdEntry,
-  FetchLike,
-  TarExtractLimits,
-  TarExtractResult,
-  TarFile,
 } from './skills/index.js';
 export { resolveUserPath } from './skills/index.js';
 export type { Skill, SkillsStore } from './skills/index.js';
