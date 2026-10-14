@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SkillService, type SkillInfo } from '../skills/skill.service';
@@ -19,7 +19,7 @@ type ManagerTab = 'configured' | 'catalog';
   templateUrl: './skill-manager.component.html',
   styleUrls: ['./skill-manager.component.css'],
 })
-export class SkillManagerComponent {
+export class SkillManagerComponent implements OnInit {
   private readonly skillService = inject(SkillService);
   private readonly catalogService = inject(SkillCatalogService);
 
@@ -42,7 +42,7 @@ export class SkillManagerComponent {
   installingKey: string | null = null;
   private catalogLoaded = false;
 
-  constructor() {
+  ngOnInit(): void {
     this.loadSkills();
   }
 

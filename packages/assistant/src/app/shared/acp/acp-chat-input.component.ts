@@ -1,5 +1,5 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, HostListener, viewChild, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, ViewChild, ElementRef, HostListener, viewChild, effect, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
@@ -675,7 +675,7 @@ interface McpServerOption {
       bottom: 100%;
       left: 0;
       margin-bottom: 4px;
-      min-width: 260px;
+      min-width: 250px;
       max-height: 300px;
       overflow-y: auto;
       background-color: var(--vscode-dropdown-background);
@@ -725,7 +725,6 @@ interface McpServerOption {
       color: var(--vscode-descriptionForeground);
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
     }
     .mcp-type {
       font-size: 10px;
@@ -936,6 +935,7 @@ interface McpServerOption {
 export class AcpChatInputComponent {
   protected acpService = inject(AcpService);
   private readonly skillService = inject(SkillService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   @ViewChild('messageInput') private messageInput!: ElementRef;
   @ViewChild('fileInput') private fileInput!: ElementRef<HTMLInputElement>;
@@ -1106,6 +1106,9 @@ export class AcpChatInputComponent {
   }
 
   loadMcpServers(): void {
+    // SSR: Node's fetch rejects relative URLs; the browser re-runs this on hydration.
+    if (!isPlatformBrowser(this.platformId)) return;
+
     fetch('/api/mcp/servers')
       .then(res => res.json())
       .then(data => {

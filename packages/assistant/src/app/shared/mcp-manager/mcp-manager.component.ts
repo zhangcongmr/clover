@@ -1,5 +1,5 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   McpRegistryService,
@@ -33,8 +33,9 @@ const SEARCH_DEBOUNCE_MS = 300;
   templateUrl: './mcp-manager.component.html',
   styleUrls: ['./mcp-manager.component.css'],
 })
-export class McpManagerComponent implements OnDestroy {
+export class McpManagerComponent implements OnInit, OnDestroy {
   private readonly registryService = inject(McpRegistryService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   servers: McpServerConfig[] = [];
   loading = false;
@@ -59,7 +60,7 @@ export class McpManagerComponent implements OnDestroy {
   /** 请求序号，丢弃过期的搜索/分页响应。 */
   private registryRequestSeq = 0;
 
-  constructor() {
+  ngOnInit(): void {
     this.loadServers();
   }
 
@@ -71,6 +72,9 @@ export class McpManagerComponent implements OnDestroy {
   }
 
   loadServers(): void {
+    // SSR: Node's fetch rejects relative URLs; the browser re-runs this on hydration.
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.loading = true;
     this.error = null;
 
