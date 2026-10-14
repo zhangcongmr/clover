@@ -170,6 +170,38 @@
   font-style: italic;
 }
 
+.acp-message.error {
+  align-self: flex-start;
+  width: auto;
+  max-width: 85%;
+}
+
+.error-bubble {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--vscode-radius-md, 8px);
+  /* 与用户气泡同风格：浅色底、无边框；红色调弱化，仅图标保留错误色作提示 */
+  background-color: rgba(241, 76, 76, 0.08);
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.error-bubble .error-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.error-bubble .error-text {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Intermediate section (grouped thought + tool_call messages) */
 .intermediate-section {
   display: flex;

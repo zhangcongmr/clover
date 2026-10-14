@@ -3,6 +3,15 @@ import { LocalAgentService } from '../local-agent/local-agent.service';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
+/**
+ * Origin of an error surfaced through `onError`:
+ * - 'connection': EventSource transport failure (line 144) — marks the session
+ *   as disconnected.
+ * - 'server': a `type: 'error'` event published by the backend (e.g. prompt
+ *   failure) — the session stays connected, the error is only displayed.
+ */
+export type ErrorSource = 'connection' | 'server';
+
 export interface ServerEvent {
   type: string;
   payload: any;
@@ -48,7 +57,7 @@ export class AcpSseService {
   private onPermissionRequestCallback: ((request: any) => void) | null = null;
   private onPromptCompleteCallback: ((stopReason: string) => void) | null = null;
   private onSessionCreatedCallback: ((sessionId: string, payload?: any) => void) | null = null;
-  private onErrorCallback: ((message: string) => void) | null = null;
+  private onErrorCallback: ((message: string, source: ErrorSource) => void) | null = null;
   private onDisconnectedCallback: (() => void) | null = null;
   private onStatusCallback: ((payload: any) => void) | null = null;
 
@@ -78,7 +87,7 @@ export class AcpSseService {
     this.onSessionCreatedCallback = callback;
   }
 
-  onError(callback: (message: string) => void): void {
+  onError(callback: (message: string, source: ErrorSource) => void): void {
     this.onErrorCallback = callback;
   }
 
@@ -176,7 +185,7 @@ export class AcpSseService {
 
       case 'error':
         console.error('[ACP SSE] Server error:', event.payload.message);
-        this.handleError(event.payload.message);
+        this.handleError(event.payload.message, 'server');
         break;
 
       case 'heartbeat':
@@ -188,9 +197,14 @@ export class AcpSseService {
     }
   }
 
-  private handleError(message: string): void {
-    this.error.set(message);
-    this.onErrorCallback?.(message);
+  private handleError(message: string, source: ErrorSource = 'connection'): void {
+    // 只有连接级错误写入 error signal：acp.service 的 syncState 会周期性把
+    // error() 同步进 sessionState().error，server 错误若写入会在 10s 内间接
+    // 改掉 sessionState（要求保持不变），因此 server 错误只走回调。
+    if (source === 'connection') {
+      this.error.set(message);
+    }
+    this.onErrorCallback?.(message, source);
   }
 
   private attemptReconnect(): void {

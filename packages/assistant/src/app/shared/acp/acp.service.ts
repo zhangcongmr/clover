@@ -33,7 +33,7 @@ function getInitialAgent(): AgentConfig {
 
 export interface AcpMessage {
   id: string;
-  role: 'user' | 'assistant' | 'thought' | 'tool_call' | 'tool_call_update';
+  role: 'user' | 'assistant' | 'thought' | 'tool_call' | 'tool_call_update' | 'error';
   content: string;
   timestamp: Date;
   // Non-text content blocks (images, audio, resources) attached to this message
@@ -407,7 +407,16 @@ export class AcpService {
       }));
     });
 
-    this.sseService.onError((message) => {
+    this.sseService.onError((message, source) => {
+      if (source === 'server') {
+        // 后端发布的服务端错误（如 prompt 失败）：sessionState 保持不变，
+        // 只结束处理状态并把错误作为消息插入对话流展示。
+        this.isProcessing.set(false);
+        this.processingStartTime.set(null);
+        this.appendErrorMessage(message);
+        return;
+      }
+      // 连接级错误（EventSource 断开）：维持既有行为，标记会话断开。
       this.sessionState.update(s => ({
         ...s,
         isConnected: false,
@@ -1099,6 +1108,23 @@ export class AcpService {
   // ============================================================================
   // Private handlers
   // ============================================================================
+
+  /** 服务端错误（SSE `error` 事件）以消息气泡形式插入对话流。
+   *  回放期间写入 replayBuffer，避免 flushReplayBuffer 的
+   *  `messages.set(replayBuffer)` 把错误冲掉。 */
+  private appendErrorMessage(message: string): void {
+    const errorMsg: AcpMessage = {
+      id: crypto.randomUUID(),
+      role: 'error',
+      content: message,
+      timestamp: new Date()
+    };
+    if (this.isReplayingHistory()) {
+      this.replayBuffer.push(errorMsg);
+      return;
+    }
+    this.messages.update(msgs => [...msgs, errorMsg]);
+  }
 
   private handleSessionUpdate(update: SessionUpdate): void {
     switch (update.sessionUpdate) {
