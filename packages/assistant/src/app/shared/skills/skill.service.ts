@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { BUILT_IN_SKILLS } from '../skill-manager/built-in-skills';
 
 export interface SkillInfo {
@@ -11,6 +12,8 @@ export interface SkillInfo {
 
 @Injectable({ providedIn: 'root' })
 export class SkillService {
+  private readonly platformId = inject(PLATFORM_ID);
+
   readonly skills = signal<SkillInfo[]>([]);
   /** 后端配置的 HTTP catalog URL（供 skill 管理器直连查询）。 */
   readonly catalogs = signal<string[]>([]);
@@ -19,6 +22,9 @@ export class SkillService {
   private readonly filesCache = new Map<string, Promise<Record<string, string>>>();
 
   refresh(): Promise<void> {
+    // SSR: Node's fetch rejects relative URLs; the browser re-runs this on hydration.
+    if (!isPlatformBrowser(this.platformId)) return Promise.resolve();
+
     return fetch('/api/skills')
       .then(res => res.json())
       .then(async data => {
@@ -39,6 +45,8 @@ export class SkillService {
    * 并发调用共享同一个 Promise；编辑/删除后由 `invalidateFiles` 丢弃缓存。
    */
   loadFiles(name: string): Promise<Record<string, string>> {
+    if (!isPlatformBrowser(this.platformId)) return Promise.resolve({});
+
     const cached = this.filesCache.get(name);
     if (cached) return cached;
 

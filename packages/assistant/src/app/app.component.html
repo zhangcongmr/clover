@@ -350,7 +350,9 @@
            modalSize="xlarge" [backdrop]="true" [draggable]="false"
            (close)="closeSkillsManager()">
   <div class="ast-modal-body">
-    <app-skill-manager />
+    @if (showSkillsManager()) {
+      <app-skill-manager />
+    }
   </div>
 </ast-modal>
 
@@ -359,6 +361,8 @@
            modalSize="xlarge" [backdrop]="true" [draggable]="false"
            (close)="closeMcpManager()">
   <div class="ast-modal-body">
-    <app-mcp-manager />
+    @if (showMcpManager()) {
+      <app-mcp-manager />
+    }
   </div>
 </ast-modal>
