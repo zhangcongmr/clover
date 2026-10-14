@@ -11,7 +11,7 @@ import { DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER } from './dynamic-virtual-scro
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp.model';
 
 export interface MessageGroup {
-  type: 'user' | 'assistant' | 'intermediate';
+  type: 'user' | 'assistant' | 'intermediate' | 'error';
   messages: AcpMessage[];
   isNew?: boolean;
 }
@@ -99,9 +99,9 @@ export class AcpChatComponent implements OnDestroy {
       const groups = this.groupMessages(preMessages);
 
       for (const msg of postMessages) {
-        const groupType = (msg.role === 'tool_call' || msg.role === 'tool_call_update' || msg.role === 'thought')
+        const groupType: MessageGroup['type'] = (msg.role === 'tool_call' || msg.role === 'tool_call_update' || msg.role === 'thought')
           ? 'intermediate'
-          : msg.role as 'user' | 'assistant' | 'intermediate';
+          : msg.role;
         groups.push({ type: groupType, messages: [msg], isNew: true });
       }
 
@@ -202,6 +202,14 @@ export class AcpChatComponent implements OnDestroy {
           currentRound = [];
         }
         groups.push({ type: 'user', messages: [msg] });
+      } else if (msg.role === 'error') {
+        // 错误消息独立成组：flushRound 只保留到最后一条 assistant 为止，
+        // 混入 round 会被丢弃（末尾）或落入 intermediate 组后不渲染（无 assistant）。
+        if (currentRound.length > 0) {
+          this.flushRound(groups, currentRound);
+          currentRound = [];
+        }
+        groups.push({ type: 'error', messages: [msg] });
       } else {
         currentRound.push(msg);
       }

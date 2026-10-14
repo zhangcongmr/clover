@@ -38,9 +38,18 @@
           </div>
         } @else {
           @for (message of group.messages; track trackByMessageId($index, message)) {
-            <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+            <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'" [class.error]="message.role === 'error'">
               <div class="message-content">
-                @if (message.role === 'assistant') {
+                @if (message.role === 'error') {
+                  <div class="error-bubble">
+                    <svg class="error-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span class="error-text">{{ message.content }}</span>
+                  </div>
+                } @else if (message.role === 'assistant') {
                   <app-a2ui-json-renderer [content]="message.content" (themeApply)="themeApply.emit($event)"></app-a2ui-json-renderer>
                   @if (!acpService.isProcessing()) {
                     @if (changedFilesFor(message); as files) {
