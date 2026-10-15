@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
-import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, buildChangedFiles, type ChangedFile } from './tool-call-info.pipe';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, buildChangedFiles, extractRagResult, type ChangedFile } from './tool-call-info.pipe';
+import { RagResultComponent } from './rag-result.component';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
 import { ScrollingModule } from '@angular/cdk/scrolling';
@@ -19,7 +20,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, ScrollingModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, CopyCodeButtonDirective, A2uiJsonRendererComponent],
+  imports: [CommonModule, ScrollingModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, RagResultComponent, CopyCodeButtonDirective, A2uiJsonRendererComponent],
   providers: [DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
@@ -182,7 +183,7 @@ export class AcpChatComponent implements OnDestroy {
   }
 
   toggleExpand(message: AcpMessage): void {
-    if (message.toolKind !== 'edit' && message.toolKind !== 'read') return;
+    if (message.toolKind !== 'edit' && message.toolKind !== 'read' && !extractRagResult(message)) return;
     const key = `expand-${message.toolCallId}`;
     if (this.collapsedSections.has(key)) {
       this.collapsedSections.delete(key);

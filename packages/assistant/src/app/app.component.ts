@@ -23,6 +23,7 @@ import { buildThemePrompt, randomThemePromptSeed, THEME_SKILL_NAME } from './sha
 import { NotificationService } from './shared/notification/notification.service';
 import { McpManagerComponent } from './shared/mcp-manager/mcp-manager.component';
 import { SkillManagerComponent } from './shared/skill-manager/skill-manager.component';
+import { RagManagerComponent } from './shared/rag/rag-manager.component';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
@@ -57,7 +58,7 @@ interface DockItem {
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
-        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, AstModalComponent], // Add TerminalComponent to imports
+        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, RagManagerComponent, AstModalComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
@@ -104,6 +105,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   showSkillsManager = signal<boolean>(false);
   /** Whether the MCP Manager dialog is open. */
   showMcpManager = signal<boolean>(false);
+  /** Whether the RAG knowledge base dialog is open. */
+  showRagManager = signal<boolean>(false);
 
   /**
    * 当前选中的 dock 项。四个分支互斥：
@@ -1172,5 +1175,13 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   closeMcpManager(): void {
     this.showMcpManager.set(false);
+  }
+
+  toggleRagManager(): void {
+    this.showRagManager.update(v => !v);
+  }
+
+  closeRagManager(): void {
+    this.showRagManager.set(false);
   }
 }
