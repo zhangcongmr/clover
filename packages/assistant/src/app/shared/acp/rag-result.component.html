@@ -1,0 +1,76 @@
+<!-- [class] overwrites the static class, so the base name is repeated here. -->
+<div class="rag-result" [class]="'rag-result rag-' + result().kind">
+  @switch (result().kind) {
+    @case ('search') {
+      <div class="rag-header">
+        <span class="rag-title">检索结果</span>
+        <span class="rag-count">{{ hitCount() }} 条</span>
+      </div>
+      <ul class="rag-hits">
+        @for (hit of result().hits; track hit.documentId + '-' + hit.chunkIndex) {
+          <li class="rag-hit">
+            <div class="rag-hit-head">
+              <span class="rag-source" [title]="hit.documentId">{{ source(hit) }}</span>
+              <span class="rag-citation">#{{ hit.chunkIndex }}</span>
+              <span class="rag-score" [title]="'similarity ' + hit.score">
+                <span class="rag-score-bar">
+                  <span class="rag-score-fill" [style.width.%]="scorePercent(hit)"></span>
+                </span>
+                <span class="rag-score-value">{{ scorePercent(hit) }}%</span>
+              </span>
+              <button
+                type="button"
+                class="rag-cite-btn"
+                title="插入引用到对话"
+                (click)="insertCitation(hit)"
+              >
+                引用
+              </button>
+            </div>
+            <div class="rag-hit-text" [class.collapsed]="collapsed()">{{ excerpt(hit) }}</div>
+            @if (isTruncated(hit)) {
+              <button type="button" class="rag-expand" (click)="toggle($event)">
+                {{ collapsed() ? '展开全文' : '收起' }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @case ('index') {
+      <div class="rag-header">
+        <span class="rag-title">已写入知识库</span>
+      </div>
+      <div class="rag-summary">
+        <span class="rag-doc-id">{{ result().documentId }}</span>
+        <span class="rag-chunks">{{ result().chunksCount }} 个分块</span>
+      </div>
+    }
+
+    @case ('list') {
+      <div class="rag-header">
+        <span class="rag-title">知识库文档</span>
+        <span class="rag-count">{{ documentCount() }} 个</span>
+      </div>
+      <ul class="rag-docs">
+        @for (doc of result().documents; track doc.documentId) {
+          <li class="rag-doc">
+            <span class="rag-doc-id">{{ doc.documentId }}</span>
+            <span class="rag-doc-source">{{ docSource(doc) }}</span>
+            <span class="rag-chunks">{{ doc.chunkCount }} 块</span>
+          </li>
+        }
+      </ul>
+    }
+
+    @case ('delete') {
+      <div class="rag-header">
+        <span class="rag-title">{{ result().success ? '已从知识库删除' : '知识库中未找到该文档' }}</span>
+      </div>
+      <div class="rag-summary">
+        <span class="rag-doc-id">{{ result().documentId }}</span>
+      </div>
+    }
+  }
+</div>

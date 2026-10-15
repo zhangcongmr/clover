@@ -530,6 +530,57 @@ export class AcpService {
     await this.applyPendingConfigSelection();
   }
 
+  /**
+   * Submits a full turn (text + content blocks) from outside the chat input box.
+   *
+   * Used by panels that drive the agent on the user's behalf — currently the RAG
+   * knowledge base, which asks the agent to invoke `index_document` / `search` /
+   * `list_documents` / `delete_document` on the configured RAG MCP server. The
+   * frontend deliberately has no MCP client of its own; the agent is the executor.
+   *
+   * Unlike `AcpChatInputComponent.sendMessage`, the blocks are built by the caller
+   * rather than read from the chat input's local `attachments` signal, so this can
+   * be called while the chat input is unmounted (e.g. from a manager modal).
+   */
+  async submitPrompt(text: string, blocks: ContentBlock[] = []): Promise<void> {
+    const content: ContentBlock[] = [];
+    if (text) {
+      content.push({ type: 'text', text });
+    }
+    content.push(...blocks);
+
+    this.pendingSlashCommand.set(null);
+    this.addUserMessage(text, blocks.length > 0 ? blocks : undefined);
+
+    await this.ensureChatSession(
+      this.selectedProjectPath() || undefined,
+      this.effectiveMcpServers(),
+    );
+    await this.sendPrompt(content);
+  }
+
+  /**
+   * MCP server names to hand to the next `session/new`.
+   *
+   * Empty array means "no MCP servers" — the caller omits the payload entirely so
+   * the agent keeps its own defaults rather than being handed an explicit empty list.
+   */
+  private effectiveMcpServers(): string[] | undefined {
+    const names = Array.from(new Set(this.selectedMcpServers()));
+    return names.length > 0 ? names : undefined;
+  }
+
+  /** Adds MCP server names to the session-level selection (idempotent). */
+  attachMcpServers(names: string[]): void {
+    this.selectedMcpServers.update(current => {
+      const next = new Set(current);
+      for (const name of names) {
+        if (name) next.add(name);
+      }
+      return Array.from(next);
+    });
+  }
+
   async sendPrompt(content: ContentBlock[]): Promise<void> {
     const sessionId = this.sessionState().sessionId;
     if (!sessionId) {

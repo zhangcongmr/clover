@@ -246,6 +246,12 @@
           </div>
         </div>
       </div>
+    } @else if (message | ragResult; as rag) {
+      <div class="acp-message tool-call">
+        <div class="message-content">
+          <app-rag-result [result]="rag" [collapsed]="!isExpanded(message)" />
+        </div>
+      </div>
     } @else {
       <div class="acp-message tool-call">
         <div class="message-content">

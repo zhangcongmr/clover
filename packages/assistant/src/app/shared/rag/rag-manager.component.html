@@ -1,0 +1,233 @@
+<div class="rag-manager">
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="RAG knowledge base sections">
+      <button type="button" role="tab" class="tab"
+              [class.active]="tab() === 'knowledge'"
+              [attr.aria-selected]="tab() === 'knowledge'"
+              (click)="switchTab('knowledge')">Knowledge Base</button>
+      <button type="button" role="tab" class="tab"
+              [class.active]="tab() === 'search'"
+              [attr.aria-selected]="tab() === 'search'"
+              (click)="switchTab('search')">Search</button>
+      <button type="button" role="tab" class="tab"
+              [class.active]="tab() === 'settings'"
+              [attr.aria-selected]="tab() === 'settings'"
+              (click)="switchTab('settings')">Settings</button>
+    </div>
+    <span class="server-chip" [class.missing]="!ragServiceApi.hasRagServer()"
+          [title]="'RAG MCP server: ' + ragServerLabel()">
+      {{ ragServerLabel() }}
+    </span>
+  </div>
+
+  @if (error()) {
+    <div class="error-banner" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="error-dismiss" (click)="error.set(null)" aria-label="Dismiss">×</button>
+    </div>
+  }
+
+  @if (requiresNewSession()) {
+    <div class="notice" role="status">
+      The RAG server is not attached to the current session. MCP servers are only
+      passed when a session is created — start a <strong>New Task</strong> for the
+      knowledge base tools to become available.
+    </div>
+  }
+
+  <!-- ── Knowledge Base ─────────────────────────────────────────────────── -->
+  @if (tab() === 'knowledge') {
+    <div class="panel">
+      <div class="upload-zone"
+           [class.drag-over]="isDragOver()"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onDrop($event)">
+        <p class="upload-hint">Drop text documents here, or</p>
+        <input #fileInput type="file" multiple class="file-input"
+               accept=".txt,.md,.markdown,.json,.jsonl,.csv,.tsv,.log,.yaml,.yml,.xml,.html,.css,.js,.mjs,.cjs,.ts,.tsx,.jsx,.py,.go,.rs,.java,.kt,.c,.h,.cpp,.hpp,.cs,.rb,.php,.sh,.sql,.toml,.ini,.conf"
+               (change)="onFilesPicked($event)" />
+        <button type="button" class="btn btn-secondary" (click)="fileInput.click()">Choose files</button>
+        <p class="upload-note">PDF and DOCX are not supported yet.</p>
+      </div>
+
+      @if (hasCandidates()) {
+        <ul class="item-list pending-list">
+          @for (file of candidates(); track file.name) {
+            <li class="item-row">
+              <div class="item-main">
+                <div class="item-name">{{ file.name }}</div>
+                <div class="item-meta">{{ formatSize(file.size) }}</div>
+              </div>
+              <div class="item-actions">
+                <button type="button" class="btn btn-ghost btn-danger"
+                        [disabled]="!canSubmit()" (click)="removeCandidate(file.name)">Remove</button>
+              </div>
+            </li>
+          }
+        </ul>
+        <div class="action-row">
+          <button type="button" class="btn btn-primary" [disabled]="!canSubmit()" (click)="upload()">
+            Write to knowledge base
+          </button>
+          <button type="button" class="btn btn-ghost" [disabled]="!canSubmit()" (click)="clearCandidates()">
+            Clear
+          </button>
+        </div>
+      }
+
+      <div class="section-head">
+        <h4>Indexed documents</h4>
+        <div class="action-row inline">
+          @if (lastIndex(); as indexed) {
+            <span class="hint">Last indexed: {{ indexed.documentId }} ({{ indexed.chunksCount }} chunks)</span>
+          }
+          <button type="button" class="btn btn-secondary" [disabled]="!canSubmit()" (click)="refreshDocuments()">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      @if (!ragServiceApi.hasListResult()) {
+        <div class="status-line">
+          Not loaded yet. Use <strong>Refresh</strong> to ask the agent to list the knowledge base.
+        </div>
+      } @else if (documents().length === 0) {
+        <div class="status-line">The knowledge base is empty.</div>
+      } @else {
+        <ul class="item-list">
+          @for (doc of documents(); track doc.documentId) {
+            <li class="item-row">
+              <div class="item-main">
+                <div class="item-name">{{ doc.documentId }}</div>
+                <div class="item-meta">{{ doc.chunkCount }} chunks</div>
+              </div>
+              <div class="item-actions">
+                <button type="button" class="btn btn-ghost btn-danger"
+                        [disabled]="!canSubmit()" (click)="removeDocument(doc.documentId)">Delete</button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <!-- ── Search ─────────────────────────────────────────────────────────── -->
+  @if (tab() === 'search') {
+    <div class="panel">
+      <div class="field">
+        <label for="rag-query">Query</label>
+        <input id="rag-query" type="text" [ngModel]="query()" (ngModelChange)="query.set($event)"
+               autocomplete="off" placeholder="What are you looking for?" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="rag-limit">Top K</label>
+          <input id="rag-limit" type="number" min="1" max="20" [ngModel]="limit()" (ngModelChange)="limit.set($event)" />
+        </div>
+        <div class="field grow">
+          <label for="rag-scope">Limit to document (optional)</label>
+          <input id="rag-scope" type="text" [ngModel]="scopeDocumentId()" (ngModelChange)="scopeDocumentId.set($event)"
+                 autocomplete="off" spellcheck="false" placeholder="documentId" />
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button type="button" class="btn btn-primary" [disabled]="!canSearch()" (click)="search()">Search</button>
+      </div>
+
+      @if (isProcessing()) {
+        <div class="status-line">Agent is searching…</div>
+      }
+
+      @if (ragServiceApi.hasSearchResult() && hits().length === 0) {
+        <div class="status-line">No matching documents.</div>
+      } @else if (hits().length > 0) {
+        <ul class="hit-list">
+          @for (hit of hits(); track hit.documentId + '-' + hit.chunkIndex) {
+            <li class="hit-row">
+              <div class="hit-head">
+                <span class="hit-source">{{ hitSource(hit) }}</span>
+                <span class="hit-citation">{{ hit.documentId }}#{{ hit.chunkIndex }}</span>
+                <span class="hit-score">{{ (hit.score * 100).toFixed(0) }}%</span>
+              </div>
+              <div class="hit-text">{{ hit.text }}</div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="status-line">No results yet. Run a search to populate this list.</div>
+      }
+    </div>
+  }
+
+  <!-- ── Settings ───────────────────────────────────────────────────────── -->
+  @if (tab() === 'settings') {
+    <div class="panel">
+      <div class="field">
+        <label for="rag-server">RAG MCP server</label>
+        <select id="rag-server"
+                [ngModel]="ragServiceApi.ragServerName()"
+                (ngModelChange)="ragServiceApi.setRagServerName($event || null)">
+          <option [ngValue]="null">— none —</option>
+          @for (server of ragServiceApi.servers(); track server.name) {
+            <option [ngValue]="server.name">{{ server.name }}</option>
+          }
+        </select>
+        <p class="field-hint">
+          Used to attach the knowledge base tools to your session. Detected automatically
+          from the MCP Servers list, or add <code>clover-rag</code> there first.
+        </p>
+      </div>
+
+      @if (ragServiceApi.serversError(); as serversError) {
+        <div class="error-banner" role="alert">{{ serversError }}</div>
+      }
+
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox"
+                 [ngModel]="ragServiceApi.autoAttach()"
+                 (ngModelChange)="ragServiceApi.setAutoAttach($event)" />
+          <span>Attach to session automatically</span>
+        </label>
+        <p class="field-hint">
+          When on, submitting from this panel adds the RAG server to the session's
+          MCP selection. When off, select it yourself in the chat input's
+          <em>MCP Servers</em> dropdown.
+        </p>
+      </div>
+
+      <div class="section-head">
+        <h4>Available MCP servers</h4>
+        <button type="button" class="btn btn-secondary" (click)="ragServiceApi.refreshServers()">
+          Reload
+        </button>
+      </div>
+
+      @if (ragServiceApi.serversLoading()) {
+        <div class="status-line">Loading…</div>
+      } @else if (ragServiceApi.servers().length === 0) {
+        <div class="status-line">No MCP servers configured.</div>
+      } @else {
+        <ul class="item-list">
+          @for (server of ragServiceApi.servers(); track server.name) {
+            <li class="item-row" [class.selected]="server.name === ragServiceApi.ragServerName()">
+              <div class="item-main">
+                <div class="item-name">
+                  {{ server.name }}
+                  <span class="item-type">{{ server.type }}</span>
+                </div>
+                @if (server.description) {
+                  <div class="item-desc">{{ server.description }}</div>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

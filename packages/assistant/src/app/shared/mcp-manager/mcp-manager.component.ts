@@ -8,18 +8,8 @@ import {
   localNameCandidates,
   summarizeServer,
   type RegistryListItem,
+  type LocalMcpServerConfig as McpServerConfig,
 } from './mcp-registry.service';
-
-interface McpServerConfig {
-  type: 'stdio' | 'http';
-  name: string;
-  description: string;
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  url?: string;
-  headers?: Record<string, string>;
-}
 
 type ManagerTab = 'configured' | 'registry';
 

@@ -135,6 +135,8 @@ export interface RegistryListOptions {
 /* 本地配置形状（与 mcp-manager / packages·agent POST body 对齐）               */
 /* -------------------------------------------------------------------------- */
 
+/** 本地已保存的 MCP server 配置，与 `packages/agent/src/mcp/types.ts` 的
+ *  `McpServerConfig` 一一对应（后端持久化在 `~/.clover/mcp-servers.json`）。 */
 export interface LocalMcpServerConfig {
   type: 'stdio' | 'http';
   name: string;

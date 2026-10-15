@@ -1,0 +1,196 @@
+.rag-result {
+  border: 1px solid var(--vscode-border-color, rgba(128, 128, 128, 0.35));
+  border-radius: 6px;
+  background-color: var(--vscode-editorWidget-background, var(--vscode-background));
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rag-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rag-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.rag-count {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+}
+
+/* ── search ─────────────────────────────────────────────────────────────── */
+
+.rag-hits,
+.rag-docs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rag-hit {
+  padding: 8px 0;
+  border-top: 1px solid var(--vscode-border-color, rgba(128, 128, 128, 0.2));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rag-hit:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.rag-hit-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rag-source {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+}
+
+.rag-citation {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  flex-shrink: 0;
+}
+
+.rag-score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.rag-score-bar {
+  display: block;
+  width: 56px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--vscode-progressBar-background, rgba(128, 128, 128, 0.25));
+  overflow: hidden;
+}
+
+.rag-score-fill {
+  display: block;
+  height: 100%;
+  background-color: var(--vscode-charts-blue, #4a9eff);
+}
+
+.rag-score-value {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+  text-align: right;
+}
+
+.rag-cite-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid var(--vscode-border-color, rgba(128, 128, 128, 0.35));
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.rag-cite-btn:hover {
+  background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-hover-background));
+}
+
+.rag-hit-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--vscode-foreground);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rag-hit-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rag-expand {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground, #4a9eff);
+  cursor: pointer;
+}
+
+/* ── index / delete summary ─────────────────────────────────────────────── */
+
+.rag-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rag-doc-id {
+  font-size: 12px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rag-chunks {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── list ───────────────────────────────────────────────────────────────── */
+
+.rag-doc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--vscode-border-color, rgba(128, 128, 128, 0.2));
+}
+
+.rag-doc:first-child {
+  border-top: none;
+}
+
+.rag-doc-source {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* A failed delete is a no-op rather than an error, so keep it visually neutral. */
+.rag-delete .rag-title {
+  color: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  font-weight: 500;
+}

@@ -183,6 +183,184 @@ export function buildChangedFiles(
   return result;
 }
 
+// ── RAG tool results ────────────────────────────────────────────────────────
+//
+// The frontend has no MCP client: RAG tools (`index_document`, `search`,
+// `list_documents`, `delete_document` from @clover/mcp-rag) are invoked by the
+// agent on our behalf. Their results therefore arrive as ordinary ACP
+// `tool_call` / `tool_call_update` payloads and must be recognised structurally —
+// ACP `ToolCall` carries no tool name, only a free-form `title`.
+//
+// The exact envelope depends on how the agent wraps MCP results, so the parser
+// probes a list of candidate locations and takes the first one that parses into a
+// recognisable shape. All four shapes are mutually exclusive and narrow enough
+// that they will not collide with ordinary file/terminal tool calls.
+
+export type RagToolKind = 'index' | 'search' | 'list' | 'delete';
+
+export interface RagSearchHit {
+  text: string;
+  score: number;
+  documentId: string;
+  chunkIndex: number;
+  metadata?: Record<string, string>;
+}
+
+export interface RagDocumentInfo {
+  documentId: string;
+  chunkCount: number;
+  metadata?: Record<string, string>;
+}
+
+export interface RagExtractResult {
+  kind: RagToolKind;
+  /** `index` / `delete`: the document this call acted on. */
+  documentId?: string;
+  /** `index`: how many chunks were written. */
+  chunksCount?: number;
+  /** `search`: ranked hits, best first. */
+  hits?: RagSearchHit[];
+  /** `list`: every indexed document. */
+  documents?: RagDocumentInfo[];
+  /** `delete`: whether the server actually removed anything. */
+  success?: boolean;
+}
+
+/** Candidate locations where an agent may have parked the MCP JSON payload. */
+function ragOutputCandidates(rawOutput: any): unknown[] {
+  if (rawOutput == null) return [];
+  const candidates: unknown[] = [rawOutput, rawOutput.text, rawOutput.output];
+
+  const blocks = Array.isArray(rawOutput.content) ? rawOutput.content : [];
+  for (const block of blocks) {
+    if (!block || typeof block !== 'object') continue;
+    candidates.push(block.text);
+    // Embedded resources nest the payload one level deeper.
+    candidates.push(block.resource?.text);
+  }
+  return candidates;
+}
+
+/**
+ * Normalises a candidate into a plain object, accepting both an already-parsed
+ * value (the common case — agents usually hand us the decoded MCP result) and a
+ * JSON string wrapped in an MCP content block.
+ */
+function parseJson(value: unknown): any | null {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{')) return null;
+  try {
+    const parsed = JSON.parse(trimmed);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether the payload carries exactly the given top-level keys.
+ *
+ * `@clover/mcp-rag` returns one key per tool (`{ results }`, `{ documents }`,
+ * `{ documentId, chunksCount }`, `{ success }`). Requiring an exact key set is a
+ * much tighter signature than looking for a single field, and — unlike a
+ * non-empty check — it still recognises a legitimately empty result set.
+ */
+function hasExactKeys(payload: any, keys: string[]): boolean {
+  const actual = Object.keys(payload);
+  return actual.length === keys.length && keys.every(key => actual.includes(key));
+}
+
+function toStringMap(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => typeof v === 'string' || typeof v === 'number');
+  return entries.length > 0
+    ? Object.fromEntries(entries.map(([k, v]) => [k, String(v)]))
+    : undefined;
+}
+
+/** `search` → `{ results: [{ text, score, documentId, chunkIndex }] }` */
+function asSearchResults(payload: any): RagSearchHit[] | null {
+  if (!hasExactKeys(payload, ['results'])) return null;
+  const results = payload.results;
+  if (!Array.isArray(results)) return null;
+  // Requiring both `score` and `chunkIndex` keeps this from matching an unrelated
+  // tool that happens to return a bare `{ results: [...] }` envelope.
+  if (!results.every((r: any) => r && 'score' in r && 'chunkIndex' in r)) return null;
+  return results.map((r: any) => ({
+    text: typeof r.text === 'string' ? r.text : '',
+    score: typeof r.score === 'number' ? r.score : 0,
+    documentId: typeof r.documentId === 'string' ? r.documentId : '',
+    chunkIndex: typeof r.chunkIndex === 'number' ? r.chunkIndex : 0,
+    metadata: toStringMap(r.metadata),
+  }));
+}
+
+/** `list_documents` → `{ documents: [{ documentId, chunkCount, metadata }] }` */
+function asDocumentList(payload: any): RagDocumentInfo[] | null {
+  if (!hasExactKeys(payload, ['documents'])) return null;
+  const documents = payload.documents;
+  if (!Array.isArray(documents)) return null;
+  if (!documents.every((d: any) => d && typeof d.documentId === 'string' && 'chunkCount' in d)) {
+    return null;
+  }
+  return documents.map((d: any) => ({
+    documentId: d.documentId,
+    chunkCount: typeof d.chunkCount === 'number' ? d.chunkCount : 0,
+    metadata: toStringMap(d.metadata),
+  }));
+}
+
+/**
+ * Recognises an RAG tool result inside an ACP tool-call message.
+ * Returns `null` for every non-RAG tool call.
+ */
+export function extractRagResult(message: AcpMessage): RagExtractResult | null {
+  if (message.role !== 'tool_call' && message.role !== 'tool_call_update') return null;
+  // Only completed calls carry a meaningful result; pending/in_progress tool calls
+  // must keep rendering as a normal status card.
+  if (message.toolStatus !== 'completed') return null;
+
+  const rawInput = message.toolRawInput as any;
+  const candidates = ragOutputCandidates(message.toolRawOutput);
+
+  for (const candidate of candidates) {
+    const payload = parseJson(candidate);
+    if (!payload) continue;
+
+    const hits = asSearchResults(payload);
+    if (hits) return { kind: 'search', hits };
+
+    const documents = asDocumentList(payload);
+    if (documents) return { kind: 'list', documents };
+
+    if (hasExactKeys(payload, ['documentId', 'chunksCount'])
+        && typeof payload.documentId === 'string'
+        && typeof payload.chunksCount === 'number') {
+      return { kind: 'index', documentId: payload.documentId, chunksCount: payload.chunksCount };
+    }
+
+    // `{ success: true }` alone is far too generic to trust, so require both the
+    // exact `{ success }` envelope and the matching `delete_document` input shape.
+    if (hasExactKeys(payload, ['success'])
+        && typeof payload.success === 'boolean'
+        && typeof rawInput?.documentId === 'string') {
+      return { kind: 'delete', documentId: rawInput.documentId, success: payload.success };
+    }
+  }
+
+  return null;
+}
+
+@Pipe({ name: 'ragResult', standalone: true, pure: true })
+export class RagResultPipe implements PipeTransform {
+  transform(message: AcpMessage): RagExtractResult | null {
+    return extractRagResult(message);
+  }
+}
+
 @Pipe({ name: 'editDiff', standalone: true, pure: true })
 export class EditDiffPipe implements PipeTransform {
   transform(message: AcpMessage): EditDiffInfo | null {
