@@ -17,11 +17,24 @@
             }
         </div>
         <div class="acp-actions">
-            @if(!acpService.isNewSession()) {
-                <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()"
-                    (click)="editorToggle.emit()" title="Toggle Editor">
+            <!-- 两个入口按 dock 模式互斥：agent-first 的 overview 由 content 组件内的分段控件进入，
+                 这里放 editor-toggle 收放内容面板；content-first 内容面板常开，改用 overview 图标（弹出 overview 浮窗）。
+                 agent-first 下 editor-toggle 不按 isNewSession 隐藏：收起内容面板后它是唯一的恢复入口，
+                 若随新会话一起隐藏，刷新后内容面板就再也打不开 -->
+            @if (layoutService.dockMode() === 'agent-first') {
+                @if(!acpService.isNewSession()) {
+                    <button class="editor-toggle-btn" [class.active]="layoutService.astContentPanelOpen()"
+                        (click)="editorToggle.emit()" title="Toggle Editor">
+                        <svg class="icon" width="20" height="20">
+                            <use href="#icon-shrink-close"></use>
+                        </svg>
+                    </button>
+                }
+            } @else {
+                <button class="editor-toggle-btn" [class.active]="layoutService.overviewOpen()"
+                    (click)="overviewToggle.emit()" title="Overview">
                     <svg class="icon" width="20" height="20">
-                        <use href="#icon-shrink-close"></use>
+                        <use href="#icon-overview"></use>
                     </svg>
                 </button>
             }

@@ -2,7 +2,7 @@
   [attr.inert]="currentDisplayViewId === 5 || currentDisplayViewId === 6 ? '' : null">
     <div data-layer="left-side-area" class="LeftSideArea ast-left-side-area">
       <div #upBtnlist data-layer="up-btnlist" class="UpBtnlist ast-up-btnlist">
-        @if((agentPanelOpen && dockPosition() === 'left') || (agentPanelOpen && !astContentPanelOpen())) {
+        @if((agentPanelOpen() && dockPosition() === 'left') || (agentPanelOpen() && !astContentPanelOpen())) {
           <div data-svg-wrapper="" data-layer="skills-btn" class="btn-svg SkillsBtn" title="Skills" (click)="toggleSkillsManager()">
             <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M16.8 7C16.8 4.28 14.72 3 12 3C9.28 3 7.2 4.28 7.2 6.84C7.2 8.92 8.64 10.04 12 11C15.36 11.96 16.8 13.08 16.8 15.16C16.8 17.72 14.72 19 12 19C9.28 19 7.2 17.72 7.2 15"/>
@@ -41,49 +41,45 @@
         </div> -->
       </div>
       <div class="ast-down-btnlist">
-        <!-- Dock 图标单一来源：触发按钮与菜单项都通过 ngTemplateOutlet 复用 -->
+        <!-- Dock 图标：单一来源，按当前 dockMode 渲染，点击在两种布局间切换。
+             图形语义化：Agent = 对话气泡，Content = 文档；左右位置对应该模式的实际排布，
+             靠前（primary）的一侧描边更粗、不透明，另一侧弱化。不再用"矩形分栏"表达布局 -->
         <ng-template #dockIcon let-id>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <!-- 图形本身只占 y≈4..16，整体下移 1.5 做视觉居中 -->
+            <g transform="translate(0,1.5)">
             @switch (id) {
-              @case ('dock-left') {
-                <rect x="1" y="3" width="20" height="18" rx="2"/>
-                <line x1="7" y1="3" x2="7" y2="21"/>
+              @case ('agent-first') {
+                <!-- Agent 左（高亮） + Content 右（弱化） -->
+                <g stroke-width="2.1">
+                  <path d="M4 4.5h4.5a2.5 2.5 0 0 1 2.5 2.5v3a2.5 2.5 0 0 1-2.5 2.5H4a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 4 4.5z"/>
+                  <path d="M3.9 12.5v2.8l3-2.8"/>
+                </g>
+                <g transform="translate(11,0)" stroke-width="1.6" opacity="0.5">
+                  <path d="M4 4h4l3 3v7.4a1.6 1.6 0 0 1-1.6 1.6H4a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4 4z"/>
+                  <path d="M8 4v3h3"/>
+                </g>
               }
-              @case ('dock-right') {
-                <rect x="1" y="3" width="20" height="18" rx="2"/>
-                <line x1="13" y1="3" x2="13" y2="21"/>
-              }
-              @case ('agent-max') {
-                <path d="M7 11l3 3L20 4"/>
-                <path d="M19 12v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              }
-              @case ('content-max') {
-                <rect x="1" y="3" width="20" height="18" rx="2"/>
-                <path d="M7 9h6M7 12h6M7 15h4"/>
-              }
-              @default {
-                <use href="#icon-hori-more"></use>
+              @case ('content-first') {
+                <!-- Content 左（高亮） + Agent 右（弱化） -->
+                <g stroke-width="2.1">
+                  <path d="M4 4h4l3 3v7.4a1.6 1.6 0 0 1-1.6 1.6H4a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4 4z"/>
+                  <path d="M8 4v3h3"/>
+                </g>
+                <g transform="translate(11,0)" stroke-width="1.6" opacity="0.5">
+                  <path d="M4 4.5h4.5a2.5 2.5 0 0 1 2.5 2.5v3a2.5 2.5 0 0 1-2.5 2.5H4a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 4 4.5z"/>
+                  <path d="M3.9 12.5v2.8l3-2.8"/>
+                </g>
               }
             }
+            </g>
           </svg>
         </ng-template>
-        <div class="acp-dock-wrapper" (click)="$event.stopPropagation()" (mouseleave)="closeDockMenu()">
-          <button class="acp-icon-button" (mouseenter)="openDockMenu()" title="Dock Position">
-            <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: activeDockItemId }"></ng-container>
-          </button>
-          @if (showDockMenu()) {
-            <div class="acp-dock-menu">
-              <div class="acp-dock-menu-title">Docking position</div>
-              <div class="acp-dock-menu-items">
-                @for (item of dockItems; track item.id) {
-                  <button class="acp-dock-item" [class.active]="item.id === activeDockItemId" (click)="item.activate()" [title]="item.title">
-                    <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: item.id }"></ng-container>
-                  </button>
-                }
-              </div>
-            </div>
-          }
-        </div>
+        <button class="acp-icon-button" (click)="toggleDockMode()"
+          [title]="dockMode() === 'agent-first' ? 'Agent First' : 'Content First'">
+          <ng-container [ngTemplateOutlet]="dockIcon" [ngTemplateOutletContext]="{ $implicit: dockMode() }"></ng-container>
+        </button>
         <div #menuBtn data-svg-wrapper="" data-layer="project-folder-btn"  class="btn-svg" (click)="toggleMenu($event)">
           <svg width="24" height="24">
             <use href="#icon-menu"></use>
@@ -92,7 +88,7 @@
         <div ast-menu [(isOpen)]="isMenuOpen" [menuInitiator]="menuAnchor" [verticalOffset]="menuBtn.offsetHeight - 10"
           (mouseentermenu)="onMenuMouseEnter()" (mouseleavemenu)="onMenuMouseLeave()"
           class="app-menu-dropdown ast-right-menu">
-          @if(!agentPanelOpen) {
+          @if(!agentPanelOpen()) {
             <!-- File Group -->
             <div #fileMenuItem class="app-menu-item has-submenu"
             (mouseenter)="fileSubmenu.onParentHover()"
@@ -228,7 +224,7 @@
     </div>
     <div class="ast-panel-container" [class.dock-left]="dockPosition() === 'left'">
       <!-- 水平拖动条 -->
-      @if(astContentPanelOpen() && agentPanelOpen) {
+      @if(astContentPanelOpen() && agentPanelOpen()) {
         <div style="position: absolute;width: 100%;height: 100%;">
           <div class="split-line-ew ast-split-handle-ew"
             [style.left]="dockPosition() === 'right' ? 'calc(100% - ' + agentPanelWidthPx() + 'px - 4px)' : agentPanelWidthPx() + 'px'"
@@ -237,18 +233,20 @@
       }
 
       <!-- Docked Agent panel -->
-      <div *appKeepAlive="agentPanelOpen" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (layoutChanged)="onAgentLayoutChanged()" (themeApply)="onA2uiThemeApply($event)"></div>
+      <div *appKeepAlive="agentPanelOpen()" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (overviewToggle)="onOverviewToggle()" (layoutChanged)="onAgentLayoutChanged()" (themeApply)="onA2uiThemeApply($event)"></div>
 
       <!-- Middle panel -->
-      <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
+      <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen() ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
           <!-- 垂直拖动条 -->
           <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
             <div class="split-line-ns ast-split-handle-ns"
               [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
           </div>
 
-          <div ast-content [leftOffset]="(dockPosition() === 'right' || !agentPanelOpen) ? 0 : agentPanelWidthPx()"
+          <!-- workspace：overview 在 agent-first 下由 content 组件内的分段控件切换，在 content-first 下挂在 agent 面板上 -->
+          <div ast-content [leftOffset]="(dockPosition() === 'right' || !agentPanelOpen()) ? 0 : agentPanelWidthPx()"
             (dataListChangeOutput)="onHandleDataListChange($event)" (indicatorDetail)="toggleIndicatorDetailPanel($event)"
+            (agentPanelToggle)="toggleAgentPanel()"
             (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
           </div>
           @if(terminalPanelShow || keepTerminalInstance.value) {
@@ -321,6 +319,21 @@
 }
 
 <app-notification></app-notification>
+
+<!-- Content-first：从 agent 面板弹出的 Overview 浮窗。position:fixed 脱离面板容器的 flex/overflow 约束，
+     agent 面板与 content 面板的位置、宽度均不受影响；支持关闭按钮、点击遮罩关闭、点击卡片关闭 -->
+@if (agentOverlayOverviewOpen()) {
+  <div class="ast-overview-popup-backdrop" (click)="closeOverview()"></div>
+  <div class="ast-overview-popup" role="dialog" aria-modal="true" aria-label="Overview">
+    <div class="ast-overview-popup-header">
+      <div class="ast-overview-popup-title">Overview</div>
+      <button type="button" class="ast-overview-popup-close" title="Close" (click)="closeOverview()">×</button>
+    </div>
+    <div class="ast-overview-popup-body">
+      <ast-overview (closed)="closeOverview()"></ast-overview>
+    </div>
+  </div>
+}
 
 @if(indicatorDetailType != 'none') {
   <div class="indicator-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">

@@ -484,205 +484,39 @@ textarea:focus {
   opacity: 0.8;
 }
 
-/* Overview 占位内容样式 */
-.overview-placeholder {
-  grid-area: 1 / 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+
+/* Content 右上角 Agent 面板 toggle：仅 content-first 渲染。
+   尺寸/对齐复用 .ast-actions-bar .btn-svg（与 tab header 的 MoreBtn 同为 20x20），
+   active 表示 Agent 面板当前已关闭，点击可拉起 */
+.ast-content-agent-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  padding: 24px;
-  box-sizing: border-box;
-  overflow: auto;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0 0 0 auto;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: var(--vscode-foreground);
-  user-select: none;
-}
-
-/* Overview：当前激活 session/task 信息卡片 */
-.overview-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  width: 100%;
-  max-width: 880px;
-}
-
-.overview-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 0;
-  padding: 14px 16px;
-  text-align: left;
-  font: inherit;
-  color: var(--vscode-foreground);
-  background: var(--vscode-panel-background, var(--vscode-background, transparent));
-  border: 1px solid var(--vscode-border-color);
-  border-radius: var(--vscode-radius-md, 6px);
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
 }
 
-.overview-item:hover {
+.ast-content-agent-toggle:hover {
   background: var(--vscode-hover-background);
-  border-color: var(--vscode-focus-border, #3794ff);
 }
 
-.overview-item:focus-visible {
-  outline: 1px solid var(--vscode-focus-border, #3794ff);
-  outline-offset: 1px;
-}
-
-.overview-item-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-
-.overview-item-icon {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  opacity: 0.7;
-}
-
-.overview-item-label {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  color: var(--vscode-border-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.overview-item-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  padding: 2px 8px;
-  font-size: 11px;
-  line-height: 1.4;
-  white-space: nowrap;
-  color: var(--vscode-foreground);
-  border: 1px solid var(--vscode-border-color);
-  border-radius: 10px;
-}
-
-.overview-item-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #888;
-  flex-shrink: 0;
-}
-
-.overview-item-badge[data-status='status-connected'] {
-  border-color: #4ec9b0;
-  color: #4ec9b0;
-}
-
-.overview-item-badge[data-status='status-connected'] .overview-item-dot {
-  background: #4ec9b0;
-  box-shadow: 0 0 4px #4ec9b0;
-}
-
-.overview-item-badge[data-status='status-connecting'] {
-  border-color: #3794ff;
-  color: #3794ff;
-}
-
-.overview-item-badge[data-status='status-connecting'] .overview-item-dot {
-  background: #3794ff;
-  box-shadow: 0 0 4px #3794ff;
-  animation: overview-dot-pulse 1.2s ease-in-out infinite;
-}
-
-.overview-item-badge[data-status='status-error'] {
-  border-color: #f44747;
-  color: #f44747;
-}
-
-.overview-item-badge[data-status='status-error'] .overview-item-dot {
-  background: #f44747;
-  box-shadow: 0 0 4px #f44747;
-}
-
-@keyframes overview-dot-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-
-.overview-item-value {
-  display: block;
-  max-width: 100%;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.overview-item-value-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.overview-item-value-text {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.overview-item-sub {
-  display: block;
-  max-width: 100%;
-  font-size: 11px;
-  color: var(--vscode-border-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.overview-agent-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 18px;
-  padding: 0 5px;
-  flex-shrink: 0;
-  border-radius: 3px;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.overview-type-tag {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.ast-content-agent-toggle.active {
+  color: var(--vscode-textLink-foreground, #3794ff);
 }
 
 /* 视图分段控件：无边框纯文本并排，激活项以实色体现，非激活项弱化（无边框/无底色）。
-   两项字重恒定一致：切换激活时字形宽度不变，避免文本/相邻项发生位移 */
+   两项字重恒定一致：切换激活时字形宽度不变，避免文本/相邻项发生位移。
+   仅 agent-first 渲染（content-first 下 overview 从 agent 面板弹出） */
 .view-segment {
   display: inline-flex;
   align-items: center;
@@ -726,4 +560,11 @@ textarea:focus {
 
 .view-segment-item.active {
   opacity: 1;
+}
+
+/* agent-first 下 overview 与 ast-actions-bar 共用同一个网格单元（顶部操作行覆盖在其上） */
+ast-overview {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
 }

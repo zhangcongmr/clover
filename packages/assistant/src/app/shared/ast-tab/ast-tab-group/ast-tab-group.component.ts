@@ -151,7 +151,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
       ulElement.scrollTo({ left: 0, behavior: 'instant' });
 
       if (this.showAllOpenedBtnAdded) {
-        this.rightMoreButtons.update(v => v.filter(btn => btn.id !== 'down'));
+        this.rightMoreButtons.update(v => v.filter(btn => btn.id !== 'showMoreOpenedListId'));
         this.showAllOpenedBtnAdded = false;
       }
       return;
@@ -181,9 +181,9 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
     this.scrollToRightEnable = this.leftScroll < maxScrollLeft;
 
     if (!this.showAllOpenedBtnAdded) {
-      // 如果右上角按钮中没有 id 为 'down' 的按钮，则添加
-      if(!this.rightMoreButtons().some(btn => btn.id === 'down')) {
-        this.rightMoreButtons.update(v => [{ label: 'show all opened', id: 'down' }, ...v]);
+      // 如果右上角按钮中没有 id 为 'showMoreOpenedListId' 的按钮，则添加
+      if(!this.rightMoreButtons().some(btn => btn.id === 'showMoreOpenedListId')) {
+        this.rightMoreButtons.update(v => [{ label: 'show all opened', id: 'showMoreOpenedListId' }, ...v]);
         this.showAllOpenedBtnAdded = true;
       }
     }
@@ -535,7 +535,7 @@ computedScrollBarLength = signal("0px");
   downMenuInitiator: DOMRect | undefined;
   downMenuOpen = false;
   hiddenTabs = signal<AstTabComponent[]>([])
-  onDownButtonClick(evt: any, action: string) {
+  onshowMoreOpenedListId(evt: any, action: string) {
     if (!this.downMenuOpen) {
       this.downMenuOpen = !this.downMenuOpen;
       this.downMenuInitiator = { // 模拟一个 DOMRect 对象

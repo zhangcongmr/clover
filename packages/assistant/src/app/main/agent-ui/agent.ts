@@ -78,6 +78,8 @@ export class AgentComponent {
 
   /** Re-emitted upward so app.component can toggle the AST content (editor) panel. */
   editorToggle = output<void>();
+  /** Re-emitted upward so app.component can toggle the overview panel (content-first only). */
+  overviewToggle = output<void>();
   /** Re-emitted upward when panel/layout state is changed directly through services (e.g. createNewTask). */
   layoutChanged = output<void>();
   /** Re-emitted upward when user clicks "应用到项目UI" in A2UI theme preview. */
@@ -474,8 +476,12 @@ export class AgentComponent {
   async createNewTask(): Promise<void> {
     this.leaveCollab();
     this.panelError.set(null);
-    this.layoutService.toggleAstContentPanel(false);
-    // 通知父组件把关闭后的布局状态同步进 dock 快照，保证刷新后仍是 Maximize Agent
+    // content-first 下内容面板常开（收放入口在 content 组件右上角），新建任务不应去关它；
+    // 只有 agent-first 才顺带收起内容面板，状态写入 agent-first 自己的参数集
+    if (this.layoutService.dockMode() === 'agent-first') {
+      this.layoutService.toggleAstContentPanel(false);
+    }
+    // 通知父组件把关闭后的布局状态同步进 dock 快照
     this.layoutChanged.emit();
     // 先清空 selectedProject，再设 isNewSession，
     // 防止 effect 在 selectedProject 仍指向 Task 时触发 loadTaskSession

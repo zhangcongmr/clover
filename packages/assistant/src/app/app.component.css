@@ -160,77 +160,7 @@
   justify-content: flex-start
 }
 
-/* ACP Dock Menu Styles */
-.acp-dock-wrapper {
-  position: relative;
-}
-
-.acp-dock-menu {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  z-index: 1000;
-  min-width: 160px;
-  background: var(--vscode-background);
-  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 8px;
-}
-
-.acp-dock-menu-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--vscode-foreground);
-  padding: 4px 8px;
-  margin-bottom: 4px;
-}
-
-.acp-dock-menu-items {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
-}
-
-.acp-dock-menu .acp-panel-close {
-  width: 100%;
-  height: 28px;
-  justify-content: center;
-  color: var(--vscode-errorForeground);
-}
-
-.acp-dock-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-  color: var(--vscode-foreground);
-  transition: background-color 0.15s, border-color 0.15s;
-}
-
-.acp-dock-item:hover {
-  background: var(--vscode-hover-background);
-}
-
-.acp-dock-item.active {
-  border-color: var(--vscode-accent-color);
-  background: var(--vscode-primary-background);
-  color: var(--vscode-primary-foreground);
-}
-
-.acp-dock-item svg {
-  width: 20px;
-  height: 20px;
-}
-
+/* ACP Dock 按钮：单击在 agent-first / content-first 之间切换 */
 .acp-panel-close {
   width: 28px;
   height: 28px;
@@ -292,6 +222,73 @@
   min-height: 0;
   overflow: hidden;
   margin: 5px;
+}
+
+/* Content-first 的 Overview 浮窗：脱离面板容器的 flex 约束，agent/content 面板均不受影响 */
+.ast-overview-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ast-overview-popup {
+  position: fixed;
+  z-index: 1101;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(920px, calc(100vw - 96px));
+  max-height: min(640px, calc(100vh - 96px));
+  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.35));
+  border-radius: 8px;
+  background-color: var(--vscode-background);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.ast-overview-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 2rem;
+  padding: 0 8px 0 12px;
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  color: var(--vscode-foreground);
+}
+
+.ast-overview-popup-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ast-overview-popup-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--vscode-radius-sm, 4px);
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ast-overview-popup-close:hover {
+  background: var(--vscode-hover-background);
+}
+
+.ast-overview-popup-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
 }
 
 .indicator-panel {
