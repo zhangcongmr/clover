@@ -29,19 +29,23 @@ import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
 import { KeepAliveDirective } from './shared/keep-alive.directive';
-import { LayoutService } from './main/layout.service';
+import { DockMode, LayoutService } from './main/layout.service';
+import { OverviewComponent } from './main/overview/overview.component';
 import { APP_VERSION } from '../app-version';
 
-/** Dock 菜单项标识，与模板中 #dockIcon 的 @case 分支一一对应 */
-type DockItemId = 'dock-left' | 'dock-right' | 'agent-max' | 'content-max';
+/** Dock 布局项标识，与模板中 #dockIcon 的 @case 分支一一对应 */
+type DockItemId = DockMode;
 
-/** 每种布局特有的参数集，切换布局时 applyDockLayout 据此还原现场 */
+/**
+ * 每种布局特有的参数集，切换布局时 applyDockMode 据此还原现场。
+ * expanded 是该布局自己的展开态：
+ * - agent-first：中间内容面板是否展开（入口在 Agent 面板右上角）
+ * - content-first：Agent 面板是否展开（入口在 Content 组件右上角）
+ */
 interface DockLayoutParams {
-  position: 'left' | 'right';
   left: number;
   previousLeftPct: number;
-  agentPanelOpen: boolean;
-  astContentPanelOpen: boolean;
+  expanded: boolean;
 }
 
 interface DockItem {
@@ -57,7 +61,7 @@ interface DockItem {
     styleUrls: ['./app.component.css'],
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
-      AstTabComponent, ContentComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
+      AstTabComponent, ContentComponent, OverviewComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
         AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, RagManagerComponent, AstModalComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -98,9 +102,16 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   currentDisplayViewId: number = 1;
   previousViewId: number = 1;
   astContentPanelOpen = computed(() => this.layoutService.astContentPanelOpen());
-  agentPanelOpen = true;
+  agentPanelOpen = this.layoutService.agentPanelOpen;
+  overviewOpen = this.layoutService.overviewOpen;
+  /**
+   * 只有 content-first 的 overview 会弹出（浮窗形式，盖在应用之上，不影响 agent/content 面板）；
+   * agent-first 的 overview 走 content 组件内的 Overview|Workspace 分段控件，由 content 组件自己渲染。
+   */
+  protected readonly agentOverlayOverviewOpen = computed(() =>
+    this.layoutService.dockMode() === 'content-first' && this.layoutService.overviewOpen());
+  dockMode = this.layoutService.dockMode;
   dockPosition = computed(() => this.layoutService.dockPosition());
-  protected showDockMenu = signal(false);
   /** Whether the Skills Manager dialog is open. */
   showSkillsManager = signal<boolean>(false);
   /** Whether the MCP Manager dialog is open. */
@@ -109,43 +120,19 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   showRagManager = signal<boolean>(false);
 
   /**
-   * 当前选中的 dock 项。四个分支互斥：
-   * agent + content → left/right，agent only → agent-max，content only → content-max。
-   * 两个面板都关闭时返回 null，触发按钮回退到通用的 hori-more 图标。
-   * 用 getter 而非 computed：agentPanelOpen 是普通字段，computed 不会跟踪它的变化。
+   * dock 布局项，模板按钮直接按 dockMode 渲染图标并触发 toggleDockMode()。
+   * 每个布局持有独立的分栏几何与展开态，互不干扰。
    */
-  get activeDockItemId(): DockItemId | null {
-    const contentOpen = this.astContentPanelOpen();
-    if (this.agentPanelOpen) {
-      return contentOpen
-        ? (this.dockPosition() === 'left' ? 'dock-left' : 'dock-right')
-        : 'agent-max';
-    }
-    return contentOpen ? 'content-max' : null;
-  }
-
-  /** dock 菜单项，模板用 @for 渲染，标题/行为/参数集集中维护 */
   protected readonly dockItems: DockItem[] = [
     {
-      id: 'dock-left', title: 'Agent Left, Content Right', activate: () => this.applyDockLayout('dock-left'),
-      params: { position: 'left', left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), agentPanelOpen: true, astContentPanelOpen: true },
+      id: 'agent-first', title: 'Agent First, Content Right', activate: () => this.applyDockMode('agent-first'),
+      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: true },
     },
     {
-      id: 'dock-right', title: 'Content Left, Agent Right', activate: () => this.applyDockLayout('dock-right'),
-      params: { position: 'right', left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), agentPanelOpen: true, astContentPanelOpen: true },
-    },
-    {
-      id: 'agent-max', title: 'Maximize Agent', activate: () => this.applyDockLayout('agent-max'),
-      params: { position: 'left', left: 0, previousLeftPct: 0.75, agentPanelOpen: true, astContentPanelOpen: false },
-    },
-    {
-      id: 'content-max', title: 'Maximize Content', activate: () => this.applyDockLayout('content-max'),
-      params: { position: 'left', left: 0, previousLeftPct: 0.75, agentPanelOpen: false, astContentPanelOpen: true },
+      id: 'content-first', title: 'Content First, Agent Right', activate: () => this.applyDockMode('content-first'),
+      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: true },
     },
   ];
-
-  /** 当前激活的 dock 项，持久化时用于确定重启后的布局 */
-  private currentDockItemId: DockItemId | null = null;
   terminalPanelShow = false;
   themeIconPath = signal<string | null>(null);
   private readonly THEME_ICON_KEY = 'vscode-theme-icon';
@@ -676,8 +663,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   onGenerateCustomTheme() {
     const skill = BUILT_IN_SKILLS.find(s => s.name === THEME_SKILL_NAME);
     if (skill) {
-      if (!this.agentPanelOpen) {
-        this.agentPanelOpen = true;
+      if (!this.agentPanelOpen()) {
+        this.agentPanelOpen.set(true);
         this.onAgentLayoutChanged();
       }
       const seed = randomThemePromptSeed(this.lastThemeSeedLabel);
@@ -700,52 +687,95 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     });
   }
 
-  /** editorToggle：在双面板与 Maximize Agent 之间往返切换 */
+  /**
+   * Agent 面板右上角 editorToggle：只切换中间内容面板的展开/收起，不改变 dock 图标。
+   * 展开态写入 agent-first 自己的参数集。
+   */
   toggleAstContentPanel() {
-    if (this.layoutService.astContentPanelOpen()) {
-      this.applyDockLayout('agent-max');
-    } else {
-      this.applyDockLayout(this.dockPosition() === 'left' ? 'dock-left' : 'dock-right');
+    const next = !this.layoutService.astContentPanelOpen();
+    this.layoutService.astContentPanelOpen.set(next);
+    // 必须重算 agent 面板宽度：ResizeObserver 只监听 host 宽度，开关中间面板不会触发它。
+    // 内容面板关闭时 agent 面板占满整宽，若不重算，重新展开的中间面板会被顶出可视区（看起来"没展开"）
+    this.refreshAgentPanelWidth();
+    this.onAgentLayoutChanged();
+  }
+
+  /**
+   * Content 组件右上角 toggle：只切换 Agent 面板的展开/收起，不改变 dock 图标。
+   * 展开态写入 content-first 自己的参数集。
+   */
+  toggleAgentPanel() {
+    const next = !this.layoutService.agentPanelOpen();
+    this.layoutService.agentPanelOpen.set(next);
+    // Content-first 下 overview 的入口在 Agent 面板右上角，Agent 收起则 overview 必须不可达
+    if (!next) {
+      this.layoutService.overviewOpen.set(false);
     }
+    // 同 toggleAstContentPanel：host 宽度不变，ResizeObserver 不会因开关面板而触发
+    this.refreshAgentPanelWidth();
+    this.onAgentLayoutChanged();
   }
 
-  /** 鼠标移入 dock 按钮即弹出菜单（移出整个 dock 区域时由 closeDockMenu 关闭） */
-  openDockMenu(): void {
-    this.showDockMenu.set(true);
+  /** Agent 面板右上角 overview 图标：翻转 overview 面板 */
+  onOverviewToggle(): void {
+    this.layoutService.overviewOpen.update(v => !v);
+    this.saveDockLayouts();
   }
 
-  closeDockMenu(): void {
-    this.showDockMenu.set(false);
+  closeOverview(): void {
+    this.layoutService.overviewOpen.set(false);
+    this.saveDockLayouts();
   }
 
-  /** 统一切换入口：从对应 dockItem 的参数集读取值并应用到当前布局 */
-  private applyDockLayout(id: DockItemId): void {
+  /** dock 按钮单击：在 agent-first 与 content-first 之间切换 */
+  toggleDockMode(): void {
+    const current = this.layoutService.dockMode();
+    // 切换前先把当前布局的实时几何与展开态存回它自己的参数集
+    this.captureExpandedState();
+    this.syncDockLayoutParams();
+    const next: DockMode = current === 'agent-first' ? 'content-first' : 'agent-first';
+    // overviewOpen 是全局开关：agent-first 由 content 分段控件消费，content-first 由 agent 面板浮层消费，
+    // 切模式时状态可沿用，无需强制关闭
+    this.applyDockMode(next);
+  }
+
+  /** 把当前展开态写回当前布局的参数集（agent-first 记内容面板，content-first 记 Agent 面板） */
+  private captureExpandedState(): void {
+    const item = this.dockItems.find(i => i.id === this.layoutService.dockMode());
+    if (!item) return;
+    item.params.expanded = this.layoutService.dockMode() === 'agent-first'
+      ? this.layoutService.astContentPanelOpen()
+      : this.layoutService.agentPanelOpen();
+  }
+
+  /** 统一切换入口：切到指定 dock 模式，并从其参数集还原分栏几何与展开态 */
+  private applyDockMode(id: DockMode): void {
     const p = this.dockItems.find(i => i.id === id)?.params;
     if (!p) return;
-    // position 只在双面板布局生效，避免 agent-max/content-max 把停靠侧改写掉（editorToggle 往返会翻侧）
-    if (id === 'dock-left' || id === 'dock-right') {
-      this.layoutService.dockPosition.set(p.position);
+    this.layoutService.dockMode.set(id);
+    if (id === 'agent-first') {
+      // agent-first 下 Agent 面板常驻（可收放的只有内容面板），必须丢弃从 content-first
+      // 带过来的 agentPanelOpen=false，否则切过去时 Agent 面板整体不显示（宽度算出来也是 0）
+      this.layoutService.agentPanelOpen.set(true);
+      this.layoutService.astContentPanelOpen.set(p.expanded);
+    } else {
+      this.layoutService.agentPanelOpen.set(p.expanded);
+      // content-first 下内容面板常开：它的收放入口在 Agent 面板里，而那里只剩 overview 图标，
+      // 若沿用 agent-first 的收起态会导致内容面板及其 toggle 一起消失、无法再打开
+      this.layoutService.astContentPanelOpen.set(true);
+      if (!p.expanded) {
+        this.layoutService.overviewOpen.set(false);
+      }
     }
-    this.layoutService.astContentPanelOpen.set(p.astContentPanelOpen);
-    this.agentPanelOpen = p.agentPanelOpen;
     this.previousLeftPct = p.previousLeftPct;
     this.leftPct = p.left;
-    this.showDockMenu.set(false);
     this.onAgentLayoutChanged();
     this.refreshAgentPanelWidth();
   }
 
   /** 子组件直接通过 service 改变面板状态后（如 createNewTask），把实时状态同步进 dock 快照并持久化 */
   protected onAgentLayoutChanged(): void {
-    if (this.agentPanelOpen && this.layoutService.astContentPanelOpen()) {
-      this.currentDockItemId = this.dockPosition() === 'left' ? 'dock-left' : 'dock-right';
-    } else if (this.agentPanelOpen) {
-      this.currentDockItemId = 'agent-max';
-    } else if (this.layoutService.astContentPanelOpen()) {
-      this.currentDockItemId = 'content-max';
-    } else {
-      this.currentDockItemId = null;
-    }
+    this.captureExpandedState();
     this.syncDockLayoutParams();
     this.saveDockLayouts();
   }
@@ -1066,61 +1096,77 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     this.saveDockLayouts();
   }
 
-  /** 拖动 EW 分隔条时，把实时分栏几何同步到 4 个 dockItem 的参数集（面板开关/停靠侧保持各自布局配置） */
+  /** 拖动 EW 分隔条时，把实时分栏几何同步到当前 dockItem 的参数集 */
   private syncDockLayoutParams(): void {
-    for (const item of this.dockItems) {
-      item.params.left = this.leftPct;
-      item.params.previousLeftPct = this.previousLeftPct;
-    }
+    const item = this.dockItems.find(i => i.id === this.layoutService.dockMode());
+    if (!item) return;
+    item.params.left = this.leftPct;
+    item.params.previousLeftPct = this.previousLeftPct;
   }
 
-  /** 将 4 个 dockItem 整体（含参数集）与当前激活布局持久化到单一快照 key */
+  /** 将 dock 模式、各自参数集与当前激活模式持久化到单一快照 key */
   private saveDockLayouts(): void {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(this.ACP_DOCK_LAYOUTS_KEY, JSON.stringify({
-      activeId: this.currentDockItemId,
-      items: this.dockItems.map(({ id, params }) => ({ id, params })),
+      activeMode: this.layoutService.dockMode(),
+      modes: this.dockItems.map(({ id, params }) => ({ id, params })),
     }));
   }
 
-  /** 从快照恢复每个 dockItem 的参数集，并用 activeId 对应项还原全局面板/停靠状态 */
+  /** 从快照恢复每个 dock 模式的参数集，并用 activeMode 对应项还原全局面板状态 */
   private restoreDockLayouts(): void {
     if (typeof localStorage === 'undefined') return;
     const raw = localStorage.getItem(this.ACP_DOCK_LAYOUTS_KEY);
-    if (raw) {
-      try {
-        const data = JSON.parse(raw);
-        for (const item of this.dockItems) {
-          const stored = data?.items?.find((s: any) => s?.id === item.id);
-          if (stored?.params && typeof stored.params.left === 'number') {
-            Object.assign(item.params, stored.params);
-          }
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      const isLegacy = Array.isArray(data?.items);
+      const list: any[] = isLegacy ? data.items : (data?.modes ?? []);
+
+      for (const item of this.dockItems) {
+        const stored = list.find((s: any) => s?.id === item.id);
+        if (!stored?.params) continue;
+        const p = stored.params;
+        if (typeof p.left === 'number') {
+          item.params.left = p.left;
         }
-        this.currentDockItemId = this.isDockItemId(data?.activeId) ? data.activeId : null;
-        const active = data?.items?.find((s: any) => s?.id === this.currentDockItemId);
-        if (active?.params) {
-          const p = active.params;
-          if (p.position === 'left' || p.position === 'right') {
-            this.layoutService.dockPosition.set(p.position);
-          }
-          this.layoutService.astContentPanelOpen.set(!!p.astContentPanelOpen);
-          this.agentPanelOpen = !!p.agentPanelOpen;
-          if (Number.isFinite(p.previousLeftPct)) {
-            this.previousLeftPct = p.previousLeftPct;
-          }
-          if (Number.isFinite(p.left)) {
-            this.leftPct = p.left;
-          }
+        if (Number.isFinite(p.previousLeftPct)) {
+          item.params.previousLeftPct = p.previousLeftPct;
         }
-        return;
-      } catch {
-        // 快照损坏则忽略，保持默认布局与初始参数集
+        if (typeof p.expanded === 'boolean') {
+          item.params.expanded = p.expanded;
+        } else if (isLegacy) {
+          // 旧结构没有 expanded，按各自的语义降级推导
+          item.params.expanded = item.id === 'agent-first'
+            ? !!p.astContentPanelOpen
+            : !!p.agentPanelOpen;
+        }
       }
+
+      const activeId = isLegacy ? this.migrateLegacyActiveId(data?.activeId) : data?.activeMode;
+      const active = this.dockItems.find(i => i.id === activeId) ?? this.dockItems[0];
+      this.applyDockMode(active.id);
+      if (isLegacy) {
+        // 迁移成功后立即覆盖为新格式，避免重复降级
+        this.saveDockLayouts();
+      }
+    } catch {
+      // 快照损坏则忽略，保持默认布局与初始参数集
     }
   }
 
-  private isDockItemId(value: unknown): value is DockItemId {
-    return value === 'dock-left' || value === 'dock-right' || value === 'agent-max' || value === 'content-max';
+  /** 旧版 activeId（dock-left/dock-right/agent-max/content-max）映射到新的两种模式 */
+  private migrateLegacyActiveId(value: unknown): DockItemId | null {
+    switch (value) {
+      case 'dock-left':
+      case 'agent-max':
+        return 'agent-first';
+      case 'dock-right':
+      case 'content-max':
+        return 'content-first';
+      default:
+        return null;
+    }
   }
 
   override whenMouseMove(evt: any) {

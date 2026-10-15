@@ -170,6 +170,7 @@
       } @else {
         <app-acp-panel class="custom-scroll"
           (editorToggle)="editorToggle.emit()"
+          (overviewToggle)="overviewToggle.emit()"
           (sidebarExpand)="layoutService.expandSidebar()"
           (themeApply)="themeApply.emit($event)"
           [sidebarCollapsed]="layoutService.sidebarCollapsed()"

@@ -1,316 +1,243 @@
+<!-- Overview|Workspace 分段控件：仅 agent-first 渲染（content-first 的 overview 从 agent 面板弹出） -->
 <ng-template #viewSegment>
-  <div class="view-segment" role="group" aria-label="Content view">
-    <button type="button" class="view-segment-item" [class.active]="contentView() === 'overview'"
-      (click)="selectContentView('overview')" title="Overview">
-      <span>Overview</span>
-    </button>
-    <button type="button" class="view-segment-item" [class.active]="contentView() === 'workspace'"
-      (click)="selectContentView('workspace')" title="Workspace">
-      <span>Workspace</span>
-    </button>
-  </div>
-</ng-template>
-
-<!-- 顶部操作条只在 overview 或无 tab 时出现；有 tab 且侧栏收起时，分段控件改由 tab 头部左侧槽位承载 -->
-@if (contentView() === 'overview' || openedList().length === 0) {
-  <div class="ast-actions-bar">
-    @if (contentView() === 'overview' || !sideOpen) {
-      <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
-    }
-  </div>
-}
-@if (contentView() === 'workspace') {
-	<div class="ast-content-main">
-	  @if(sideOpen) {
-		<div class="ast-content-drag-overlay">
-		  <div class="split-line ast-content-split-handle"
-			[style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
-			(mousedown)="dragStart($event, 'ew')"></div>
-		</div>
-	  }
-
-	  <div class="ast-content-drag-overlay">
-		<div [style.display]="addMarkFile?'block': 'none'" class="new_file ast-content-new-file-popup">
-		  <input type="text" name="createNewFile" [(ngModel)]="newFileName" (keyup)="newFileKeyUp($event, newFileName)"
-			autocomplete="off" required>
-		</div>
-		<app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
-	  </div>
-
-	  @if (sideOpen) {
-		<div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
-		  <div class="left-side-section-bar">
-			<ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
-		  </div>
-		  @if(currentDisplayViewId==1) {
-			@if(showButtonPlaceholder()) {
-			  <div class="ast-content-empty-state">
-				<div class="ast-content-empty-card">
-				  <div class="ast-content-empty-title">NO FOLDER/FILE OPENED</div>
-				  <div class="ast-content-empty-desc">You have not yet opened a folder or file.</div>
-				  <div class="ast-content-empty-actions">
-					<button (click)="openFolderInContent('readwrite')" class="ast-content-empty-primary-btn">Open Folder</button>
-					<button (click)="openFileInContent()" class="ast-content-empty-secondary-btn">Open File</button>
-				  </div>
-				  <div class="ast-content-empty-hint">Click to browse and select a local folder or file.</div>
-				</div>
-			  </div>
-			} @else {
-			  <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
-				<div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
-				  <!-- <div data-layer="ProjectName" class="Projectname ast-projectname">ProjectName</div> -->
-				  <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="shrinkExplorer()">
-					<svg class="icon" width="20" height="20">
-					  <use href="#icon-shrink-open"></use>
-					</svg>
-				  </div>
-				</div>
-				<div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
-				  <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
-					<svg class="icon" width="20" height="20">
-					  <use href="#icon-add-file"></use>
-					</svg>
-				  </div>
-				  <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" title="Add Folder" class="btn-svg FolderaddBtn">
-					<svg class="icon" width="20" height="20">
-					  <use href="#icon-add-folder"></use>
-					</svg>
-				  </div> -->
-				  @if(!isLocked) {
-					<!-- <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" title="Import"
-					  class="btn-svg ImportBtn">
-					  <svg class="icon" width="20" height="20">
-						<use href="#icon-add-obj"></use>
-					  </svg>
-					</div> -->
-				  } @else {
-					<div data-svg-wrapper="" data-layer="fork-btn" (click)="forkBtn($event)" title="Fork"
-					  class="btn-svg ForkBtn">
-					  <svg class="icon" width="20" height="20">
-						<use href="#icon-fork"></use>
-					  </svg>
-					</div>
-					@if(coreService.forking()) {
-					  <span class="ast-content-forking-text">Forking...</span>
-					}
-				  }
-
-				  <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
-					<svg class="icon" width="20" height="20">
-					  <use href="#icon-location"></use>
-					</svg>
-				  </div> -->
-				  <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" title="All Collapse"
-					class="btn-svg CollapseBtn">
-					<svg class="icon" width="19" height="21">
-					  <use href="#icon-collapse"></use>
-					</svg>
-				  </div>
-
-				</div>
-			  </div>
-			  <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" [folderBeforeToggle]="onFolderBeforeToggle" class="custom-scroll ast-content-tree"></div>
-			  <ast-modal [title]="'Share on Community'" [visible]="shareOnMenuVisible" [modalSize]="'small'" (close)="shareOnMenuVisible = false">
-				<div class="ast-modal-body">
-				  <div class="ShareOnMessage">
-					Are you sure to share on Community?
-				  </div>
-				  <div class="ShareOnActions">
-					<div class="btn cancel" (click)="shareOnMenuVisible = false">Cancel</div>
-					<div class="btn confirm" (click)="confirmShare()">Share</div>
-				  </div>
-				</div>
-			  </ast-modal>
-			  <ast-modal [title]="'Duplicate Entry'" [visible]="duplicateModalVisible()" [modalSize]="'small'" (close)="cancelDuplicate()">
-				<div class="ast-modal-body">
-				  <div class="ShareOnMessage">
-					This name and username combination already exists. Jump to the existing project?
-				  </div>
-				  <div class="ShareOnActions">
-					<div class="btn cancel" (click)="cancelDuplicate()">Cancel</div>
-					<div class="btn confirm" (click)="confirmDuplicate()">Jump to Project</div>
-				  </div>
-				</div>
-			  </ast-modal>
-			  <ast-modal [title]="'Select Save Location'" [visible]="showLocationSelector()" [modalSize]="'large'" (close)="cancelLocation()">
-				<div class="ast-modal-body select-location-modal-body">
-				  <div class="select-location-message">
-					Please select a folder in the tree below to save the imported files/folders.
-				  </div>
-				  <div class="select-location-tree-wrapper">
-					<div ast-tree class="select-location-tree" [data]="locationSelectionTree()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
-				  </div>
-				  <div class="ShareOnActions select-location-actions">
-					<div class="btn cancel" (click)="cancelLocation()">Cancel</div>
-					<div class="btn confirm" (click)="confirmLocation()">Save Here</div>
-				  </div>
-				</div>
-			  </ast-modal>
-			}
-			<app-add-project (apiInfoSelected)="apiSelected($event)" />
-		  } @else if(currentDisplayViewId==2) {
-			<div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
-			  <div>Search:</div>
-			</div>
-			<div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
-			<div>{{searchResults}}</div>
-		  } @else if(currentDisplayViewId==3) {
-			<div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
-			  <div>Plugins:</div>
-			</div>
-			<div>The function is under development.</div>
-		  }
-		</div>
-	  }
-
-	  <div class="ast-content-tabs-wrapper">
-		@if (openedList().length>0) {
-		  <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
-		   (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
-		   [(leftMoreButtons)]="leftMoreButtons">
-			<!-- 侧栏收起时分段控件投影到 tab 头部左侧槽位（该槽位仅在 leftMoreButtons 非空即侧栏收起时渲染），与 shrink 按钮并排 -->
-			<div tabHeaderSegment class="view-segment-slot">
-			  <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
-			</div>
-			@for (openedTab of openedList(); track openedTab.id) {
-			<div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
-			  [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
-			  (onClickTab)="onClickTab($event)">
-			  @if (openedTab['nodeType']=='api') {
-			  <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
-			  }
-			  @if (openedTab['nodeType']=='file') {
-				<div notebook [data]="openedTab" (saved)="saveText($event)" (contentChanged)="onContentChanged(openedTab)"></div>
-			  }
-			  @if (openedTab['type']=='api-community') {
-				<app-api-explorer [currentDisplayViewId]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
-			  }
-			</div>
-			}
-		  </div>
-		} @else {
-		  <!--TODO-->
-		  <div class="empty-state">
-			@if (welcomeIconPath()) {
-			  <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-				<path [attr.d]="welcomeIconPath()"></path>
-			  </svg>
-			} @else {
-			  <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-				<polyline points="14 2 14 8 20 8"></polyline>
-				<line x1="16" y1="13" x2="8" y2="13"></line>
-				<line x1="16" y1="17" x2="8" y2="17"></line>
-				<polyline points="10 9 9 9 8 9"></polyline>
-			  </svg>
-			}
-			@if (welcomeTip()) {
-			  <p class="empty-state-text">{{ welcomeTip() }}</p>
-			} @else {
-			  <p class="empty-state-text">No tabs open</p>
-			}
-		  </div>
-		}
-	  </div>
-	</div>
-} @else {
-  <div class="overview-placeholder">
-    <div class="overview-items">
-      <button type="button" class="overview-item" (click)="selectContentView('workspace')" title="Open Workspace">
-        <span class="overview-item-head">
-          <svg class="overview-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <span class="overview-item-label">Session</span>
-          <span class="overview-item-badge" [attr.data-status]="overviewStatus().cls">
-            <span class="overview-item-dot"></span>{{ overviewStatus().label }}
-          </span>
-        </span>
-        <span class="overview-item-value" [attr.title]="overviewSessionTitle()">{{ overviewSessionTitle() }}</span>
+  @if (layoutService.dockMode() === 'agent-first') {
+    <div class="view-segment" role="group" aria-label="Content view">
+      <button type="button" class="view-segment-item" [class.active]="isOverviewView()"
+        (click)="showOverview()" title="Overview">
+        <span>Overview</span>
       </button>
-
-      <button type="button" class="overview-item" (click)="selectContentView('workspace')" title="Open Workspace">
-        <span class="overview-item-head">
-          <svg class="overview-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-            <circle cx="12" cy="5" r="2"></circle>
-            <path d="M12 7v4"></path>
-            <path d="M8 16h.01"></path>
-            <path d="M16 16h.01"></path>
-          </svg>
-          <span class="overview-item-label">Agent</span>
-        </span>
-        <span class="overview-item-value overview-item-value-row">
-          <span class="overview-agent-badge">{{ overviewAgent()?.badge ?? '--' }}</span>
-          <span class="overview-item-value-text">{{ overviewAgent()?.name ?? '—' }}</span>
-        </span>
-      </button>
-
-      <button type="button" class="overview-item" (click)="selectContentView('workspace')" title="Open Workspace">
-        <span class="overview-item-head">
-          <svg class="overview-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" y1="21" x2="4" y2="14"></line>
-            <line x1="4" y1="10" x2="4" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12" y2="3"></line>
-            <line x1="20" y1="21" x2="20" y2="16"></line>
-            <line x1="20" y1="12" x2="20" y2="3"></line>
-            <line x1="1" y1="14" x2="7" y2="14"></line>
-            <line x1="9" y1="8" x2="15" y2="8"></line>
-            <line x1="17" y1="16" x2="23" y2="16"></line>
-          </svg>
-          <span class="overview-item-label">Model / Mode</span>
-        </span>
-        <span class="overview-item-value" [attr.title]="overviewModelLabel()">{{ overviewModelLabel() || '—' }}</span>
-        <span class="overview-item-sub">Mode: {{ overviewModeLabel() || '—' }}</span>
-      </button>
-
-      <button type="button" class="overview-item" (click)="selectContentView('workspace')" title="Open Workspace">
-        <span class="overview-item-head">
-          <svg class="overview-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <span class="overview-item-label">Project</span>
-        </span>
-        <span class="overview-item-value overview-item-value-row">
-          <span class="overview-item-value-text">{{ overviewProject()?.name ?? 'No project' }}</span>
-          @if (overviewProject(); as project) {
-            <span class="overview-type-tag">{{ project.type }}</span>
-          }
-        </span>
-        <span class="overview-item-sub" [attr.title]="overviewProject()?.path ?? ''">{{ overviewProject()?.path ?? '' }}</span>
-      </button>
-
-      <button type="button" class="overview-item" (click)="selectContentView('workspace')" title="Open Workspace">
-        <span class="overview-item-head">
-          <svg class="overview-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-          </svg>
-          <span class="overview-item-label">Activity</span>
-        </span>
-        <span class="overview-item-value">{{ overviewMessageCount() }} message{{ overviewMessageCount() === 1 ? '' : 's' }}</span>
-        <span class="overview-item-sub">
-          @if (overviewProcessing()) {
-            Agent is working…
-          } @else {
-            {{ overviewActivityText() }}
-          }
-        </span>
-      </button>
-
-      <button type="button" class="overview-item" (click)="selectContentView('workspace')" title="Open Workspace">
-        <span class="overview-item-head">
-          <svg class="overview-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          <span class="overview-item-label">Tokens &amp; Plan</span>
-        </span>
-        <span class="overview-item-value">{{ overviewTokensValue() }}</span>
-        <span class="overview-item-sub">{{ overviewTokensSub() }}</span>
+      <button type="button" class="view-segment-item" [class.active]="!isOverviewView()"
+        (click)="showWorkspace()" title="Workspace">
+        <span>Workspace</span>
       </button>
     </div>
+  }
+</ng-template>
+
+<!-- Agent 面板 toggle：仅 content-first 渲染（agent-first 的收放入口在 Agent 面板右上角）。
+     只用于「无 tab」时的右上角；有 tab 时改由 ast-tab-group 的 rightMoreButtons 承载，
+     两者互斥，同一时刻只会有一个实例 -->
+<ng-template #agentToggle>
+  @if (layoutService.dockMode() === 'content-first') {
+    <button class="btn-svg ast-content-agent-toggle"
+      [class.active]="!layoutService.agentPanelOpen()"
+      (click)="agentPanelToggle.emit()"
+      [title]="layoutService.agentPanelOpen() ? 'Hide Agent' : 'Show Agent'">
+      <svg class="icon" width="20" height="20">
+        <use href="#icon-panel-right"></use>
+      </svg>
+    </button>
+  }
+</ng-template>
+
+<!-- 内容区顶部操作行：仅在 overview 视图或无 tab 时出现，给分段控件/toggle 一个与 tab header 同高的落点 -->
+@if (isOverviewView() || openedList().length === 0) {
+  <div class="ast-actions-bar">
+    @if (isOverviewView() || !sideOpen) {
+      <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
+    }
+    <ng-container [ngTemplateOutlet]="agentToggle"></ng-container>
   </div>
 }
 
+@if (isOverviewView()) {
+  <ast-overview (closed)="showWorkspace()"></ast-overview>
+} @else {
+<div class="ast-content-main">
+  <div class="ast-content-drag-overlay">
+    <div [style.display]="addMarkFile?'block': 'none'" class="new_file ast-content-new-file-popup">
+      <input type="text" name="createNewFile" [(ngModel)]="newFileName" (keyup)="newFileKeyUp($event, newFileName)"
+      autocomplete="off" required>
+    </div>
+    <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
+  </div>
+
+  @if (sideOpen) {
+    <div class="ast-content-drag-overlay">
+      <div class="split-line ast-content-split-handle"
+      [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
+      (mousedown)="dragStart($event, 'ew')"></div>
+    </div>
+  }
+
+  @if (sideOpen) {
+    <div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
+      @if (layoutService.dockMode() === 'agent-first') {
+        <div class="left-side-section-bar">
+          <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
+        </div>
+      }
+      @if(currentDisplayViewId==1) {
+      @if(showButtonPlaceholder()) {
+        <div class="ast-content-empty-state">
+          <div class="ast-content-empty-card">
+            <div class="ast-content-empty-title">NO FOLDER/FILE OPENED</div>
+            <div class="ast-content-empty-desc">You have not yet opened a folder or file.</div>
+            <div class="ast-content-empty-actions">
+              <button (click)="openFolderInContent('readwrite')" class="ast-content-empty-primary-btn">Open Folder</button>
+              <button (click)="openFileInContent()" class="ast-content-empty-secondary-btn">Open File</button>
+            </div>
+            <div class="ast-content-empty-hint">Click to browse and select a local folder or file.</div>
+          </div>
+        </div>
+      } @else {
+        <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
+          <div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
+            <!-- <div data-layer="ProjectName" class="Projectname ast-projectname">ProjectName</div> -->
+            <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="shrinkExplorer()">
+              <svg class="icon" width="20" height="20">
+                <use href="#icon-shrink-open"></use>
+              </svg>
+            </div>
+          </div>
+          <div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
+            <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="#icon-add-file"></use>
+              </svg>
+            </div>
+            <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="FolderaddBtn($event)" title="Add Folder" class="btn-svg FolderaddBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="#icon-add-folder"></use>
+              </svg>
+            </div> -->
+            @if(!isLocked) {
+              <!-- <div data-svg-wrapper="" data-layer="folderadd-btn" (click)="importBtn($event)" title="Import"
+                class="btn-svg ImportBtn">
+                <svg class="icon" width="20" height="20">
+                  <use href="#icon-add-obj"></use>
+                </svg>
+              </div> -->
+            } @else {
+              <div data-svg-wrapper="" data-layer="fork-btn" (click)="forkBtn($event)" title="Fork"
+                class="btn-svg ForkBtn">
+                <svg class="icon" width="20" height="20">
+                  <use href="#icon-fork"></use>
+                </svg>
+              </div>
+              @if(coreService.forking()) {
+                <span class="ast-content-forking-text">Forking...</span>
+              }
+            }
+
+            <!-- <div data-svg-wrapper="" data-layer="location-btn" (click)="LocationBtn($event)" class="btn-svg LocationBtn">
+              <svg class="icon" width="20" height="20">
+                <use href="#icon-location"></use>
+              </svg>
+            </div> -->
+            <div data-svg-wrapper="" data-layer="collapse-btn" (click)="CollapseBtn($event)" title="All Collapse"
+              class="btn-svg CollapseBtn">
+              <svg class="icon" width="19" height="21">
+                <use href="#icon-collapse"></use>
+              </svg>
+            </div>
+
+          </div>
+        </div>
+        <div ast-tree [(data)]="dataList" (nodeClick)="listClick($event)" (menuItemAction)="menuItemAction($event)" [isLocked]="isLocked" [folderBeforeToggle]="onFolderBeforeToggle" class="custom-scroll ast-content-tree"></div>
+        <ast-modal [title]="'Share on Community'" [visible]="shareOnMenuVisible" [modalSize]="'small'" (close)="shareOnMenuVisible = false">
+          <div class="ast-modal-body">
+            <div class="ShareOnMessage">
+              Are you sure to share on Community?
+            </div>
+            <div class="ShareOnActions">
+              <div class="btn cancel" (click)="shareOnMenuVisible = false">Cancel</div>
+              <div class="btn confirm" (click)="confirmShare()">Share</div>
+            </div>
+          </div>
+        </ast-modal>
+        <ast-modal [title]="'Duplicate Entry'" [visible]="duplicateModalVisible()" [modalSize]="'small'" (close)="cancelDuplicate()">
+          <div class="ast-modal-body">
+            <div class="ShareOnMessage">
+              This name and username combination already exists. Jump to the existing project?
+            </div>
+            <div class="ShareOnActions">
+              <div class="btn cancel" (click)="cancelDuplicate()">Cancel</div>
+              <div class="btn confirm" (click)="confirmDuplicate()">Jump to Project</div>
+            </div>
+          </div>
+        </ast-modal>
+        <ast-modal [title]="'Select Save Location'" [visible]="showLocationSelector()" [modalSize]="'large'" (close)="cancelLocation()">
+          <div class="ast-modal-body select-location-modal-body">
+            <div class="select-location-message">
+              Please select a folder in the tree below to save the imported files/folders.
+            </div>
+            <div class="select-location-tree-wrapper">
+              <div ast-tree class="select-location-tree" [data]="locationSelectionTree()" (nodeClick)="onLocationNodeClick($event)" [fobiddenContextMenu]="true"></div>
+            </div>
+            <div class="ShareOnActions select-location-actions">
+              <div class="btn cancel" (click)="cancelLocation()">Cancel</div>
+              <div class="btn confirm" (click)="confirmLocation()">Save Here</div>
+            </div>
+          </div>
+        </ast-modal>
+      }
+      <app-add-project (apiInfoSelected)="apiSelected($event)" />
+    } @else if(currentDisplayViewId==2) {
+        <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
+          <div>Search:</div>
+        </div>
+        <div><input type="text"  name="name" autocomplete="off"  [(ngModel)]="searchKeyword" placeholder="input key words"><button (click)="searchText()">search</button></div>
+        <div>{{searchResults}}</div>
+    } @else if(currentDisplayViewId==3) {
+        <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
+          <div>Plugins:</div>
+        </div>
+        <div>The function is under development.</div>
+    }
+    </div>
+  }
+
+  <div class="ast-content-tabs-wrapper">
+    @if (openedList().length>0) {
+      <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
+       (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
+       [(leftMoreButtons)]="leftMoreButtons" [rightMoreButtons]="rightMoreBtns()"
+       (rightMoreButtonsChange)="onGroupBtns($event)">
+        <!-- 有 tab 时分段控件投影到 tab 头部左侧槽位（该槽位仅在 leftMoreButtons 非空即侧栏收起时渲染）；
+             Agent 面板 toggle 走 rightMoreButtons，恒在 tab 头部右上角 -->
+        <div tabHeaderSegment class="view-segment-slot">
+          <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
+        </div>
+        @for (openedTab of openedList(); track openedTab.id) {
+        <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
+          [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
+          (onClickTab)="onClickTab($event)">
+          @if (openedTab['nodeType']=='api') {
+          <ast-api [apiInfo]="openedTab" (saved)="saveApi($event)"></ast-api>
+          }
+          @if (openedTab['nodeType']=='file') {
+          <div notebook [data]="openedTab" (saved)="saveText($event)" (contentChanged)="onContentChanged(openedTab)"></div>
+          }
+          @if (openedTab['type']=='api-community') {
+          <app-api-explorer [currentDisplayViewId]="4" style="overflow: auto;" (viewOut)="apiSelected($event)"></app-api-explorer>
+          }
+        </div>
+        }
+      </div>
+    } @else {
+      <!--TODO-->
+      <div class="empty-state">
+        @if (welcomeIconPath()) {
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path [attr.d]="welcomeIconPath()"></path>
+          </svg>
+        } @else {
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        }
+        @if (welcomeTip()) {
+          <p class="empty-state-text">{{ welcomeTip() }}</p>
+        } @else {
+          <p class="empty-state-text">No tabs open</p>
+        }
+      </div>
+    }
+  </div>
+</div>
+}

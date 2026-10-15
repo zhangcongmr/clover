@@ -27,7 +27,8 @@ import { LocalAgentService } from '../../shared/local-agent/local-agent.service'
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 import { SettingsService } from '../settings/settings.service';
 import { AcpService } from '../../shared/acp/acp.service';
-import { AVAILABLE_AGENTS } from '../../shared/acp/acp-agent.types';
+import { LayoutService } from '../layout.service';
+import { OverviewComponent } from '../overview/overview.component';
 
 interface WebSocketRequest {
   action: string;
@@ -56,7 +57,7 @@ interface WebSocketResponse {
     '(mouseleave)': 'onHostMouseLeave($event)'
   },
   imports: [FormsModule, NgTemplateOutlet, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
-    NoteBookComponent, FilePickerDialogComponent
+    NoteBookComponent, FilePickerDialogComponent, OverviewComponent
   ]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
@@ -69,7 +70,66 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private settingsService = inject(SettingsService);
   private acpService = inject(AcpService);
   private elementRef = inject(ElementRef);
+  /** dock 模式/面板状态由 LayoutService 统一持有，content 只需读并向上抛 toggle 意图 */
+  protected readonly layoutService = inject(LayoutService);
 
+  /**
+   * overview 是否由本组件渲染。
+   * 仅 agent-first 成立：分段控件切换的 overview 视图显示在这里；
+   * content-first 下 overview 从 agent 面板弹出，本组件恒为 workspace。
+   */
+  readonly isOverviewView = computed(() =>
+    this.layoutService.dockMode() === 'agent-first' && this.layoutService.overviewOpen());
+
+  showOverview(): void {
+    this.layoutService.overviewOpen.set(true);
+  }
+
+  showWorkspace(): void {
+    this.layoutService.overviewOpen.set(false);
+  }
+
+  /** 右上角 toggle：请求父组件打开/关闭 Agent 面板（仅 content-first 渲染） */
+  readonly agentPanelToggle = output<void>();
+
+  /**
+   * tab 头部右上角按钮组。有 tab 时 Agent 面板 toggle 经此进入 ast-tab-group，
+   * 与左侧的 tabHeaderSegment 槽位分居 tab header 两端；无 tab 时改由 .ast-actions-bar 承载。
+   * 双向绑定：ast-tab-group 在 tab 溢出时会自行往同一组里插入/移除 'down' 按钮，
+   * 双向绑定才能让这些变更回流到本字段，refreshRightMoreBtns 重建时才能保留它。
+   */
+  /** 本组件注入的 toggle 按钮 id */
+  private static readonly AGENT_TOGGLE_BTN_ID = 'panel-right';
+
+  /**
+   * ast-tab-group 通过 rightMoreButtonsChange 回传它当前的右上角按钮组
+   * （含它自己在 tab 溢出时插入的 "show all opened"）。只做记录，不在此处改写。
+   */
+  private readonly groupBtns = signal<Array<{ label: string; id: string; action?: Function }>>([]);
+
+  /**
+   * 实际渲染的右上角按钮组 = tab-group 自己的按钮 + 本组件的 Agent 面板 toggle。
+   * 纯派生：每次都先剔除所有自身 id 的旧实例再按需补一个，因此天然幂等，
+   * 不会因 dock 模式 / Agent 面板显隐反复切换而累积出重复的 toggle。
+   * 不用 [(rightMoreButtons)] 双向绑定写普通字段：model() 的写回会覆盖本组件的赋值，
+   * 双向来回会让数组不断增长。
+   */
+  readonly rightMoreBtns = computed(() => {
+    const merged = this.groupBtns().filter(b => b.id !== ContentComponent.AGENT_TOGGLE_BTN_ID);
+    if (this.layoutService.dockMode() === 'content-first') {
+      merged.push({
+        label: this.layoutService.agentPanelOpen() ? 'Hide Agent' : 'Show Agent',
+        id: ContentComponent.AGENT_TOGGLE_BTN_ID,
+        action: () => this.agentPanelToggle.emit(),
+      });
+    }
+    return merged;
+  });
+
+  /** 接收 ast-tab-group 回传的按钮组（供上面的 computed 合并去重） */
+  onGroupBtns(btns: Array<{ label: string; id: string; action?: Function }>): void {
+    this.groupBtns.set(btns ?? []);
+  }
 
   constructor() {
     super();
@@ -135,8 +195,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchKeyword = ''
   searchResults = ''
 
-  // 内容视图：overview=概览占位内容，workspace=整个 ast-content-main
-  contentView = signal<'overview' | 'workspace'>('overview');
+  // 内容视图分段控件已随 Overview 面板移出而移除，content 组件恒为 workspace。
 
   // 左上角按钮：仅侧栏收起按钮（视图分段控件固定渲染在左侧，不放入 leftMoreButtons）
   leftMoreButtons: Array<{ label: string; id: string; action?: Function }> = [];
@@ -183,121 +242,6 @@ showButtonPlaceholder = computed(() => {
     return false;
   });
 
-  // ===== Overview：当前激活 session/task 派生信息 =====
-
-  /** 激活会话标题；无会话时回退到选中项目/任务名 */
-  readonly overviewSessionTitle = computed(() => {
-    const state = this.acpService.sessionState();
-    const title = state.title?.trim();
-    if (title) return title;
-    const info = this.acpService.getSelectedProjectInfo(this.acpService.selectedProjectPath());
-    if (info) return info.name;
-    if (state.cwd) return state.cwd.split(/[/\\]/).pop() || state.cwd;
-    return this.acpService.hasActiveSession() ? 'Untitled Session' : 'New Task';
-  });
-
-  /** 连接状态徽标 */
-  readonly overviewStatus = computed<{ label: string; cls: string }>(() => {
-    const state = this.acpService.sessionState();
-    if (state.error) return { label: 'Error', cls: 'status-error' };
-    if (state.isConnecting) return { label: 'Connecting', cls: 'status-connecting' };
-    if (state.isConnected && state.agentConnected) return { label: 'Connected', cls: 'status-connected' };
-    if (state.isConnected) return { label: 'Agent Offline', cls: 'status-error' };
-    if (this.acpService.hasActiveSession()) return { label: 'Disconnected', cls: 'status-idle' };
-    return { label: 'Idle', cls: 'status-idle' };
-  });
-
-  /** 当前激活会话所属 agent（优先会话记录中的 agentId，其次选中的 agent） */
-  readonly overviewAgent = computed<{ name: string; badge: string } | null>(() => {
-    let agentId = this.acpService.selectedAgent()?.id;
-    const sessionId = this.acpService.selectedSessionId();
-    if (sessionId) {
-      const sessionInfo = this.acpService.findSessionInfo(
-        sessionId,
-        this.acpService.getSelectedProjectInfo(this.acpService.selectedProjectPath())
-      );
-      if (sessionInfo.agentId) agentId = sessionInfo.agentId;
-    }
-    const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
-    if (!agent) return null;
-    const badges: Record<string, string> = {
-      opencode: 'OC', claude: 'CL', codex: 'CX', gemini: 'GM', qwen: 'QW', augment: 'AU'
-    };
-    return { name: agent.name, badge: badges[agent.id] ?? '??' };
-  });
-
-  readonly overviewModelLabel = computed(() => this.readConfigOptionLabel('model'));
-  readonly overviewModeLabel = computed(() => this.readConfigOptionLabel('mode'));
-
-  private readConfigOptionLabel(category: 'model' | 'mode'): string {
-    const config = this.acpService.sessionState().configOptions
-      ?.find(o => o.category === category && o.type === 'select');
-    if (!config) return '';
-    const option = config.options?.find(o => o.value === config.currentValue);
-    return option?.name ?? String(config.currentValue ?? '');
-  }
-
-  /** 当前选中的项目/任务（回退到会话 cwd） */
-  readonly overviewProject = computed<{ name: string; type: 'project' | 'task'; path: string } | null>(() => {
-    const path = this.acpService.selectedProjectPath();
-    const info = this.acpService.getSelectedProjectInfo(path);
-    if (info) return { name: info.name, type: info.type, path: info.path };
-    const fallback = this.acpService.sessionState().cwd ?? path;
-    if (!fallback) return null;
-    return { name: fallback.split(/[/\\]/).pop() || fallback, type: 'project', path: fallback };
-  });
-
-  readonly overviewMessageCount = computed(() => this.acpService.messageCount());
-  readonly overviewProcessing = computed(() => this.acpService.isProcessing());
-
-  readonly overviewActivityText = computed(() => {
-    const messages = this.acpService.messages();
-    const last = messages[messages.length - 1];
-    if (!last?.timestamp) return 'No messages yet';
-    const rel = this.getRelativeTime(last.timestamp);
-    return rel === 'just now' ? 'Active just now' : `Active ${rel} ago`;
-  });
-
-  readonly overviewTokensValue = computed(() => {
-    const usage = this.acpService.usage();
-    if (!usage) return '—';
-    const total = usage.totalTokens ?? (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
-    return total ? `${this.formatCount(total)} tokens` : '—';
-  });
-
-  readonly overviewTokensSub = computed(() => {
-    const plan = this.overviewPlanProgress();
-    if (plan) return `Plan ${plan.done}/${plan.total} steps done`;
-    const usage = this.acpService.usage();
-    if (!usage) return 'No usage yet';
-    return `↑ ${this.formatCount(usage.inputTokens ?? 0)} in · ↓ ${this.formatCount(usage.outputTokens ?? 0)} out`;
-  });
-
-  readonly overviewPlanProgress = computed(() => {
-    let total = 0;
-    let done = 0;
-    this.acpService.plans().forEach(plan => plan.entries.forEach(entry => {
-      total++;
-      if (entry.status === 'completed') done++;
-    }));
-    return total ? { done, total } : null;
-  });
-
-  private getRelativeTime(date: Date | string): string {
-    const diffMs = Date.now() - new Date(date).getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h`;
-    return `${Math.floor(diffHr / 24)}d`;
-  }
-
-  private formatCount(n: number): string {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
-    return String(n);
-  }
 
   async ngOnInit() {
     const doc = this.myConfigService.getDoc();
@@ -399,12 +343,6 @@ showButtonPlaceholder = computed(() => {
       : [
           { label: 'Shrink the project explorer', id: 'shrink-close', action: () => this.shrinkExplorer() },
         ];
-  }
-
-  selectContentView(view: 'overview' | 'workspace') {
-    if (this.contentView() !== view) {
-      this.contentView.set(view);
-    }
   }
 
   // 检测是否为本地项目（根节点 isLocal = true）

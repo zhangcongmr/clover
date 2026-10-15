@@ -33,8 +33,10 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   themeApply = output<Record<string, any>>();
   private static readonly PANEL_WIDE_THRESHOLD = 600;
   closePanel = output<void>();
-  /** Emitted when the editor (AST content panel) toggle button is clicked. */
+  /** Emitted when the editor (AST content panel) toggle button is clicked. Only in agent-first mode. */
   editorToggle = output<void>();
+  /** Emitted when the overview toggle button is clicked. Only in content-first mode. */
+  overviewToggle = output<void>();
   /** Emitted when the sidebar expand button is clicked. */
   sidebarExpand = output<void>();
   /** Whether the left sidebar is collapsed; controls visibility of the expand button. */

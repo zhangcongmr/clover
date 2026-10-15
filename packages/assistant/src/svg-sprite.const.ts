@@ -83,7 +83,17 @@ export const SVG_SPRITE_CONTENT = `
    <symbol id="icon-preview" viewBox="0 0 24 24">
         <path d="M10.9995 4H21V5.9995H10.9995V4ZM10.9995 7.999H16.9995V10H10.9995V7.999ZM10.9995 13.999H21V16H10.9995V13.999ZM10.9995 17.9995H16.9995V19.999H10.9995V17.9995ZM3 4H9V10H3V4ZM4.9995 5.9995V7.999H7.0005V5.9995H4.9995ZM3 13.999H9V19.999H3V13.999ZM4.9995 16V17.9995H7.0005V16H4.9995Z" fill="currentColor"></path>
    </symbol>
-   <symbol id="icon-red-dot" viewBox="0 0 24 25">
+   <symbol id="icon-overview" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" fill="currentColor"></rect>
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" fill="currentColor"></rect>
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor"></rect>
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" fill="currentColor"></rect>
+    </symbol>
+    <symbol id="icon-panel-right" viewBox="0 0 24 24">
+        <rect x="2.5" y="4" width="19" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
+        <line x1="14" y1="4" x2="14" y2="20" stroke="currentColor" stroke-width="1.8"></line>
+    </symbol>
+    <symbol id="icon-red-dot" viewBox="0 0 24 25">
         <path
         d="M12 17.5C14.7614 17.5 17 15.2614 17 12.5C17 9.73857 14.7614 7.5 12 7.5C9.23857 7.5 7 9.73857 7 12.5C7 15.2614 9.23857 17.5 12 17.5Z"
         fill="currentColor"></path>
