@@ -131,8 +131,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: transparent;
@@ -150,10 +150,6 @@
   background: var(--vscode-hover-background);
 }
 
-.sidebar-toggle-btn svg {
-  width: 16px;
-  height: 16px;
-}
 
 .status-dot {
   width: 8px;
