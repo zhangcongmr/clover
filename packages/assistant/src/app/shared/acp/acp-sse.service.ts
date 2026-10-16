@@ -324,11 +324,11 @@ export class AcpSseService {
   // ============================================================================
 
   /**
-   * 创建新会话
+   * 创建新会话（仅创建 wrapper 会话；cwd 由 session/create 端点解析）
    */
-  async createSession(options?: { cwd?: string; agentCommand?: string; agentArgs?: string[]; agentEnv?: Record<string, string> }): Promise<{ sessionId: string; cwd: string }> {
+  async createSession(options?: { agentCommand?: string; agentArgs?: string[]; agentEnv?: Record<string, string> }): Promise<{ sessionId: string }> {
     const result = await this.post('/api/acp/session', options || {});
-    return { sessionId: result.sessionId, cwd: result.cwd || options?.cwd || '' };
+    return { sessionId: result.sessionId };
   }
 
   /**
