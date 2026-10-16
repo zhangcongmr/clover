@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import { client, type ClientApp, type ClientConnection, type ActiveSession, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 import type * as acp from '@agentclientprotocol/sdk';
 import { AgentProcess } from './agent-process.js';
@@ -109,7 +110,7 @@ export class SseAcpClient {
     }
 
     // 1. Spawn agent process
-    this.agentProcess = new AgentProcess();
+    this.agentProcess = new AgentProcess(this.logId);
     this.agentProcess.spawn({ command, args, env });
 
     // 2. Create stdio-based ACP stream
@@ -123,7 +124,7 @@ export class SseAcpClient {
 
     // 5. Handle connection close
     this.clientConnection.closed.then(() => {
-      console.log(`[SSE ACP Client] Connection closed for: ${this.logId}`);
+      logger.log(`[SSE ACP Client] Connection closed for: ${this.logId}`);
       this.clientConnection = null;
       this.clearBindings();
       this.handleConnectionLost();
@@ -150,7 +151,7 @@ export class SseAcpClient {
         'initialize',
       );
     } catch (error) {
-      console.error(`[SSE ACP Client] Initialize failed for ${this.logId}:`, (error as Error).message);
+      logger.error(`[SSE ACP Client] Initialize failed for ${this.logId}:`, (error as Error).message);
       this.clientConnection = null;
       this.agentProcess?.kill();
       this.agentProcess = null;
@@ -158,7 +159,7 @@ export class SseAcpClient {
       throw error;
     }
 
-    console.log(`[SSE ACP Client] Agent initialized for: ${this.logId}`);
+    logger.log(`[SSE ACP Client] Agent initialized for: ${this.logId}`);
 
     // 7. Store capabilities
     this.agentInfo = initResult.agentInfo ?? null;
@@ -347,7 +348,7 @@ export class SseAcpClient {
       try {
         cb(connected);
       } catch (error) {
-        console.error('[SSE ACP Client] connection state listener error:', error);
+        logger.error(`[SSE ACP Client] connection state listener error (agent: ${this.logId}):`, error);
       }
     }
   }
@@ -357,7 +358,7 @@ export class SseAcpClient {
       try {
         cb(wrapperId, acpSessionId);
       } catch (error) {
-        console.error('[SSE ACP Client] agent session change listener error:', error);
+        logger.error(`[SSE ACP Client] agent session change listener error (agent: ${this.logId}, wrapper: ${wrapperId}):`, error);
       }
     }
   }
@@ -405,7 +406,7 @@ export class SseAcpClient {
             payload: ctx.params,
           });
         } else {
-          console.warn(`[SSE ACP Client] Dropped session/update for unmapped session: ${update?.sessionId}`);
+          logger.warn(`[SSE ACP Client] Dropped session/update for unmapped session: ${update?.sessionId}`);
         }
       })
       .onRequest('session/request_permission', async (ctx) => {
@@ -415,11 +416,11 @@ export class SseAcpClient {
         const wrapperId = this.reverseAcp.get(params.sessionId);
 
         if (!wrapperId) {
-          console.warn(`[SSE ACP Client] Permission request for unmapped session ${params.sessionId}; cancelling`);
+          logger.warn(`[SSE ACP Client] Permission request for unmapped session ${params.sessionId}; cancelling`);
           return { outcome: { outcome: 'cancelled' as const } };
         }
 
-        console.log(`[SSE ACP Client] Permission requested: ${requestId} (wrapper: ${wrapperId})`);
+        logger.log(`[SSE ACP Client] Permission requested: ${requestId} (wrapper: ${wrapperId})`);
 
         this.publishToWrapper(wrapperId, {
           type: 'permission_request',
@@ -434,7 +435,7 @@ export class SseAcpClient {
         // Wait for frontend response via Redis
         const outcome = await new Promise<acp.RequestPermissionOutcome>((resolve) => {
           const timeout = setTimeout(() => {
-            console.log(`[SSE ACP Client] Permission request timed out: ${requestId}`);
+            logger.log(`[SSE ACP Client] Permission request timed out: ${requestId}`);
             pendingPermissions.delete(requestId);
             resolve({ outcome: 'cancelled' });
           }, 5 * 60 * 1000);
@@ -442,15 +443,15 @@ export class SseAcpClient {
           pendingPermissions.set(requestId, { resolve, timeout, wrapperId });
         });
 
-        console.log(`[SSE ACP Client] Permission response: ${requestId}`, outcome);
+        logger.log(`[SSE ACP Client] Permission response: ${requestId}`, outcome);
         return { outcome };
       })
       .onRequest('fs/read_text_file', async (ctx) => {
-        console.log(`[SSE ACP Client] Read file: ${ctx.params.path}`);
+        logger.log(`[SSE ACP Client] Read file: ${ctx.params.path}`);
         return { content: '' };
       })
       .onRequest('fs/write_text_file', async (ctx) => {
-        console.log(`[SSE ACP Client] Write file: ${ctx.params.path}`);
+        logger.log(`[SSE ACP Client] Write file: ${ctx.params.path}`);
         return {};
       });
   }
@@ -499,7 +500,7 @@ export class SseAcpClient {
       throw new Error('No active session');
     }
 
-    console.log(`[SSE ACP Client] Sending prompt to session: ${sessionId} (wrapper: ${wrapperId})`);
+    logger.log(`[SSE ACP Client] Sending prompt to session: ${sessionId} (wrapper: ${wrapperId})`);
 
     try {
       const result = await this.clientConnection.agent.request('session/prompt', {
@@ -507,11 +508,11 @@ export class SseAcpClient {
         prompt: content,
       });
 
-      console.log(`[SSE ACP Client] Prompt completed: ${result.stopReason}`);
+      logger.log(`[SSE ACP Client] Prompt completed (wrapper: ${wrapperId}, session: ${sessionId}): ${result.stopReason}`);
 
       return { stopReason: result.stopReason };
     } catch (error) {
-      console.error(`[SSE ACP Client] Prompt failed:`, error);
+      logger.error(`[SSE ACP Client] Prompt failed (wrapper: ${wrapperId}, session: ${sessionId}):`, error);
       throw error;
     }
   }
@@ -531,9 +532,9 @@ export class SseAcpClient {
       await this.clientConnection.agent.notify('session/cancel', {
         sessionId,
       });
-      console.log(`[SSE ACP Client] Cancel sent for session: ${sessionId}`);
+      logger.log(`[SSE ACP Client] Cancel sent for session: ${sessionId}`);
     } catch (error) {
-      console.error(`[SSE ACP Client] Failed to cancel:`, error);
+      logger.error(`[SSE ACP Client] Failed to cancel (wrapper: ${wrapperId}, session: ${sessionId}):`, error);
     }
   }
 
@@ -543,7 +544,7 @@ export class SseAcpClient {
   handlePermissionResponse(requestId: string, outcome: acp.RequestPermissionOutcome): void {
     const pending = this.pendingPermissions.get(requestId);
     if (!pending) {
-      console.warn(`[SSE ACP Client] Unknown permission response: ${requestId}`);
+      logger.warn(`[SSE ACP Client] Unknown permission response: ${requestId}`);
       return;
     }
 
@@ -581,7 +582,7 @@ export class SseAcpClient {
 
     const sessionResponse = activeSession.newSessionResponse;
 
-    console.log(`[SSE ACP Client] Session created: ${activeSession.sessionId} (wrapper: ${wrapperId})`);
+    logger.log(`[SSE ACP Client] Session created: ${activeSession.sessionId} (wrapper: ${wrapperId})`);
 
     // Start reading session updates in the background
     this.startUpdateLoop(wrapperId, activeSession);
@@ -602,7 +603,7 @@ export class SseAcpClient {
       throw new Error('Not connected to agent');
     }
 
-    console.log(`[SSE ACP Client] Listing sessions`);
+    logger.log(`[SSE ACP Client] Listing sessions (agent: ${this.logId})`);
 
     try {
       const result = await this.clientConnection.agent.request('session/list', {
@@ -610,10 +611,10 @@ export class SseAcpClient {
         cursor: params.cursor,
       });
 
-      console.log(`[SSE ACP Client] Sessions listed`);
+      logger.log(`[SSE ACP Client] Sessions listed (agent: ${this.logId})`);
       return result;
     } catch (error) {
-      console.error(`[SSE ACP Client] Failed to list sessions:`, error);
+      logger.error(`[SSE ACP Client] Failed to list sessions (agent: ${this.logId}):`, error);
       throw error;
     }
   }
@@ -628,7 +629,7 @@ export class SseAcpClient {
 
     const cwd = params.cwd;
 
-    console.log(`[SSE ACP Client] Loading session: ${params.sessionId} (wrapper: ${wrapperId})`);
+    logger.log(`[SSE ACP Client] Loading session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
     try {
       // Dispose the previous session of THIS wrapper only
@@ -642,13 +643,13 @@ export class SseAcpClient {
         mcpServers: params.mcpServers || [],
       });
 
-      console.log(`[SSE ACP Client] Session loaded: ${params.sessionId}`);
+      logger.log(`[SSE ACP Client] Session loaded: ${params.sessionId}`);
 
       this.notifyAgentSessionChange(wrapperId, params.sessionId);
       return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
       this.unbind(wrapperId);
-      console.error(`[SSE ACP Client] Failed to load session:`, error);
+      logger.error(`[SSE ACP Client] Failed to load session (wrapper: ${wrapperId}, session: ${params.sessionId}):`, error);
       throw error;
     }
   }
@@ -663,7 +664,7 @@ export class SseAcpClient {
 
     const cwd = params.cwd;
 
-    console.log(`[SSE ACP Client] Resuming session: ${params.sessionId} (wrapper: ${wrapperId})`);
+    logger.log(`[SSE ACP Client] Resuming session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
     try {
       // Dispose the previous session of THIS wrapper only
@@ -677,13 +678,13 @@ export class SseAcpClient {
         mcpServers: params.mcpServers || [],
       });
 
-      console.log(`[SSE ACP Client] Session resumed: ${params.sessionId}`);
+      logger.log(`[SSE ACP Client] Session resumed: ${params.sessionId}`);
 
       this.notifyAgentSessionChange(wrapperId, params.sessionId);
       return this.mergeConfigOptions({ sessionId: params.sessionId, ...result });
     } catch (error) {
       this.unbind(wrapperId);
-      console.error(`[SSE ACP Client] Failed to resume session:`, error);
+      logger.error(`[SSE ACP Client] Failed to resume session (wrapper: ${wrapperId}, session: ${params.sessionId}):`, error);
       throw error;
     }
   }
@@ -702,7 +703,7 @@ export class SseAcpClient {
       throw new Error('Agent does not support session deletion');
     }
 
-    console.log(`[SSE ACP Client] Deleting session: ${params.sessionId}`);
+    logger.log(`[SSE ACP Client] Deleting session: ${params.sessionId}`);
 
     try {
       await this.clientConnection.agent.request('session/delete', {
@@ -716,9 +717,9 @@ export class SseAcpClient {
       }
 
       this.notifyAgentSessionChange(wrapperId, this.sessionBindings.get(wrapperId)?.acpSessionId ?? null);
-      console.log(`[SSE ACP Client] Session deleted: ${params.sessionId}`);
+      logger.log(`[SSE ACP Client] Session deleted: ${params.sessionId}`);
     } catch (error) {
-      console.error(`[SSE ACP Client] Failed to delete session:`, error);
+      logger.error(`[SSE ACP Client] Failed to delete session (wrapper: ${wrapperId}, session: ${params.sessionId}):`, error);
       throw error;
     }
   }
@@ -740,7 +741,7 @@ export class SseAcpClient {
       throw new Error('No active session');
     }
 
-    console.log(`[SSE ACP Client] Setting config option: ${params.configId}`);
+    logger.log(`[SSE ACP Client] Setting config option: ${params.configId}`);
 
     try {
       const result = await this.clientConnection.agent.request('session/set_config_option', {
@@ -751,7 +752,7 @@ export class SseAcpClient {
           : { type: 'id' as const, value: params.value as string }),
       });
 
-      console.log(`[SSE ACP Client] Config option set: ${params.configId}`);
+      logger.log(`[SSE ACP Client] Config option set: ${params.configId}`);
 
       // Cache the complete config state so it survives session load/resume
       if (result?.configOptions) {
@@ -760,7 +761,7 @@ export class SseAcpClient {
 
       return result;
     } catch (error) {
-      console.error(`[SSE ACP Client] Failed to set config option:`, error);
+      logger.error(`[SSE ACP Client] Failed to set config option (wrapper: ${wrapperId}, session: ${sessionId}):`, error);
       throw error;
     }
   }
@@ -799,7 +800,7 @@ export class SseAcpClient {
           const message = await session.nextUpdate();
 
           if (message.kind === 'stop') {
-            console.log(`[SSE ACP Client] Prompt completed: ${message.stopReason}`);
+            logger.log(`[SSE ACP Client] Prompt completed: ${message.stopReason}`);
             this.publishToWrapper(wrapperId, {
               type: 'prompt_complete',
               payload: message.response,
@@ -811,7 +812,7 @@ export class SseAcpClient {
         if (!isCurrent()) {
           return;
         }
-        console.error(`[SSE ACP Client] Error reading session updates:`, error);
+        logger.error(`[SSE ACP Client] Error reading session updates (wrapper: ${wrapperId}, session: ${acpSessionId}):`, error);
       }
     })();
   }

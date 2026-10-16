@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import type { Express, Request, Response } from 'express';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
@@ -165,7 +166,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
           });
         })
         .catch((error) => {
-          console.error(`[ACP Routes] Auto-reconnect failed for ${sessionId}:`, error);
+          logger.error(`[ACP Routes] Auto-reconnect failed for ${sessionId}:`, error);
           sessionManager.publishEvent(sessionId, {
             type: 'error',
             payload: { message: `Agent recovery failed: ${(error as Error).message}` },
@@ -223,7 +224,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         message: 'Session created and connected',
       });
     } catch (error) {
-      console.error('[ACP Routes] Create session error:', error);
+      logger.error('[ACP Routes] Create session error:', error);
       res.status(500).json({
         success: false,
         error: (error as Error).message,
@@ -311,7 +312,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         message: 'Prompt sent',
       });
     } catch (error) {
-      console.error('[ACP Routes] Send prompt error:', error);
+      logger.error(`[ACP Routes] Send prompt error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -368,7 +369,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const result = await sessionManager.listAcpSessions(sessionId, cwd, cursor);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('[ACP Routes] List sessions error:', error);
+      logger.error(`[ACP Routes] List sessions error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -410,7 +411,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
           return { ok: true, agentId: agent.id, sessions: result?.sessions ?? [] };
         } catch (error) {
           const message = (error as Error).message || String(error);
-          console.warn(`[ACP Routes] Failed to list sessions for agent ${agent.id}:`, message);
+          logger.warn(`[ACP Routes] Failed to list sessions for agent ${agent.id}:`, message);
           return { ok: false, agentId: agent.id, error: message };
         }
       }),
@@ -459,7 +460,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const result = await sessionManager.loadAcpSession(sessionId, loadSessionId, cwd, resolvedMcpServers);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('[ACP Routes] Load session error:', error);
+      logger.error(`[ACP Routes] Load session error (session: ${sessionId}, load: ${loadSessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -490,7 +491,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const result = await sessionManager.resumeAcpSession(sessionId, resumeSessionId, cwd, resolvedMcpServers);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('[ACP Routes] Resume session error:', error);
+      logger.error(`[ACP Routes] Resume session error (session: ${sessionId}, resume: ${resumeSessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -511,7 +512,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       await sessionManager.deleteAcpSession(sessionId, deleteSessionId);
       res.json({ success: true, message: 'Session deleted' });
     } catch (error) {
-      console.error('[ACP Routes] Delete session error:', error);
+      logger.error(`[ACP Routes] Delete session error (session: ${sessionId}, delete: ${deleteSessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -532,7 +533,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const result = await sessionManager.setAcpConfigOption(sessionId, configId, type, value);
       res.json({ success: true, ...result });
     } catch (error) {
-      console.error('[ACP Routes] Set config option error:', error);
+      logger.error(`[ACP Routes] Set config option error (session: ${sessionId}, config: ${configId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -579,7 +580,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       writeAgentConfigFile(data);
       res.json({ success: true });
     } catch (error) {
-      console.error('[ACP Routes] Save agent config error:', error);
+      logger.error(`[ACP Routes] Save agent config error (agent: ${agentId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -723,7 +724,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     try {
       res.json({ agents: registry.getStatus() });
     } catch (error) {
-      console.error('[ACP Routes] List agents error:', error);
+      logger.error('[ACP Routes] List agents error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -741,7 +742,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const agent = await registry.checkNow(String(req.params.id));
       res.json({ agent });
     } catch (error) {
-      console.error('[ACP Routes] Check agent error:', error);
+      logger.error(`[ACP Routes] Check agent error (agent: ${req.params.id}):`, error);
       const message = (error as Error).message;
       res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
     }
@@ -762,7 +763,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const projects = readProjects();
       res.json({ success: true, projects });
     } catch (error) {
-      console.error('[ACP Routes] List projects error:', error);
+      logger.error('[ACP Routes] List projects error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -776,7 +777,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const tasks = readTasks();
       res.json({ success: true, tasks });
     } catch (error) {
-      console.error('[ACP Routes] List tasks error:', error);
+      logger.error('[ACP Routes] List tasks error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -812,7 +813,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         writeTasks(tasks);
         res.json({ success: true, task });
       } catch (error) {
-        console.error('[ACP Routes] Add task error:', error);
+        logger.error(`[ACP Routes] Add task error (id: ${id}):`, error);
         res.status(500).json({ error: (error as Error).message });
       }
     } else {
@@ -834,7 +835,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         writeProjects(projects);
         res.json({ success: true, projects });
       } catch (error) {
-        console.error('[ACP Routes] Add project error:', error);
+        logger.error(`[ACP Routes] Add project error (name: ${name}):`, error);
         res.status(500).json({ error: (error as Error).message });
       }
     }
@@ -863,7 +864,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
       res.json({ success: true });
     } catch (error) {
-      console.error('[ACP Routes] Delete error:', error);
+      logger.error(`[ACP Routes] Delete error (name: ${name}, type: ${type}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -919,7 +920,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
       res.status(404).json({ error: 'Project not found' });
     } catch (error) {
-      console.error('[ACP Routes] Save session error:', error);
+      logger.error(`[ACP Routes] Save session error (session: ${session.sessionId}, agent: ${session.agentId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -948,7 +949,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       writeProjects(projects);
       res.json({ success: true });
     } catch (error) {
-      console.error('[ACP Routes] Delete session error:', error);
+      logger.error(`[ACP Routes] Delete session error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -975,7 +976,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const { selectedProject, selectedSessionId } = readSelectedProject();
       res.json({ success: true, selectedProject, selectedSessionId });
     } catch (error) {
-      console.error('[ACP Routes] Get selected project error:', error);
+      logger.error('[ACP Routes] Get selected project error:', error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -986,7 +987,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       writeSelectedProject(selectedProject || null, selectedSessionId || null);
       res.json({ success: true });
     } catch (error) {
-      console.error('[ACP Routes] Save selected project error:', error);
+      logger.error(`[ACP Routes] Save selected project error (project: ${selectedProject}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });

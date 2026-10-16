@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
@@ -21,7 +22,7 @@ export class McpServerRegistry {
         this.store = JSON.parse(data);
       }
     } catch (error) {
-      console.error('[MCP Registry] Failed to load store:', error);
+      logger.error('[MCP Registry] Failed to load store:', error);
       this.store = { servers: {} };
     }
   }
@@ -33,14 +34,14 @@ export class McpServerRegistry {
       }
       writeFileSync(STORE_FILE, JSON.stringify(this.store, null, 2));
     } catch (error) {
-      console.error('[MCP Registry] Failed to save store:', error);
+      logger.error('[MCP Registry] Failed to save store:', error);
     }
   }
 
   resolve(name: string): acp.McpServer | null {
     const config = this.store.servers[name];
     if (!config) {
-      console.warn(`[MCP Registry] Server not found: ${name}`);
+      logger.warn(`[MCP Registry] Server not found: ${name}`);
       return null;
     }
 
@@ -74,14 +75,14 @@ export class McpServerRegistry {
     const cleanName = name.trim();
     this.store.servers[cleanName] = { ...config, name: cleanName } as McpServerConfig;
     this.saveStore();
-    console.log(`[MCP Registry] Server "${cleanName}" saved`);
+    logger.log(`[MCP Registry] Server "${cleanName}" saved`);
   }
 
   remove(name: string): boolean {
     if (!this.store.servers[name]) return false;
     delete this.store.servers[name];
     this.saveStore();
-    console.log(`[MCP Registry] Server "${name}" removed`);
+    logger.log(`[MCP Registry] Server "${name}" removed`);
     return true;
   }
 

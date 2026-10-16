@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { SseAcpClient } from './sse-client.js';
@@ -116,9 +117,9 @@ export class AgentRegistry {
   async warmupAll(): Promise<void> {
     const configs = this.agentConfigs;
     if (!configs.length) return;
-    console.log(`[AgentRegistry] Warming up ${configs.length} agents in parallel...`);
+    logger.log(`[AgentRegistry] Warming up ${configs.length} agents in parallel...`);
     await Promise.all(configs.map(config => this.warmupOne(config)));
-    console.log(`[AgentRegistry] Warmup finished: ${this.getStatus().map(a => `${a.id}=${a.status}`).join(', ')}`);
+    logger.log(`[AgentRegistry] Warmup finished: ${this.getStatus().map(a => `${a.id}=${a.status}`).join(', ')}`);
   }
 
   private async warmupOne(config: AgentConfig): Promise<void> {
@@ -132,7 +133,7 @@ export class AgentRegistry {
       if (!state.installed) {
         state.status = 'unavailable';
         state.error = `Command not found in PATH: ${config.command}`;
-        console.log(`[AgentRegistry] ${config.name}: unavailable (${state.error})`);
+        logger.log(`[AgentRegistry] ${config.name}: unavailable (${state.error})`);
         return;
       }
 
@@ -141,11 +142,11 @@ export class AgentRegistry {
       }
 
       await this.ensureConnected(state);
-      console.log(`[AgentRegistry] ${config.name}: connected (warm)`);
+      logger.log(`[AgentRegistry] ${config.name}: connected (warm)`);
     } catch (error) {
       state.status = state.installed ? 'offline' : 'unavailable';
       state.error = (error as Error).message;
-      console.error(`[AgentRegistry] ${config.name}: warmup failed — ${state.error}`);
+      logger.error(`[AgentRegistry] ${config.name}: warmup failed — ${state.error}`);
     }
   }
 

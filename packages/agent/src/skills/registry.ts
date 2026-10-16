@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
@@ -93,7 +94,7 @@ export class SkillRegistry {
     try {
       this.persisted = this.readPersistedStore();
     } catch (error) {
-      console.error('[Skill Registry] Failed to load store:', error);
+      logger.error('[Skill Registry] Failed to load store:', error);
       this.persisted = { skills: {} };
     }
 
@@ -106,7 +107,7 @@ export class SkillRegistry {
       const discovery = discoverSkills({ ...this.options, store: this.persisted.skills });
 
       for (const error of discovery.errors) {
-        console.error('[Skill Registry] Discovery warning:', error);
+        logger.error('[Skill Registry] Discovery warning:', error);
       }
 
       this.discovery = discovery;
@@ -120,11 +121,11 @@ export class SkillRegistry {
       this.writable = writable;
 
       const total = Object.keys(discovery.skills).length;
-      console.log(
+      logger.log(
         `[Skill Registry] Aggregated ${total} skill(s) from ${discovery.sources.length} source(s)`,
       );
     } catch (error) {
-      console.error('[Skill Registry] Skill discovery failed:', error);
+      logger.error('[Skill Registry] Skill discovery failed:', error);
       this.adoptStoreOnly();
     }
   }
@@ -150,7 +151,7 @@ export class SkillRegistry {
       mkdirSync(dirname(this.storeFile), { recursive: true });
       writeFileSync(this.storeFile, JSON.stringify(this.persisted, null, 2));
     } catch (error) {
-      console.error('[Skill Registry] Failed to save legacy store:', error);
+      logger.error('[Skill Registry] Failed to save legacy store:', error);
     }
   }
 
@@ -216,7 +217,7 @@ export class SkillRegistry {
     };
     this.store.skills[cleanName] = next;
     this.writable.add(cleanName);
-    console.log(
+    logger.log(
       `[Skill Registry] Skill "${cleanName}" saved to directory store` +
         (fileCount > 0 ? ` (${fileCount} supporting file(s))` : ''),
     );
@@ -234,7 +235,7 @@ export class SkillRegistry {
 
     this.writable.delete(name);
     delete this.store.skills[name];
-    console.log(`[Skill Registry] Skill "${name}" removed`);
+    logger.log(`[Skill Registry] Skill "${name}" removed`);
     return true;
   }
 
@@ -316,7 +317,7 @@ export class SkillRegistry {
     if (!inserted) next[newName] = copy;
     this.store.skills = next;
 
-    console.log(`[Skill Registry] Skill "${name}" duplicated as "${newName}"`);
+    logger.log(`[Skill Registry] Skill "${name}" duplicated as "${newName}"`);
     return copy;
   }
 

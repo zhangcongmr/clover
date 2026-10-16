@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import type { Stream } from '@agentclientprotocol/sdk';
 import type { WebSocket } from 'ws';
 
@@ -12,10 +13,12 @@ const SOCKET_OPEN = 1;
  *
  * Messages are sent/received as JSON text frames.
  */
-export function createWsStream(ws: WebSocket): Stream {
+export function createWsStream(ws: WebSocket, label?: string): Stream {
   let readableController: ReadableStreamDefaultController;
   let isClosed = false;
   const detachListeners: Array<() => void> = [];
+  // Optional correlation id so concurrent ACP WebSocket streams are attributable.
+  const tag = label ? ` [${label}]` : '';
 
   const readable = new ReadableStream({
     start(controller) {
@@ -36,12 +39,12 @@ export function createWsStream(ws: WebSocket): Stream {
         try {
           value = JSON.parse(text);
         } catch {
-          console.warn('[ACP ws-stream] Ignoring malformed JSON message');
+          logger.warn(`[ACP ws-stream]${tag} Ignoring malformed JSON message`);
           return;
         }
 
         if (typeof value !== 'object' || value === null) {
-          console.warn('[ACP ws-stream] Ignoring non-object message:', value);
+          logger.warn(`[ACP ws-stream]${tag} Ignoring non-object message:`, value);
           return;
         }
 

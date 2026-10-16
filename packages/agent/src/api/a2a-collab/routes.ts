@@ -1,3 +1,4 @@
+import { logger } from '../../helpers/logger.js';
 import express from 'express';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { createRequireAuth } from '../middleware.js';
@@ -68,11 +69,11 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
   // ==========================================================================
 
   app.post('/api/a2a/collab/spaces', express.json(), async (req: Request, res: Response) => {
+    const cwd = typeof req.body?.cwd === 'string' ? req.body.cwd : '';
+    const agentIds = Array.isArray(req.body?.agentIds) ? req.body.agentIds : [];
+    const orchestratorAgentId =
+      typeof req.body?.orchestratorAgentId === 'string' ? req.body.orchestratorAgentId : undefined;
     try {
-      const cwd = typeof req.body?.cwd === 'string' ? req.body.cwd : '';
-      const agentIds = Array.isArray(req.body?.agentIds) ? req.body.agentIds : [];
-      const orchestratorAgentId =
-        typeof req.body?.orchestratorAgentId === 'string' ? req.body.orchestratorAgentId : undefined;
       const space = await spaces.create({ cwd, agentIds, orchestratorAgentId });
       res.json({
         success: true,
@@ -86,7 +87,7 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
         })),
       });
     } catch (error) {
-      console.error('[A2A Collab] Create space error:', error);
+      logger.error(`[A2A Collab] Create space error (cwd: ${cwd}, agents: ${agentIds.join(', ')}):`, error);
       res.status(400).json({ success: false, message: (error as Error).message });
     }
   });
@@ -100,7 +101,7 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
       }
       res.json({ success: true });
     } catch (error) {
-      console.error('[A2A Collab] Remove space error:', error);
+      logger.error(`[A2A Collab] Remove space error (space: ${req.params.spaceId}):`, error);
       res.status(500).json({ success: false, message: (error as Error).message });
     }
   });

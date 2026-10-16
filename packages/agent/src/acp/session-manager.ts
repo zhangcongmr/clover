@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { SseAcpClient } from './sse-client.js';
 import { RedisClient } from '../redis/client.js';
@@ -102,7 +103,7 @@ export class AcpSessionManager {
     };
     this.sessions.set(sessionId, session);
 
-    console.log(`[ACP Session] Created session: ${sessionId} (total: ${this.sessions.size})`);
+    logger.log(`[ACP Session] Created session: ${sessionId} (total: ${this.sessions.size})`);
 
     return sessionId;
   }
@@ -116,7 +117,7 @@ export class AcpSessionManager {
         const msg: SessionMessage = JSON.parse(message);
         await this.handleClientMessage(sessionId, msg, session.client);
       } catch (error) {
-        console.error(`[ACP Session] Error handling prompt message:`, error);
+        logger.error(`[ACP Session] Error handling prompt message (session: ${sessionId}):`, error);
         await this.publishEvent(sessionId, {
           type: 'error',
           payload: { message: (error as Error).message },
@@ -133,7 +134,7 @@ export class AcpSessionManager {
         const msg: SessionMessage = JSON.parse(message);
         await this.handlePermissionResponse(sessionId, msg, session.client);
       } catch (error) {
-        console.error(`[ACP Session] Error handling permission message:`, error);
+        logger.error(`[ACP Session] Error handling permission message (session: ${sessionId}):`, error);
       }
     });
 
@@ -183,7 +184,7 @@ export class AcpSessionManager {
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error(`[ACP Session] Prompt error:`, error);
+      logger.error(`[ACP Session] Prompt error (session: ${sessionId}):`, error);
       await this.publishEvent(sessionId, {
         type: 'error',
         payload: { message: (error as Error).message, requestId: msg.requestId },
@@ -204,7 +205,7 @@ export class AcpSessionManager {
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error(`[ACP Session] Cancel error:`, error);
+      logger.error(`[ACP Session] Cancel error (session: ${sessionId}):`, error);
     }
   }
 
@@ -216,7 +217,7 @@ export class AcpSessionManager {
     try {
       await client.handlePermissionResponse(msg.requestId!, msg.payload.outcome);
     } catch (error) {
-      console.error(`[ACP Session] Permission response error:`, error);
+      logger.error(`[ACP Session] Permission response error (session: ${sessionId}):`, error);
     }
   }
 
@@ -280,7 +281,7 @@ export class AcpSessionManager {
       });
       return result;
     } catch (error) {
-      console.error(`[ACP Session] promptAndWait error:`, error);
+      logger.error(`[ACP Session] promptAndWait error (session: ${sessionId}):`, error);
       await this.publishEvent(sessionId, {
         type: 'error',
         payload: { message: (error as Error).message },
@@ -302,7 +303,7 @@ export class AcpSessionManager {
     try {
       await session.client.handleCancel(sessionId);
     } catch (error) {
-      console.error(`[ACP Session] cancelPrompt error:`, error);
+      logger.error(`[ACP Session] cancelPrompt error (session: ${sessionId}):`, error);
     }
   }
 
@@ -343,7 +344,7 @@ export class AcpSessionManager {
       });
     }
 
-    console.log(`[ACP Session] Session connected: ${session.sessionId}`);
+    logger.log(`[ACP Session] Session connected: ${session.sessionId}`);
   }
 
   /**
@@ -398,7 +399,7 @@ export class AcpSessionManager {
     try {
       await this.ensureConnected(session);
     } catch (error) {
-      console.error(`[ACP Session] Connect error:`, error);
+      logger.error(`[ACP Session] Connect error (session: ${sessionId}):`, error);
       await this.publishEvent(sessionId, {
         type: 'error',
         payload: { message: (error as Error).message },
@@ -433,7 +434,7 @@ export class AcpSessionManager {
 
       return result;
     } catch (error) {
-      console.error(`[ACP Session] Create session error:`, error);
+      logger.error(`[ACP Session] Create session error (session: ${sessionId}):`, error);
       throw error;
     }
   }
@@ -449,7 +450,7 @@ export class AcpSessionManager {
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
-      console.error(`[ACP Session] List sessions error:`, error);
+      logger.error(`[ACP Session] List sessions error (session: ${sessionId}):`, error);
       throw error;
     }
   }
@@ -491,7 +492,7 @@ export class AcpSessionManager {
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
-      console.error(`[ACP Session] Load session error:`, error);
+      logger.error(`[ACP Session] Load session error (session: ${sessionId}, load: ${loadSessionId}):`, error);
       throw error;
     }
   }
@@ -514,7 +515,7 @@ export class AcpSessionManager {
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
-      console.error(`[ACP Session] Resume session error:`, error);
+      logger.error(`[ACP Session] Resume session error (session: ${sessionId}, resume: ${resumeSessionId}):`, error);
       throw error;
     }
   }
@@ -532,7 +533,7 @@ export class AcpSessionManager {
         session.agentSessionId = null;
       }
     } catch (error) {
-      console.error(`[ACP Session] Delete session error:`, error);
+      logger.error(`[ACP Session] Delete session error (session: ${sessionId}, delete: ${deleteSessionId}):`, error);
       throw error;
     }
   }
@@ -553,7 +554,7 @@ export class AcpSessionManager {
       session.lastActivity = Date.now();
       return result;
     } catch (error) {
-      console.error(`[ACP Session] Set config option error:`, error);
+      logger.error(`[ACP Session] Set config option error (session: ${sessionId}, config: ${configId}):`, error);
       throw error;
     }
   }
@@ -636,7 +637,7 @@ export class AcpSessionManager {
       });
 
       this.sessions.delete(sessionId);
-      console.log(`[ACP Session] Removed session: ${sessionId}`);
+      logger.log(`[ACP Session] Removed session: ${sessionId}`);
     }
   }
 
@@ -650,7 +651,7 @@ export class AcpSessionManager {
       const age = now - session.createdAt;
 
       if (idleTime > maxIdleTime || age > maxAge) {
-        console.log(`[ACP Session] Cleaning up expired session: ${sessionId} (idle: ${idleTime}ms, age: ${age}ms)`);
+        logger.log(`[ACP Session] Cleaning up expired session: ${sessionId} (idle: ${idleTime}ms, age: ${age}ms)`);
         this.removeSession(sessionId);
       }
     }

@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import Redis, { type RedisOptions } from 'ioredis';
 
 export interface RedisConfig {
@@ -30,7 +31,7 @@ export class RedisClient {
       process.env.REDIS_USE_MEMORY_FALLBACK !== 'false'; // Default to memory mode
 
     if (this.useMemoryFallback) {
-      console.log('[Redis] Running in memory fallback mode (no Redis required)');
+      logger.log('[Redis] Running in memory fallback mode (no Redis required)');
       this.isReady = true;
       return;
     }
@@ -45,7 +46,7 @@ export class RedisClient {
       protocol: (config.protocol || parseInt(process.env.REDIS_PROTOCOL || '2')) as 2 | 3,
       retryStrategy: (times: number) => {
         if (times > 10) {
-          console.error('[Redis] Max reconnection attempts reached, falling back to memory mode');
+          logger.error('[Redis] Max reconnection attempts reached, falling back to memory mode');
           this.useMemoryFallback = true;
           this.isReady = true;
           return null;
@@ -58,7 +59,7 @@ export class RedisClient {
     this.publisher = new Redis(redisConfig);
     this.subscriber = this.publisher.duplicate();
 
-    console.log(`[Redis] Connecting with protocol: RESP${redisConfig.protocol}`);
+    logger.log(`[Redis] Connecting with protocol: RESP${redisConfig.protocol}`);
     this.setupEventHandlers();
   }
 
@@ -85,24 +86,24 @@ export class RedisClient {
     const subscriber = this.getSubscriber();
 
     publisher.on('connect', () => {
-      console.log('[Redis] Publisher connected');
+      logger.log('[Redis] Publisher connected');
     });
 
     publisher.on('ready', () => {
       this.isReady = true;
-      console.log('[Redis] Publisher ready');
+      logger.log('[Redis] Publisher ready');
     });
 
     publisher.on('error', (err) => {
-      console.error('[Redis] Publisher error:', err.message);
+      logger.error('[Redis] Publisher error:', err.message);
     });
 
     subscriber.on('connect', () => {
-      console.log('[Redis] Subscriber connected');
+      logger.log('[Redis] Subscriber connected');
     });
 
     subscriber.on('error', (err) => {
-      console.error('[Redis] Subscriber error:', err.message);
+      logger.error('[Redis] Subscriber error:', err.message);
     });
 
     subscriber.on('message', (channel, message) => {

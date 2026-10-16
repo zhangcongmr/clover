@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import {
   readdir,
   readFile,
@@ -275,9 +276,9 @@ export class FileService {
           }
         });
         this.watchers.set(filePath, watcher);
-        console.log(`[FileService] Started watching: ${resolved}`);
+        logger.log(`[FileService] Started watching: ${resolved}`);
       } catch (err) {
-        console.error(`[FileService] Failed to watch file: ${resolved}`, err);
+        logger.error(`[FileService] Failed to watch file: ${resolved}`, err);
       }
     };
 

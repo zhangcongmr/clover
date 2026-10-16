@@ -1,3 +1,4 @@
+import { logger } from './helpers/logger.js';
 import express from 'express';
 import type http from 'node:http';
 import type https from 'node:https';
@@ -142,7 +143,7 @@ export function createServer(config: ServerConfig): ServerInstance {
   // session、不订阅 Redis、不阻塞 server 启动）。session/create·load·
   // resume·prompt 仍会在 ensureConnected 中兜底 spawn+initialize。
   services.agentRegistry.warmupAll().catch((error) => {
-    console.error('[AgentRegistry] Warmup failed:', error);
+    logger.error('[AgentRegistry] Warmup failed:', error);
   });
 
   const sslConfig = sslDir ? loadSslConfig(sslDir) : null;
@@ -159,7 +160,7 @@ export function createServer(config: ServerConfig): ServerInstance {
       `${protocol}://localhost:${port}${logUrlPath}`,
       ...addresses.map((ip) => `${protocol}://${ip}:${port}${logUrlPath}`),
     ];
-    console.log(`${prefix}Server listening on:\n${urls.map((u) => `  ${u}`).join('\n')}`);
+    logger.log(`${prefix}Server listening on:\n${urls.map((u) => `  ${u}`).join('\n')}`);
   });
 
   setupWebSocket(httpServer, services, sslConfig, { logPrefix });

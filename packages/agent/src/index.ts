@@ -89,6 +89,10 @@ export type { RedisConfig } from './redis/client.js';
 
 // Helpers
 export { loadSslConfig, isJson } from './helpers/index.js';
+export { logger, formatLogTimestamp, configureFileLogging, logDirectory, currentLogFile, flushLogs, closeLogs } from './helpers/logger.js';
+export type { Logger, LogArgs, LogLevel } from './helpers/logger.js';
+export { RollingFileLogger, defaultLogDir } from './helpers/log-file.js';
+export type { FileLoggingOptions } from './helpers/log-file.js';
 export type { SslConfig } from './helpers/index.js';
 
 // Server

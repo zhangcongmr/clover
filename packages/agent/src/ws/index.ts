@@ -1,3 +1,5 @@
+import { logger } from '../helpers/logger.js';
+import { randomUUID } from 'node:crypto';
 import type http from 'node:http';
 import type https from 'node:https';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -48,10 +50,12 @@ export function setupWebSocket(
   wss.on('connection', (ws, req) => {
     const url = new URL(req.url || '/', `${protocol}://${req.headers.host}`);
     const isFileWatch = url.pathname === '/ws/file-watch';
+    // Short per-connection id so concurrent sockets are attributable in logs.
+    const connId = randomUUID().slice(0, 8);
 
     if (isFileWatch) {
       const watchedFiles = new Set<string>();
-      console.log(`${logPrefix} File-watch WebSocket connected`);
+      logger.log(`${logPrefix} File-watch WebSocket connected (conn: ${connId})`);
 
     ws.on('message', async (data) => {
         try {
@@ -75,7 +79,7 @@ export function setupWebSocket(
             watchedFiles.delete(stopMsg.path);
           }
         } catch (e) {
-          console.error('Failed to handle file-watch message:', e);
+          logger.error(`Failed to handle file-watch message (conn: ${connId}):`, e);
         }
       });
 
@@ -114,7 +118,7 @@ export function setupWebSocket(
             });
           }
         } catch (e) {
-          console.error('Failed to create PTY:', e);
+          logger.error(`Failed to create PTY (conn: ${connId}):`, e);
           ws.close(4002, 'Invalid init message');
         }
         return;
