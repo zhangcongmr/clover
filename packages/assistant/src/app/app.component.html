@@ -13,13 +13,26 @@
               <use href="#icon-mcp"></use>
             </svg>
           </div>
-          <div data-svg-wrapper="" data-layer="rag-btn" class="btn-svg RagKnowledgeBtn" title="Knowledge Base" (click)="toggleRagManager()">
+          <div data-svg-wrapper="" data-layer="rag-btn" class="btn-svg RagKnowledgeBtn" title="Knowledge Base"
+            [class.indexing]="ragService.isIndexing()"
+            [attr.aria-busy]="ragService.isIndexing() ? 'true' : null"
+            (click)="toggleRagManager()">
             <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               <circle cx="10" cy="7" r="1"></circle>
               <circle cx="14" cy="11" r="1"></circle>
             </svg>
+            @if (ragService.isIndexing()) {
+              <!-- Indexing documents: a small spinning vortex overlaid on the book icon -->
+              <span class="rag-indexing-badge" title="Indexing documents…"
+                    role="status" aria-label="Indexing documents">
+                <svg class="rag-indexing-vortex" viewBox="0 0 24 24" width="13" height="13"
+                     fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                  <path d="M12 3 a9 9 0 1 0 9 9 a6 6 0 1 1 -6 -6 a3 3 0 1 0 3 3"/>
+                </svg>
+              </span>
+            }
           </div>
         }
         @if((astContentPanelOpen() && dockPosition() === 'right') || (astContentPanelOpen() && !agentPanelOpen)) {
@@ -394,7 +407,7 @@
            (close)="closeRagManager()">
   <div class="ast-modal-body">
     @if (showRagManager()) {
-      <app-rag-manager />
+      <app-rag-manager (indexingStarted)="closeRagManager()" />
     }
   </div>
 </ast-modal>

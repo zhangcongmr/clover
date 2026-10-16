@@ -24,6 +24,7 @@ import { NotificationService } from './shared/notification/notification.service'
 import { McpManagerComponent } from './shared/mcp-manager/mcp-manager.component';
 import { SkillManagerComponent } from './shared/skill-manager/skill-manager.component';
 import { RagManagerComponent } from './shared/rag/rag-manager.component';
+import { RagService } from './shared/rag/rag.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
@@ -70,6 +71,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private themeLibrary = inject(ThemeLibraryService);
   protected notificationService = inject(NotificationService);
   protected acpService = inject(AcpService);
+  protected ragService = inject(RagService);
   protected layoutService = inject(LayoutService);
   contentComp = viewChild(ContentComponent);
   agentComp = viewChild(AgentComponent);

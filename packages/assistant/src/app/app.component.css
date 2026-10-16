@@ -592,6 +592,40 @@ form {
   }
 }
 
+/* Knowledge Base button: "indexing documents" badge.
+   The book icon stays in place; a small spinning vortex is overlaid on its
+   bottom-right corner while the RAG upload turn runs, then disappears. */
+.RagKnowledgeBtn {
+  position: relative;
+}
+
+.rag-indexing-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--vscode-badge-background, var(--vscode-button-background));
+  color: var(--vscode-badge-foreground, #ffffff);
+  box-shadow: 0 0 0 1.5px var(--vscode-background);
+  pointer-events: none;
+}
+
+.rag-indexing-vortex {
+  animation: spin 0.9s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rag-indexing-vortex {
+    animation-duration: 2.4s;
+  }
+}
+
 /* Upload progress bar */
 .upload-progress-container {
   position: relative;
