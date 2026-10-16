@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, computed, effect, inject, signal, untracked } from '@angular/core';
 import { AcpService, type AcpMessage } from '../acp/acp.service';
 import type { ContentBlock } from '../acp/acp.model';
 import type { LocalMcpServerConfig } from '../mcp-manager/mcp-registry.service';
@@ -64,11 +64,39 @@ export class RagService {
 
   readonly hasRagServer = computed(() => this.ragServerName() !== null);
 
+  /**
+   * True from the moment an index (upload) turn is dispatched until the agent
+   * finishes running it. Kept on the service — rather than in the manager
+   * component — so indexing stays visible in the sidebar after the manager
+   * dialog auto-closes on submit.
+   */
+  readonly isIndexing = signal(false);
+
+  /** Set once the dispatched index turn has actually started running. Guards
+   *  against clearing {@link isIndexing} during the gap between submit and the
+   *  agent picking the prompt up (session creation can take a while). */
+  private indexingTurnStarted = false;
+
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       this.ragServerName.set(localStorage.getItem(RAG_SERVER_STORAGE_KEY));
       this.autoAttach.set(localStorage.getItem(AUTO_ATTACH_STORAGE_KEY) !== 'false');
     }
+
+    // The turn that carries an index request is "done" once the agent stops
+    // processing. Clear the badge then so it disappears as soon as indexing
+    // (or a failed attempt) ends.
+    effect(() => {
+      const processing = this.acpService.isProcessing();
+      if (processing) {
+        if (untracked(() => this.isIndexing())) this.indexingTurnStarted = true;
+        return;
+      }
+      if (this.indexingTurnStarted) {
+        this.indexingTurnStarted = false;
+        this.isIndexing.set(false);
+      }
+    });
   }
 
   /**
@@ -181,13 +209,21 @@ export class RagService {
     await this.acpService.submitPrompt(text, blocks);
   }
 
-  upload(files: RagUploadCandidate[]): Promise<void> {
-    if (files.length === 0) return Promise.resolve();
+  async upload(files: RagUploadCandidate[]): Promise<void> {
+    if (files.length === 0) return;
     const blocks: ContentBlock[] = files.map(file => ({
       type: 'resource',
       resource: { uri: `file:///${file.name}`, text: file.text, mimeType: 'text/plain' },
     }));
-    return this.submit(this.buildUploadPrompt(files), blocks);
+    this.indexingTurnStarted = false;
+    this.isIndexing.set(true);
+    try {
+      await this.submit(this.buildUploadPrompt(files), blocks);
+    } catch (error) {
+      // Nothing will ever finish this turn, so drop the badge immediately.
+      this.isIndexing.set(false);
+      throw error;
+    }
   }
 
   refreshDocuments(): Promise<void> {

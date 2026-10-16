@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from '../acp/acp.service';
 import type { RagSearchHit } from '../acp/tool-call-info.pipe';
@@ -24,6 +24,13 @@ export class RagManagerComponent implements OnInit {
   error = signal<string | null>(null);
   busy = signal(false);
   isDragOver = signal(false);
+
+  /**
+   * Fired as soon as a write-to-knowledge-base is dispatched. The host closes
+   * the dialog on it; indexing progress is then shown as an animated badge on
+   * the Knowledge Base sidebar button (see {@link RagService.isIndexing}).
+   */
+  readonly indexingStarted = output<void>();
 
   readonly candidates = signal<RagUploadCandidate[]>([]);
   readonly query = signal('');
@@ -109,8 +116,13 @@ export class RagManagerComponent implements OnInit {
   /* ---------------------------------------------------------------------- */
 
   async upload(): Promise<void> {
-    await this.run(() => this.ragService.upload(this.candidates()));
+    const files = this.candidates();
+    if (files.length === 0 || !this.canSubmit()) return;
+    // Close the dialog right away — indexing keeps running in the background and
+    // is surfaced as a spinner on the sidebar button instead.
+    this.indexingStarted.emit();
     this.candidates.set([]);
+    await this.run(() => this.ragService.upload(files));
   }
 
   async refreshDocuments(): Promise<void> {
