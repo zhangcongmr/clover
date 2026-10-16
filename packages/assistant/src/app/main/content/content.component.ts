@@ -1022,11 +1022,14 @@ Always use the welcome_greeting tool.`;
   // 编辑器打开状态下，agent 切换选中项目时实时联动
   private setupProjectSyncEffect(): void {
     effect(() => {
-      const path = this.acpService.selectedProjectPath();
-      if (path) {
-        void this.loadAgentProject(path);
-      } else {
-        this.clearAgentProject();
+      // 仅在 agent-first 模式下联动，避免 doc 驱动模式被覆盖
+      if(this.layoutService.dockMode() === 'agent-first') {
+        const path = this.acpService.selectedProjectPath();
+        if (path) {
+          void this.loadAgentProject(path);
+        } else {
+          this.clearAgentProject();
+        }
       }
     });
   }
