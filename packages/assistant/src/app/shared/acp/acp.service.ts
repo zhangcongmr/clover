@@ -19,6 +19,7 @@ import {
 } from './acp.model';
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
+import { LocalAgentService } from '../local-agent/local-agent.service';
 
 const AGENT_STORAGE_KEY = 'clover_selected_agent';
 
@@ -96,6 +97,7 @@ export interface AcpSessionState {
 })
 export class AcpService {
   private sseService = inject(AcpSseService);
+  private localAgentService = inject(LocalAgentService);
 
   /** Placeholder session title used until the agent provides its own (LLM) title. */
   private static readonly PLACEHOLDER_TITLE = 'New Session';
@@ -903,14 +905,51 @@ export class AcpService {
   // ============================================================================
 
   async deleteTask(id: string): Promise<void> {
+    const task = this.tasks().find(t => t.id === id);
+    if (!task) return;
     try {
-      const task = this.tasks().find(t => t.id === id);
-      await this.sseService.deleteProject(task?.name || '', 'task');
-      await this.listProjects();
+      // 先删除任务下的所有会话（连同 agent 侧的 ACP 会话），再删除任务记录。
+      // 单个会话删除失败不阻断任务删除，保证任务始终能从列表移除。
+      for (const session of task.sessions ?? []) {
+        if (!session.sessionId) continue;
+        try {
+          await this.deleteSession(session.sessionId);
+        } catch (error) {
+          console.error('[ACP] Failed to delete task session:', session.sessionId, error);
+        }
+      }
+      await this.sseService.deleteProject(task.name, 'task', id);
+      await this.listTasks();
+      // 任务记录删除后，连同其工作目录文件夹一并删除（默认工作目录位于 ~/.clover/<时间戳>）
+      await this.deleteTaskWorkspace(task.path);
     } catch (error) {
       console.error('[ACP] Failed to delete task:', error);
       throw error;
     }
+  }
+
+  /**
+   * 递归删除任务对应的工作目录文件夹。
+   * 删除失败只记录日志，不影响任务删除结果。
+   */
+  private async deleteTaskWorkspace(workspacePath?: string): Promise<void> {
+    const target = workspacePath?.trim();
+    if (!target || this.isUnsafeWorkspacePath(target)) return;
+    try {
+      await this.localAgentService.deleteFile(target);
+    } catch (error) {
+      console.error('[ACP] Failed to delete task workspace:', target, error);
+    }
+  }
+
+  /**
+   * 判断路径是否属于不可删除的危险目录（空路径或文件系统根目录），
+   * 避免误删整盘。
+   */
+  private isUnsafeWorkspacePath(target: string): boolean {
+    // 去掉尾部斜杠后：'/' 会归一化为空串，'C:' / 'C:/' 作为盘符根
+    const normalized = target.replace(/\\/g, '/').replace(/\/+$/, '');
+    return !normalized || /^[a-zA-Z]:$/.test(normalized);
   }
 
   async switchAgent(agentId: string, cwd?: string): Promise<void> {
