@@ -845,16 +845,22 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 删除项目或任务（通过 type 区分）
    */
   app.post('/api/projects/delete', async (req: Request, res: Response) => {
-    const { name, type } = req.body;
+    const { name, type, id } = req.body;
 
-    if (!name) {
+    if (type === 'task') {
+      if (!id && !name) {
+        res.status(400).json({ error: 'id or name is required for tasks' });
+        return;
+      }
+    } else if (!name) {
       res.status(400).json({ error: 'name is required' });
       return;
     }
 
     try {
       if (type === 'task') {
-        const tasks = readTasks().filter(t => t.name !== name);
+        // 优先按 id 精确匹配，避免同名任务被误删；无 id 时回退按 name
+        const tasks = readTasks().filter(t => (id ? t.id !== id : t.name !== name));
         writeTasks(tasks);
       } else {
         let projects = readProjects();

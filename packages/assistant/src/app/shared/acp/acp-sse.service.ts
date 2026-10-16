@@ -529,10 +529,10 @@ export class AcpSseService {
   }
 
   /**
-   * 删除项目或任务
+   * 删除项目或任务（task 支持按 id 精确删除）
    */
-  async deleteProject(name: string, type: string): Promise<any> {
-    return this.postNoAuth('/api/projects/delete', { name, type });
+  async deleteProject(name: string, type: string, id?: string): Promise<any> {
+    return this.postNoAuth('/api/projects/delete', { name, type, id });
   }
 
   /**
