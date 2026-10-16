@@ -1,3 +1,4 @@
+import { logger } from '../../helpers/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import type * as acp from '@agentclientprotocol/sdk';
 import type { AcpSessionManager } from '../../acp/session-manager.js';
@@ -96,7 +97,7 @@ export class CollabSpaceStore {
     }
 
     this.spaces.set(space.id, space);
-    console.log(
+    logger.log(
       `[A2A Collab] Space created: ${space.id} (agents: ${agentIds.join(', ')}` +
         `${orchestratorAgentId ? `, orchestrator: ${orchestratorAgentId}` : ''}, cwd: ${cwd})`,
     );
@@ -117,10 +118,10 @@ export class CollabSpaceStore {
       try {
         await this.sessionManager.removeSession(wrapperId);
       } catch (error) {
-        console.warn(`[A2A Collab] Failed to release wrapper ${wrapperId}:`, error);
+        logger.warn(`[A2A Collab] Failed to release wrapper ${wrapperId}:`, error);
       }
     }
-    console.log(`[A2A Collab] Space closed: ${spaceId}`);
+    logger.log(`[A2A Collab] Space closed: ${spaceId}`);
     return true;
   }
 }

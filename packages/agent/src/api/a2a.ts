@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import type express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { Client, ClientFactory } from '@a2a-js/sdk/client';
@@ -21,6 +22,7 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
     });
 
     req.on('end', async () => {
+      const reqId = uuidv4();
       let sendParams: SendMessageRequest;
 
       if (isJson(originalBody)) {
@@ -28,7 +30,7 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
         const contextId = requestData.contextId;
 
         if (requestData.event) {
-          console.log('[a2a-middleware] Received JSON UI event:', requestData.event);
+          logger.log(`[a2a-middleware] Received JSON UI event (req: ${reqId}):`, requestData.event);
           sendParams = createSendMessageRequest(
             [
               {
@@ -41,7 +43,7 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
             contextId,
           );
         } else if (requestData.query) {
-          console.log('[a2a-middleware] Received text query:', requestData.query);
+          logger.log(`[a2a-middleware] Received text query (req: ${reqId}):`, requestData.query);
           sendParams = createSendMessageRequest(
             [
               {
@@ -54,7 +56,7 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
             contextId,
           );
         } else {
-          console.log('[a2a-middleware] Received legacy JSON event:', originalBody);
+          logger.log(`[a2a-middleware] Received legacy JSON event (req: ${reqId}):`, originalBody);
           sendParams = createSendMessageRequest(
             [
               {
@@ -68,7 +70,7 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
           );
         }
       } else {
-        console.log('[a2a-middleware] Received plain text query:', originalBody);
+        logger.log(`[a2a-middleware] Received plain text query (req: ${reqId}):`, originalBody);
         sendParams = createSendMessageRequest([
           {
             content: { $case: 'text', value: originalBody },
@@ -82,12 +84,12 @@ export function setupA2ARoute(app: express.Application, options: A2AOptions = {}
       try {
         const a2aClient = await createOrGetClient(agentCardUrl);
         if (enableStreaming) {
-          await handleStreamingResponse(a2aClient, sendParams, res);
+          await handleStreamingResponse(a2aClient, sendParams, res, reqId);
         } else {
-          await handleNonStreamingResponse(a2aClient, sendParams, res);
+          await handleNonStreamingResponse(a2aClient, sendParams, res, reqId);
         }
       } catch (error: any) {
-        console.error('Request error:', error.message);
+        logger.error(`Request error (req: ${reqId}):`, error.message);
         if (!res.headersSent) {
           res.status(500).json({ error: error.message });
         } else if (!res.writableEnded) {
@@ -122,8 +124,9 @@ async function handleStreamingResponse(
   client: Client,
   sendParams: SendMessageRequest,
   res: express.Response,
+  reqId: string,
 ) {
-  process.stdout.write('[server] Streaming mode enabled\n');
+  logger.log(`[server] Streaming mode enabled (req: ${reqId})`);
   const stream = client.sendMessageStream(sendParams);
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -134,7 +137,7 @@ async function handleStreamingResponse(
 
   for await (const event of stream) {
     const payload = event.payload;
-    console.log(`[server] Received event from agent: ${payload?.$case}`);
+    logger.log(`[server] Received event from agent: ${payload?.$case} (req: ${reqId})`);
     let parts: Part[] = [];
     let contextId: string | undefined;
 
@@ -162,8 +165,8 @@ async function handleStreamingResponse(
     }
 
     if (parts.length > 0) {
-      console.log(`[server] Streaming ${parts.length} parts to client`);
-      console.log(`[server] Streaming parts: ${JSON.stringify(parts)}`);
+      logger.log(`[server] Streaming ${parts.length} parts to client (req: ${reqId})`);
+      logger.log(`[server] Streaming parts (req: ${reqId}): ${JSON.stringify(parts)}`);
       const responseData = {
         parts,
         contextId,
@@ -172,15 +175,16 @@ async function handleStreamingResponse(
     }
   }
   res.end();
-  console.log('[server] Stream finished');
+  logger.log(`[server] Stream finished (req: ${reqId})`);
 }
 
 async function handleNonStreamingResponse(
   client: Client,
   sendParams: SendMessageRequest,
   res: express.Response,
+  reqId: string,
 ) {
-  process.stdout.write('[server] Streaming mode disabled\n');
+  logger.log(`[server] Streaming mode disabled (req: ${reqId})`);
   const result = await client.sendMessage(sendParams);
   res.set('Cache-Control', 'no-store');
 
@@ -210,7 +214,7 @@ function isJson(str: string): boolean {
     const parsed = JSON.parse(str);
     return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
   } catch (err) {
-    console.warn(err);
+    logger.warn(err);
     return false;
   }
 }

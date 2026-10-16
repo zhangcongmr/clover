@@ -1,3 +1,4 @@
+import { logger } from '../../helpers/logger.js';
 import {
   AgentEvent,
   type ExecutionEventBus,
@@ -281,7 +282,7 @@ export class BridgeRunner {
         }
       });
     } catch (error) {
-      console.warn('[A2A Collab] Orchestrator routing failed, falling back to rules:', error);
+      logger.warn(`[A2A Collab] Orchestrator routing failed (space: ${space.id}), falling back to rules:`, error);
       return undefined;
     }
 
@@ -289,10 +290,10 @@ export class BridgeRunner {
 
     const target = parseRoutingReply(reply, space.agentIds);
     if (target) {
-      console.log(`[A2A Collab] Orchestrator selected ${target} for: ${promptText.slice(0, 120)}`);
+      logger.log(`[A2A Collab] Orchestrator selected ${target} (space: ${space.id}) for: ${promptText.slice(0, 120)}`);
       return target;
     }
-    console.warn('[A2A Collab] Orchestrator reply unparsable, falling back to rules:', reply.slice(0, 200));
+    logger.warn(`[A2A Collab] Orchestrator reply unparsable (space: ${space.id}), falling back to rules:`, reply.slice(0, 200));
     return undefined;
   }
 
@@ -485,7 +486,7 @@ export class BridgeRunner {
             error instanceof BridgeTimeoutError
               ? `调用 ${label} 超时（${this.timeoutMs}ms）`
               : (error as Error).message;
-          console.error(`[A2A Collab] Bridge task ${taskId} failed:`, error);
+          logger.error(`[A2A Collab] Bridge task ${taskId} failed:`, error);
           setStatus(TaskState.TASK_STATE_FAILED, `${label} 调用失败：${message}`);
         } finally {
           runState.wrapperId = undefined;

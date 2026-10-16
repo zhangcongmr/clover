@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import type { Response } from 'express';
 import { RedisClient } from '../redis/client.js';
 
@@ -55,16 +56,16 @@ export class SseManager {
       type: 'connected',
       payload: { sessionId, timestamp: Date.now() },
       timestamp: Date.now(),
-    });
+    }, sessionId);
 
     // 订阅 Redis 频道
     const channel = `acp:events:${sessionId}`;
     const unsubscribe = this.redis.subscribe(channel, (message) => {
       try {
         const event: ServerEvent = JSON.parse(message);
-        this.sendEvent(response, event);
+        this.sendEvent(response, event, sessionId);
       } catch (error) {
-        console.error(`[SSE] Failed to parse Redis message:`, error);
+        logger.error(`[SSE] Failed to parse Redis message (session: ${sessionId}):`, error);
       }
     });
 
@@ -80,28 +81,28 @@ export class SseManager {
 
     // 处理连接关闭
     response.on('close', () => {
-      console.log(`[SSE] Client disconnected: ${sessionId}`);
+      logger.log(`[SSE] Client disconnected: ${sessionId}`);
       unsubscribe();
       this.connections.delete(sessionId);
     });
 
     // 处理错误
     response.on('error', (error) => {
-      console.error(`[SSE] Response error for ${sessionId}:`, error);
+      logger.error(`[SSE] Response error for ${sessionId}:`, error);
       unsubscribe();
       this.connections.delete(sessionId);
     });
 
-    console.log(`[SSE] Client connected: ${sessionId} (total: ${this.connections.size})`);
+    logger.log(`[SSE] Client connected: ${sessionId} (total: ${this.connections.size})`);
   }
 
-  private sendEvent(response: Response, event: ServerEvent): void {
+  private sendEvent(response: Response, event: ServerEvent, sessionId?: string): void {
     try {
       if (!response.writableEnded && !response.destroyed) {
         response.write(`data: ${JSON.stringify(event)}\n\n`);
       }
     } catch (error) {
-      console.error('[SSE] Failed to send event:', error);
+      logger.error(`[SSE] Failed to send event (session: ${sessionId ?? 'unknown'}):`, error);
     }
   }
 
@@ -113,7 +114,7 @@ export class SseManager {
         type: 'heartbeat',
         payload: { timestamp: Date.now() },
         timestamp: Date.now(),
-      });
+      }, sessionId);
     }
   }
 
@@ -123,7 +124,7 @@ export class SseManager {
   sendToConnection(sessionId: string, event: ServerEvent): void {
     const connection = this.connections.get(sessionId);
     if (connection) {
-      this.sendEvent(connection.response, event);
+      this.sendEvent(connection.response, event, sessionId);
     }
   }
 
@@ -150,14 +151,14 @@ export class SseManager {
     for (const [sessionId, connection] of this.connections) {
       // 检查响应是否已关闭
       if (connection.response.writableEnded || connection.response.destroyed) {
-        console.log(`[SSE] Cleaning up closed connection: ${sessionId}`);
+        logger.log(`[SSE] Cleaning up closed connection: ${sessionId}`);
         this.connections.delete(sessionId);
         continue;
       }
 
       // 检查空闲时间
       if (now - connection.lastHeartbeat > maxIdleTime) {
-        console.log(`[SSE] Cleaning up idle connection: ${sessionId}`);
+        logger.log(`[SSE] Cleaning up idle connection: ${sessionId}`);
         this.closeConnection(connection);
         this.connections.delete(sessionId);
       }

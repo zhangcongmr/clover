@@ -1,3 +1,4 @@
+import { logger } from '../helpers/logger.js';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { Writable, Readable } from 'node:stream';
 import type { Stream } from '@agentclientprotocol/sdk';
@@ -18,6 +19,19 @@ export class AgentProcess {
   private process: ChildProcess | null = null;
 
   /**
+   * @param label Human-readable correlation id for this subprocess (e.g.
+   *   `agent:opencode` or a wrapper session id). Several agent processes run
+   *   concurrently and share this class, so the label is what makes their log
+   *   lines attributable.
+   */
+  constructor(private readonly label?: string) {}
+
+  /** Build a log tag, appending the correlation label when provided. */
+  private tag(name: string): string {
+    return this.label ? `[${name}] [${this.label}]` : `[${name}]`;
+  }
+
+  /**
    * Spawn the agent process.
    */
   spawn(config: AgentProcessConfig): void {
@@ -27,7 +41,7 @@ export class AgentProcess {
 
     const { command, args = [], env } = config;
 
-    console.log(`[ACP AgentProcess] Spawning: ${command} ${args.join(' ')}`);
+    logger.log(`${this.tag('ACP AgentProcess')} Spawning: ${command} ${args.join(' ')}`);
 
     this.process = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -51,19 +65,19 @@ export class AgentProcess {
         stderrBuffer = lines.pop() || '';
         for (const line of lines) {
           if (line.trim()) {
-            console.log(`[ACP Agent stderr] ${line}`);
+            logger.log(`${this.tag('ACP Agent stderr')} ${line}`);
           }
         }
       });
     }
 
     this.process.on('close', (code) => {
-      console.log(`[ACP AgentProcess] Process exited with code: ${code}`);
+      logger.log(`${this.tag('ACP AgentProcess')} Process exited with code: ${code}`);
       this.process = null;
     });
 
     this.process.on('error', (err) => {
-      console.error('[ACP AgentProcess] Process error:', err.message);
+      logger.error(`${this.tag('ACP AgentProcess')} Process error:`, err.message);
       this.process = null;
     });
   }
@@ -95,7 +109,7 @@ export class AgentProcess {
    */
   kill(): void {
     if (this.process) {
-      console.log('[ACP AgentProcess] Killing process');
+      logger.log(`${this.tag('ACP AgentProcess')} Killing process`);
       this.process.kill();
       this.process = null;
     }
