@@ -62,12 +62,12 @@
 
   @if (sideOpen) {
     <div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
-      @if (layoutService.dockMode() === 'agent-first') {
-        <div class="left-side-section-bar">
-          <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
-        </div>
-      }
-      @if(currentDisplayViewId==1) {
+    @if (layoutService.dockMode() === 'agent-first') {
+      <div class="left-side-section-bar">
+        <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
+      </div>
+    }
+    @if(currentDisplayViewId==1) {
       @if(showButtonPlaceholder()) {
         <div class="ast-content-empty-state">
           <div class="ast-content-empty-card">
