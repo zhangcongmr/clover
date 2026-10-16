@@ -193,21 +193,10 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    */
   app.post('/api/acp/session', async (req: Request, res: Response) => {
     try {
-      const { cwd: rawCwd, agentCommand, agentArgs, agentEnv } = req.body;
-
-      let cwd = rawCwd;
-      if (cwd && String(cwd).trim()) {
-        cwd = String(cwd).trim().replace(/^~(?=\/|\\|$)/, homedir());
-      } else {
-        const now = new Date();
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-        cwd = join(PROJECTS_DIR, ts);
-      }
-      mkdirSync(cwd, { recursive: true });
+      const { agentCommand, agentArgs, agentEnv } = req.body;
 
       // 创建会话（cwd 不再存入 wrapper——会话真实 cwd 在 session/new·load·resume
-      // 绑定时从连接侧记录，此处仅生成目录并返回给前端）
+      // 绑定时从连接侧记录）
       const sessionId = await sessionManager.createSession({
         agentCommand,
         agentArgs,
@@ -220,7 +209,6 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({
         success: true,
         sessionId,
-        cwd: String(cwd).trim(),
         message: 'Session created and connected',
       });
     } catch (error) {
@@ -326,7 +314,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 创建新的 ACP 会话（在已连接的客户端中）
    */
   app.post('/api/acp/session/create', async (req: Request, res: Response) => {
-    const { sessionId, cwd, mcpServers } = req.body;
+    const { sessionId, cwd: rawCwd, mcpServers } = req.body;
 
     if (!sessionId) {
       res.status(400).json({ error: 'sessionId is required' });
@@ -334,6 +322,17 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
+      let cwd = rawCwd;
+      if (cwd && String(cwd).trim()) {
+        cwd = String(cwd).trim().replace(/^~(?=\/|\\|$)/, homedir());
+      } else {
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        cwd = join(PROJECTS_DIR, ts);
+      }
+      mkdirSync(cwd, { recursive: true });
+
       // Resolve MCP server names to full config objects via registry
       let resolvedMcpServers: acp.McpServer[] | undefined;
       if (Array.isArray(mcpServers) && mcpServers.length > 0 && mcpRegistry) {

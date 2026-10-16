@@ -466,7 +466,10 @@ export class AcpService {
 
   /**
    * Creates a wrapper session only: spawns the agent wrapper on the server,
-   * records it in sessionState, and opens the SSE connection. 
+   * records it in sessionState, and opens the SSE connection.
+   *
+   * The real working directory is resolved by the server when the underlying
+   * ACP session is created (createAcpSession / loadAcpSession / resumeAcpSession).
    *
    * Callers:
    * - createSession: creates wrapper + internal ACP session (full new session)
@@ -474,10 +477,9 @@ export class AcpService {
    * - loadSession / resumeSession: creates wrapper only, then loads/resumes the target ACP session
    * - deleteSession: creates a throwaway wrapper and deletes the target ACP session through it
    */
-  async createWrapperSession(cwd?: string): Promise<{ sessionId: string; cwd: string }> {
+  async createWrapperSession(): Promise<{ sessionId: string }> {
     const agent = this.selectedAgent();
     const result = await this.sseService.createSession({
-      cwd,
       agentCommand: agent?.command,
       agentArgs: agent?.args,
       agentEnv: agent?.env,
@@ -486,7 +488,6 @@ export class AcpService {
     this.sessionState.update(s => ({
       ...s,
       sessionId: result.sessionId,
-      cwd: result.cwd,
     }));
     this.wrapperAgentId = agent?.id ?? null;
 
@@ -497,11 +498,15 @@ export class AcpService {
   }
 
   async createSession(cwd?: string, mcpServers?: any[]): Promise<string> {
-    const { sessionId, cwd: actualCwd } = await this.createWrapperSession(cwd);
+    const { sessionId } = await this.createWrapperSession();
 
-    // Create the underlying ACP session so prompt requests have an active session
-    const acpResult = await this.sseService.createAcpSession(sessionId, actualCwd, mcpServers);
+    // Create the underlying ACP session so prompt requests have an active session.
+    // cwd is resolved (and defaulted) server-side; the resolved value comes back here.
+    const acpResult = await this.sseService.createAcpSession(sessionId, cwd, mcpServers);
     this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
+    if (acpResult?.cwd) {
+      this.sessionState.update(s => ({ ...s, cwd: acpResult.cwd }));
+    }
 
     return sessionId;
   }
@@ -955,7 +960,7 @@ export class AcpService {
     // Phase 3: Create wrapper session if needed
     if (!currentSessionId) {
       this.loadingText.set('Connecting to server...');
-      const wrapper = await this.createWrapperSession(cwd || undefined);
+      const wrapper = await this.createWrapperSession();
       currentSessionId = wrapper.sessionId;
       this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
     }
@@ -973,6 +978,7 @@ export class AcpService {
         ...s,
         isConnected: true,
         isConnecting: false,
+        cwd: cwd ?? s.cwd,
         // 仅使用 session/load 返回的 configOptions：不沿用上一个会话的值，
         // 也不写入 agent-config.json（持久化文件只服务 New Task）
         configOptions: result?.configOptions,
@@ -1025,7 +1031,7 @@ export class AcpService {
     // Phase 3: Create wrapper session if needed
     if (!currentSessionId) {
       this.loadingText.set('Connecting to server...');
-      const wrapper = await this.createWrapperSession(cwd || undefined);
+      const wrapper = await this.createWrapperSession();
       currentSessionId = wrapper.sessionId;
       this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
     }
@@ -1043,6 +1049,7 @@ export class AcpService {
         ...s,
         isConnected: true,
         isConnecting: false,
+        cwd: cwd ?? s.cwd,
         // 仅使用 session/resume 返回的 configOptions（不沿用上一个会话的值）
         configOptions: result?.configOptions,
       }));
