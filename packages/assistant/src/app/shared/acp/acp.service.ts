@@ -12,6 +12,7 @@ import {
   ContentBlock,
   ToolCall,
   ToolCallUpdate,
+  ToolCallContent,
   Plan,
   ToolCallStatus,
   ToolKind,
@@ -47,6 +48,14 @@ export interface AcpMessage {
   toolLocations?: Array<{ path: string; line?: number }>;
   toolRawInput?: unknown;
   toolRawOutput?: unknown;
+  /**
+   * ACP tool-call result blocks (`ToolCallUpdate.content`).
+   *
+   * Many agents — `opencode acp` among them — put the tool's textual result here
+   * while leaving `rawOutput` empty or metadata-only, so anything that needs the
+   * result payload (e.g. the RAG result extractor) must read this field.
+   */
+  toolContent?: ToolCallContent[];
 }
 
 export interface AcpPlan {
@@ -1342,6 +1351,7 @@ export class AcpService {
       toolLocations: update.locations ?? existing.toolLocations,
       toolRawInput: update.rawInput ?? existing.toolRawInput,
       toolRawOutput: update.rawOutput ?? existing.toolRawOutput,
+      toolContent: update.content ?? existing.toolContent,
     };
   }
 
@@ -1404,7 +1414,8 @@ export class AcpService {
       toolStatus: update.status || 'pending',
       toolLocations: update.locations,
       toolRawInput: update.rawInput,
-      toolRawOutput: update.rawOutput
+      toolRawOutput: update.rawOutput,
+      toolContent: update.content ?? undefined
     };
   }
 

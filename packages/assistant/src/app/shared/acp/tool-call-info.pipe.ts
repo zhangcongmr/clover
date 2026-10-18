@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { AcpMessage } from './acp.service';
-import type { EmbeddedResource } from './acp.model';
+import type { EmbeddedResource, ToolCallContent } from './acp.model';
 import { renderMarkdownSync } from '../utils/markdown.util';
 
 export interface EditDiffInfo {
@@ -192,9 +192,12 @@ export function buildChangedFiles(
 // ACP `ToolCall` carries no tool name, only a free-form `title`.
 //
 // The exact envelope depends on how the agent wraps MCP results, so the parser
-// probes a list of candidate locations and takes the first one that parses into a
-// recognisable shape. All four shapes are mutually exclusive and narrow enough
-// that they will not collide with ordinary file/terminal tool calls.
+// probes a list of candidate locations — `rawOutput` and the tool call's
+// `content` result blocks — and takes the first one that parses into a
+// recognisable shape. `rawOutput` is not enough on its own: `opencode acp`
+// reports the textual result in `content` and leaves `rawOutput` metadata-only.
+// All four shapes are mutually exclusive and narrow enough that they will not
+// collide with ordinary file/terminal tool calls.
 
 export type RagToolKind = 'index' | 'search' | 'list' | 'delete';
 
@@ -227,17 +230,32 @@ export interface RagExtractResult {
 }
 
 /** Candidate locations where an agent may have parked the MCP JSON payload. */
-function ragOutputCandidates(rawOutput: any): unknown[] {
-  if (rawOutput == null) return [];
-  const candidates: unknown[] = [rawOutput, rawOutput.text, rawOutput.output];
+function ragOutputCandidates(rawOutput: any, toolContent?: ToolCallContent[]): unknown[] {
+  const candidates: unknown[] = [];
 
-  const blocks = Array.isArray(rawOutput.content) ? rawOutput.content : [];
-  for (const block of blocks) {
-    if (!block || typeof block !== 'object') continue;
-    candidates.push(block.text);
-    // Embedded resources nest the payload one level deeper.
-    candidates.push(block.resource?.text);
+  if (rawOutput != null) {
+    candidates.push(rawOutput, rawOutput.text, rawOutput.output);
+
+    const blocks = Array.isArray(rawOutput.content) ? rawOutput.content : [];
+    for (const block of blocks) {
+      if (!block || typeof block !== 'object') continue;
+      candidates.push(block.text);
+      // Embedded resources nest the payload one level deeper.
+      candidates.push(block.resource?.text);
+    }
   }
+
+  // ACP tool-call result blocks. Agents such as `opencode acp` report the tool's
+  // textual output here and leave `rawOutput` metadata-only, so without this the
+  // payload is never seen.
+  for (const block of toolContent ?? []) {
+    if (!block || typeof block !== 'object' || block.type !== 'content') continue;
+    const inner = block.content as any;
+    if (!inner || typeof inner !== 'object') continue;
+    candidates.push(inner.text);
+    if (inner.type === 'resource') candidates.push(inner.resource?.text);
+  }
+
   return candidates;
 }
 
@@ -324,7 +342,7 @@ export function extractRagResult(message: AcpMessage): RagExtractResult | null {
   if (message.toolStatus !== 'completed') return null;
 
   const rawInput = message.toolRawInput as any;
-  const candidates = ragOutputCandidates(message.toolRawOutput);
+  const candidates = ragOutputCandidates(message.toolRawOutput, message.toolContent);
 
   for (const candidate of candidates) {
     const payload = parseJson(candidate);
