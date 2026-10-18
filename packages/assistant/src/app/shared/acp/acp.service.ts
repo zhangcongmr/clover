@@ -73,6 +73,8 @@ export interface ProjectSessionInfo {
   agentId: string;
   title?: string;
   updatedAt?: string;
+  /** MCP server names bound to this session, persisted so they survive page reloads. */
+  mcpServers?: string[];
 }
 
 export interface ProjectInfo {
@@ -99,6 +101,8 @@ export interface AcpSessionState {
   configOptions?: ConfigOption[];
   title?: string;
   cwd?: string;
+  /** MCP server names bound to this session (survives page reload via persisted record). */
+  mcpServers?: string[];
 }
 
 @Injectable({
@@ -345,13 +349,14 @@ export class AcpService {
         const title = this.sessionState().title || 'New Task';
         const agentId = this.selectedAgent()?.id || 'opencode';
         const cwd = this.sessionState().cwd || '';
+        const mcpServers = this.sessionState().mcpServers;
         if (cwd) {
           const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
           const newTask: ProjectInfo = {
             name: title,
             path: cwd,
             type: 'task',
-            sessions: [{ sessionId: acpSessionId, agentId, title }],
+            sessions: [{ sessionId: acpSessionId, agentId, title, ...(mcpServers?.length ? { mcpServers } : {}) }],
             id: taskId,
             createdAt: new Date().toISOString(),
           }
@@ -376,6 +381,7 @@ export class AcpService {
       if (this.isNewSession()) {
         const cwd = this.sessionState().cwd || '';
         const agentId = this.selectedAgent()?.id || 'opencode';
+        const mcpServers = this.sessionState().mcpServers;
 
         const project = this.projects().find(p => p.path === cwd);
         if (project) {
@@ -384,6 +390,7 @@ export class AcpService {
             agentId,
             title: this.sessionState().title || 'New session',
             updatedAt: new Date().toISOString(),
+            ...(mcpServers?.length ? { mcpServers } : {}),
           };
           await this.saveSessionToProject(cwd, record);
           // 本地同步 upsert，新会话立即出现在侧边栏，无需等待 listProjects 刷新
@@ -511,12 +518,23 @@ export class AcpService {
   async createSession(cwd?: string, mcpServers?: any[]): Promise<string> {
     const { sessionId } = await this.createWrapperSession();
 
+    // Pre-bind MCP servers to sessionState BEFORE createAcpSession, so that the
+    // SSE `session_created` event (which may arrive before the HTTP response)
+    // can read sessionState().mcpServers when persisting the session record.
+    if (mcpServers?.length) {
+      this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
+    }
+
     // Create the underlying ACP session so prompt requests have an active session.
     // cwd is resolved (and defaulted) server-side; the resolved value comes back here.
     const acpResult = await this.sseService.createAcpSession(sessionId, cwd, mcpServers);
     this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
     if (acpResult?.cwd) {
       this.sessionState.update(s => ({ ...s, cwd: acpResult.cwd }));
+    }
+    // Persist the MCP servers bound to this session so they survive page reloads.
+    if (mcpServers?.length) {
+      this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
     }
 
     return sessionId;
@@ -533,6 +551,11 @@ export class AcpService {
     const existing = this.sessionState().sessionId;
     const agentChanged = this.wrapperAgentId !== (this.selectedAgent()?.id ?? null);
     if (existing && this.sessionState().isConnected && !agentChanged) {
+      // Pre-bind MCP servers before createAcpSession so the SSE session_created
+      // event (which may arrive before the HTTP response) can read them.
+      if (mcpServers?.length) {
+        this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
+      }
       const acpResult = await this.sseService.createAcpSession(existing, cwd ?? this.sessionState().cwd, mcpServers);
       this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
       const resolvedCwd = acpResult?.cwd || cwd;
@@ -681,8 +704,16 @@ export class AcpService {
     const agentId =
       owner.sessions?.find(s => s.sessionId === sessionId)?.agentId ||
       this.selectedAgent()?.id || 'opencode';
+    const existingMcpServers =
+      owner.sessions?.find(s => s.sessionId === sessionId)?.mcpServers;
 
-    await this.saveSessionToProject(owner.path, { sessionId, agentId, title: next, updatedAt });
+    await this.saveSessionToProject(owner.path, {
+      sessionId,
+      agentId,
+      title: next,
+      updatedAt,
+      ...(existingMcpServers?.length ? { mcpServers: existingMcpServers } : {}),
+    });
   }
 
   /** Delays the agent-title fetch — agents generate titles asynchronously
@@ -1002,6 +1033,9 @@ export class AcpService {
     if (loaded) {
       this.sessionState.update(s => ({ ...s, title: loaded.title }));
     }
+    // MCP servers bound to this session: prefer the persisted value (survives page reloads),
+    // fall back to the caller-supplied argument.
+    const persistedMcpServers = loaded?.mcpServers;
 
     let currentSessionId = this.sessionState().sessionId;
 
@@ -1018,7 +1052,7 @@ export class AcpService {
     this.isReplayingHistory.set(true);
     try {
       const result = await this.sseService.loadSession(
-        currentSessionId, sessionId, cwd || undefined, mcpServers,
+        currentSessionId, sessionId, cwd || undefined, persistedMcpServers ?? mcpServers,
       );
 
       this.selectedSessionId.set(sessionId);
@@ -1030,6 +1064,8 @@ export class AcpService {
         // 仅使用 session/load 返回的 configOptions：不沿用上一个会话的值，
         // 也不写入 agent-config.json（持久化文件只服务 New Task）
         configOptions: result?.configOptions,
+        // 将本次加载所用的 mcpServers 写入 sessionState，供后续保存记录时使用
+        mcpServers: persistedMcpServers ?? mcpServers,
       }));
     } finally {
       this.isReplayingHistory.set(false);
@@ -1073,6 +1109,9 @@ export class AcpService {
     if (resumed) {
       this.sessionState.update(s => ({ ...s, title: resumed.title }));
     }
+    // MCP servers bound to this session: prefer the persisted value (survives page reloads),
+    // fall back to the caller-supplied argument.
+    const persistedMcpServers = resumed?.mcpServers;
 
     let currentSessionId = this.sessionState().sessionId;
 
@@ -1089,7 +1128,7 @@ export class AcpService {
     this.isReplayingHistory.set(true);
     try {
       const result = await this.sseService.resumeSession(
-        currentSessionId, sessionId, cwd || undefined, mcpServers,
+        currentSessionId, sessionId, cwd || undefined, persistedMcpServers ?? mcpServers,
       );
 
       this.selectedSessionId.set(sessionId);
@@ -1100,6 +1139,8 @@ export class AcpService {
         cwd: cwd ?? s.cwd,
         // 仅使用 session/resume 返回的 configOptions（不沿用上一个会话的值）
         configOptions: result?.configOptions,
+        // 将本次恢复所用的 mcpServers 写入 sessionState，供后续保存记录时使用
+        mcpServers: persistedMcpServers ?? mcpServers,
       }));
     } finally {
       this.isReplayingHistory.set(false);
