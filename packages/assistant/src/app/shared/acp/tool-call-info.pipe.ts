@@ -1,4 +1,5 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Pipe, PipeTransform, inject } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AcpMessage } from './acp.service';
 import type { EmbeddedResource, ToolCallContent } from './acp.model';
 import { renderMarkdownSync } from '../utils/markdown.util';
@@ -513,8 +514,10 @@ export class FileDiffViewPipe implements PipeTransform {
 
 @Pipe({ name: 'formatMessage', standalone: true, pure: true })
 export class FormatMessagePipe implements PipeTransform {
-  transform(content: string): string {
-    return renderMarkdownSync(content);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  transform(content: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(renderMarkdownSync(content));
   }
 }
 
