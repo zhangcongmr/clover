@@ -320,7 +320,7 @@ export class AgentComponent {
     this.panelLoading.set(true);
 
     try {
-      await this.acpService.loadSession(sessionId, cwd, agentId, this.acpService.selectedMcpServers());
+      await this.acpService.loadSession(sessionId, cwd, agentId);
       this.acpService.selectedProjectPath.set(cwd || null);
       await this.acpService.saveSelectedSession(sessionId);
     } catch (error: any) {
@@ -342,7 +342,7 @@ export class AgentComponent {
     this.panelLoading.set(true);
 
     try {
-      await this.acpService.resumeSession(sessionId, cwd, agentId, undefined, this.acpService.selectedMcpServers());
+      await this.acpService.resumeSession(sessionId, cwd, agentId, undefined);
       this.acpService.selectedProjectPath.set(cwd || null);
       await this.acpService.saveSelectedSession(sessionId);
     } catch (error: any) {
@@ -530,7 +530,7 @@ export class AgentComponent {
 
     const agentId = task.sessions?.find(s => s.sessionId === sessionId)?.agentId;
     try {
-      await this.acpService.loadSession(sessionId, task.path, agentId, this.acpService.selectedMcpServers());
+      await this.acpService.loadSession(sessionId, task.path, agentId);
     } catch (error: any) {
       console.error('[Agent] Failed to load task session:', error);
       this.panelError.set(error?.message || 'Failed to load session');
