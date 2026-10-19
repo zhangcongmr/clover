@@ -4,10 +4,15 @@ import { FormsModule } from "@angular/forms";
 import { AcpService } from "../../shared/acp/acp.service";
 import type { ProjectInfo } from "../../shared/acp/acp.service";
 import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
+import { AcpChatComponent } from "../../shared/acp/acp-chat.component";
+import { AcpChatInputComponent } from "../../shared/acp/acp-chat-input.component";
+import { AcpPermissionDialogComponent } from "../../shared/acp/acp-permission-dialog.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
+import { RagService } from "../../shared/rag/rag.service";
+import { RagMetricsService } from "../../shared/rag/rag-metrics.service";
 import { LayoutService } from "../layout.service";
 import { CollabPanelComponent } from "./collab/collab-panel.component";
 import { CollabService } from "./collab/collab.service";
@@ -46,12 +51,24 @@ function readCollapsedProjects(): Set<string> {
     'class': 'agent-container'
   },
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, CollabPanelComponent, AstMenuComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    FilePickerDialogComponent,
+    AcpPanelComponent,
+    AcpChatComponent,
+    AcpChatInputComponent,
+    AcpPermissionDialogComponent,
+    CollabPanelComponent,
+    AstMenuComponent,
+  ],
 })
 export class AgentComponent {
   protected acpService = inject(AcpService);
   protected layoutService = inject(LayoutService);
   protected collabService = inject(CollabService);
+  protected ragService = inject(RagService);
+  private readonly ragMetrics = inject(RagMetricsService);
   private readonly platformId = inject(PLATFORM_ID);
   /** True only in the browser; used to skip rendering the ACP panel during SSR. */
   protected readonly isBrowser = computed(() => isPlatformBrowser(this.platformId));
@@ -64,6 +81,46 @@ export class AgentComponent {
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
+
+  // ============================================================================
+  // Content-first agent panel
+  // ============================================================================
+
+  /** Session whose content is shown as an overlay in the content-first panel. */
+  private readonly contentFirstOpenSessionId = signal<string | null>(null);
+
+  /** Sessions of the selected project, newest first. Empty when no project is selected. */
+  protected readonly contentFirstSessions = computed<SessionWithAgent[]>(() => {
+    const project = this.selectedProject();
+    if (!project) return [];
+    return (project.sessions || [])
+      .map(s => ({
+        sessionId: s.sessionId,
+        cwd: project.path,
+        title: s.title,
+        updatedAt: s.updatedAt,
+        agentId: s.agentId,
+      }))
+      .sort((a, b) => {
+        const ta = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const tb = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return tb - ta;
+      });
+  });
+
+  /** True while a session's chat content should cover the session list. */
+  protected readonly contentFirstSessionOpen = computed(() =>
+    !!this.contentFirstOpenSessionId() && !this.acpService.isNewSession());
+
+  /** Item backing the overlay header (title/agent), may be missing for a freshly created session. */
+  protected readonly contentFirstActiveSession = computed(() => {
+    const sessionId = this.contentFirstOpenSessionId();
+    if (!sessionId) return null;
+    return this.contentFirstSessions().find(s => s.sessionId === sessionId) ?? null;
+  });
+
+  /** Project paths whose sessions were already auto-fetched in content-first mode. */
+  private readonly contentFirstLoadedProjects = new Set<string>();
 
   /** Session right-click context menu: open flag, cursor anchor, and the targeted session. */
   sessionMenuOpen = false;
@@ -87,6 +144,18 @@ export class AgentComponent {
   layoutChanged = output<void>();
   /** Re-emitted upward when user clicks "应用到项目UI" in A2UI theme preview. */
   themeApply = output<Record<string, any>>();
+  /** Content-first toolbar entries: open the managers owned by AppComponent. */
+  skillsManagerToggle = output<void>();
+  mcpManagerToggle = output<void>();
+  ragManagerToggle = output<void>();
+
+  /** Knowledge-base tooltip, mirroring the AppComponent sidebar button. */
+  protected readonly ragButtonTitle = computed(() => {
+    const summary = this.ragMetrics.summary();
+    if (summary.completedCount === 0) return 'Knowledge Base';
+    const hitRate = summary.hitRate === null ? '—' : `${Math.round(summary.hitRate * 100)}%`;
+    return `Knowledge Base · hit rate ${hitRate} · ${summary.completedCount} searches`;
+  });
 
   protected projects = computed(() => {
     return this.acpService.projects()
@@ -209,6 +278,33 @@ export class AgentComponent {
       });
     }
 
+    // Content-first: a session selected from the list (or created by sending a
+    // message) opens the chat overlay automatically. Back-to-list clears the
+    // session and flips isNewSession back to true, so this won't reopen it.
+    effect(() => {
+      if (this.layoutService.dockMode() !== 'content-first') return;
+      if (this.acpService.isNewSession()) {
+        this.contentFirstOpenSessionId.set(null);
+        return;
+      }
+      const sessionId = this.acpService.selectedSessionId();
+      if (sessionId) {
+        this.contentFirstOpenSessionId.set(sessionId);
+      }
+    });
+
+    // Content-first: lazily fetch the selected project's sessions once, so the
+    // panel is not empty when the project was picked from the chat input menu.
+    effect(() => {
+      if (this.layoutService.dockMode() !== 'content-first') return;
+      const project = this.selectedProject();
+      if (!project || project.type !== 'project') return;
+      if ((project.sessions?.length ?? 0) > 0) return;
+      if (this.contentFirstLoadedProjects.has(project.path)) return;
+      this.contentFirstLoadedProjects.add(project.path);
+      void this.loadSessionsForProject(project.path);
+    });
+
     // 初始状态：默认激活 New Task，右侧显示 ACP panel（仅浏览器端渲染，避免 SSR 报错）
     this.acpService.isNewSession.set(true);
     if (typeof window !== 'undefined') {
@@ -249,6 +345,35 @@ export class AgentComponent {
 
   getInitial(name: string): string {
     return (name || '?')[0].toUpperCase();
+  }
+
+  /** Accent color of a project, reusing the sidebar palette. */
+  getProjectColor(name: string): string {
+    const index = this.projects().findIndex(p => p.name === name);
+    return index >= 0 ? PROJECT_COLORS[index % PROJECT_COLORS.length] : 'transparent';
+  }
+
+  /** Content-first: open a session's chat content over the session list. */
+  async openContentFirstSession(sessionId: string): Promise<void> {
+    if (this.sessionLoadingId()) return;
+    // Show the overlay immediately; the chat component renders its loading state.
+    this.contentFirstOpenSessionId.set(sessionId);
+    await this.loadSession(sessionId);
+  }
+
+  /**
+   * Content-first: close the session content overlay and return to the list.
+   * The session selection is cleared (keeping the project), so the next message
+   * starts a fresh session as described by the panel behaviour.
+   */
+  async closeContentFirstSession(): Promise<void> {
+    if (this.acpService.isProcessing()) return;
+    this.contentFirstOpenSessionId.set(null);
+    await this.acpService.saveSelectedSession(null);
+    await this.acpService.disconnect();
+    this.acpService.isNewSession.set(true);
+    // disconnect() resets sessionState; restore the persisted config selectors.
+    void this.acpService.reloadConfigOptions();
   }
 
   switchToTasksView(): void {
@@ -560,7 +685,8 @@ export class AgentComponent {
     return icons[agentId || ''] || '??';
   }
 
-  getRelativeTime(dateStr: string): string {
+  getRelativeTime(dateStr?: string): string {
+    if (!dateStr) return '';
     const now = new Date();
     const date = new Date(dateStr);
     const diffMs = now.getTime() - date.getTime();

@@ -246,7 +246,7 @@
       }
 
       <!-- Docked Agent panel -->
-      <div *appKeepAlive="agentPanelOpen()" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (overviewToggle)="onOverviewToggle()" (layoutChanged)="onAgentLayoutChanged()" (themeApply)="onA2uiThemeApply($event)"></div>
+      <div *appKeepAlive="agentPanelOpen()" ast-agent [style.flex]="astContentPanelOpen() ? 'none' : '1 1 0'" [style.width]="astContentPanelOpen() ? agentPanelWidthPx() + 'px' : 'auto'" (editorToggle)="toggleAstContentPanel()" (overviewToggle)="onOverviewToggle()" (layoutChanged)="onAgentLayoutChanged()" (themeApply)="onA2uiThemeApply($event)" (skillsManagerToggle)="toggleSkillsManager()" (mcpManagerToggle)="toggleMcpManager()" (ragManagerToggle)="toggleRagManager()"></div>
 
       <!-- Middle panel -->
       <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen() ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
