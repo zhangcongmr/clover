@@ -1,5 +1,4 @@
 import { Injectable, WritableSignal, signal, inject } from '@angular/core';
-import { file, write } from 'opfs-tools';
 import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
 import { ThemeService } from '../../theme.service';
 import { ThemeLibraryService } from '../../theme-library.service';
@@ -10,11 +9,6 @@ export interface SettingsCategory {
   id: string;
   label: string;
   icon?: string;
-}
-
-export interface OpfsStorageInfo {
-  files: { name: string; exists: boolean }[];
-  totalSize: string;
 }
 
 /**
@@ -63,7 +57,6 @@ export class SettingsService {
   readonly categories: SettingsCategory[] = [
     { id: 'general', label: 'General', icon: '#icon-settings' },
     { id: 'appearance', label: 'Appearance', icon: '#icon-appearance' },
-    { id: 'data', label: 'Data', icon: '#icon-data' },
     { id: 'advanced', label: 'Advanced', icon: '#icon-advanced' },
   ];
 
@@ -81,10 +74,6 @@ export class SettingsService {
   uiLineHeight = signal<number>(DEFAULT_UI_LINE_HEIGHT);
 
   notificationDuration = signal<number>(5);
-
-  opfsInfo = signal<OpfsStorageInfo | null>(null);
-
-  private readonly OPFS_FILES = ['/dir/file.txt', '/dir/openedList.txt', '/dir/serverList.txt', '/dir/microserviceDataList.txt', '/dir/microserviceDataStatusFlag.txt'];
 
   selectedModel = signal<string>('deepseek-v4-flash');
   pluginsEnabled = signal<boolean>(false);
@@ -262,35 +251,5 @@ export class SettingsService {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('clover_use_memory_mode', String(enabled));
     }
-  }
-
-  async refreshOpfsInfo() {
-    const results: { name: string; exists: boolean }[] = [];
-    for (const path of this.OPFS_FILES) {
-      try {
-        const content = await file(path).text();
-        results.push({ name: path.replace('/dir/', ''), exists: content != null });
-      } catch {
-        results.push({ name: path.replace('/dir/', ''), exists: false });
-      }
-    }
-    let totalSize = '0 B';
-    try {
-      const storage = await navigator.storage?.estimate();
-      if (storage) {
-        const used = storage.usage ?? 0;
-        totalSize = used < 1024 ? `${used} B` : used < 1048576 ? `${(used / 1024).toFixed(1)} KB` : `${(used / 1048576).toFixed(1)} MB`;
-      }
-    } catch { }
-    this.opfsInfo.set({ files: results, totalSize });
-  }
-
-  async clearAllOpfsData() {
-    for (const path of this.OPFS_FILES) {
-      try {
-        await write(path, '');
-      } catch { }
-    }
-    await this.refreshOpfsInfo();
   }
 }

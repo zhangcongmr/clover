@@ -401,61 +401,6 @@
   cursor: not-allowed;
 }
 
-.opfs-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.opfs-total {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.opfs-label {
-  font-size: var(--vscode-font-size);
-  color: var(--vscode-foreground);
-}
-
-.opfs-value {
-  font-size: var(--vscode-font-size);
-  font-weight: 500;
-  color: var(--vscode-foreground);
-}
-
-.opfs-files {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.opfs-file-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.opfs-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.opfs-dot-yes {
-  background: #4ec9b0;
-}
-
-.opfs-dot-no {
-  background: #555;
-}
-
-.opfs-fname {
-  font-size: 12px;
-  color: var(--vscode-descriptionForeground, #7a7a7a);
-}
-
 /* ==========================================================================
    Agents management (Settings -> General -> Agents)
    ========================================================================== */

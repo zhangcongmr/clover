@@ -68,8 +68,6 @@ export class SettingsComponent {
 
   notificationDuration = this.settingsService.notificationDuration;
 
-  opfsInfo = this.settingsService.opfsInfo;
-
   selectedModel = this.settingsService.selectedModel;
   pluginsEnabled = this.settingsService.pluginsEnabled;
   useMemoryMode = this.settingsService.useMemoryMode;
@@ -83,8 +81,6 @@ export class SettingsComponent {
   agentsError = signal<string | null>(null);
   /** Agent id currently running a Check Now, guards double-click. */
   checkingAgentId = signal<string | null>(null);
-
-  opfsClearing = signal(false);
 
   showSavedToast = signal(false);
 
@@ -131,9 +127,6 @@ export class SettingsComponent {
 
   setActiveCategory(id: string) {
     this.settingsService.setActiveCategory(id);
-    if (id === 'data') {
-      this.settingsService.refreshOpfsInfo();
-    }
     if (id === 'general' && this.agents().length === 0 && !this.agentsLoading()) {
       this.loadAgents();
     }
@@ -314,12 +307,6 @@ export class SettingsComponent {
   onUseMemoryModeChange(event: Event) {
     const enabled = (event.target as HTMLInputElement).checked;
     this.settingsService.setUseMemoryMode(enabled);
-  }
-
-  async clearAllOpfsData() {
-    this.opfsClearing.set(true);
-    await this.settingsService.clearAllOpfsData();
-    this.opfsClearing.set(false);
   }
 
   async testAgentConnection() {
