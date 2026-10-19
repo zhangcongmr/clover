@@ -26,7 +26,7 @@
   gap: 6px;
   padding: 8px 16px;
   cursor: pointer;
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   color: var(--vscode-foreground);
   transition: background 0.15s;
   border-bottom: 1px solid var(--vscode-border-color);
@@ -48,7 +48,7 @@
   gap: 8px;
   padding: 8px 16px;
   cursor: pointer;
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   color: var(--vscode-foreground);
   transition: background 0.15s;
 }
@@ -88,6 +88,44 @@
   border-bottom: 1px solid var(--vscode-border-color);
 }
 
+/* Group heading inside a settings section (e.g. Appearance -> Editor / Terminal). */
+.settings-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 28px 0 0;
+}
+
+/* The first group sits directly under the section title, which already has a bottom margin. */
+.section-title + .settings-group-header {
+  margin-top: 0;
+}
+
+.settings-group-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vscode-foreground);
+  opacity: 0.75;
+}
+
+.btn.settings-group-reset {
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--vscode-border-color);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
+  font-size: 11px;
+  border-radius: var(--vscode-radius-sm, 3px);
+}
+
+.btn.settings-group-reset:hover {
+  background: var(--vscode-hover-background);
+  color: var(--vscode-foreground);
+}
+
 .setting-item {
   display: flex;
   align-items: flex-start;
@@ -104,7 +142,7 @@
 
 .setting-label {
   display: block;
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   font-weight: 500;
   margin-bottom: 4px;
   color: var(--vscode-foreground);
@@ -126,7 +164,7 @@
 .setting-desc {
   margin: 0;
   font-size: 12px;
-  color: var(--vscode-accent-color);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
   line-height: 1.4;
 }
 
@@ -148,13 +186,17 @@
   background: var(--vscode-background);
   border: 1px solid var(--vscode-border-color);
   color: var(--vscode-foreground);
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   border-radius: var(--vscode-radius-sm, 3px);
   outline: none;
 }
 
 .setting-input:focus {
-  border-color: var(--vscode-accent-color);
+  border-color: var(--vscode-primary-background);
+}
+
+.setting-input::placeholder {
+  color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
 }
 
 .setting-select {
@@ -163,14 +205,14 @@
   background: var(--vscode-background);
   border: 1px solid var(--vscode-border-color);
   color: var(--vscode-foreground);
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   border-radius: var(--vscode-radius-sm, 3px);
   outline: none;
   cursor: pointer;
 }
 
 .setting-select:focus {
-  border-color: var(--vscode-accent-color);
+  border-color: var(--vscode-primary-background);
 }
 
 .btn {
@@ -178,8 +220,13 @@
   border: none;
   border-radius: var(--vscode-radius-sm, 3px);
   cursor: pointer;
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   white-space: nowrap;
+}
+
+.btn:focus-visible {
+  outline: 1px solid var(--vscode-primary-background);
+  outline-offset: 1px;
 }
 
 .btn-primary {
@@ -242,7 +289,7 @@
 }
 
 .status-text {
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   min-width: 80px;
 }
 
@@ -257,7 +304,7 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
 }
 
 .radio-item input[type="radio"] {
@@ -301,6 +348,11 @@
   background: var(--vscode-foreground);
   border-radius: 50%;
   transition: 0.2s;
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  outline: 1px solid var(--vscode-primary-background);
+  outline-offset: 2px;
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -362,12 +414,12 @@
 }
 
 .opfs-label {
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   color: var(--vscode-foreground);
 }
 
 .opfs-value {
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   font-weight: 500;
   color: var(--vscode-foreground);
 }
@@ -401,7 +453,7 @@
 
 .opfs-fname {
   font-size: 12px;
-  color: var(--vscode-border-color);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
 }
 
 /* ==========================================================================
@@ -445,14 +497,14 @@
 }
 
 .agent-name {
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   font-weight: 500;
   color: var(--vscode-foreground);
 }
 
 .agent-desc {
   font-size: 12px;
-  color: var(--vscode-border-color);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
 }
 
 .agent-error {
@@ -532,7 +584,7 @@
 .agents-hint {
   margin: 0;
   font-size: 12px;
-  color: var(--vscode-border-color);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
 }
 
 .agents-hint.agents-error {
@@ -610,6 +662,11 @@
   border-color: var(--borderless-accent, var(--vscode-accent-color));
 }
 
+.theme-library-card:focus-visible {
+  outline: 1px solid var(--vscode-primary-background);
+  outline-offset: 1px;
+}
+
 .theme-library-thumb {
   border: 1px solid var(--vscode-border-color);
   border-radius: var(--vscode-radius-sm, 3px);
@@ -644,12 +701,20 @@
   background: var(--vscode-background);
   color: var(--vscode-foreground);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
+  /* Always visible (touch devices have no hover); hover/focus just sharpens it. */
+  opacity: 0.65;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
 }
 
-.theme-library-card:hover .theme-library-delete {
+.theme-library-card:hover .theme-library-delete,
+.theme-library-card:focus-within .theme-library-delete,
+.theme-library-delete:focus-visible {
   opacity: 1;
+}
+
+.theme-library-delete:focus-visible {
+  outline: 1px solid var(--vscode-primary-background);
+  outline-offset: 1px;
 }
 
 .theme-library-delete:hover {

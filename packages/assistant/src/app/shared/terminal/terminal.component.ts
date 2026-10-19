@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, AfterViewInit, input, effect, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, input, effect, inject } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -6,6 +6,7 @@ import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { CoreService } from '../../core.service';
 import { LocalAgentService } from '../local-agent/local-agent.service';
+import { SettingsService } from '../../main/settings/settings.service';
 
 @Component({
   selector: 'app-terminal',
@@ -15,10 +16,11 @@ import { LocalAgentService } from '../local-agent/local-agent.service';
 })
 export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('terminal', { static: true }) terminalElement!: ElementRef;
-  
-  @Input() fontSize: number = 14;
+
   private coreService = inject(CoreService);
   private localAgentService = inject(LocalAgentService);
+  /** Terminal typography is owned by Settings → Appearance. */
+  private settingsService = inject(SettingsService);
   theme = input<string>('light'); // 'dark' or 'light'
   dataList = input<Array<any>>([]);
 
@@ -59,6 +61,26 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
         this.hasConnected = true;
       }
     });
+
+    // Settings → Appearance 拥有终端字体族与字号：改动后实时应用到 xterm 并重新排版。
+    effect(() => {
+      const fontFamily = this.settingsService.terminalFontFamily();
+      const fontSize = this.settingsService.terminalFontSize();
+      if (!this.terminal) return;
+      this.terminal.options.fontFamily = fontFamily;
+      this.terminal.options.fontSize = fontSize;
+      this.refitTerminal();
+    });
+  }
+
+  /** 重新计算终端行列数；字体变化或布局变化后调用。 */
+  private refitTerminal(): void {
+    if (!this.fitAddon || !this.terminal?.element) return;
+    try {
+      this.fitAddon.fit();
+    } catch {
+      // 终端尚未排版（例如所在标签页不可见），下一次 resize 时会自动修正。
+    }
   }
 
   ngOnInit(): void {
@@ -76,7 +98,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     // 设置ResizeObserver，确保终端能够自适应滚动
     this.resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
-        this.fitAddon.fit();
+        this.refitTerminal();
       }
     });
 
@@ -146,7 +168,8 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   private initializeTerminal(): void {
     // Create terminal instance with options
     this.terminal = new Terminal({
-      fontSize: this.fontSize,
+      fontSize: this.settingsService.terminalFontSize(),
+      fontFamily: this.settingsService.terminalFontFamily(),
       cursorBlink: true,
       windowsPty: {
         backend: 'conpty',

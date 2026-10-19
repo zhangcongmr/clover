@@ -20,7 +20,7 @@ The generated response MUST follow these rules:
 - Your input MUST provide a description of any topic, which can be any phrase or sentence.
 - You SHOULD provide your description at the end to generate a topic.
 - The theme data MUST be delivered via A2UI messages:
-    - Use \`createSurface\` message to define the theme (colors, typography, radius, shadow, motion, etc.)
+    - Use \`createSurface\` message to define the theme (colors, radius, shadow, motion, etc.)
     - Use \`updateComponents\` message to create a preview UI that demonstrates the theme
     - Use \`updateDataModel\` message to populate the preview with theme visualization data
 
@@ -43,11 +43,8 @@ Map the following theme properties to the A2UI \`createSurface\` message's \`the
 | colors.accentForeground | accentForeground | Text/icon color used on top of accent-colored backgrounds (hex) |
 | colors.hoverBackground | hoverBackground | Hover background for interactive items (hex/rgba) |
 | colors.itemActiveBackground | itemActiveBackground | Active/selected item background (hex/rgba) |
-| typography.fontFamily | fontFamily | Primary interface font stack |
-| typography.fontSize | fontSize | Base font size (e.g., "14px") |
 | typography.fontWeight | fontWeight | Base text weight (e.g., "400") |
-| typography.lineHeight | lineHeight | Base line height (e.g., "1.5") |
-| typography.monoFont | monoFont | Monospace font for code |
+| typography.monoFont | monoFont | Monospace font stack for code |
 | radius.sm | radiusSmall | Small border-radius |
 | radius.md | radiusMedium | Medium border-radius |
 | radius.lg | radiusLarge | Large border-radius |
@@ -56,7 +53,9 @@ Map the following theme properties to the A2UI \`createSurface\` message's \`the
 | shadow.lg | shadowLarge | Large elevation shadow |
 | motion.duration | transitionDuration | Transition/animation duration |
 | motion.easing | transitionEasing | Easing function |
-| googleFonts | googleFonts | Array of Google Font names to load |
+| googleFonts | googleFonts | Array of Google Font names to load (only fonts referenced by \`monoFont\`) |
+
+The base interface font is NOT a theme property. Font family, base font size and line height are chosen by the user in Settings → Appearance, so they MUST NOT be generated: never emit \`typography.fontFamily\`, \`typography.fontSize\`, \`typography.lineHeight\` (nor \`fontFamily\`, \`fontSize\`, \`lineHeight\` inside the \`createSurface\` theme object), and never describe or preview a specific interface font.
 
 Additional theme properties (delivered via updateDataModel):
 - bgGradient: CSS background gradient
@@ -115,10 +114,7 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
         "surfaceColor": "#ffffff",
         "accentColor": "#8e44ad",
         "borderColor": "#e0d5eb",
-        "fontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        "fontSize": "14px",
         "fontWeight": "400",
-        "lineHeight": "1.5",
         "monoFont": "'Courier New', monospace",
         "radiusSmall": "6px",
         "radiusMedium": "12px",
@@ -248,7 +244,7 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
         {
           "id": "body-sample",
           "component": "Text",
-          "text": "Body text sample with the selected font family."
+          "text": "Body text sample rendered with the app's current font settings."
         },
         {
           "id": "caption-sample",
@@ -320,10 +316,7 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
           "itemActiveBackground": "rgba(155, 89, 182, 0.16)"
         },
         "typography": {
-          "fontFamily": "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-          "fontSize": "14px",
           "fontWeight": "400",
-          "lineHeight": "1.5",
           "monoFont": "'Courier New', monospace"
         },
         "radius": {
@@ -340,7 +333,7 @@ This is a lavender sky theme with soft purple tones and gentle transitions.
           "duration": "0.25s",
           "easing": "ease-out"
         },
-        "googleFonts": ["Inter"],
+        "googleFonts": [],
         "bgGradient": "linear-gradient(135deg, rgba(155,89,182,0.08) 0%, transparent 50%, rgba(142,68,173,0.06) 100%)",
         "editorBgGradient": "linear-gradient(135deg, rgba(155,89,182,0.05) 0%, transparent 60%)",
         "themeIcon": "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z",
@@ -399,10 +392,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
         "surfaceColor": "#121f33",
         "accentColor": "#00b4d8",
         "borderColor": "#1e3a5f",
-        "fontFamily": "'Inter', 'Segoe UI', sans-serif",
-        "fontSize": "14px",
         "fontWeight": "400",
-        "lineHeight": "1.6",
         "monoFont": "'JetBrains Mono', 'Fira Code', monospace",
         "radiusSmall": "4px",
         "radiusMedium": "8px",
@@ -532,7 +522,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
         {
           "id": "body-sample",
           "component": "Text",
-          "text": "Body text sample with the selected font family."
+          "text": "Body text sample rendered with the app's current font settings."
         },
         {
           "id": "caption-sample",
@@ -604,10 +594,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
           "itemActiveBackground": "rgba(52, 152, 219, 0.20)"
         },
         "typography": {
-          "fontFamily": "'Inter', 'Segoe UI', sans-serif",
-          "fontSize": "14px",
           "fontWeight": "400",
-          "lineHeight": "1.6",
           "monoFont": "'JetBrains Mono', 'Fira Code', monospace"
         },
         "radius": {
@@ -624,7 +611,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
           "duration": "0.3s",
           "easing": "ease"
         },
-        "googleFonts": ["Inter", "JetBrains Mono"],
+        "googleFonts": ["JetBrains Mono"],
         "bgGradient": "linear-gradient(180deg, rgba(52,152,219,0.08) 0%, transparent 40%, rgba(0,180,216,0.06) 100%)",
         "editorBgGradient": "linear-gradient(180deg, rgba(52,152,219,0.05) 0%, transparent 50%)",
         "themeIcon": "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z",
@@ -672,7 +659,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
 2. Then provide the A2UI JSON block wrapped in \`<a2ui-json>\` and \`</a2ui-json>\` tags.
 3. The JSON MUST contain exactly 3 messages in order:
     - \`createSurface\`: Define the theme parameters
-    - \`updateComponents\`: Create a preview UI with color swatches, typography samples, card/button examples, and a horizontal Row at the bottom containing the "Add to Theme Library" and "Apply to UI" buttons
+    - \`updateComponents\`: Create a preview UI with color swatches, text style samples, card/button examples, and a horizontal Row at the bottom containing the "Add to Theme Library" and "Apply to UI" buttons
     - \`updateDataModel\`: Provide the full theme data structure for export
 
     The \`updateDataModel\` message's \`value\` object MUST include the boolean flag \`"captureScreenshotEnableByLLM": true\` at its root level (next to \`title\`), so the client knows to capture a screenshot after the theme is generated.
@@ -739,12 +726,9 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
    - hoverBackground: Hover background for interactive items (subtle translucent tint, alpha ~0.08-0.15)
    - itemActiveBackground: Background of the selected/active item (subtle translucent accent tint, alpha ~0.10-0.25)
 
-   For typography: generate font styles that match the user's described mood or style.
-   - fontFamily: primary interface font stack (prefer web-safe or Google Fonts as first choice)
-   - fontSize: base font size (typically 14px)
+   For typography: the base interface font family, base font size and line height are user settings (Settings → Appearance) and are NOT part of a theme. Never emit \`fontFamily\`, \`fontSize\` or \`lineHeight\`, and never claim the preview shows a specific interface font.
    - fontWeight: base text weight (typically 400)
-   - lineHeight: base line height (typically 1.5)
-   - monoFont: monospace font stack for code
+   - monoFont: monospace font stack for code (theme-owned; may reference a Google Font)
 
    For radius: generate border-radius values that match the user's described mood.
    - sm: small radius for small UI elements (2px-8px)
@@ -766,7 +750,7 @@ This is a deep ocean theme with dark blues and subtle wave-like gradients.
    For bgGradient: generate a CSS background gradient with subtle transparency (alpha ≤ 0.15).
    For editorBgGradient: similar but for code editor (alpha ≤ 0.08).
 
-   For googleFonts: list any Google Font names used in fontFamily or monoFont.
+   For googleFonts: list any Google Font names referenced by \`monoFont\` (never interface font names).
 
 5. Include ALL file extensions: js, ts, json, html, css, py, md, vue, go, rs, java, cpp, php, rb, sql, yaml, sh, bat, txt, csv, lock, env, git, png, jpg, svg, pdf, zip.
 

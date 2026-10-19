@@ -24,14 +24,6 @@ export interface ThemeChipCategory {
 export const THEME_CHIP_CATEGORIES: readonly ThemeChipCategory[] = [
   // ── 风格类 ────────────────────────────────────────────────
   {
-    id: 'glamour',
-    label: '性感女人',
-    chips: [
-      { label: '魅惑酒红', prompt: 'Create a theme inspired by "魅惑酒红" — deep wine red surfaces, gold accents, elegant serif typography and luxe satin shadows' },
-      { label: '玫瑰粉黛', prompt: 'Create a theme inspired by "玫瑰粉黛" — soft rose pink and cream tones, delicate borders and glamorous glossy highlights' },
-    ],
-  },
-  {
     id: 'cartoon',
     label: '卡通动漫',
     chips: [

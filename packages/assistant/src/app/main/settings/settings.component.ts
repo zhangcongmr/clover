@@ -26,6 +26,12 @@ export interface ThemeGroup {
   themes: ThemeLibraryEntry[];
 }
 
+/** Reads a numeric input; an empty field yields NaN so the service keeps the current value. */
+function readNumber(raw: string): number {
+  const trimmed = raw.trim();
+  return trimmed === '' ? NaN : Number(trimmed);
+}
+
 @Component({
   selector: 'app-settings',
   templateUrl: './settings.component.html',
@@ -186,6 +192,15 @@ export class SettingsComponent {
     this.previewVariant.set('welcome');
   }
 
+  /** Theme cards expose `role="button"`, so mirror click on Enter / Space. */
+  onThemeCardKeydown(event: KeyboardEvent, theme: ThemeLibraryEntry) {
+    // Ignore keys coming from the nested delete button, which handles its own activation.
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    this.openPreview(theme);
+  }
+
   closePreview() {
     this.previewTheme.set(null);
   }
@@ -242,37 +257,40 @@ export class SettingsComponent {
   }
 
   onTerminalFontFamilyChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.settingsService.setTerminalFontFamily(value);
+    const input = event.target as HTMLInputElement;
+    input.value = this.settingsService.setTerminalFontFamily(input.value);
   }
 
   onTerminalFontSizeChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    const num = Number(value);
-    if (!isNaN(num) && num > 0) {
-      this.settingsService.setTerminalFontSize(num);
-    }
+    const input = event.target as HTMLInputElement;
+    input.value = String(this.settingsService.setTerminalFontSize(readNumber(input.value)));
   }
 
   onUiFontFamilyChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.settingsService.setUiFontFamily(value);
+    const input = event.target as HTMLInputElement;
+    input.value = this.settingsService.setUiFontFamily(input.value);
   }
 
   onUiFontSizeChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    const num = Number(value);
-    if (!isNaN(num) && num > 0) {
-      this.settingsService.setUiFontSize(num);
-    }
+    const input = event.target as HTMLInputElement;
+    input.value = String(this.settingsService.setUiFontSize(readNumber(input.value)));
   }
 
   onUiLineHeightChange(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    const num = Number(value);
-    if (!isNaN(num) && num > 0) {
-      this.settingsService.setUiLineHeight(num);
-    }
+    const input = event.target as HTMLInputElement;
+    input.value = String(this.settingsService.setUiLineHeight(readNumber(input.value)));
+  }
+
+  /** Restores the Editor (UI typography) group to the app defaults. */
+  resetUiTextDefaults() {
+    this.settingsService.resetUiTypography();
+    this.notification.showNotification('Editor text settings restored to defaults', 'info');
+  }
+
+  /** Restores the Terminal group to the app defaults. */
+  resetTerminalTextDefaults() {
+    this.settingsService.resetTerminalTypography();
+    this.notification.showNotification('Terminal text settings restored to defaults', 'info');
   }
 
   onNotificationDurationChange(event: Event) {

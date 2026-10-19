@@ -44,7 +44,8 @@
 .terminal-element {
   flex: 1 1 0;
   /* padding: 10px; */
-  font-family: var(--vscode-font-mono, 'Courier New', monospace);
+  /* xterm 自身按 Settings → Appearance 的终端字体渲染；这里让容器保持一致。 */
+  font-family: var(--vscode-terminal-font-family, var(--vscode-font-mono, 'Courier New', monospace));
   overflow-y: hidden;
 }
 
