@@ -1,6 +1,25 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
+/**
+ * Typography variables owned by Settings → Appearance.
+ *
+ * A theme describes colour, shape and motion only: applying one must never
+ * overwrite the user's UI/terminal font choices, and editing a font must never
+ * mutate the applied theme. Everything outside this list (mono/code font,
+ * heading scale, label/button sizes) stays theme-owned, because no Settings
+ * control drives it and dozens of components consume `--vscode-font-mono`.
+ */
+export const SETTINGS_OWNED_FONT_VARS: readonly string[] = [
+  '--vscode-font-family',
+  '--vscode-font-size',
+  '--vscode-line-height',
+  '--vscode-terminal-font-family',
+  '--vscode-terminal-font-size',
+];
+
+const SETTINGS_OWNED_FONT_VAR_SET = new Set(SETTINGS_OWNED_FONT_VARS);
+
 @Injectable({
   providedIn: 'root'
 })
@@ -60,7 +79,28 @@ export class ThemeService {
     }
   }
 
+  /**
+   * Merges theme variables into the applied theme. Settings-owned font
+   * variables in `vars` are ignored (see `SETTINGS_OWNED_FONT_VARS`); the
+   * user's current font variables are left untouched.
+   */
   setThemeVariables(vars: Record<string, string>): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.generatedVariables = {
+        ...this.generatedVariables,
+        ...this.stripSettingsOwnedVars(vars),
+      };
+      this.applyTheme();
+      this.saveThemeVariables();
+    }
+  }
+
+  /**
+   * Applies Settings → Appearance font variables. They share the persisted
+   * theme-variable bag (so they survive a reload) but are exempt from the theme
+   * ownership filter, and theme switches preserve them.
+   */
+  setSettingsFontVars(vars: Record<string, string>): void {
     if (isPlatformBrowser(this.platformId)) {
       this.generatedVariables = {
         ...this.generatedVariables,
@@ -74,28 +114,37 @@ export class ThemeService {
   /**
    * 全量替换内联主题变量：先移除旧变量的内联样式，再写入新变量。
    * 用于 Light/Dark 内置预设切换，避免残留 AI 自定义主题的键。
+   * 用户字体变量（Settings → Appearance）不参与替换，始终保留。
    */
   replaceThemeVariables(vars: Record<string, string>): void {
     if (isPlatformBrowser(this.platformId)) {
       const root = document.documentElement;
+      const next = {
+        ...this.stripSettingsOwnedVars(vars),
+        ...this.settingsOwnedVarsFrom(this.generatedVariables),
+      };
       for (const key of Object.keys(this.generatedVariables)) {
-        if (!(key in vars)) {
+        if (!(key in next)) {
           root.style.removeProperty(key);
         }
       }
-      this.generatedVariables = { ...vars };
+      this.generatedVariables = next;
       this.applyTheme();
       this.saveThemeVariables();
     }
   }
 
+  /** Clears the applied theme variables, keeping the user's font variables. */
   clearThemeVariables(): void {
     if (isPlatformBrowser(this.platformId)) {
       const root = document.documentElement;
+      const preserved = this.settingsOwnedVarsFrom(this.generatedVariables);
       for (const key of Object.keys(this.generatedVariables)) {
-        root.style.removeProperty(key);
+        if (!(key in preserved)) {
+          root.style.removeProperty(key);
+        }
       }
-      this.generatedVariables = {};
+      this.generatedVariables = preserved;
       this.removeGoogleFonts();
     }
   }
@@ -108,6 +157,28 @@ export class ThemeService {
     for (const [key, value] of Object.entries(vars)) {
       root.style.setProperty(key, value);
     }
+  }
+
+  /** Drops Settings-owned font variables from a theme-provided variable map. */
+  private stripSettingsOwnedVars(vars: Record<string, string>): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(vars)) {
+      if (!SETTINGS_OWNED_FONT_VAR_SET.has(key)) {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
+  /** The Settings-owned font variables currently applied, kept across theme switches. */
+  private settingsOwnedVarsFrom(vars: Record<string, string>): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const key of SETTINGS_OWNED_FONT_VARS) {
+      if (key in vars) {
+        result[key] = vars[key];
+      }
+    }
+    return result;
   }
 
   /**
@@ -273,7 +344,10 @@ export class ThemeService {
         }
       }
     }
-    return cssVars;
+    // Settings → Appearance owns the base UI/terminal typography: a theme may
+    // not write those variables, so saved themes and previews stay in sync with
+    // the values the settings panel shows.
+    return this.stripSettingsOwnedVars(cssVars);
   }
 
   private mapShadowToCss(shadow: Record<string, string>): Record<string, string> {

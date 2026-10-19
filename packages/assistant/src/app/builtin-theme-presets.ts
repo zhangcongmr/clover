@@ -8,6 +8,12 @@ import type { SavedTheme } from './theme-library.service';
  *
  * Selecting a card fully replaces the inline theme variables with the
  * preset's `vars` and loads its `googleFonts`.
+ *
+ * Typesetting is NOT part of a preset: the base UI/terminal font family, size
+ * and line height belong to Settings → Appearance (see
+ * `SETTINGS_OWNED_FONT_VARS`), so switching themes never resets the user's
+ * typography. Only the theme-owned mono/code typeface (and the Google Font it
+ * needs) stays here.
  */
 export const BUILTIN_THEME_PRESETS: Record<string, SavedTheme> = {
   default: {
@@ -28,12 +34,8 @@ export const BUILTIN_THEME_PRESETS: Record<string, SavedTheme> = {
       '--vscode-accent-foreground': '#422006',
       '--vscode-hover-background': 'rgba(37, 99, 235, 0.08)',
       '--vscode-item-active-background': 'rgba(37, 99, 235, 0.16)',
-      '--vscode-font-family': "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      '--vscode-font-size': '14px',
       '--vscode-font-weight': '400',
-      '--vscode-line-height': '1.55',
       '--vscode-font-mono': "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-      '--vscode-terminal-font-family': "'JetBrains Mono', 'Fira Code', Consolas, monospace",
       '--vscode-radius-sm': '4px',
       '--vscode-radius-md': '8px',
       '--vscode-radius-lg': '14px',
@@ -45,7 +47,7 @@ export const BUILTIN_THEME_PRESETS: Record<string, SavedTheme> = {
       '--vscode-bg-gradient': 'linear-gradient(160deg, rgba(37,99,235,0.07) 0%, transparent 45%, rgba(245,158,11,0.05) 100%)',
       '--vscode-editor-bg-gradient': 'linear-gradient(180deg, rgba(37,99,235,0.045) 0%, transparent 55%)',
     },
-    googleFonts: ['Inter', 'JetBrains Mono'],
+    googleFonts: ['JetBrains Mono'],
   },
   dark: {
     id: 'noir-graphite-theme-1790777798192',
@@ -65,12 +67,8 @@ export const BUILTIN_THEME_PRESETS: Record<string, SavedTheme> = {
       '--vscode-accent-foreground': '#05221c',
       '--vscode-hover-background': 'rgba(124, 92, 255, 0.10)',
       '--vscode-item-active-background': 'rgba(0, 211, 167, 0.16)',
-      '--vscode-font-family': "'Space Grotesk', 'Segoe UI', 'Helvetica Neue', sans-serif",
-      '--vscode-font-size': '14px',
       '--vscode-font-weight': '400',
-      '--vscode-line-height': '1.55',
       '--vscode-font-mono': "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-      '--vscode-terminal-font-family': "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
       '--vscode-radius-sm': '2px',
       '--vscode-radius-md': '4px',
       '--vscode-radius-lg': '8px',
@@ -82,6 +80,6 @@ export const BUILTIN_THEME_PRESETS: Record<string, SavedTheme> = {
       '--vscode-bg-gradient': 'linear-gradient(160deg, rgba(124, 92, 255, 0.12) 0%, transparent 45%, rgba(0, 211, 167, 0.07) 100%)',
       '--vscode-editor-bg-gradient': 'linear-gradient(180deg, rgba(124, 92, 255, 0.06) 0%, transparent 55%)',
     },
-    googleFonts: ['Space Grotesk', 'JetBrains Mono'],
+    googleFonts: ['JetBrains Mono'],
   },
 };

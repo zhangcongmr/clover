@@ -17,6 +17,42 @@ export interface OpfsStorageInfo {
   totalSize: string;
 }
 
+/**
+ * Typography defaults, kept in sync with the `:root` declarations in
+ * `styles.css` so the settings inputs show the value the app actually uses.
+ * (`--vscode-terminal-font-size` resolves to `--vscode-code-font-size`.)
+ */
+const DEFAULT_UI_FONT_FAMILY = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+const DEFAULT_UI_FONT_SIZE = 14;
+const DEFAULT_UI_LINE_HEIGHT = 1.5;
+const DEFAULT_TERMINAL_FONT_FAMILY = "'Courier New', monospace";
+const DEFAULT_TERMINAL_FONT_SIZE = 13;
+
+/** Editable ranges, mirroring the min/max attributes in the settings template. */
+const UI_FONT_SIZE_RANGE = { min: 10, max: 24 };
+const UI_LINE_HEIGHT_RANGE = { min: 1, max: 3 };
+const TERMINAL_FONT_SIZE_RANGE = { min: 8, max: 48 };
+
+/** Clamps a numeric setting to its editable range; non-numbers fall back to `fallback`. */
+function clampNumber(value: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+/** Reads a numeric CSS value such as `14px` or `1.55`; null when it is not a number. */
+function readNumericCssValue(raw: unknown): number | null {
+  if (typeof raw !== 'string' && typeof raw !== 'number') return null;
+  const parsed = parseFloat(String(raw));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Reads a font stack, ignoring blank values so the CSS variable never becomes empty. */
+function readFontFamily(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const value = raw.trim();
+  return value ? value : null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private localAgentService = inject(LocalAgentService);
@@ -27,7 +63,6 @@ export class SettingsService {
   readonly categories: SettingsCategory[] = [
     { id: 'general', label: 'General', icon: '#icon-settings' },
     { id: 'appearance', label: 'Appearance', icon: '#icon-appearance' },
-    { id: 'editor', label: 'Editor', icon: '#icon-editor' },
     { id: 'data', label: 'Data', icon: '#icon-data' },
     { id: 'advanced', label: 'Advanced', icon: '#icon-advanced' },
   ];
@@ -38,12 +73,12 @@ export class SettingsService {
   autoRefreshEnabled = signal<boolean>(true);
 
   currentTheme = signal<string>('default');
-  terminalFontFamily = signal<string>('');
-  terminalFontSize = signal<number>(14);
+  terminalFontFamily = signal<string>(DEFAULT_TERMINAL_FONT_FAMILY);
+  terminalFontSize = signal<number>(DEFAULT_TERMINAL_FONT_SIZE);
 
-  uiFontFamily = signal<string>('');
-  uiFontSize = signal<number>(13);
-  uiLineHeight = signal<number>(1.6);
+  uiFontFamily = signal<string>(DEFAULT_UI_FONT_FAMILY);
+  uiFontSize = signal<number>(DEFAULT_UI_FONT_SIZE);
+  uiLineHeight = signal<number>(DEFAULT_UI_LINE_HEIGHT);
 
   notificationDuration = signal<number>(5);
 
@@ -63,20 +98,26 @@ export class SettingsService {
       if (vars) {
         try {
           const parsed = JSON.parse(vars);
-          if (parsed['--vscode-terminal-font-family']) {
-            this.terminalFontFamily.set(parsed['--vscode-terminal-font-family']);
+          // Theme vars store CSS lengths (`14px`), which Number() would turn into NaN.
+          const terminalFamily = readFontFamily(parsed['--vscode-terminal-font-family']);
+          if (terminalFamily) {
+            this.terminalFontFamily.set(terminalFamily);
           }
-          if (parsed['--vscode-terminal-font-size']) {
-            this.terminalFontSize.set(Number(parsed['--vscode-terminal-font-size']));
+          const terminalSize = readNumericCssValue(parsed['--vscode-terminal-font-size']);
+          if (terminalSize !== null) {
+            this.terminalFontSize.set(clampNumber(terminalSize, TERMINAL_FONT_SIZE_RANGE.min, TERMINAL_FONT_SIZE_RANGE.max, DEFAULT_TERMINAL_FONT_SIZE));
           }
-          if (parsed['--vscode-font-family']) {
-            this.uiFontFamily.set(parsed['--vscode-font-family']);
+          const uiFamily = readFontFamily(parsed['--vscode-font-family']);
+          if (uiFamily) {
+            this.uiFontFamily.set(uiFamily);
           }
-          if (parsed['--vscode-font-size']) {
-            this.uiFontSize.set(Number(parsed['--vscode-font-size']));
+          const uiSize = readNumericCssValue(parsed['--vscode-font-size']);
+          if (uiSize !== null) {
+            this.uiFontSize.set(clampNumber(uiSize, UI_FONT_SIZE_RANGE.min, UI_FONT_SIZE_RANGE.max, DEFAULT_UI_FONT_SIZE));
           }
-          if (parsed['--vscode-line-height']) {
-            this.uiLineHeight.set(Number(parsed['--vscode-line-height']));
+          const lineHeight = readNumericCssValue(parsed['--vscode-line-height']);
+          if (lineHeight !== null) {
+            this.uiLineHeight.set(clampNumber(lineHeight, UI_LINE_HEIGHT_RANGE.min, UI_LINE_HEIGHT_RANGE.max, DEFAULT_UI_LINE_HEIGHT));
           }
         } catch { }
       }
@@ -141,29 +182,57 @@ export class SettingsService {
     this.currentTheme.set(theme);
   }
 
-  setTerminalFontFamily(family: string) {
-    this.terminalFontFamily.set(family);
-    this.themeService.setThemeVariables({ '--vscode-terminal-font-family': family });
+  /** Applies the terminal font stack; blank input falls back to the app default. */
+  setTerminalFontFamily(family: string): string {
+    const value = readFontFamily(family) ?? DEFAULT_TERMINAL_FONT_FAMILY;
+    this.terminalFontFamily.set(value);
+    this.themeService.setSettingsFontVars({ '--vscode-terminal-font-family': value });
+    return value;
   }
 
-  setTerminalFontSize(size: number) {
-    this.terminalFontSize.set(size);
-    this.themeService.setThemeVariables({ '--vscode-terminal-font-size': String(size) });
+  /** Applies the terminal font size clamped to its editable range; returns the applied value. */
+  setTerminalFontSize(size: number): number {
+    const value = clampNumber(size, TERMINAL_FONT_SIZE_RANGE.min, TERMINAL_FONT_SIZE_RANGE.max, this.terminalFontSize());
+    this.terminalFontSize.set(value);
+    this.themeService.setSettingsFontVars({ '--vscode-terminal-font-size': String(value) });
+    return value;
   }
 
-  setUiFontFamily(family: string) {
-    this.uiFontFamily.set(family);
-    this.themeService.setThemeVariables({ '--vscode-font-family': family });
+  /** Applies the UI font stack; blank input falls back to the app default. */
+  setUiFontFamily(family: string): string {
+    const value = readFontFamily(family) ?? DEFAULT_UI_FONT_FAMILY;
+    this.uiFontFamily.set(value);
+    this.themeService.setSettingsFontVars({ '--vscode-font-family': value });
+    return value;
   }
 
-  setUiFontSize(size: number) {
-    this.uiFontSize.set(size);
-    this.themeService.setThemeVariables({ '--vscode-font-size': String(size) });
+  /** Applies the UI font size clamped to its editable range; returns the applied value. */
+  setUiFontSize(size: number): number {
+    const value = clampNumber(size, UI_FONT_SIZE_RANGE.min, UI_FONT_SIZE_RANGE.max, this.uiFontSize());
+    this.uiFontSize.set(value);
+    this.themeService.setSettingsFontVars({ '--vscode-font-size': String(value) });
+    return value;
   }
 
-  setUiLineHeight(height: number) {
-    this.uiLineHeight.set(height);
-    this.themeService.setThemeVariables({ '--vscode-line-height': String(height) });
+  /** Applies the UI line height clamped to its editable range; returns the applied value. */
+  setUiLineHeight(height: number): number {
+    const value = clampNumber(height, UI_LINE_HEIGHT_RANGE.min, UI_LINE_HEIGHT_RANGE.max, this.uiLineHeight());
+    this.uiLineHeight.set(value);
+    this.themeService.setSettingsFontVars({ '--vscode-line-height': String(value) });
+    return value;
+  }
+
+  /** Restores the UI typography defaults (Settings → Appearance → Editor). */
+  resetUiTypography() {
+    this.setUiFontFamily(DEFAULT_UI_FONT_FAMILY);
+    this.setUiFontSize(DEFAULT_UI_FONT_SIZE);
+    this.setUiLineHeight(DEFAULT_UI_LINE_HEIGHT);
+  }
+
+  /** Restores the terminal typography defaults (Settings → Appearance → Terminal). */
+  resetTerminalTypography() {
+    this.setTerminalFontFamily(DEFAULT_TERMINAL_FONT_FAMILY);
+    this.setTerminalFontSize(DEFAULT_TERMINAL_FONT_SIZE);
   }
 
   setNotificationDuration(seconds: number) {

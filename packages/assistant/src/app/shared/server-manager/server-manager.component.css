@@ -25,7 +25,7 @@
   border: 1px solid var(--vscode-border-color);
   color: var(--vscode-foreground);
   font-family: inherit;
-  font-size: var(--vscode-font-size, 13px);
+  font-size: var(--vscode-font-size);
   border-radius: var(--vscode-radius-sm, 4px);
   outline: none;
 }
