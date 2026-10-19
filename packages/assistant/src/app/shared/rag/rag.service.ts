@@ -3,10 +3,21 @@ import { Injectable, PLATFORM_ID, computed, effect, inject, signal, untracked } 
 import { AcpService, type AcpMessage } from '../acp/acp.service';
 import type { ContentBlock } from '../acp/acp.model';
 import type { LocalMcpServerConfig } from '../mcp-manager/mcp-registry.service';
-import { extractRagResult, type RagDocumentInfo, type RagSearchHit } from '../acp/tool-call-info.pipe';
+import { extractRagResult, type RagDocumentInfo, type RagSearchHit, type RagToolKind } from '../acp/tool-call-info.pipe';
+import { RagMetricsService } from './rag-metrics.service';
+import {
+  canUseTool,
+  defaultProfile,
+  normalizeProfile,
+  type RagAgentProfile,
+  type RagRetrievalStrategy,
+} from './rag-agent-profile';
 
-const RAG_SERVER_STORAGE_KEY = 'clover.rag.serverName';
-const AUTO_ATTACH_STORAGE_KEY = 'clover.rag.autoAttach';
+const PROFILES_STORAGE_KEY = 'clover.rag.profiles';
+const ACTIVE_PROFILE_STORAGE_KEY = 'clover.rag.activeProfile';
+/** Pre-profile keys, migrated into the first profile on load. */
+const LEGACY_SERVER_STORAGE_KEY = 'clover.rag.serverName';
+const LEGACY_AUTO_ATTACH_STORAGE_KEY = 'clover.rag.autoAttach';
 
 /** Extensions we can hand to the agent as plain text. PDF/DOCX need a real parser. */
 const TEXT_EXTENSIONS = new Set([
@@ -29,24 +40,35 @@ export interface RagUploadCandidate {
  * deleting — is expressed as an imperative prompt that asks the agent to call the
  * matching MCP tool. Results are then read back off the ACP message stream by
  * {@link extractRagResult}. The service therefore holds no authoritative state of
- * its own: the knowledge base panel is a prompt composer plus a view over the most
- * recent tool result.
+ * its own beyond the user's {@link RagAgentProfile}s: the knowledge base panel is a
+ * prompt composer plus a view over the most recent tool result.
  */
 @Injectable({ providedIn: 'root' })
 export class RagService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly acpService = inject(AcpService);
+  private readonly metrics = inject(RagMetricsService);
 
-  /** Every configured MCP server; used to spot the RAG one. */
+  /** Every configured MCP server; used to spot RAG ones. */
   readonly servers = signal<LocalMcpServerConfig[]>([]);
   readonly serversLoading = signal(false);
   readonly serversError = signal<string | null>(null);
 
-  /** Name of the MCP server the agent should treat as the knowledge base. */
-  readonly ragServerName = signal<string | null>(null);
+  /** Named RAG agent profiles (data sources + retrieval strategy). */
+  readonly profiles = signal<RagAgentProfile[]>([]);
+  readonly activeProfileId = signal<string | null>(null);
 
-  /** When on, the RAG server is attached to the session on every submit. */
-  readonly autoAttach = signal(true);
+  readonly activeProfile = computed<RagAgentProfile>(() => {
+    const id = this.activeProfileId();
+    const list = this.profiles();
+    return list.find(profile => profile.id === id) ?? list[0] ?? defaultProfile();
+  });
+
+  /** MCP servers the active profile treats as knowledge bases. */
+  readonly serverNames = computed(() => this.activeProfile().serverNames);
+  readonly autoAttach = computed(() => this.activeProfile().autoAttach);
+  readonly strategy = computed<RagRetrievalStrategy>(() => this.activeProfile().strategy);
+  readonly hasRagServer = computed(() => this.serverNames().length > 0);
 
   /** Most recent RAG tool result of each kind, derived from the message stream. */
   readonly lastSearchResult = computed<RagSearchHit[]>(() => this.latestResult('search')?.hits ?? []);
@@ -62,8 +84,6 @@ export class RagService {
   readonly hasListResult = computed(() => this.latestResult('list') !== null);
   readonly hasSearchResult = computed(() => this.latestResult('search') !== null);
 
-  readonly hasRagServer = computed(() => this.ragServerName() !== null);
-
   /**
    * True from the moment an index (upload) turn is dispatched until the agent
    * finishes running it. Kept on the service — rather than in the manager
@@ -76,34 +96,171 @@ export class RagService {
    *  against clearing {@link isIndexing} during the gap between submit and the
    *  agent picking the prompt up (session creation can take a while). */
   private indexingTurnStarted = false;
+  /** Same guard, for finalising the metrics record of a RAG turn. */
+  private turnActive = false;
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.ragServerName.set(localStorage.getItem(RAG_SERVER_STORAGE_KEY));
-      this.autoAttach.set(localStorage.getItem(AUTO_ATTACH_STORAGE_KEY) !== 'false');
+      this.restoreProfiles();
     }
 
-    // The turn that carries an index request is "done" once the agent stops
-    // processing. Clear the badge then so it disappears as soon as indexing
-    // (or a failed attempt) ends.
+    // A RAG turn is "done" once the agent stops processing: clear the indexing
+    // badge and let the metrics service fold the stream back into a record.
     effect(() => {
       const processing = this.acpService.isProcessing();
       if (processing) {
         if (untracked(() => this.isIndexing())) this.indexingTurnStarted = true;
+        if (untracked(() => this.metrics.hasPending())) this.turnActive = true;
         return;
       }
       if (this.indexingTurnStarted) {
         this.indexingTurnStarted = false;
         this.isIndexing.set(false);
       }
+      if (this.turnActive) {
+        this.turnActive = false;
+        untracked(() => this.metrics.finalizeTurn(this.acpService.messages()));
+      }
+    });
+
+    // Persist profiles on change (browser only).
+    effect(() => {
+      const profiles = this.profiles();
+      const activeId = this.activeProfileId();
+      if (!isPlatformBrowser(this.platformId) || profiles.length === 0) return;
+      try {
+        localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(profiles));
+        if (activeId) localStorage.setItem(ACTIVE_PROFILE_STORAGE_KEY, activeId);
+      } catch {
+        // Storage unavailable — profiles simply won't survive a reload.
+      }
     });
   }
 
+  /* ---------------------------------------------------------------------- */
+  /* Profiles                                                               */
+  /* ---------------------------------------------------------------------- */
+
+  private restoreProfiles(): void {
+    let profiles: RagAgentProfile[] = [];
+    try {
+      const raw = localStorage.getItem(PROFILES_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(parsed)) profiles = parsed.map(normalizeProfile);
+    } catch {
+      profiles = [];
+    }
+
+    if (profiles.length === 0) {
+      const legacyServer = localStorage.getItem(LEGACY_SERVER_STORAGE_KEY);
+      const legacyAuto = localStorage.getItem(LEGACY_AUTO_ATTACH_STORAGE_KEY) !== 'false';
+      profiles = [
+        defaultProfile({
+          serverNames: legacyServer ? [legacyServer] : [],
+          autoAttach: legacyAuto,
+        }),
+      ];
+    }
+
+    this.profiles.set(profiles);
+    const savedActive = localStorage.getItem(ACTIVE_PROFILE_STORAGE_KEY);
+    this.activeProfileId.set(
+      profiles.some(profile => profile.id === savedActive) ? savedActive : profiles[0].id,
+    );
+  }
+
+  createProfile(name?: string): RagAgentProfile {
+    const profile = defaultProfile({
+      name: name?.trim() || `RAG ${this.profiles().length + 1}`,
+      serverNames: [],
+    });
+    this.profiles.update(list => [...list, profile]);
+    this.activeProfileId.set(profile.id);
+    return profile;
+  }
+
+  deleteProfile(id: string): void {
+    if (this.profiles().length <= 1) return;
+    const remaining = this.profiles().filter(profile => profile.id !== id);
+    this.profiles.set(remaining);
+    if (this.activeProfileId() === id) this.activeProfileId.set(remaining[0].id);
+  }
+
+  setActiveProfile(id: string): void {
+    if (this.profiles().some(profile => profile.id === id)) this.activeProfileId.set(id);
+  }
+
+  /** Merges `changes` into the active profile (values are re-normalised). */
+  updateActiveProfile(changes: Partial<RagAgentProfile>): void {
+    const id = this.activeProfileId();
+    this.profiles.update(list =>
+      list.map(profile => (profile.id === id ? normalizeProfile({ ...profile, ...changes }) : profile)),
+    );
+  }
+
+  /** Replaces the active profile's data sources (order preserved, deduped). */
+  setServerNames(names: string[]): void {
+    const seen = new Set<string>();
+    const deduped: string[] = [];
+    for (const name of names) {
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      deduped.push(name);
+    }
+    this.updateActiveProfile({ serverNames: deduped });
+  }
+
+  toggleServer(name: string): void {
+    const current = this.serverNames();
+    this.setServerNames(
+      current.includes(name) ? current.filter(n => n !== name) : [...current, name],
+    );
+  }
+
+  setStrategy(strategy: RagRetrievalStrategy): void {
+    this.updateActiveProfile({ strategy });
+  }
+
+  setAutoAttach(enabled: boolean): void {
+    this.updateActiveProfile({ autoAttach: enabled });
+  }
+
+  setToolEnabled(tool: RagToolKind, enabled: boolean): void {
+    const current = this.activeProfile().toolAllowlist;
+    const next = enabled
+      ? Array.from(new Set([...current, tool]))
+      : current.filter(t => t !== tool);
+    this.updateActiveProfile({ toolAllowlist: next.length > 0 ? next : current });
+  }
+
+  canUse(tool: RagToolKind): boolean {
+    return canUseTool(this.activeProfile(), tool);
+  }
+
+  /** Whether every server of the active profile is part of the session's MCP selection. */
+  isAttached(): boolean {
+    const names = this.serverNames();
+    if (names.length === 0) return false;
+    const selected = this.acpService.selectedMcpServers();
+    return names.every(name => selected.includes(name));
+  }
+
+  /** True when the user must start a new session for the RAG tools to appear. */
+  requiresNewSession(): boolean {
+    if (this.serverNames().length === 0) return false;
+    return this.acpService.hasActiveSession() && !this.isAttached();
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* MCP servers                                                            */
+  /* ---------------------------------------------------------------------- */
+
   /**
-   * Loads the configured MCP servers and picks the RAG one.
+   * Loads the configured MCP servers and, when the active profile has none yet,
+   * auto-detects the RAG one.
    *
    * The heuristic is deliberately loose: `name`, `command` or `description`
-   * mentioning "rag". Users can override the choice in the panel's Settings tab.
+   * mentioning "rag". Users can override the choice in the Agent tab.
    */
   async refreshServers(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -116,43 +273,22 @@ export class RagService {
       const servers: LocalMcpServerConfig[] = Array.isArray(body?.servers) ? body.servers : [];
       this.servers.set(servers);
 
-      const current = this.ragServerName();
-      const stillPresent = current && servers.some(s => s.name === current);
-      if (!stillPresent) {
-        this.setRagServerName(this.detectRagServer(servers));
+      // Drop servers that no longer exist, then auto-fill an empty selection.
+      const known = new Set(servers.map(server => server.name));
+      const current = this.serverNames();
+      const stillPresent = current.filter(name => known.has(name));
+      if (stillPresent.length !== current.length) {
+        this.setServerNames(stillPresent);
+      }
+      if (stillPresent.length === 0) {
+        const detected = this.detectRagServer(servers);
+        if (detected) this.setServerNames([detected]);
       }
     } catch (error) {
       this.serversError.set(error instanceof Error ? error.message : String(error));
     } finally {
       this.serversLoading.set(false);
     }
-  }
-
-  setRagServerName(name: string | null): void {
-    this.ragServerName.set(name);
-    if (!isPlatformBrowser(this.platformId)) return;
-    if (name) localStorage.setItem(RAG_SERVER_STORAGE_KEY, name);
-    else localStorage.removeItem(RAG_SERVER_STORAGE_KEY);
-  }
-
-  setAutoAttach(enabled: boolean): void {
-    this.autoAttach.set(enabled);
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(AUTO_ATTACH_STORAGE_KEY, String(enabled));
-    }
-  }
-
-  /** Whether the RAG server is part of the session's current MCP selection. */
-  isAttached(): boolean {
-    const name = this.ragServerName();
-    return !!name && this.acpService.selectedMcpServers().includes(name);
-  }
-
-  /** True when the user must start a new session for the RAG tools to appear. */
-  requiresNewSession(): boolean {
-    const name = this.ragServerName();
-    if (!name) return false;
-    return this.acpService.hasActiveSession() && !this.isAttached();
   }
 
   /* ---------------------------------------------------------------------- */
@@ -181,11 +317,26 @@ export class RagService {
   }
 
   buildSearchPrompt(query: string, limit: number, documentId?: string): string {
+    const profile = this.activeProfile();
     const lines = [`请调用 search 工具检索知识库，query 为「${query}」，limit 为 ${limit}。`];
-    if (documentId) {
-      lines.push(`限定 documentId 为 "${documentId}"。`);
+
+    if (profile.strategy === 'fanout-rrf' && profile.serverNames.length > 1) {
+      lines.push(
+        `请对以下每个数据源分别执行 search：${profile.serverNames.join('、')}，` +
+          '再用 Reciprocal Rank Fusion 合并结果并去重（相同 documentId#chunkIndex 只保留一次）。',
+      );
+    } else if (profile.strategy === 'hybrid') {
+      lines.push('优先使用混合（向量 + 关键词）检索；若该数据源不支持混合模式，则退回向量检索。');
     }
-    lines.push('检索完成后，请基于命中的分块回答，并在引用处标注 【documentId#chunkIndex】。');
+
+    if (documentId) lines.push(`限定 documentId 为 "${documentId}"。`);
+    if (profile.minScore > 0) lines.push(`忽略相关度（score）低于 ${profile.minScore} 的分块。`);
+
+    lines.push(
+      `检索完成后，请基于命中的分块回答，并在引用处使用此格式标注来源：` +
+        `${profile.citationStyle}（即 {documentId}#{chunkIndex}）。`,
+    );
+    if (profile.answerInstruction.trim()) lines.push(profile.answerInstruction.trim());
     return lines.join('\n');
   }
 
@@ -194,17 +345,18 @@ export class RagService {
   /* ---------------------------------------------------------------------- */
 
   /**
-   * Sends a prompt to the agent, attaching the RAG server to the session first
-   * when auto-attach is on. Throws when no RAG server is configured, since the
-   * agent would otherwise silently answer from its own context.
+   * Sends a prompt to the agent, attaching the active profile's servers to the
+   * session first when auto-attach is on. Throws when no RAG server is
+   * configured, since the agent would otherwise silently answer from its own
+   * context.
    */
   private async submit(text: string, blocks: ContentBlock[] = []): Promise<void> {
-    const name = this.ragServerName();
-    if (!name) {
+    const names = this.serverNames();
+    if (names.length === 0) {
       throw new Error('No RAG MCP server selected. Add clover-rag in MCP Servers first.');
     }
     if (this.autoAttach()) {
-      this.acpService.attachMcpServers([name]);
+      this.acpService.attachMcpServers(names);
     }
     await this.acpService.submitPrompt(text, blocks);
   }
@@ -217,11 +369,13 @@ export class RagService {
     }));
     this.indexingTurnStarted = false;
     this.isIndexing.set(true);
+    this.metrics.beginIndex();
     try {
       await this.submit(this.buildUploadPrompt(files), blocks);
     } catch (error) {
       // Nothing will ever finish this turn, so drop the badge immediately.
       this.isIndexing.set(false);
+      this.metrics.finalizeTurn(this.acpService.messages());
       throw error;
     }
   }
@@ -234,9 +388,16 @@ export class RagService {
     return this.submit(this.buildDeletePrompt(documentId));
   }
 
-  search(query: string, limit: number, documentId?: string): Promise<void> {
-    if (!query.trim()) return Promise.resolve();
-    return this.submit(this.buildSearchPrompt(query.trim(), limit, documentId));
+  async search(query: string, limit: number, documentId?: string): Promise<void> {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    this.metrics.beginSearch(trimmed, this.serverNames());
+    try {
+      await this.submit(this.buildSearchPrompt(trimmed, limit, documentId));
+    } catch (error) {
+      this.metrics.finalizeTurn(this.acpService.messages());
+      throw error;
+    }
   }
 
   /* ---------------------------------------------------------------------- */

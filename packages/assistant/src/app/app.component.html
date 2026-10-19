@@ -13,7 +13,7 @@
               <use href="#icon-mcp"></use>
             </svg>
           </div>
-          <div data-svg-wrapper="" data-layer="rag-btn" class="btn-svg RagKnowledgeBtn" title="Knowledge Base"
+          <div data-svg-wrapper="" data-layer="rag-btn" class="btn-svg RagKnowledgeBtn" [title]="ragButtonTitle()"
             [class.indexing]="ragService.isIndexing()"
             [attr.aria-busy]="ragService.isIndexing() ? 'true' : null"
             (click)="toggleRagManager()">

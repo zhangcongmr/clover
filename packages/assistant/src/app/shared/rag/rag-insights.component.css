@@ -1,0 +1,202 @@
+/* Insights tab — token set mirrors rag-manager.component.css (component-scoped). */
+
+:host {
+  display: block;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.insight-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: var(--vscode-radius-sm, 4px);
+  background: var(--vscode-background);
+}
+
+.card-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-foreground);
+}
+
+.card-label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.card-sub {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.section-head h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.status-line {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.mono {
+  font-family: var(--vscode-font-mono, monospace);
+}
+
+/* ── Bars ───────────────────────────────────────────────────────────────── */
+
+.bar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-label {
+  width: 96px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background, rgba(128, 128, 128, 0.25));
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--vscode-charts-blue, #4a9eff);
+  transition: width 0.2s;
+}
+
+.bar-fill.empty {
+  background: var(--vscode-descriptionForeground);
+  opacity: 0.5;
+}
+
+.bar-fill.latency {
+  background: var(--vscode-charts-purple, #b180d7);
+}
+
+.bar-value {
+  width: 64px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ── Operation log ──────────────────────────────────────────────────────── */
+
+.op-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.op-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-border-color);
+}
+
+.op-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--vscode-border-color);
+  color: var(--vscode-foreground);
+}
+
+.op-table tbody tr:hover {
+  background: var(--vscode-hover-background);
+}
+
+.op-table tr.pending {
+  opacity: 0.7;
+}
+
+.op-table td.target {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: var(--vscode-radius-sm, 4px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--vscode-foreground);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--vscode-hover-background);
+}
+
+.btn-ghost.btn-danger:hover:not(:disabled) {
+  color: var(--vscode-errorForeground, #f48771);
+  background: var(--vscode-inputValidation-errorBackground, rgba(241, 76, 76, 0.15));
+}

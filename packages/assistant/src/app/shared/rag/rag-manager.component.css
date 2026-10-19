@@ -364,7 +364,8 @@
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 6px 10px;
@@ -377,12 +378,18 @@
   outline: none;
 }
 
+.field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
 .field select {
   cursor: pointer;
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   border-color: var(--vscode-primary-background);
 }
 
@@ -416,6 +423,12 @@
   width: auto;
   margin: 0;
   cursor: pointer;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────────── */

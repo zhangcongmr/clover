@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { AcpService } from './acp.service';
 import type { RagExtractResult, RagDocumentInfo, RagSearchHit } from './tool-call-info.pipe';
+import { RagMetricsService, type RagHitFeedback } from '../rag/rag-metrics.service';
 
 /** Excerpt length shown before a hit is expanded to its full chunk text. */
 const HIT_EXCERPT_LENGTH = 220;
@@ -22,6 +23,7 @@ const HIT_EXCERPT_LENGTH = 220;
 })
 export class RagResultComponent {
   private readonly acpService = inject(AcpService);
+  private readonly metrics = inject(RagMetricsService);
 
   readonly result = input.required<RagExtractResult>();
   readonly collapsed = input(false);
@@ -32,6 +34,16 @@ export class RagResultComponent {
   /** Citation label shown on a hit, e.g. `guide#3`. */
   citation(hit: RagSearchHit): string {
     return `${hit.documentId}#${hit.chunkIndex}`;
+  }
+
+  /** Recorded relevance feedback for a hit, if the user rated it. */
+  feedbackFor(hit: RagSearchHit): RagHitFeedback | null {
+    return this.metrics.citationFeedback()[this.citation(hit)] ?? null;
+  }
+
+  /** Toggles 👍/👎 relevance feedback for a hit. */
+  rate(hit: RagSearchHit, value: RagHitFeedback): void {
+    this.metrics.toggleCitationFeedback(this.citation(hit), value);
   }
 
   /** Human-readable origin for a hit, preferring explicit metadata over the id. */

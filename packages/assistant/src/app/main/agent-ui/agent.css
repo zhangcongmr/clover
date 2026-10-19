@@ -97,7 +97,7 @@
 
 /* ===== Sidebar Navigation ===== */
 .sidebar-nav {
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .sidebar-chevron {
@@ -541,7 +541,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 6px 10px;
+  margin: 0px 10px;
   padding: 6px 10px;
   background: var(--vscode-background);
   border: 1px solid var(--vscode-border-color);

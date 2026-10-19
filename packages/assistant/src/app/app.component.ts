@@ -25,6 +25,7 @@ import { McpManagerComponent } from './shared/mcp-manager/mcp-manager.component'
 import { SkillManagerComponent } from './shared/skill-manager/skill-manager.component';
 import { RagManagerComponent } from './shared/rag/rag-manager.component';
 import { RagService } from './shared/rag/rag.service';
+import { RagMetricsService } from './shared/rag/rag-metrics.service';
 import { AstDraggableComponent } from './shared/ast-draggable/ast-draggable.component';
 import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
@@ -72,6 +73,15 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected notificationService = inject(NotificationService);
   protected acpService = inject(AcpService);
   protected ragService = inject(RagService);
+  protected ragMetrics = inject(RagMetricsService);
+
+  /** Sidebar tooltip: a one-line retrieval health summary (empty until first search). */
+  protected ragButtonTitle = computed(() => {
+    const summary = this.ragMetrics.summary();
+    if (summary.completedCount === 0) return 'Knowledge Base';
+    const hitRate = summary.hitRate === null ? '—' : `${Math.round(summary.hitRate * 100)}%`;
+    return `Knowledge Base · hit rate ${hitRate} · ${summary.completedCount} searches`;
+  });
   protected layoutService = inject(LayoutService);
   contentComp = viewChild(ContentComponent);
   agentComp = viewChild(AgentComponent);
