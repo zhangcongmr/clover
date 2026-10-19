@@ -413,57 +413,6 @@
       </div>
     }
 
-    @if (activeCategoryId() === 'data') {
-      <div class="settings-section">
-        <h2 class="section-title">Data Management</h2>
-
-        <!-- OPFS Storage Info -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">OPFS Storage</span>
-            <p class="setting-desc">Origin Private File System usage for app data</p>
-          </div>
-          <div class="setting-control">
-            <div class="opfs-info">
-              <div class="opfs-total">
-                <span class="opfs-label">Total usage:</span>
-                <span class="opfs-value">{{ opfsInfo()?.totalSize || 'Unknown' }}</span>
-              </div>
-              <div class="opfs-files">
-                @for (f of opfsInfo()?.files || []; track f.name) {
-                  <div class="opfs-file-row">
-                    <span class="opfs-dot" [class.opfs-dot-yes]="f.exists" [class.opfs-dot-no]="!f.exists"></span>
-                    <span class="opfs-fname">{{ f.name }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Clear Data -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">Clear All Data</span>
-            <p class="setting-desc">Remove all locally stored app data (project tree, tabs, server lists)</p>
-          </div>
-          <div class="setting-control">
-            <button
-              class="btn btn-danger"
-              (click)="clearAllOpfsData()"
-              [disabled]="opfsClearing()"
-            >
-              @if (opfsClearing()) {
-                Clearing...
-              } @else {
-                Clear All Data
-              }
-            </button>
-          </div>
-        </div>
-      </div>
-    }
-
     @if (activeCategoryId() === 'advanced') {
       <div class="settings-section">
         <h2 class="section-title">Advanced Settings</h2>
