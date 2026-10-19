@@ -42,6 +42,9 @@ function readCollapsedProjects(): Set<string> {
   selector: "div[ast-agent]",
   templateUrl: "./agent.html",
   styleUrls: ["./agent.css"],
+  host: {
+    'class': 'agent-container'
+  },
   standalone: true,
   imports: [CommonModule, FormsModule, FilePickerDialogComponent, AcpPanelComponent, CollabPanelComponent, AstMenuComponent],
 })

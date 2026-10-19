@@ -6,8 +6,7 @@
   position: relative;
   z-index: 101;
 }
-
-.agent-container {
+:host(.agent-container) {
   display: flex;
   flex: 1;
   min-height: 0;
