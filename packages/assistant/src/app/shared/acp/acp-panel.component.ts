@@ -53,6 +53,8 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   protected hostWidth = signal<number>(0);
   protected isPanelWide = computed(() => this.hostWidth() >= AcpPanelComponent.PANEL_WIDE_THRESHOLD);
   protected hasMessages = computed(() => this.acpService.messages().length > 0);
+  /** Welcome screen shows only when the session has no messages and is not switching. */
+  protected showWelcomeScreen = computed(() => !this.hasMessages() && !this.acpService.isSwitchingSession());
   private hostRef = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
   /** Label of the last random theme seed, so consecutive picks differ. */

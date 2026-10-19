@@ -39,8 +39,8 @@
 		}
 	</div>
 </div>
-<div class="acp-chat-container">
-	@if (!hasMessages() && !acpService.isSwitchingSession()) {
+<div class="acp-chat-container" [class.welcome-mode]="showWelcomeScreen()">
+	@if (showWelcomeScreen()) {
 		<div class="acp-welcome-screen">
 			<div class="welcome-content">
 				<h2 class="welcome-title">What can I help you with today?</h2>
@@ -159,14 +159,14 @@
 					}
 				</div>
 			</div>
-			<div class="welcome-chat-wrapper">
-				<app-acp-chat-input />
-			</div>
 		</div>
 	} @else {
 		<app-acp-chat (themeApply)="themeApply.emit($event)" />
-		<app-acp-chat-input />
 	}
+
+	<!-- 输入框只保留一份实例：欢迎页与对话页共用，切换会话时不会被销毁重建。
+	     欢迎页下通过 welcome-chat-input 还原原来 840px 居中列宽。 -->
+	<app-acp-chat-input [class.welcome-chat-input]="showWelcomeScreen()" />
 </div>
 
 <app-acp-permission-dialog />
