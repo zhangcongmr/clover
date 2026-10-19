@@ -20,7 +20,8 @@ import { LayoutService } from '../../main/layout.service';
   ],
   templateUrl: './acp-panel.component.html',
   host: {
-    '[class.dock-left]': "layoutService.dockPosition() === 'left'"
+    '[class.dock-left]': "layoutService.dockPosition() === 'left'",
+    '(wheel)': 'onWheel($event)'
   },
   styleUrls: ['./acp-panel.component.css'],
 })
