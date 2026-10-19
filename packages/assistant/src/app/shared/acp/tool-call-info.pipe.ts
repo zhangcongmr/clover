@@ -230,6 +230,20 @@ export interface RagExtractResult {
   success?: boolean;
 }
 
+/**
+ * Renders a citation for a hit using a template such as
+ * `【{documentId}#{chunkIndex}】`. Kept here (next to {@link RagSearchHit}) so
+ * both the RAG prompt builders and the result views format citations identically.
+ */
+export function formatCitation(
+  style: string,
+  hit: { documentId: string; chunkIndex: number },
+): string {
+  return style
+    .replace(/\{documentId\}/g, hit.documentId)
+    .replace(/\{chunkIndex\}/g, String(hit.chunkIndex));
+}
+
 /** Candidate locations where an agent may have parked the MCP JSON payload. */
 function ragOutputCandidates(rawOutput: any, toolContent?: ToolCallContent[]): unknown[] {
   const candidates: unknown[] = [];

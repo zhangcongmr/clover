@@ -26,6 +26,22 @@
               >
                 引用
               </button>
+              <span class="rag-feedback" role="group" aria-label="检索相关度反馈">
+                <button
+                  type="button"
+                  class="rag-feedback-btn"
+                  [class.active]="feedbackFor(hit) === 'up'"
+                  title="该结果相关"
+                  (click)="rate(hit, 'up')"
+                >👍</button>
+                <button
+                  type="button"
+                  class="rag-feedback-btn"
+                  [class.active]="feedbackFor(hit) === 'down'"
+                  title="该结果不相关"
+                  (click)="rate(hit, 'down')"
+                >👎</button>
+              </span>
             </div>
             <div class="rag-hit-text" [class.collapsed]="collapsed()">{{ excerpt(hit) }}</div>
             @if (isTruncated(hit)) {

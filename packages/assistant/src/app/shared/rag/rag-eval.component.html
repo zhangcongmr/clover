@@ -1,0 +1,106 @@
+<div class="panel">
+  <div class="eval-summary">
+    <div class="stat">
+      <span class="stat-label">Hit rate</span>
+      <span class="stat-value">{{ percent(summary().hitRate) }}</span>
+      <span class="stat-sub">{{ summary().completedCount }} 次检索</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Cited rate</span>
+      <span class="stat-value">{{ percent(summary().citedRate) }}</span>
+      <span class="stat-sub">被引用比例</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Avg top score</span>
+      <span class="stat-value">{{ percent(summary().avgTopScore, 1) }}</span>
+      <span class="stat-sub">最高相关度均值</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Relevant rate</span>
+      <span class="stat-value">{{ percent(summary().relevantRate) }}</span>
+      <span class="stat-sub">{{ summary().evaluatedCount }} 条已标注</span>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h4>Retrieval history</h4>
+    <div class="action-row inline">
+      <button type="button" class="btn btn-secondary" (click)="exportReport()">Export</button>
+      <label class="btn btn-secondary import-btn">
+        Import
+        <input type="file" accept="application/json,.json" class="file-input" (change)="onImport($event)" />
+      </label>
+      <button type="button" class="btn btn-ghost btn-danger" [disabled]="searches().length === 0" (click)="clearAll()">
+        Clear
+      </button>
+    </div>
+  </div>
+
+  @if (importError(); as message) {
+    <div class="error-banner" role="alert">{{ message }}</div>
+  }
+
+  @if (searches().length === 0) {
+    <div class="status-line">
+      No retrievals recorded yet. Run a search from the <strong>Search</strong> tab to populate this report.
+    </div>
+  } @else {
+    <ul class="eval-list">
+      @for (record of searches(); track record.id) {
+        <li class="eval-row" [class.pending]="record.pending" [class.empty]="!record.pending && (record.hits?.length ?? 0) === 0">
+          <div class="eval-head">
+            <span class="eval-query" [title]="record.query || ''">{{ record.query || '(untitled query)' }}</span>
+            @if (record.pending) {
+              <span class="eval-tag pending-tag">running…</span>
+            } @else if (record.error) {
+              <span class="eval-tag error-tag">no result</span>
+            } @else if ((record.hits?.length ?? 0) === 0) {
+              <span class="eval-tag empty-tag">0 hits</span>
+            } @else {
+              <span class="eval-tag">{{ record.hits?.length }} hits</span>
+            }
+            @if (record.cited) {
+              <span class="eval-tag cited-tag">cited</span>
+            }
+          </div>
+
+          <div class="eval-meta">
+            <span>{{ time(record.startedAt) }}</span>
+            <span>top {{ percent(record.topScore ?? null, 1) }}</span>
+            <span>mean {{ percent(record.meanScore ?? null, 1) }}</span>
+            <span>{{ latency(record.latencyMs) }}</span>
+            @if ((record.serverNames?.length ?? 0) > 0) {
+              <span class="mono">{{ record.serverNames?.join(', ') }}</span>
+            }
+          </div>
+
+          <div class="eval-actions">
+            <span class="eval-actions-label">Overall:</span>
+            <button type="button" class="chip" [class.active]="record.feedback === 'relevant'" (click)="setFeedback(record, 'relevant')">Relevant</button>
+            <button type="button" class="chip" [class.active]="record.feedback === 'mixed'" (click)="setFeedback(record, 'mixed')">Mixed</button>
+            <button type="button" class="chip" [class.active]="record.feedback === 'irrelevant'" (click)="setFeedback(record, 'irrelevant')">Irrelevant</button>
+            <button type="button" class="btn btn-ghost btn-danger remove-btn" (click)="remove(record)">Remove</button>
+          </div>
+
+          @if ((record.hits?.length ?? 0) > 0) {
+            <ul class="eval-hits">
+              @for (hit of record.hits; track citation(hit)) {
+                <li class="eval-hit">
+                  <span class="eval-hit-cite mono">{{ citation(hit) }}</span>
+                  <span class="eval-hit-score">{{ percent(hit.score, 0) }}</span>
+                  <span class="eval-hit-text">{{ hit.text }}</span>
+                  <span class="eval-hit-feedback">
+                    <button type="button" class="icon-btn" [class.active]="hitFeedback(citation(hit)) === 'up'"
+                            title="相关" (click)="rateHit(citation(hit), 'up')">👍</button>
+                    <button type="button" class="icon-btn" [class.active]="hitFeedback(citation(hit)) === 'down'"
+                            title="不相关" (click)="rateHit(citation(hit), 'down')">👎</button>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

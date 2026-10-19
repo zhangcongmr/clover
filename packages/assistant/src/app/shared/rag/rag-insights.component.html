@@ -1,0 +1,89 @@
+<div class="panel">
+  <div class="insight-cards">
+    <div class="card">
+      <span class="card-value">{{ summary().searchCount }}</span>
+      <span class="card-label">Searches</span>
+      <span class="card-sub">{{ summary().errorCount }} 无结果</span>
+    </div>
+    <div class="card">
+      <span class="card-value">{{ summary().indexCount }}</span>
+      <span class="card-label">Index runs</span>
+      <span class="card-sub">{{ summary().totalChunks }} chunks</span>
+    </div>
+    <div class="card">
+      <span class="card-value">{{ latency(summary().avgLatencyMs) }}</span>
+      <span class="card-label">Avg latency</span>
+      <span class="card-sub">p95 {{ latency(summary().p95LatencyMs) }}</span>
+    </div>
+    <div class="card">
+      <span class="card-value">{{ percent(summary().avgTopScore, 0) }}</span>
+      <span class="card-label">Avg top score</span>
+      <span class="card-sub">最高相关度均值</span>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h4>Quality rates</h4>
+  </div>
+  <ul class="bar-list">
+    @for (bar of rateBars(); track bar.label) {
+      <li class="bar-row" [title]="bar.hint">
+        <span class="bar-label">{{ bar.label }}</span>
+        <span class="bar-track">
+          <span class="bar-fill" [class.empty]="bar.value === null" [style.width.%]="(bar.value ?? 0) * 100"></span>
+        </span>
+        <span class="bar-value">{{ percent(bar.value) }}</span>
+      </li>
+    }
+  </ul>
+
+  <div class="section-head">
+    <h4>Latency</h4>
+    <span class="hint">dispatch → result</span>
+  </div>
+  <ul class="bar-list">
+    @for (bar of latencyBars(); track bar.label) {
+      <li class="bar-row">
+        <span class="bar-label">{{ bar.label }}</span>
+        <span class="bar-track">
+          <span class="bar-fill latency" [style.width.%]="bar.width"></span>
+        </span>
+        <span class="bar-value">{{ latency(bar.value) }}</span>
+      </li>
+    }
+  </ul>
+
+  <div class="section-head">
+    <h4>Recent operations</h4>
+    <button type="button" class="btn btn-ghost btn-danger" [disabled]="operations().length === 0" (click)="clear()">
+      Clear
+    </button>
+  </div>
+
+  @if (operations().length === 0) {
+    <div class="status-line">No operations recorded yet.</div>
+  } @else {
+    <table class="op-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Kind</th>
+          <th>Target</th>
+          <th>Result</th>
+          <th>Latency</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (op of operations(); track op.id) {
+          <tr [class.pending]="op.pending">
+            <td class="mono">{{ time(op.startedAt) }}</td>
+            <td>{{ op.kind }}</td>
+            <td class="target" [title]="opLabel(op)">{{ opLabel(op) }}</td>
+            <td>{{ opDetail(op) }}</td>
+            <td class="mono">{{ latency(op.latencyMs) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

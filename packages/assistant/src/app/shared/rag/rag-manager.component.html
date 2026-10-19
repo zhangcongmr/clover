@@ -10,9 +10,17 @@
               [attr.aria-selected]="tab() === 'search'"
               (click)="switchTab('search')">Search</button>
       <button type="button" role="tab" class="tab"
-              [class.active]="tab() === 'settings'"
-              [attr.aria-selected]="tab() === 'settings'"
-              (click)="switchTab('settings')">Settings</button>
+              [class.active]="tab() === 'evaluate'"
+              [attr.aria-selected]="tab() === 'evaluate'"
+              (click)="switchTab('evaluate')">Evaluate</button>
+      <button type="button" role="tab" class="tab"
+              [class.active]="tab() === 'insights'"
+              [attr.aria-selected]="tab() === 'insights'"
+              (click)="switchTab('insights')">Insights</button>
+      <button type="button" role="tab" class="tab"
+              [class.active]="tab() === 'agent'"
+              [attr.aria-selected]="tab() === 'agent'"
+              (click)="switchTab('agent')">Agent</button>
     </div>
     <span class="server-chip" [class.missing]="!ragServiceApi.hasRagServer()"
           [title]="'RAG MCP server: ' + ragServerLabel()">
@@ -51,6 +59,13 @@
         <p class="upload-note">PDF and DOCX are not supported yet.</p>
       </div>
 
+      @if (!ragServiceApi.canUse('index')) {
+        <div class="notice" role="status">
+          The <strong>Index</strong> tool is disabled in this RAG Agent profile. Enable it in the
+          <strong>Agent</strong> tab to write documents.
+        </div>
+      }
+
       @if (hasCandidates()) {
         <ul class="item-list pending-list">
           @for (file of candidates(); track file.name) {
@@ -61,16 +76,16 @@
               </div>
               <div class="item-actions">
                 <button type="button" class="btn btn-ghost btn-danger"
-                        [disabled]="!canSubmit()" (click)="removeCandidate(file.name)">Remove</button>
+                        [disabled]="!canUpload()" (click)="removeCandidate(file.name)">Remove</button>
               </div>
             </li>
           }
         </ul>
         <div class="action-row">
-          <button type="button" class="btn btn-primary" [disabled]="!canSubmit()" (click)="upload()">
+          <button type="button" class="btn btn-primary" [disabled]="!canUpload()" (click)="upload()">
             Write to knowledge base
           </button>
-          <button type="button" class="btn btn-ghost" [disabled]="!canSubmit()" (click)="clearCandidates()">
+          <button type="button" class="btn btn-ghost" [disabled]="!canUpload()" (click)="clearCandidates()">
             Clear
           </button>
         </div>
@@ -125,7 +140,7 @@
       <div class="field-row">
         <div class="field">
           <label for="rag-limit">Top K</label>
-          <input id="rag-limit" type="number" min="1" max="20" [ngModel]="limit()" (ngModelChange)="limit.set($event)" />
+          <input id="rag-limit" type="number" min="1" max="50" [ngModel]="limit()" (ngModelChange)="limit.set($event)" />
         </div>
         <div class="field grow">
           <label for="rag-scope">Limit to document (optional)</label>
@@ -136,7 +151,16 @@
 
       <div class="action-row">
         <button type="button" class="btn btn-primary" [disabled]="!canSearch()" (click)="search()">Search</button>
+        @if (ragServiceApi.strategy() !== 'vector') {
+          <span class="hint">Strategy: {{ ragServiceApi.strategy() }}</span>
+        }
       </div>
+
+      @if (!ragServiceApi.canUse('search')) {
+        <div class="notice" role="status">
+          The <strong>Search</strong> tool is disabled in this RAG Agent profile (see the Agent tab).
+        </div>
+      }
 
       @if (isProcessing()) {
         <div class="status-line">Agent is searching…</div>
@@ -163,71 +187,152 @@
     </div>
   }
 
-  <!-- ── Settings ───────────────────────────────────────────────────────── -->
-  @if (tab() === 'settings') {
+  <!-- ── Evaluate ───────────────────────────────────────────────────────── -->
+  @if (tab() === 'evaluate') {
+    <app-rag-eval />
+  }
+
+  <!-- ── Insights ───────────────────────────────────────────────────────── -->
+  @if (tab() === 'insights') {
+    <app-rag-insights />
+  }
+
+  <!-- ── Agent ──────────────────────────────────────────────────────────── -->
+  @if (tab() === 'agent') {
     <div class="panel">
-      <div class="field">
-        <label for="rag-server">RAG MCP server</label>
-        <select id="rag-server"
-                [ngModel]="ragServiceApi.ragServerName()"
-                (ngModelChange)="ragServiceApi.setRagServerName($event || null)">
-          <option [ngValue]="null">— none —</option>
-          @for (server of ragServiceApi.servers(); track server.name) {
-            <option [ngValue]="server.name">{{ server.name }}</option>
-          }
-        </select>
-        <p class="field-hint">
-          Used to attach the knowledge base tools to your session. Detected automatically
-          from the MCP Servers list, or add <code>clover-rag</code> there first.
-        </p>
-      </div>
-
-      @if (ragServiceApi.serversError(); as serversError) {
-        <div class="error-banner" role="alert">{{ serversError }}</div>
-      }
-
-      <div class="field">
-        <label class="checkbox-row">
-          <input type="checkbox"
-                 [ngModel]="ragServiceApi.autoAttach()"
-                 (ngModelChange)="ragServiceApi.setAutoAttach($event)" />
-          <span>Attach to session automatically</span>
-        </label>
-        <p class="field-hint">
-          When on, submitting from this panel adds the RAG server to the session's
-          MCP selection. When off, select it yourself in the chat input's
-          <em>MCP Servers</em> dropdown.
-        </p>
-      </div>
-
       <div class="section-head">
-        <h4>Available MCP servers</h4>
-        <button type="button" class="btn btn-secondary" (click)="ragServiceApi.refreshServers()">
-          Reload
-        </button>
+        <h4>RAG agent profile</h4>
+        <div class="action-row inline">
+          <button type="button" class="btn btn-secondary" (click)="createProfile()">New profile</button>
+          <button type="button" class="btn btn-ghost btn-danger"
+                  [disabled]="profiles().length <= 1" (click)="deleteActiveProfile()">Delete</button>
+        </div>
       </div>
 
-      @if (ragServiceApi.serversLoading()) {
-        <div class="status-line">Loading…</div>
-      } @else if (ragServiceApi.servers().length === 0) {
-        <div class="status-line">No MCP servers configured.</div>
-      } @else {
-        <ul class="item-list">
-          @for (server of ragServiceApi.servers(); track server.name) {
-            <li class="item-row" [class.selected]="server.name === ragServiceApi.ragServerName()">
-              <div class="item-main">
-                <div class="item-name">
-                  {{ server.name }}
-                  <span class="item-type">{{ server.type }}</span>
-                </div>
+      <div class="field-row">
+        <div class="field grow">
+          <label for="rag-profile">Active profile</label>
+          <select id="rag-profile" [ngModel]="ragServiceApi.activeProfileId()"
+                  (ngModelChange)="setActiveProfile($event)">
+            @for (profile of profiles(); track profile.id) {
+              <option [ngValue]="profile.id">{{ profile.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="field grow">
+          <label for="rag-profile-name">Name</label>
+          <input id="rag-profile-name" type="text" [ngModel]="profile().name"
+                 (ngModelChange)="renameProfile($event)" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Data sources</label>
+        @if (ragServiceApi.serversLoading()) {
+          <div class="status-line">Loading…</div>
+        } @else if (ragServiceApi.servers().length === 0) {
+          <div class="status-line">No MCP servers configured.</div>
+        } @else {
+          <ul class="item-list">
+            @for (server of ragServiceApi.servers(); track server.name) {
+              <li class="item-row" [class.selected]="isServerSelected(server.name)">
+                <label class="checkbox-row item-main">
+                  <input type="checkbox" [checked]="isServerSelected(server.name)"
+                         (change)="toggleServer(server.name)" />
+                  <span class="item-name">
+                    {{ server.name }}
+                    <span class="item-type">{{ server.type }}</span>
+                  </span>
+                </label>
                 @if (server.description) {
                   <div class="item-desc">{{ server.description }}</div>
                 }
-              </div>
-            </li>
+              </li>
+            }
+          </ul>
+        }
+        <p class="field-hint">
+          Selected servers become this profile's knowledge bases and are attached to the
+          session when <em>Attach automatically</em> is on.
+        </p>
+        <div class="action-row inline">
+          <button type="button" class="btn btn-secondary" (click)="ragServiceApi.refreshServers()">Reload</button>
+        </div>
+        @if (ragServiceApi.serversError(); as serversError) {
+          <div class="error-banner" role="alert">{{ serversError }}</div>
+        }
+      </div>
+
+      <div class="field">
+        <label for="rag-strategy">Retrieval strategy</label>
+        <select id="rag-strategy" [ngModel]="profile().strategy" (ngModelChange)="setStrategy($event)">
+          @for (strategy of strategies; track strategy.id) {
+            <option [ngValue]="strategy.id">{{ strategy.label }}</option>
           }
-        </ul>
-      }
+        </select>
+        <p class="field-hint">
+          @for (strategy of strategies; track strategy.id) {
+            @if (strategy.id === profile().strategy) {
+              {{ strategy.hint }}
+            }
+          }
+        </p>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="rag-topk">Default Top K</label>
+          <input id="rag-topk" type="number" min="1" max="50" [ngModel]="profile().defaultTopK"
+                 (ngModelChange)="setDefaultTopK($event)" />
+        </div>
+        <div class="field">
+          <label for="rag-minscore">Min score (0–1)</label>
+          <input id="rag-minscore" type="number" min="0" max="1" step="0.05" [ngModel]="profile().minScore"
+                 (ngModelChange)="setMinScore($event)" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="rag-citation">Citation style</label>
+        <input id="rag-citation" type="text" [ngModel]="profile().citationStyle"
+               (ngModelChange)="setCitationStyle($event)" spellcheck="false" />
+        <p class="field-hint">
+          Placeholders <code>{{ '{documentId}' }}</code> and <code>{{ '{chunkIndex}' }}</code>, e.g.
+          <code>{{ '【{documentId}#{chunkIndex}】' }}</code>.
+        </p>
+      </div>
+
+      <div class="field">
+        <label for="rag-instruction">Answer instruction</label>
+        <textarea id="rag-instruction" rows="3" [ngModel]="profile().answerInstruction"
+                  (ngModelChange)="setAnswerInstruction($event)"></textarea>
+        <p class="field-hint">Appended to every retrieval prompt to steer answer style and grounding.</p>
+      </div>
+
+      <div class="field">
+        <label>Allowed tools</label>
+        <div class="chip-row">
+          @for (tool of tools; track tool) {
+            <label class="checkbox-row">
+              <input type="checkbox" [checked]="profile().toolAllowlist.includes(tool)"
+                     (change)="setTool(tool, $any($event.target).checked)" />
+              <span>{{ toolLabels[tool] }}</span>
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" [ngModel]="profile().autoAttach" (ngModelChange)="setAutoAttach($event)" />
+          <span>Attach automatically</span>
+        </label>
+        <p class="field-hint">
+          When on, submitting from this panel adds the profile's servers to the session's
+          MCP selection. When off, select them yourself in the chat input's
+          <em>MCP Servers</em> dropdown.
+        </p>
+      </div>
     </div>
   }
 </div>
