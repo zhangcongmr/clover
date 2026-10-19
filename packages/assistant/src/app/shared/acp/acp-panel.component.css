@@ -251,7 +251,22 @@
   opacity: 0.7;
 }
 
-.welcome-chat-wrapper {
-  width: 100%;
+/*
+ * 输入框只有一个实例，位于欢迎页/对话页之外，因此欢迎页需要：
+ * 1) 去掉上下内边距，让「欢迎内容 + 输入框」作为一组整体垂直居中，
+ *    等价于原来两者都在 .acp-welcome-screen 里居中；
+ * 2) 保留左右 16px 内边距，维持原来的内容宽度。
+ * 居中用首尾 auto margin 而不是 justify-content: center，内容超高时不会把顶部裁掉。
+ */
+.acp-chat-container.welcome-mode .acp-welcome-screen {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: 0 16px;
+}
+
+.welcome-chat-input {
+  width: calc(100% - 32px);
   max-width: 840px;
+  align-self: center;
+  margin-bottom: auto;
 }
