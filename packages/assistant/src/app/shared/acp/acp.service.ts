@@ -319,7 +319,13 @@ export class AcpService {
       this.handlePermissionRequest(request);
     });
 
-    this.sseService.onPromptComplete((stopReason) => {
+    this.sseService.onPromptComplete((stopReason, acpSessionId) => {
+      // 只处理「当前会话」的完成事件：切换会话后，旧会话的 prompt_complete
+      // 仍可能迟到（它按 ACP session 路由，与当前视图无关），若不忽略就会
+      // 把当前会话的 isProcessing 误置为 false。
+      if (acpSessionId && acpSessionId !== this.selectedSessionId()) {
+        return;
+      }
       this.isProcessing.set(false);
       this.processingStartTime.set(null);
       if (stopReason === 'end_turn') {
@@ -425,8 +431,13 @@ export class AcpService {
       }));
     });
 
-    this.sseService.onError((message, source) => {
+    this.sseService.onError((message, source, acpSessionId) => {
       if (source === 'server') {
+        // 只处理「当前会话」的错误：旧会话的迟到 error 与 prompt_complete
+        // 同理，必须忽略，否则会误清当前会话的处理中状态。
+        if (acpSessionId && acpSessionId !== this.selectedSessionId()) {
+          return;
+        }
         // 后端发布的服务端错误（如 prompt 失败）：sessionState 保持不变，
         // 只结束处理状态并把错误作为消息插入对话流展示。
         this.isProcessing.set(false);
@@ -796,6 +807,10 @@ export class AcpService {
     // them would leave hasActiveQuestions() true and the chat textarea disabled.
     this.activeQuestionsMessages.set([]);
     this.activeTodosMessages.set([]);
+    // 处理中状态同属刚断开的会话：必须一并清掉，否则 isProcessing 残留为 true，
+    // sendMessage 会被直接 return（输入框表现为「发不出去」）。
+    this.isProcessing.set(false);
+    this.processingStartTime.set(null);
   }
 
   // ============================================================================
@@ -1028,6 +1043,11 @@ export class AcpService {
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     this.provisionalTitle = false;
+    // 切换会话 = 换了一轮「处理中」上下文。旧会话的 isProcessing 必须清掉，
+    // 否则它会一直卡住输入框（sendMessage 会因 isProcessing 直接 return）。
+    // 目标会话若在服务端仍在跑，由 Phase 4 的 result.prompting 恢复。
+    this.isProcessing.set(false);
+    this.processingStartTime.set(null);
     // 会话标题：从项目/任务记录取回；记录存在但无标题时清空，避免残留上一个会话的标题
     const loaded = this.findSessionRecord(sessionId);
     if (loaded) {
@@ -1056,6 +1076,12 @@ export class AcpService {
       );
 
       this.selectedSessionId.set(sessionId);
+      // 该会话在服务端可能仍有一轮 prompt 在跑（例如切走又切回）：
+      // 恢复处理中状态，等待它真正的 prompt_complete。
+      if (result?.prompting) {
+        this.isProcessing.set(true);
+        this.processingStartTime.set(Date.now());
+      }
       this.sessionState.update(s => ({
         ...s,
         isConnected: true,
@@ -1104,6 +1130,9 @@ export class AcpService {
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     this.provisionalTitle = false;
+    // 切换会话 = 换了一轮「处理中」上下文（同 loadSession）。
+    this.isProcessing.set(false);
+    this.processingStartTime.set(null);
     // 会话标题：从项目/任务记录取回；记录存在但无标题时清空，避免残留上一个会话的标题
     const resumed = this.findSessionRecord(sessionId);
     if (resumed) {
@@ -1132,6 +1161,11 @@ export class AcpService {
       );
 
       this.selectedSessionId.set(sessionId);
+      // 该会话在服务端可能仍有一轮 prompt 在跑：恢复处理中状态。
+      if (result?.prompting) {
+        this.isProcessing.set(true);
+        this.processingStartTime.set(Date.now());
+      }
       this.sessionState.update(s => ({
         ...s,
         isConnected: true,

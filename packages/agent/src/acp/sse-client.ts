@@ -49,6 +49,14 @@ export class SseAcpClient {
   private reverseAcp: Map<string, string> = new Map();
   /** All wrapper sessions currently bound to this connection. */
   private attachedWrappers: Set<string> = new Set();
+  /**
+   * ACP sessions with a prompt currently in flight.
+   *
+   * Keyed by ACP session id, not by wrapper: a session can be re-bound to a
+   * fresh wrapper while its prompt is still running, and "is this session
+   * busy?" must not depend on which wrapper happens to hold it.
+   */
+  private inFlightPrompts: Set<string> = new Set();
 
   private connectionStateListeners: Set<(connected: boolean) => void> = new Set();
   private agentSessionChangeListeners: Set<(wrapperId: string, acpSessionId: string | null) => void> = new Set();
@@ -315,6 +323,18 @@ export class SseAcpClient {
     return this.sessionBindings.get(wrapperId)?.acpSessionId ?? null;
   }
 
+  /**
+   * The wrapper session currently bound to an ACP session, if any.
+   *
+   * Ownership of an ACP session can move between wrappers (e.g. the UI
+   * reloads the same session under a fresh wrapper). Events about that ACP
+   * session must be routed to its *current* owner, otherwise they land on a
+   * channel nobody listens to any more.
+   */
+  getWrapperForAcpSession(acpSessionId: string): string | null {
+    return this.reverseAcp.get(acpSessionId) ?? null;
+  }
+
   /** Working directory the wrapper's current agent session is bound to. */
   getAcpSessionCwd(wrapperId: string): string | undefined {
     return this.sessionBindings.get(wrapperId)?.cwd;
@@ -489,8 +509,12 @@ export class SseAcpClient {
 
   /**
    * Handle prompt request for a specific wrapper session.
+   *
+   * The resolved `acpSessionId` is returned alongside the stop reason: the
+   * caller needs it to route the completion event to whoever owns that ACP
+   * session *now* (the owner may change while the prompt is in flight).
    */
-  async handlePrompt(wrapperId: string, content: acp.ContentBlock[]): Promise<{ stopReason: string }> {
+  async handlePrompt(wrapperId: string, content: acp.ContentBlock[]): Promise<{ stopReason: string; acpSessionId: string }> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
     }
@@ -502,6 +526,7 @@ export class SseAcpClient {
 
     logger.log(`[SSE ACP Client] Sending prompt to session: ${sessionId} (wrapper: ${wrapperId})`);
 
+    this.inFlightPrompts.add(sessionId);
     try {
       const result = await this.clientConnection.agent.request('session/prompt', {
         sessionId,
@@ -510,11 +535,29 @@ export class SseAcpClient {
 
       logger.log(`[SSE ACP Client] Prompt completed (wrapper: ${wrapperId}, session: ${sessionId}): ${result.stopReason}`);
 
-      return { stopReason: result.stopReason };
+      return { stopReason: result.stopReason, acpSessionId: sessionId };
     } catch (error) {
       logger.error(`[SSE ACP Client] Prompt failed (wrapper: ${wrapperId}, session: ${sessionId}):`, error);
+      // 附带 ACP session id：调用方据此把「本轮结束」投递到当前持有该
+      // 会话的 wrapper，而不是发起 prompt 的那个（后者可能已被换绑）。
+      if (error && typeof error === 'object') {
+        (error as { acpSessionId?: string }).acpSessionId = sessionId;
+      }
       throw error;
+    } finally {
+      this.inFlightPrompts.delete(sessionId);
     }
+  }
+
+  /**
+   * Whether a prompt is currently running for the given ACP session.
+   *
+   * A session can outlive the wrapper that started the prompt (the UI may
+   * re-bind it to a fresh wrapper), so callers that need "is this session
+   * busy?" must ask by ACP session id, not by wrapper.
+   */
+  isPrompting(acpSessionId: string): boolean {
+    return this.inFlightPrompts.has(acpSessionId);
   }
 
   /**

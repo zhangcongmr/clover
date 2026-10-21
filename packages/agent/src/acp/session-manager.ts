@@ -177,17 +177,37 @@ export class AcpSessionManager {
       // 调用客户端处理 prompt（按 wrapper session 定向到其 ACP session）
       const result = await client.handlePrompt(sessionId, msg.payload.content);
 
-      // 发布完成事件
-      await this.publishEvent(sessionId, {
+      // 发布完成事件。
+      //
+      // 路由键必须是「当前持有该 ACP session 的 wrapper」，而不是发起
+      // prompt 时的那个 wrapper：prompt 运行期间 UI 可能新建 wrapper 并
+      // 把同一个 ACP session 重新绑定过去（loadSession / resumeSession）。
+      // 此时按发起时的 wrapper 投递，事件会落到一个前端已经退订的
+      // Redis 通道上，前端永远收不到 prompt_complete，isProcessing 卡死。
+      const owner = client.getWrapperForAcpSession(result.acpSessionId) ?? sessionId;
+      await this.publishEvent(owner, {
         type: 'prompt_complete',
+        // 带 acpSessionId：前端据此判断这是不是它当前会话的结束事件
+        // （切换会话后，旧会话的迟到事件必须被忽略）。
         payload: result,
         timestamp: Date.now(),
       });
     } catch (error) {
       logger.error(`[ACP Session] Prompt error (session: ${sessionId}):`, error);
-      await this.publishEvent(sessionId, {
+      // 失败同样要通知到「当前持有该 ACP session 的 wrapper」：前端靠
+      // prompt_complete / error 结束处理中状态，投递到旧 wrapper 会卡死。
+      const failedSessionId = (error as { acpSessionId?: string })?.acpSessionId;
+      const owner = failedSessionId
+        ? (client.getWrapperForAcpSession(failedSessionId) ?? sessionId)
+        : sessionId;
+      await this.publishEvent(owner, {
         type: 'error',
-        payload: { message: (error as Error).message, requestId: msg.requestId },
+        payload: {
+          message: (error as Error).message,
+          requestId: msg.requestId,
+          // 带 acpSessionId：前端据此判断是否属于当前会话（与 prompt_complete 同理）
+          acpSessionId: failedSessionId,
+        },
         timestamp: Date.now(),
       });
     }
@@ -490,7 +510,9 @@ export class AcpSessionManager {
         mcpServers,
       });
       session.lastActivity = Date.now();
-      return result;
+      // 该 ACP session 可能仍有一轮 prompt 在跑（例如 UI 切走又切回）：
+      // 告诉前端，免得它把「仍在处理中」的状态弄丢。
+      return { ...result, prompting: session.client.isPrompting(loadSessionId) };
     } catch (error) {
       logger.error(`[ACP Session] Load session error (session: ${sessionId}, load: ${loadSessionId}):`, error);
       throw error;
@@ -513,7 +535,7 @@ export class AcpSessionManager {
         mcpServers,
       });
       session.lastActivity = Date.now();
-      return result;
+      return { ...result, prompting: session.client.isPrompting(resumeSessionId) };
     } catch (error) {
       logger.error(`[ACP Session] Resume session error (session: ${sessionId}, resume: ${resumeSessionId}):`, error);
       throw error;

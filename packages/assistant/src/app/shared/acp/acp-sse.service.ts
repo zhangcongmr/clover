@@ -55,9 +55,9 @@ export class AcpSseService {
   private onConnectedCallback: (() => void) | null = null;
   private onSessionUpdateCallback: ((update: any) => void) | null = null;
   private onPermissionRequestCallback: ((request: any) => void) | null = null;
-  private onPromptCompleteCallback: ((stopReason: string) => void) | null = null;
+  private onPromptCompleteCallback: ((stopReason: string, acpSessionId?: string) => void) | null = null;
   private onSessionCreatedCallback: ((sessionId: string, payload?: any) => void) | null = null;
-  private onErrorCallback: ((message: string, source: ErrorSource) => void) | null = null;
+  private onErrorCallback: ((message: string, source: ErrorSource, acpSessionId?: string) => void) | null = null;
   private onDisconnectedCallback: (() => void) | null = null;
   private onStatusCallback: ((payload: any) => void) | null = null;
 
@@ -79,7 +79,7 @@ export class AcpSseService {
     this.onPermissionRequestCallback = callback;
   }
 
-  onPromptComplete(callback: (stopReason: string) => void): void {
+  onPromptComplete(callback: (stopReason: string, acpSessionId?: string) => void): void {
     this.onPromptCompleteCallback = callback;
   }
 
@@ -87,7 +87,7 @@ export class AcpSseService {
     this.onSessionCreatedCallback = callback;
   }
 
-  onError(callback: (message: string, source: ErrorSource) => void): void {
+  onError(callback: (message: string, source: ErrorSource, acpSessionId?: string) => void): void {
     this.onErrorCallback = callback;
   }
 
@@ -176,7 +176,9 @@ export class AcpSseService {
         break;
 
       case 'prompt_complete':
-        this.onPromptCompleteCallback?.(event.payload.stopReason);
+        // payload.acpSessionId 标明这是哪个 ACP 会话结束：前端据此判断
+        // 该事件是否属于当前会话（切换会话后旧会话的迟到事件必须忽略）。
+        this.onPromptCompleteCallback?.(event.payload.stopReason, event.payload.acpSessionId);
         break;
 
       case 'session_created':
@@ -185,7 +187,9 @@ export class AcpSseService {
 
       case 'error':
         console.error('[ACP SSE] Server error:', event.payload.message);
-        this.handleError(event.payload.message, 'server');
+        // payload.acpSessionId 标明错误属于哪个 ACP 会话：前端据此忽略
+        // 其它会话的迟到错误（同 prompt_complete）。
+        this.handleError(event.payload.message, 'server', event.payload.acpSessionId);
         break;
 
       case 'heartbeat':
@@ -197,14 +201,14 @@ export class AcpSseService {
     }
   }
 
-  private handleError(message: string, source: ErrorSource = 'connection'): void {
+  private handleError(message: string, source: ErrorSource = 'connection', acpSessionId?: string): void {
     // 只有连接级错误写入 error signal：acp.service 的 syncState 会周期性把
     // error() 同步进 sessionState().error，server 错误若写入会在 10s 内间接
     // 改掉 sessionState（要求保持不变），因此 server 错误只走回调。
     if (source === 'connection') {
       this.error.set(message);
     }
-    this.onErrorCallback?.(message, source);
+    this.onErrorCallback?.(message, source, acpSessionId);
   }
 
   private attemptReconnect(): void {
