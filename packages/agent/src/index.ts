@@ -103,7 +103,7 @@ export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './ser
 export { SseManager } from './acp/sse-manager.js';
 export type { SseConnection, ServerEvent } from './acp/sse-manager.js';
 export { AcpSessionManager } from './acp/session-manager.js';
-export type { AcpSession, SessionCreateOptions, SessionMessage, AcpWrapperEvent } from './acp/session-manager.js';
+export type { AcpSession, SessionMessage, AcpSessionEvent, SessionOperationOptions } from './acp/session-manager.js';
 export { SseAcpClient } from './acp/sse-client.js';
 export type { SseAcpClientConfig } from './acp/sse-client.js';
 export { AgentRegistry } from './acp/agent-registry.js';

@@ -70,7 +70,7 @@ function probeCommand(command: string): Promise<boolean> {
  *
  * - Server startup calls `warmupAll()`: probes each agent on PATH and then
  *   spawns + initializes the subprocess IN PARALLEL — without creating any
- *   wrapper session or Redis subscription.
+ *   session or Redis subscription.
  * - Session code calls `getOrCreate()`: reuses the warm connection when it
  *   is ready, otherwise falls back to spawn+initialize on the spot.
  * - Settings calls `getStatus()` / `checkNow()` for the Agents management UI.
@@ -111,8 +111,8 @@ export class AgentRegistry {
 
   /**
    * Probe + spawn + initialize every known agent, all in parallel.
-   * Never creates wrapper sessions or Redis subscriptions (startup phase
-   * deliberately skips the wrapper-session wrapping).
+   * Never creates session records or Redis subscriptions (startup phase
+   * deliberately skips session-record creation).
    */
   async warmupAll(): Promise<void> {
     const configs = this.agentConfigs;
@@ -155,12 +155,26 @@ export class AgentRegistry {
   // ==========================================================================
 
   /**
-   * Get the shared connection for a wrapper session's agent config.
+   * Get the shared connection for the given agent config.
    * Reuses the pre-warmed connection when ready; otherwise spawns and
    * initializes on the spot (the fallback path kept for robustness).
    */
   async getOrCreate(config: SseAcpClientConfig): Promise<SseAcpClient> {
     return this.ensureConnected(this.stateForSession(config));
+  }
+
+  /**
+   * Resolve an agent's launch config (command/args/env) by its public id.
+   * Returns null for unknown ids — callers surface the error to the frontend.
+   */
+  getConfigById(agentId: string): SseAcpClientConfig | null {
+    const state = this.statesById.get(agentId);
+    if (!state) return null;
+    return {
+      agentCommand: state.config.command,
+      agentArgs: state.config.args,
+      agentEnv: state.config.env,
+    };
   }
 
   /** Existing connection for a session config without creating one. */

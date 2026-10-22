@@ -46,7 +46,7 @@ function agentSkill(agentId: string, name: string, description: string) {
 /**
  * A2A collaboration surface:
  *
- *  - `POST   /api/a2a/collab/spaces`         create a space (one ACP wrapper session per agent)
+ *  - `POST   /api/a2a/collab/spaces`         create a space (one ACP session per agent)
  *  - `DELETE /api/a2a/collab/spaces/:spaceId` close a space and release its sessions
  *  - `GET    /api/a2a/orchestrator/...`       orchestrator agent card + JSON-RPC endpoint
  *  - `GET    /api/a2a/agents/:agentId/...`    per-agent agent card + JSON-RPC endpoint
@@ -82,7 +82,7 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
         orchestratorAgentId: space.orchestratorAgentId ?? null,
         agents: space.agentIds.map(agentId => ({
           agentId,
-          sessionId: space.wrappers.get(agentId)!,
+          sessionId: space.sessions.get(agentId)!,
           configOptions: space.configOptions.get(agentId) ?? [],
         })),
       });

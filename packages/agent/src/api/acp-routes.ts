@@ -140,12 +140,25 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   /**
    * GET /api/acp/events/:sessionId
    * 建立 SSE 连接，持续接收服务器事件
+   *
+   * `sessionId` 即 ACP session id。可选 `?agentId=`：服务端尚无该会话记录时
+   * （后端重启）用它解析 agent 建立记录——前端在 `session/load` 之前先连
+   * SSE，保证 load 的历史回放通知有订阅者，不会丢失。
    */
-  app.get('/api/acp/events/:sessionId', (req: Request, res: Response) => {
+  app.get('/api/acp/events/:sessionId', async (req: Request, res: Response) => {
     const sessionId = req.params.sessionId as string;
+    const agentId = typeof req.query.agentId === 'string' ? req.query.agentId : undefined;
+
+    let session = sessionManager.getSession(sessionId);
+    if (!session && agentId) {
+      try {
+        session = await sessionManager.ensureRecord(sessionId, agentId);
+      } catch (error) {
+        logger.warn(`[ACP Routes] Failed to ensure session record ${sessionId} (agent: ${agentId}):`, error);
+      }
+    }
 
     // 验证会话是否存在
-    const session = sessionManager.getSession(sessionId);
     if (!session) {
       res.status(404).json({ error: 'Session not found' });
       return;
@@ -156,12 +169,15 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
     // 如果 agent 未连接，自动重连并恢复会话（优先 resume 旧会话延续上下文）
     if (!sessionManager.isAgentConnected(sessionId)) {
-      sessionManager.connectSession(sessionId)
-        .then(() => sessionManager.ensureAgentSession(sessionId))
+      sessionManager.ensureAgentSession(sessionId)
         .then(() => {
           sseManager.sendToConnection(sessionId, {
             type: 'status',
-            payload: { connected: true },
+            payload: {
+              connected: true,
+              agentInfo: session!.client.getAgentInfo(),
+              capabilities: session!.client.getAgentCapabilities(),
+            },
             timestamp: Date.now(),
           });
         })
@@ -174,10 +190,14 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
           });
         });
     } else {
-      // agent 已连接：直接告知前端当前状态（初始连接也保证收到 status）
+      // agent 已连接：直接告知前端当前状态（含 capabilities，供 UI 门控输入能力）
       sseManager.sendToConnection(sessionId, {
         type: 'status',
-        payload: { connected: true },
+        payload: {
+          connected: true,
+          agentInfo: session.client.getAgentInfo(),
+          capabilities: session.client.getAgentCapabilities(),
+        },
         timestamp: Date.now(),
       });
     }
@@ -186,78 +206,6 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   // ============================================================================
   // 会话管理端点
   // ============================================================================
-
-  /**
-   * POST /api/acp/session
-   * 创建新的wrapper会话
-   */
-  app.post('/api/acp/session', async (req: Request, res: Response) => {
-    try {
-      const { agentCommand, agentArgs, agentEnv } = req.body;
-
-      // 创建会话（cwd 不再存入 wrapper——会话真实 cwd 在 session/new·load·resume
-      // 绑定时从连接侧记录）
-      const sessionId = await sessionManager.createSession({
-        agentCommand,
-        agentArgs,
-        agentEnv,
-      });
-
-      // 连接到 agent
-      await sessionManager.connectSession(sessionId);
-
-      res.json({
-        success: true,
-        sessionId,
-        message: 'Session created and connected',
-      });
-    } catch (error) {
-      logger.error('[ACP Routes] Create session error:', error);
-      res.status(500).json({
-        success: false,
-        error: (error as Error).message,
-      });
-    }
-  });
-
-  /**
-   * GET /api/acp/session/agent/:agentSessionId
-   * 按 agent (ACP) session id 反查持有它的 wrapper 会话
-   *
-   * 场景：浏览器刷新 / 切走又切回后，前端丢失了 wrapper session id，但服务端
-   * 仍然保留着「wrapper → agent session」的绑定。前端据此复用同一个 wrapper，
-   * 而不是新建一个 wrapper 把同一个 agent session 绑走——后者会覆盖
-   * SseAcpClient.reverseAcp 里的唯一 owner，导致旧 wrapper 再也收不到
-   * session/update 事件。
-   *
-   * 查询不到属于正常结果（非错误），因此固定返回 200，用 found 字段区分。
-   *
-   * 注意：本路由必须注册在 GET /api/acp/session/:sessionId 之前，
-   * 否则 "agent" 段会被当成 sessionId。
-   */
-  app.get('/api/acp/session/agent/:agentSessionId', (req: Request, res: Response) => {
-    const agentSessionId = req.params.agentSessionId as string;
-    const session = sessionManager.findByAgentSessionId(agentSessionId);
-
-    if (!session) {
-      res.json({ found: false, agentSessionId });
-      return;
-    }
-
-    res.json({
-      found: true,
-      /** wrapper session id（前端用作 transport session id） */
-      sessionId: session.sessionId,
-      /** agent (ACP) session id */
-      agentSessionId: session.agentSessionId,
-      status: session.status,
-      cwd: session.agentCwd,
-      createdAt: session.createdAt,
-      lastActivity: session.lastActivity,
-      /** 是否已有前端 SSE 连到该 wrapper */
-      hasConnection: sseManager.hasConnection(session.sessionId),
-    });
-  });
 
   /**
    * GET /api/acp/session/:sessionId
@@ -350,13 +298,16 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/acp/session/create
-   * 创建新的 ACP 会话（在已连接的客户端中）
+   * 创建新的 ACP 会话（按 agentId 解析 agent，返回真实 ACP session id）
+   *
+   * 响应即会话创建结果：前端拿到 sessionId 后再建立 SSE 连接（先建会话、
+   * 后开流；available_commands 等创建期通知由响应字段携带补偿）。
    */
   app.post('/api/acp/session/create', async (req: Request, res: Response) => {
-    const { sessionId, cwd: rawCwd, mcpServers } = req.body;
+    const { agentId, cwd: rawCwd, mcpServers } = req.body;
 
-    if (!sessionId) {
-      res.status(400).json({ error: 'sessionId is required' });
+    if (!agentId || typeof agentId !== 'string') {
+      res.status(400).json({ error: 'agentId is required' });
       return;
     }
 
@@ -384,8 +335,8 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         }
       }
 
-      const result = await sessionManager.createAcpSession(sessionId, cwd, resolvedMcpServers);
-      res.json({ success: true, ...result });
+      const result = await sessionManager.createAcpSession(agentId, cwd, resolvedMcpServers);
+      res.json({ success: true, agentId, ...result });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -393,28 +344,28 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/acp/session/list
-   * 列出会话（同步等待 agent 返回）
+   * 列出会话（同步等待 agent 返回；连接级操作，按 agentId 解析）
    */
   app.post('/api/acp/session/list', async (req: Request, res: Response) => {
-    const { sessionId, cwd, cursor } = req.body;
+    const { agentId, cwd, cursor } = req.body;
 
-    if (!sessionId) {
-      res.status(400).json({ error: 'sessionId is required' });
+    if (!agentId) {
+      res.status(400).json({ error: 'agentId is required' });
       return;
     }
 
     try {
-      const result = await sessionManager.listAcpSessions(sessionId, cwd, cursor);
+      const result = await sessionManager.listAcpSessions(agentId, cwd, cursor);
       res.json({ success: true, ...result });
     } catch (error) {
-      logger.error(`[ACP Routes] List sessions error (session: ${sessionId}):`, error);
+      logger.error(`[ACP Routes] List sessions error (agent: ${agentId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
 
   /**
    * POST /api/acp/list-all-sessions
-   * 聚合列出所有 agent 的会话（直接复用 registry 预热连接，不创建 wrapper session）
+   * 聚合列出所有 agent 的会话（直接复用 registry 预热连接，不落 session 记录）
    */
   app.post('/api/acp/list-all-sessions', async (req: Request, res: Response) => {
     const { cwd, agents } = req.body;
@@ -474,13 +425,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/acp/session/load
-   * 加载会话（同步等待 agent 返回）
+   * 加载会话（sessionId 即目标 ACP session id；agentId 解析 agent，同步等待）
    */
   app.post('/api/acp/session/load', async (req: Request, res: Response) => {
-    const { sessionId, loadSessionId, cwd, mcpServers } = req.body;
+    const { sessionId, agentId, cwd, mcpServers } = req.body;
 
-    if (!sessionId || !loadSessionId) {
-      res.status(400).json({ error: 'sessionId and loadSessionId are required' });
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required' });
       return;
     }
 
@@ -495,23 +446,23 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         }
       }
 
-      const result = await sessionManager.loadAcpSession(sessionId, loadSessionId, cwd, resolvedMcpServers);
+      const result = await sessionManager.loadAcpSession(sessionId, { agentId, cwd, mcpServers: resolvedMcpServers });
       res.json({ success: true, ...result });
     } catch (error) {
-      logger.error(`[ACP Routes] Load session error (session: ${sessionId}, load: ${loadSessionId}):`, error);
+      logger.error(`[ACP Routes] Load session error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
 
   /**
    * POST /api/acp/session/resume
-   * 恢复会话（同步等待 agent 返回）
+   * 恢复会话（sessionId 即目标 ACP session id；agentId 解析 agent，同步等待）
    */
   app.post('/api/acp/session/resume', async (req: Request, res: Response) => {
-    const { sessionId, resumeSessionId, cwd, mcpServers } = req.body;
+    const { sessionId, agentId, cwd, mcpServers } = req.body;
 
-    if (!sessionId || !resumeSessionId) {
-      res.status(400).json({ error: 'sessionId and resumeSessionId are required' });
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required' });
       return;
     }
 
@@ -526,31 +477,31 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         }
       }
 
-      const result = await sessionManager.resumeAcpSession(sessionId, resumeSessionId, cwd, resolvedMcpServers);
+      const result = await sessionManager.resumeAcpSession(sessionId, { agentId, cwd, mcpServers: resolvedMcpServers });
       res.json({ success: true, ...result });
     } catch (error) {
-      logger.error(`[ACP Routes] Resume session error (session: ${sessionId}, resume: ${resumeSessionId}):`, error);
+      logger.error(`[ACP Routes] Resume session error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
 
   /**
    * POST /api/acp/session/delete
-   * 删除会话（同步等待 agent 返回）
+   * 删除会话（同步等待 agent 返回；agentId 仅在服务端记录丢失时用于解析 agent）
    */
   app.post('/api/acp/session/delete', async (req: Request, res: Response) => {
-    const { sessionId, deleteSessionId } = req.body;
+    const { sessionId, agentId } = req.body;
 
-    if (!sessionId || !deleteSessionId) {
-      res.status(400).json({ error: 'sessionId and deleteSessionId are required' });
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required' });
       return;
     }
 
     try {
-      await sessionManager.deleteAcpSession(sessionId, deleteSessionId);
+      await sessionManager.deleteAcpSession(sessionId, agentId);
       res.json({ success: true, message: 'Session deleted' });
     } catch (error) {
-      logger.error(`[ACP Routes] Delete session error (session: ${sessionId}, delete: ${deleteSessionId}):`, error);
+      logger.error(`[ACP Routes] Delete session error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });

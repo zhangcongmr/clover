@@ -139,7 +139,7 @@ export function createServer(config: ServerConfig): ServerInstance {
 
   const services = setupAgentMiddleware(app, middlewareOptions);
 
-  // 启动阶段：异步并列预热全部 Agent 子进程并 initialize（不创建 wrapper
+  // 启动阶段：异步并列预热全部 Agent 子进程并 initialize（不落 session 记录）
   // session、不订阅 Redis、不阻塞 server 启动）。session/create·load·
   // resume·prompt 仍会在 ensureConnected 中兜底 spawn+initialize。
   services.agentRegistry.warmupAll().catch((error) => {

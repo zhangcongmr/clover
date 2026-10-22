@@ -43,7 +43,11 @@ export class AcpSseService {
   private eventSource: EventSource | null = null;
   private baseUrl = '';
   private _currentSessionId = '';
+  private _currentAgentId: string | undefined;
   private reconnectAttempts = 0;
+  /** Rejects the pending `waitForEventSourceReady`, so a disconnect during a
+   *  cold-start connect fails fast instead of stalling until timeout. */
+  private readyWaiterReject: (() => void) | null = null;
   private maxReconnectAttempts = 5;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -56,7 +60,6 @@ export class AcpSseService {
   private onSessionUpdateCallback: ((update: any) => void) | null = null;
   private onPermissionRequestCallback: ((request: any) => void) | null = null;
   private onPromptCompleteCallback: ((stopReason: string, acpSessionId?: string) => void) | null = null;
-  private onSessionCreatedCallback: ((sessionId: string, payload?: any) => void) | null = null;
   private onErrorCallback: ((message: string, source: ErrorSource, acpSessionId?: string) => void) | null = null;
   private onDisconnectedCallback: (() => void) | null = null;
   private onStatusCallback: ((payload: any) => void) | null = null;
@@ -83,10 +86,6 @@ export class AcpSseService {
     this.onPromptCompleteCallback = callback;
   }
 
-  onSessionCreated(callback: (sessionId: string, payload?: any) => void): void {
-    this.onSessionCreatedCallback = callback;
-  }
-
   onError(callback: (message: string, source: ErrorSource, acpSessionId?: string) => void): void {
     this.onErrorCallback = callback;
   }
@@ -103,13 +102,14 @@ export class AcpSseService {
   // 连接管理
   // ============================================================================
 
-  async connect(sessionId: string): Promise<void> {
+  async connect(sessionId: string, agentId?: string): Promise<void> {
     if (this.eventSource) {
       this.disconnect();
     }
 
     this.baseUrl = this.localAgentService.getBaseUrl();
     this._currentSessionId = sessionId;
+    this._currentAgentId = agentId;
     this.sessionId.set(sessionId);
     this.connectionState.set('connecting');
     this.error.set(null);
@@ -117,18 +117,75 @@ export class AcpSseService {
     try {
       // 获取认证 token
       const token = await this.localAgentService.getToken();
-      const url = `${this.baseUrl}/api/acp/events/${sessionId}`;
+      // `?agentId=` 供服务端在会话记录缺失时（后端重启）解析 agent：
+      // load/resume 流程要求 SSE 先于 session/load 建立，否则历史回放丢失。
+      const url = `${this.baseUrl}/api/acp/events/${encodeURIComponent(sessionId)}${agentId ? `?agentId=${encodeURIComponent(agentId)}` : ''}`;
 
       // 创建 EventSource
-      this.eventSource = new EventSource(`${url}?token=${token}`);
+      this.eventSource = new EventSource(`${url}${agentId ? '&' : '?'}token=${token}`);
 
       this.setupEventSourceHandlers();
+
+      // 等待连接真正建立后才 resolve：保证「后端订阅已就绪」先于后续的
+      // session/load 请求，load 期间 agent 回放的历史通知才不会丢失。
+      // （onopen = 服务端已写入并 flush SSE 头 = addConnection 已完成订阅）
+      await this.waitForEventSourceReady();
     } catch (error) {
       console.error('[ACP SSE] Failed to connect:', error);
       this.connectionState.set('error');
       this.error.set((error as Error).message);
       throw error;
     }
+  }
+
+  /**
+   * Resolves once the SSE stream is open (server headers flushed, Redis
+   * subscription in place), rejects on failure or timeout so callers do not
+   * race a doomed connection.
+   *
+   * 冷启动场景（后端记录缺失 → ensureRecord → getOrCreate 可能要 spawn +
+   * initialize agent）耗时可达数秒，与 initialize 超时对齐取 30s。
+   */
+  private waitForEventSourceReady(timeoutMs = 30_000): Promise<void> {
+    const es = this.eventSource;
+    if (!es) {
+      return Promise.resolve();
+    }
+    if (es.readyState === 1) {
+      // EventSource.OPEN
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.readyWaiterReject = null;
+        es.removeEventListener('open', onOpen);
+        es.removeEventListener('error', onError);
+      };
+      const onOpen = () => {
+        cleanup();
+        resolve();
+      };
+      const onError = () => {
+        cleanup();
+        reject(new Error('SSE connection failed'));
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('SSE connection timed out'));
+      }, timeoutMs);
+
+      // disconnect() 时快速失败，避免等待句柄悬挂到超时
+      this.readyWaiterReject = () => {
+        cleanup();
+        reject(new Error('SSE connection cancelled'));
+      };
+
+      // 与 setupEventSourceHandlers 的 onopen/onerror 互不干扰（独立 listener）
+      es.addEventListener('open', onOpen);
+      es.addEventListener('error', onError);
+    });
   }
 
   private setupEventSourceHandlers(): void {
@@ -181,10 +238,6 @@ export class AcpSseService {
         this.onPromptCompleteCallback?.(event.payload.stopReason, event.payload.acpSessionId);
         break;
 
-      case 'session_created':
-        this.onSessionCreatedCallback?.(event.payload.sessionId, event.payload);
-        break;
-
       case 'error':
         console.error('[ACP SSE] Server error:', event.payload.message);
         // payload.acpSessionId 标明错误属于哪个 ACP 会话：前端据此忽略
@@ -226,7 +279,7 @@ export class AcpSseService {
 
     this.reconnectTimeout = setTimeout(async () => {
       try {
-        await this.connect(this._currentSessionId);
+        await this.connect(this._currentSessionId, this._currentAgentId);
       } catch (error) {
         console.error('[ACP SSE] Reconnection failed:', error);
       }
@@ -238,6 +291,8 @@ export class AcpSseService {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    this.readyWaiterReject?.();
+    this.readyWaiterReject = null;
 
     if (this.eventSource) {
       this.eventSource.close();
@@ -328,36 +383,6 @@ export class AcpSseService {
   // ============================================================================
 
   /**
-   * 创建新会话（仅创建 wrapper 会话；cwd 由 session/create 端点解析）
-   */
-  async createSession(options?: { agentCommand?: string; agentArgs?: string[]; agentEnv?: Record<string, string> }): Promise<{ sessionId: string }> {
-    const result = await this.post('/api/acp/session', options || {});
-    return { sessionId: result.sessionId };
-  }
-
-  /**
-   * 获取会话状态
-   */
-  async getSessionStatus(sessionId: string): Promise<any> {
-    return this.get(`/api/acp/session/${sessionId}`);
-  }
-
-  /**
-   * 删除会话
-   */
-  async deleteSession(sessionId: string): Promise<void> {
-    const token = await this.localAgentService.getToken();
-    const base = this.localAgentService.getBaseUrl();
-
-    await fetch(`${base}/api/acp/session/${sessionId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  }
-
-  /**
    * 发送 prompt
    */
   async sendPrompt(sessionId: string, content: any[]): Promise<string> {
@@ -391,83 +416,49 @@ export class AcpSseService {
   }
 
   /**
-   * 获取系统状态
+   * 创建 ACP 会话（按 agentId 解析 agent，一步返回真实 ACP session id）。
+   * available_commands 等创建期通知由响应字段携带补偿（前端在
+   * 会话创建之后才建立 SSE，创建期通知没有订阅者）。
    */
-  async getStatus(): Promise<any> {
-    return this.get('/api/acp/status');
+  async createAcpSession(agentId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
+    return this.post('/api/acp/session/create', { agentId, cwd, mcpServers });
   }
 
   /**
-   * 创建 ACP 会话（在已连接的客户端中）
+   * 列出一个 agent 的会话（连接级操作，同步返回结果）
    */
-  async createAcpSession(sessionId: string, cwd?: string, mcpServers?: any[]): Promise<any> {
-    return this.post('/api/acp/session/create', { sessionId, cwd, mcpServers });
+  async listSessions(agentId: string, cwd?: string, cursor?: string): Promise<any> {
+    return this.post('/api/acp/session/list', { agentId, cwd, cursor });
   }
 
   /**
-   * 列出会话（同步返回结果）
-   */
-  async listSessions(sessionId: string, cwd?: string, cursor?: string): Promise<any> {
-    return this.post('/api/acp/session/list', { sessionId, cwd, cursor });
-  }
-
-  /**
-   * 聚合列出所有 agent 的会话（服务端逐个 agent create/connect/list/清理）
+   * 聚合列出所有 agent 的会话（服务端逐个 agent getOrCreate/list）
    */
   async listAllSessions(cwd: string, agents: Array<{ id: string; command: string; args?: string[]; env?: Record<string, string> }>): Promise<any> {
     return this.post('/api/acp/list-all-sessions', { cwd, agents });
   }
 
   /**
-   * 按 agent (ACP) session id 反查持有它的 wrapper 会话。
-   *
-   * 服务端用 `found: true/false` 表示是否命中——查询不到是正常结果而非错误，
-   * 因此这里不抛异常，统一返回 null。
+   * 加载会话历史（sessionId 即目标 ACP session id；同步返回结果）。
+   * 注意：SSE 必须先行建立（connect 带 agentId），否则 load 的历史回放通知
+   * 没有订阅者、消息会丢失。
    */
-  async findWrapperByAgentSessionId(agentSessionId: string): Promise<{
-    sessionId: string;
-    agentSessionId?: string | null;
-    status?: string;
-    cwd?: string | null;
-    createdAt?: number;
-    lastActivity?: number;
-    hasConnection?: boolean;
-  } | null> {
-    if (!agentSessionId) {
-      return null;
-    }
-    try {
-      const result = await this.get(`/api/acp/session/agent/${encodeURIComponent(agentSessionId)}`);
-      if (!result?.found || !result.sessionId) {
-        return null;
-      }
-      return result;
-    } catch (error) {
-      // 反查失败不能阻断加载流程：退回「新建 wrapper」的老路径
-      console.warn('[ACP SSE] Failed to look up wrapper by agent session id:', error);
-      return null;
-    }
+  async loadSession(sessionId: string, agentId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
+    return this.post('/api/acp/session/load', { sessionId, agentId, cwd, mcpServers });
   }
 
   /**
-   * 加载会话（同步返回结果）
+   * 恢复会话（sessionId 即目标 ACP session id；同步返回结果）
    */
-  async loadSession(sessionId: string, loadSessionId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
-    return this.post('/api/acp/session/load', { sessionId, loadSessionId, cwd, mcpServers });
+  async resumeSession(sessionId: string, agentId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
+    return this.post('/api/acp/session/resume', { sessionId, agentId, cwd, mcpServers });
   }
 
   /**
-   * 恢复会话（同步返回结果）
+   * 删除 ACP 会话（agentId 仅在服务端记录丢失时用于解析 agent）
    */
-  async resumeSession(sessionId: string, resumeSessionId: string, cwd?: string, mcpServers?: string[]): Promise<any> {
-    return this.post('/api/acp/session/resume', { sessionId, resumeSessionId, cwd, mcpServers });
-  }
-
-  /**
-   * 删除 ACP 会话（通过 wrapper session 同步删除）
-   */
-  async deleteAcpSession(sessionId: string, deleteSessionId: string): Promise<any> {
-    return this.post('/api/acp/session/delete', { sessionId, deleteSessionId });
+  async deleteAcpSession(sessionId: string, agentId?: string): Promise<any> {
+    return this.post('/api/acp/session/delete', { sessionId, agentId });
   }
 
   /**
