@@ -585,6 +585,29 @@ export class AcpSessionManager {
     return this.sessions.get(sessionId);
   }
 
+  /**
+   * Find the wrapper session that currently holds a given agent (ACP) session id.
+   *
+   * The binding is 1:1 at runtime — `SseAcpClient.reverseAcp` keeps a single
+   * owner per agent session id — so at most one wrapper can be returned.
+   *
+   * Used by the frontend to re-attach to an existing wrapper after it lost
+   * track of it (page reload, session switch), instead of creating a second
+   * wrapper for the same agent session (which would steal the binding and
+   * leave the original wrapper without any session/update events).
+   */
+  findByAgentSessionId(agentSessionId: string): AcpSession | undefined {
+    if (!agentSessionId) {
+      return undefined;
+    }
+    for (const session of this.sessions.values()) {
+      if (session.agentSessionId === agentSessionId) {
+        return session;
+      }
+    }
+    return undefined;
+  }
+
   getSessionCount(): number {
     return this.sessions.size;
   }

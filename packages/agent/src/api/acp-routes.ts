@@ -221,6 +221,45 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   });
 
   /**
+   * GET /api/acp/session/agent/:agentSessionId
+   * 按 agent (ACP) session id 反查持有它的 wrapper 会话
+   *
+   * 场景：浏览器刷新 / 切走又切回后，前端丢失了 wrapper session id，但服务端
+   * 仍然保留着「wrapper → agent session」的绑定。前端据此复用同一个 wrapper，
+   * 而不是新建一个 wrapper 把同一个 agent session 绑走——后者会覆盖
+   * SseAcpClient.reverseAcp 里的唯一 owner，导致旧 wrapper 再也收不到
+   * session/update 事件。
+   *
+   * 查询不到属于正常结果（非错误），因此固定返回 200，用 found 字段区分。
+   *
+   * 注意：本路由必须注册在 GET /api/acp/session/:sessionId 之前，
+   * 否则 "agent" 段会被当成 sessionId。
+   */
+  app.get('/api/acp/session/agent/:agentSessionId', (req: Request, res: Response) => {
+    const agentSessionId = req.params.agentSessionId as string;
+    const session = sessionManager.findByAgentSessionId(agentSessionId);
+
+    if (!session) {
+      res.json({ found: false, agentSessionId });
+      return;
+    }
+
+    res.json({
+      found: true,
+      /** wrapper session id（前端用作 transport session id） */
+      sessionId: session.sessionId,
+      /** agent (ACP) session id */
+      agentSessionId: session.agentSessionId,
+      status: session.status,
+      cwd: session.agentCwd,
+      createdAt: session.createdAt,
+      lastActivity: session.lastActivity,
+      /** 是否已有前端 SSE 连到该 wrapper */
+      hasConnection: sseManager.hasConnection(session.sessionId),
+    });
+  });
+
+  /**
    * GET /api/acp/session/:sessionId
    * 获取会话状态
    */
