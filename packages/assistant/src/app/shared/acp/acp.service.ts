@@ -1059,12 +1059,30 @@ export class AcpService {
 
     let currentSessionId = this.sessionState().sessionId;
 
-    // Phase 3: Create wrapper session if needed
+    // Phase 3: 复用已有 wrapper session，没有才新建
+    //
+    // 同一个 agent (ACP) session 可能已经被某个 wrapper 持有（浏览器刷新后
+    // 丢失了 wrapper id、或者切走又切回）。新建 wrapper 会把同一个 agent
+    // session 绑到新 wrapper 上，覆盖 SseAcpClient.reverseAcp 里的唯一 owner，
+    // 旧 wrapper 就再也收不到后续的 session/update 事件。因此先按
+    // acpSessionId 反查，命中就复用。
     if (!currentSessionId) {
       this.loadingText.set('Connecting to server...');
-      const wrapper = await this.createWrapperSession();
-      currentSessionId = wrapper.sessionId;
-      this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
+      const existing = await this.sseService.findWrapperByAgentSessionId(sessionId);
+      if (existing?.sessionId) {
+        currentSessionId = existing.sessionId;
+        this.sessionState.update(s => ({ ...s, sessionId: currentSessionId }));
+        // 复用的 wrapper 视为属于当前选中的 agent（Phase 1 已按需切换过），
+        // 保持 wrapperAgentId 与 UI 选中项一致，后续 ensureChatSession 才会
+        // 复用这个 wrapper，而不是新建会话把刚加载的上下文丢掉。
+        this.wrapperAgentId = this.selectedAgent()?.id ?? null;
+        // 复用已有 wrapper 同样需要重新建立 SSE 事件流
+        await this.sseService.connect(currentSessionId);
+      } else {
+        const wrapper = await this.createWrapperSession();
+        currentSessionId = wrapper.sessionId;
+        this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
+      }
     }
 
     // Phase 4: Load session history
@@ -1144,12 +1162,20 @@ export class AcpService {
 
     let currentSessionId = this.sessionState().sessionId;
 
-    // Phase 3: Create wrapper session if needed
+    // Phase 3: 复用已有 wrapper session，没有才新建（同 loadSession）
     if (!currentSessionId) {
       this.loadingText.set('Connecting to server...');
-      const wrapper = await this.createWrapperSession();
-      currentSessionId = wrapper.sessionId;
-      this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
+      const existing = await this.sseService.findWrapperByAgentSessionId(sessionId);
+      if (existing?.sessionId) {
+        currentSessionId = existing.sessionId;
+        this.sessionState.update(s => ({ ...s, sessionId: currentSessionId }));
+        this.wrapperAgentId = this.selectedAgent()?.id ?? null;
+        await this.sseService.connect(currentSessionId);
+      } else {
+        const wrapper = await this.createWrapperSession();
+        currentSessionId = wrapper.sessionId;
+        this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
+      }
     }
 
     // Phase 4: Resume session

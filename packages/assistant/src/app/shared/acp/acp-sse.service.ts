@@ -419,6 +419,37 @@ export class AcpSseService {
   }
 
   /**
+   * 按 agent (ACP) session id 反查持有它的 wrapper 会话。
+   *
+   * 服务端用 `found: true/false` 表示是否命中——查询不到是正常结果而非错误，
+   * 因此这里不抛异常，统一返回 null。
+   */
+  async findWrapperByAgentSessionId(agentSessionId: string): Promise<{
+    sessionId: string;
+    agentSessionId?: string | null;
+    status?: string;
+    cwd?: string | null;
+    createdAt?: number;
+    lastActivity?: number;
+    hasConnection?: boolean;
+  } | null> {
+    if (!agentSessionId) {
+      return null;
+    }
+    try {
+      const result = await this.get(`/api/acp/session/agent/${encodeURIComponent(agentSessionId)}`);
+      if (!result?.found || !result.sessionId) {
+        return null;
+      }
+      return result;
+    } catch (error) {
+      // 反查失败不能阻断加载流程：退回「新建 wrapper」的老路径
+      console.warn('[ACP SSE] Failed to look up wrapper by agent session id:', error);
+      return null;
+    }
+  }
+
+  /**
    * 加载会话（同步返回结果）
    */
   async loadSession(sessionId: string, loadSessionId: string, cwd?: string, mcpServers?: string[]): Promise<any> {

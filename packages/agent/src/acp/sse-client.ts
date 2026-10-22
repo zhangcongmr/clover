@@ -609,9 +609,6 @@ export class SseAcpClient {
       throw new Error('cwd is required to create an ACP session');
     }
 
-    // Dispose the previous session of THIS wrapper only
-    this.unbind(wrapperId);
-
     // Create and start a new session with mcpServers support
     const sessionBuilder = this.clientConnection.agent.buildSession(cwd);
     params.mcpServers?.forEach(mcpServer => sessionBuilder.withMcpServer(mcpServer));
@@ -626,9 +623,6 @@ export class SseAcpClient {
     const sessionResponse = activeSession.newSessionResponse;
 
     logger.log(`[SSE ACP Client] Session created: ${activeSession.sessionId} (wrapper: ${wrapperId})`);
-
-    // Start reading session updates in the background
-    this.startUpdateLoop(wrapperId, activeSession);
 
     this.notifyAgentSessionChange(wrapperId, activeSession.sessionId);
     return this.mergeConfigOptions({
@@ -675,8 +669,6 @@ export class SseAcpClient {
     logger.log(`[SSE ACP Client] Loading session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
     try {
-      // Dispose the previous session of THIS wrapper only
-      this.unbind(wrapperId);
       // Bind before the request so updates emitted during load are routed
       this.bind(wrapperId, { acpSessionId: params.sessionId, activeSession: null, cwd });
 
@@ -710,8 +702,6 @@ export class SseAcpClient {
     logger.log(`[SSE ACP Client] Resuming session: ${params.sessionId} (wrapper: ${wrapperId})`);
 
     try {
-      // Dispose the previous session of THIS wrapper only
-      this.unbind(wrapperId);
       // Bind before the request so updates emitted during resume are routed
       this.bind(wrapperId, { acpSessionId: params.sessionId, activeSession: null, cwd });
 
@@ -827,37 +817,6 @@ export class SseAcpClient {
     const cacheById = new Map(this.configOptionsCache.map(o => [o.id, o]));
     const configOptions = response.configOptions.map(o => cacheById.get(o.id) ?? o);
     return { ...response, configOptions };
-  }
-
-  /**
-   * Background loop that reads updates for one wrapper's session. Routes
-   * `stop` back to that wrapper's channel as `prompt_complete`.
-   */
-  private startUpdateLoop(wrapperId: string, session: ActiveSession): void {
-    const acpSessionId = session.sessionId;
-    const isCurrent = () => this.sessionBindings.get(wrapperId)?.acpSessionId === acpSessionId;
-
-    void (async () => {
-      try {
-        while (isCurrent()) {
-          const message = await session.nextUpdate();
-
-          if (message.kind === 'stop') {
-            logger.log(`[SSE ACP Client] Prompt completed: ${message.stopReason}`);
-            this.publishToWrapper(wrapperId, {
-              type: 'prompt_complete',
-              payload: message.response,
-            });
-            break;
-          }
-        }
-      } catch (error) {
-        if (!isCurrent()) {
-          return;
-        }
-        logger.error(`[SSE ACP Client] Error reading session updates (wrapper: ${wrapperId}, session: ${acpSessionId}):`, error);
-      }
-    })();
   }
 
   /**
