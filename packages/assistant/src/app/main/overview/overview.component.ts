@@ -48,7 +48,7 @@ export class OverviewComponent {
   /** 当前激活会话所属 agent（优先会话记录中的 agentId，其次选中的 agent） */
   readonly overviewAgent = computed<{ name: string; badge: string } | null>(() => {
     let agentId = this.acpService.selectedAgent()?.id;
-    const sessionId = this.acpService.selectedSessionId();
+    const sessionId = this.acpService.sessionState().sessionId;
     if (sessionId) {
       const sessionInfo = this.acpService.findSessionInfo(
         sessionId,

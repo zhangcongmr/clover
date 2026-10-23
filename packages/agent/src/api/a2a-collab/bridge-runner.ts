@@ -11,7 +11,7 @@ import {
   type Task,
 } from '@a2a-js/sdk';
 import type * as acp from '@agentclientprotocol/sdk';
-import type { AcpSessionManager, AcpWrapperEvent } from '../../acp/session-manager.js';
+import type { AcpSessionManager, AcpSessionEvent } from '../../acp/session-manager.js';
 import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
 import type { CollabSpaceStore, CollabSpace } from './spaces.js';
 
@@ -37,7 +37,8 @@ export interface RunTaskInput {
 }
 
 interface ActiveRun {
-  wrapperId?: string;
+  /** ACP session id the run is currently prompting (for cancellation). */
+  sessionId?: string;
   cancelled: boolean;
 }
 
@@ -69,8 +70,8 @@ function extractText(message: Message): string {
     .trim();
 }
 
-/** Pulls an `agent_message_chunk` delta out of a wrapper event. */
-function extractAgentChunk(event: AcpWrapperEvent): string | undefined {
+/** Pulls an `agent_message_chunk` delta out of an ACP session event. */
+function extractAgentChunk(event: AcpSessionEvent): string | undefined {
   if (event.type !== 'session_update') return undefined;
   const update = event.payload?.update;
   if (update?.sessionUpdate !== 'agent_message_chunk') return undefined;
@@ -124,7 +125,7 @@ function keywordTarget(collab: CollabMetadata, promptText: string): string | und
   return agentIds[0];
 }
 
-/** Routing instruction sent to the orchestrator agent's wrapper session. */
+/** Routing instruction sent to the orchestrator agent's ACP session. */
 function buildRoutingPrompt(memberIds: string[], question: string): string {
   const catalog = memberIds
     .map(id => {
@@ -213,13 +214,13 @@ function withTimeout<T>(
  *  1. publish the task snapshot (A2A streams must start with a Task),
  *  2. resolve the target agent: forced/explicit → orchestrator LLM routing →
  *     keyword/first-member rules,
- *  3. serialize prompts per wrapper session (ACP allows one prompt at a time),
+ *  3. serialize prompts per ACP session (ACP allows one prompt at a time),
  *  4. run the ACP prompt, forwarding `agent_message_chunk` events as
  *     appending A2A artifact updates,
  *  5. publish the terminal status (COMPLETED / CANCELED / FAILED).
  */
 export class BridgeRunner {
-  /** Per-wrapper FIFO: serializes prompts targeting the same agent session. */
+  /** Per-session FIFO: serializes prompts targeting the same agent session. */
   private locks: Map<string, Promise<void>> = new Map();
   private active: Map<string, ActiveRun> = new Map();
 
@@ -234,8 +235,8 @@ export class BridgeRunner {
     const run = this.active.get(taskId);
     if (!run) return;
     run.cancelled = true;
-    if (run.wrapperId) {
-      await this.sessionManager.cancelPrompt(run.wrapperId);
+    if (run.sessionId) {
+      await this.sessionManager.cancelPrompt(run.sessionId);
     }
   };
 
@@ -253,21 +254,21 @@ export class BridgeRunner {
   ): Promise<string | undefined> {
     const orchestratorAgentId = space.orchestratorAgentId;
     if (!orchestratorAgentId) return undefined;
-    const wrapperId = space.wrappers.get(orchestratorAgentId);
-    if (!wrapperId) return undefined;
+    const sessionId = space.sessions.get(orchestratorAgentId);
+    if (!sessionId) return undefined;
 
     setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator 正在选择目标 Agent…');
 
     let reply = '';
     try {
-      await this.withLock(wrapperId, async () => {
+      await this.withLock(sessionId, async () => {
         if (runState.cancelled) return;
-        runState.wrapperId = wrapperId;
+        runState.sessionId = sessionId;
         try {
-          await this.sessionManager.ensureAgentSession(wrapperId);
+          await this.sessionManager.ensureAgentSession(sessionId);
           await withTimeout(
             this.sessionManager.promptAndWait(
-              wrapperId,
+              sessionId,
               [{ type: 'text', text: buildRoutingPrompt(space.agentIds, promptText) }] as acp.ContentBlock[],
               event => {
                 const delta = extractAgentChunk(event);
@@ -275,10 +276,10 @@ export class BridgeRunner {
               },
             ),
             this.routeTimeoutMs,
-            () => this.sessionManager.cancelPrompt(wrapperId),
+            () => this.sessionManager.cancelPrompt(sessionId),
           );
         } finally {
-          runState.wrapperId = undefined;
+          runState.sessionId = undefined;
         }
       });
     } catch (error) {
@@ -397,8 +398,8 @@ export class BridgeRunner {
         return;
       }
 
-      const wrapperId = space.wrappers.get(targetAgentId);
-      if (!wrapperId) {
+      const sessionId = space.sessions.get(targetAgentId);
+      if (!sessionId) {
         setStatus(TaskState.TASK_STATE_FAILED, `协作空间未包含 Agent「${targetAgentId}」。`);
         return;
       }
@@ -410,12 +411,12 @@ export class BridgeRunner {
       );
 
       const artifactId = `${taskId}-reply`;
-      await this.withLock(wrapperId, async () => {
+      await this.withLock(sessionId, async () => {
         if (runState.cancelled) {
           setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
           return;
         }
-        runState.wrapperId = wrapperId;
+        runState.sessionId = sessionId;
 
         let chunkPublished = false;
         const publishChunk = (delta: string): void => {
@@ -440,11 +441,11 @@ export class BridgeRunner {
         };
 
         try {
-          await this.sessionManager.ensureAgentSession(wrapperId);
+          await this.sessionManager.ensureAgentSession(sessionId);
 
           const result = await withTimeout(
             this.sessionManager.promptAndWait(
-              wrapperId,
+              sessionId,
               [{ type: 'text', text: promptText }] as acp.ContentBlock[],
               event => {
                 const delta = extractAgentChunk(event);
@@ -452,7 +453,7 @@ export class BridgeRunner {
               },
             ),
             this.timeoutMs,
-            () => this.sessionManager.cancelPrompt(wrapperId),
+            () => this.sessionManager.cancelPrompt(sessionId),
           );
 
           if (runState.cancelled || result.stopReason === 'cancelled') {
@@ -489,7 +490,7 @@ export class BridgeRunner {
           logger.error(`[A2A Collab] Bridge task ${taskId} failed:`, error);
           setStatus(TaskState.TASK_STATE_FAILED, `${label} 调用失败：${message}`);
         } finally {
-          runState.wrapperId = undefined;
+          runState.sessionId = undefined;
         }
       });
     } finally {

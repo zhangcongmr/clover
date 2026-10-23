@@ -8,8 +8,8 @@ export interface CollabSpace {
   id: string;
   cwd: string;
   agentIds: string[];
-  /** agentId → wrapper session id (one wrapper session per participating agent). */
-  wrappers: Map<string, string>;
+  /** agentId → ACP session id (one ACP session per participating agent). */
+  sessions: Map<string, string>;
   /** agentId → configOptions returned by session/new (mode/model selectors). */
   configOptions: Map<string, acp.SessionConfigOption[]>;
   /** Optional member agent that routes each prompt to the answering agent. */
@@ -26,7 +26,7 @@ export interface CreateSpaceOptions {
 /**
  * Process-local registry of collaboration spaces.
  *
- * A space owns one ACP wrapper session per participating agent, all bound to a
+ * A space owns one ACP session per participating agent, all bound to a
  * shared working directory. Spaces are ephemeral: they live until the frontend
  * closes them (or the backend restarts) and are never persisted.
  */
@@ -60,7 +60,7 @@ export class CollabSpaceStore {
       id: uuidv4(),
       cwd,
       agentIds,
-      wrappers: new Map(),
+      sessions: new Map(),
       configOptions: new Map(),
       orchestratorAgentId: orchestratorAgentId || undefined,
       createdAt: Date.now(),
@@ -69,26 +69,23 @@ export class CollabSpaceStore {
 
     try {
       for (const agentId of agentIds) {
-        const config = AVAILABLE_AGENTS.find(agent => agent.id === agentId)!;
-        const wrapperId = await this.sessionManager.createSession({
-          agentCommand: config.command,
-          agentArgs: config.args,
-          agentEnv: config.env,
-        });
-        created.push(wrapperId);
-        await this.sessionManager.connectSession(wrapperId);
-        const newSession = await this.sessionManager.createAcpSession(wrapperId, cwd);
-        space.wrappers.set(agentId, wrapperId);
+        const newSession = await this.sessionManager.createAcpSession(agentId, cwd);
+        const acpSessionId = String(newSession?.sessionId ?? '');
+        if (!acpSessionId) {
+          throw new Error(`Agent ${agentId} returned no ACP session id`);
+        }
+        created.push(acpSessionId);
+        space.sessions.set(agentId, acpSessionId);
         space.configOptions.set(
           agentId,
           Array.isArray(newSession?.configOptions) ? newSession.configOptions : [],
         );
       }
     } catch (error) {
-      // Roll back partially created wrapper sessions
-      for (const wrapperId of created) {
+      // Roll back partially created sessions
+      for (const acpSessionId of created) {
         try {
-          await this.sessionManager.removeSession(wrapperId);
+          await this.sessionManager.removeSession(acpSessionId);
         } catch {
           /* ignore cleanup errors */
         }
@@ -114,11 +111,11 @@ export class CollabSpaceStore {
     if (!space) return false;
 
     this.spaces.delete(spaceId);
-    for (const wrapperId of space.wrappers.values()) {
+    for (const acpSessionId of space.sessions.values()) {
       try {
-        await this.sessionManager.removeSession(wrapperId);
+        await this.sessionManager.removeSession(acpSessionId);
       } catch (error) {
-        logger.warn(`[A2A Collab] Failed to release wrapper ${wrapperId}:`, error);
+        logger.warn(`[A2A Collab] Failed to release session ${acpSessionId}:`, error);
       }
     }
     logger.log(`[A2A Collab] Space closed: ${spaceId}`);

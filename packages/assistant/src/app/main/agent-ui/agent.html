@@ -283,7 +283,7 @@
             <div class="cf-session-list custom-scroll">
               @for (session of contentFirstSessions(); track session.sessionId) {
                 <button class="cf-session-item"
-                  [class.active]="acpService.selectedSessionId() === session.sessionId && contentFirstSessionOpen()"
+                  [class.active]="acpService.sessionState().sessionId === session.sessionId && contentFirstSessionOpen()"
                   [class.loading]="sessionLoadingId() === session.sessionId"
                   [disabled]="sessionLoadingId() !== null"
                   (click)="openContentFirstSession(session.sessionId)">

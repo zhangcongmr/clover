@@ -206,7 +206,7 @@ export class AgentComponent {
     return sessions;
   }
 
-  protected activeSessionId = computed(() => this.acpService.selectedSessionId());
+  protected activeSessionId = computed(() => this.acpService.sessionState().sessionId);
 
   /**
    * Single source of truth for the sidebar highlight: exactly one of
@@ -287,7 +287,7 @@ export class AgentComponent {
         this.contentFirstOpenSessionId.set(null);
         return;
       }
-      const sessionId = this.acpService.selectedSessionId();
+      const sessionId = this.acpService.sessionState().sessionId;
       if (sessionId) {
         this.contentFirstOpenSessionId.set(sessionId);
       }
@@ -312,7 +312,6 @@ export class AgentComponent {
         // Hydrate the persisted selected project path and session id
         this.acpService.getSelectedProject().then(p => {
           if (p.selectedProject) this.acpService.selectedProjectPath.set(p.selectedProject);
-          if (p.selectedSessionId) this.acpService.selectedSessionId.set(p.selectedSessionId);
 
           if (!p.selectedSessionId) {
             this.acpService.isSwitchingSession.set(false);
@@ -322,9 +321,8 @@ export class AgentComponent {
           if (cur) {
             if (cur.type === 'project') {
               this.loadSessionsForProject(cur.path).then(() => {
-                const selectedSessionId = this.acpService.selectedSessionId();
-                if (selectedSessionId) {
-                  this.loadSession(selectedSessionId);
+                if (p.selectedSessionId) {
+                  this.loadSession(p.selectedSessionId);
                 }
               });
             } else if (cur.type === 'task' && cur.sessions?.length > 0) {
@@ -644,7 +642,7 @@ export class AgentComponent {
     this.acpService.saveSelectedProject(task.path || null);
 
     // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
-    if (this.acpService.selectedSessionId() === sessionId && this.acpService.sessionState().isConnected) {
+    if (this.acpService.sessionState().sessionId === sessionId && this.acpService.sessionState().isConnected) {
       this.sessionLoadingId.set(null);
       return;
     }

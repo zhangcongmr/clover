@@ -20,7 +20,7 @@ export class AgentProcess {
 
   /**
    * @param label Human-readable correlation id for this subprocess (e.g.
-   *   `agent:opencode` or a wrapper session id). Several agent processes run
+   *   `agent:opencode` or an ACP session id). Several agent processes run
    *   concurrently and share this class, so the label is what makes their log
    *   lines attributable.
    */

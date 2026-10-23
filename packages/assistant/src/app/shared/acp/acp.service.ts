@@ -150,12 +150,9 @@ export class AcpService {
   /** True when no session has been opened/loaded yet (fresh start). */
   readonly isNewSession = signal<boolean>(true);
 
-  /** Real ACP/OpenCode session id of the current wrapper's active session.
-   *  Distinct from the wrapper session id (`sessionState.sessionId`), which is
-   *  an internal transport id. Required to load sessions/tasks on the agent.
-   *
-  /** Persisted selected session id for the current project (restored on page load). */
-  readonly selectedSessionId = signal<string | null>(null);
+  // NOTE: there is a single session identifier in this app: `sessionState().sessionId`
+  // is the agent-generated ACP session id. Nothing needs to be set again; you can directly use it to
+  // perform session/load, session/delete, and other operations.
 
   // Model
   readonly currentModelId = signal<string | null>(null);
@@ -192,10 +189,6 @@ export class AcpService {
   /** Track last todos round during replay to determine final state */
   private lastTodosMessage: AcpMessage | null = null;
   private lastTodosAllCompleted: boolean = false;
-
-  /** Agent id the current wrapper session was created with, used to detect
-   *  agent changes so a stale wrapper is not reused. */
-  private wrapperAgentId: string | null = null;
 
   /** Whether `sessionState().title` is a local placeholder (first user message)
    *  still awaiting the agent's own (LLM) title. Cleared once an agent title is
@@ -323,7 +316,7 @@ export class AcpService {
       // 只处理「当前会话」的完成事件：切换会话后，旧会话的 prompt_complete
       // 仍可能迟到（它按 ACP session 路由，与当前视图无关），若不忽略就会
       // 把当前会话的 isProcessing 误置为 false。
-      if (acpSessionId && acpSessionId !== this.selectedSessionId()) {
+      if (acpSessionId && acpSessionId !== this.sessionState().sessionId) {
         return;
       }
       this.isProcessing.set(false);
@@ -336,81 +329,6 @@ export class AcpService {
       if (this.provisionalTitle) {
         this.scheduleTitleRefresh();
       }
-    });
-
-    this.sseService.onSessionCreated(async (sessionId, payload) => {
-      // payload.sessionId 是 OpenCode 返回的真实 ACP 会话 id（wrapper session id 保持不变）
-      const acpSessionId = payload?.sessionId ?? sessionId;
-      this.selectedSessionId.set(acpSessionId);
-      this.sessionState.update(s => ({
-        ...s,
-        // 保持 wrapper session id，不覆盖为 agent 返回的 ACP session id
-        configOptions: payload?.configOptions,
-        cwd: payload?.cwd ?? s.cwd,
-      }));
-      this.persistConfigOptions(payload?.configOptions);
-
-      // Create task (task creation = isNewSession && no selected project)
-      if (this.isNewSession() && !this.selectedProjectPath()) {
-        const title = this.sessionState().title || 'New Task';
-        const agentId = this.selectedAgent()?.id || 'opencode';
-        const cwd = this.sessionState().cwd || '';
-        const mcpServers = this.sessionState().mcpServers;
-        if (cwd) {
-          const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
-          const newTask: ProjectInfo = {
-            name: title,
-            path: cwd,
-            type: 'task',
-            sessions: [{ sessionId: acpSessionId, agentId, title, ...(mcpServers?.length ? { mcpServers } : {}) }],
-            id: taskId,
-            createdAt: new Date().toISOString(),
-          }
-          this.tasks.update(list => [
-            newTask,
-            ...list.filter(t => t.id !== taskId),
-          ]);
-
-          if (taskId) {
-            try {
-              await this.sseService.addProject(newTask);
-              await this.saveSelectedProject(cwd);
-              await this.saveSelectedSession(acpSessionId);
-            } catch (err) {
-              console.error('[ACP] Failed to create task:', err);
-            }
-          }
-        }
-      }
-
-      // Create session record (moved from acp-chat-input sendMessage)
-      if (this.isNewSession()) {
-        const cwd = this.sessionState().cwd || '';
-        const agentId = this.selectedAgent()?.id || 'opencode';
-        const mcpServers = this.sessionState().mcpServers;
-
-        const project = this.projects().find(p => p.path === cwd);
-        if (project) {
-          const record: ProjectSessionInfo = {
-            sessionId: acpSessionId,
-            agentId,
-            title: this.sessionState().title || 'New session',
-            updatedAt: new Date().toISOString(),
-            ...(mcpServers?.length ? { mcpServers } : {}),
-          };
-          await this.saveSessionToProject(cwd, record);
-          // 本地同步 upsert，新会话立即出现在侧边栏，无需等待 listProjects 刷新
-          this.projects.update(list => list.map(p =>
-            p.path === cwd
-              ? { ...p, sessions: [...(p.sessions || []).filter(s => s.sessionId !== acpSessionId), record] }
-              : p
-          ));
-          await this.saveSelectedSession(acpSessionId);
-        }
-      }
-
-      // Reset isNewSession after task/session creation logic has read it
-      this.isNewSession.set(false);
     });
 
     this.sseService.onConnected(() => {
@@ -435,7 +353,7 @@ export class AcpService {
       if (source === 'server') {
         // 只处理「当前会话」的错误：旧会话的迟到 error 与 prompt_complete
         // 同理，必须忽略，否则会误清当前会话的处理中状态。
-        if (acpSessionId && acpSessionId !== this.selectedSessionId()) {
+        if (acpSessionId && acpSessionId !== this.sessionState().sessionId) {
           return;
         }
         // 后端发布的服务端错误（如 prompt 失败）：sessionState 保持不变，
@@ -494,84 +412,143 @@ export class AcpService {
   // ============================================================================
 
   /**
-   * Creates a wrapper session only: spawns the agent wrapper on the server,
-   * records it in sessionState, and opens the SSE connection.
+   * Creates a fresh ACP session via a single HTTP call (agent resolved by
+   * `agentId`, server returns the real ACP session id), records it in
+   * sessionState, and only then opens the SSE stream (`sessionId` is known by
+   * then). Notifications the agent pushes in the creation window — notably
+   * `available_commands_update` — have no SSE subscriber yet, so the HTTP
+   * response carries them and they are applied here.
    *
-   * The real working directory is resolved by the server when the underlying
-   * ACP session is created (createAcpSession / loadAcpSession / resumeAcpSession).
-   *
-   * Callers:
-   * - createSession: creates wrapper + internal ACP session (full new session)
-   * - connect: creates wrapper only (acp-session-manager connection)
-   * - loadSession / resumeSession: creates wrapper only, then loads/resumes the target ACP session
-   * - deleteSession: creates a throwaway wrapper and deletes the target ACP session through it
+   * Also persists the new task/session records (previously handled by the SSE
+   * `session_created` event, which no longer exists) before opening the stream.
    */
-  async createWrapperSession(): Promise<{ sessionId: string }> {
+  async createSession(cwd?: string, mcpServers?: any[]): Promise<string> {
     const agent = this.selectedAgent();
-    const result = await this.sseService.createSession({
-      agentCommand: agent?.command,
-      agentArgs: agent?.args,
-      agentEnv: agent?.env,
-    });
+    if (!agent?.id) {
+      throw new Error('No agent selected');
+    }
+
+    // Pre-bind the MCP server selection so the persisted task/session record
+    // below carries the servers that are actually being used.
+    if (mcpServers?.length) {
+      this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
+    }
+
+    // Create the ACP session first (cwd is resolved and defaulted server-side)
+    const acpResult = await this.sseService.createAcpSession(agent.id, cwd, mcpServers);
+    const acpSessionId = acpResult?.sessionId;
+    if (!acpSessionId) {
+      throw new Error('Agent returned no session id');
+    }
 
     this.sessionState.update(s => ({
       ...s,
-      sessionId: result.sessionId,
+      sessionId: acpSessionId,
+      cwd: acpResult?.cwd ?? s.cwd,
+      // 仅使用 session/create 返回的 configOptions
+      configOptions: acpResult?.configOptions ?? s.configOptions,
     }));
-    this.wrapperAgentId = agent?.id ?? null;
-
-    // Connect to SSE with the new session ID
-    await this.sseService.connect(result.sessionId);
-
-    return result;
-  }
-
-  async createSession(cwd?: string, mcpServers?: any[]): Promise<string> {
-    const { sessionId } = await this.createWrapperSession();
-
-    // Pre-bind MCP servers to sessionState BEFORE createAcpSession, so that the
-    // SSE `session_created` event (which may arrive before the HTTP response)
-    // can read sessionState().mcpServers when persisting the session record.
-    if (mcpServers?.length) {
-      this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
+    // Slash commands pushed before any SSE subscriber exists
+    if (Array.isArray(acpResult?.availableCommands) && acpResult.availableCommands.length > 0) {
+      this.availableCommands.set(acpResult.availableCommands);
     }
+    this.persistConfigOptions(acpResult?.configOptions);
 
-    // Create the underlying ACP session so prompt requests have an active session.
-    // cwd is resolved (and defaulted) server-side; the resolved value comes back here.
-    const acpResult = await this.sseService.createAcpSession(sessionId, cwd, mcpServers);
-    this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
-    if (acpResult?.cwd) {
-      this.sessionState.update(s => ({ ...s, cwd: acpResult.cwd }));
-    }
-    // Persist the MCP servers bound to this session so they survive page reloads.
-    if (mcpServers?.length) {
-      this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
-    }
+    // Create task/session records while the isNewSession flag is still intact
+    await this.persistNewSessionRecords(acpSessionId);
+    // Reset isNewSession after task/session creation logic has read it
+    this.isNewSession.set(false);
 
-    return sessionId;
+    // Open the event stream after the ACP session exists
+    await this.sseService.connect(acpSessionId, agent.id);
+
+    return acpSessionId;
   }
 
   /**
-   * Ensures there is an active wrapper with an underlying ACP session before
-   * chatting. Reuses the existing wrapper (created by connect() or history
-   * load/resume) when possible; only falls back to creating a new wrapper when
-   * there is no usable wrapper, SSE is disconnected, or the selected agent
-   * differs from the one the wrapper was created with.
+   * Persists a brand-new session's task (no project selected) or project
+   * session record, and marks it as the selected session.
+   *
+   * Previously ran inside the SSE `session_created` callback; the event no
+   * longer exists (creation results now arrive in the HTTP response), so this
+   * runs directly after `session/create` returns.
+   */
+  private async persistNewSessionRecords(acpSessionId: string): Promise<void> {
+    // Create task (task creation = isNewSession && no selected project)
+    if (this.isNewSession() && !this.selectedProjectPath()) {
+      const title = this.sessionState().title || 'New Task';
+      const agentId = this.selectedAgent()?.id || 'opencode';
+      const cwd = this.sessionState().cwd || '';
+      const mcpServers = this.sessionState().mcpServers;
+      if (cwd) {
+        const taskId = cwd.replace(/\\/g, '/').split('/').pop() || '';
+        const newTask: ProjectInfo = {
+          name: title,
+          path: cwd,
+          type: 'task',
+          sessions: [{ sessionId: acpSessionId, agentId, title, ...(mcpServers?.length ? { mcpServers } : {}) }],
+          id: taskId,
+          createdAt: new Date().toISOString(),
+        }
+        this.tasks.update(list => [
+          newTask,
+          ...list.filter(t => t.id !== taskId),
+        ]);
+
+        if (taskId) {
+          try {
+            await this.sseService.addProject(newTask);
+            await this.saveSelectedProject(cwd);
+            await this.saveSelectedSession(acpSessionId);
+          } catch (err) {
+            console.error('[ACP] Failed to create task:', err);
+          }
+        }
+      }
+    }
+
+    // Create session record (moved from acp-chat-input sendMessage)
+    if (this.isNewSession()) {
+      const cwd = this.sessionState().cwd || '';
+      const agentId = this.selectedAgent()?.id || 'opencode';
+      const mcpServers = this.sessionState().mcpServers;
+
+      const project = this.projects().find(p => p.path === cwd);
+      if (project) {
+        const record: ProjectSessionInfo = {
+          sessionId: acpSessionId,
+          agentId,
+          title: this.sessionState().title || 'New session',
+          updatedAt: new Date().toISOString(),
+          ...(mcpServers?.length ? { mcpServers } : {}),
+        };
+        await this.saveSessionToProject(cwd, record);
+        // 本地同步 upsert，新会话立即出现在侧边栏，无需等待 listProjects 刷新
+        this.projects.update(list => list.map(p =>
+          p.path === cwd
+            ? { ...p, sessions: [...(p.sessions || []).filter(s => s.sessionId !== acpSessionId), record] }
+            : p
+        ));
+        await this.saveSelectedSession(acpSessionId);
+      }
+    }
+  }
+
+  /**
+   * Ensures an active ACP session id exists before chatting.
+   *
+   * When `sessionState().sessionId` is already set, the ACP session exists
+   * (freshly created, or loaded/resumed from history) — it must NOT be
+   * re-created: `session/new` would throw away the loaded context. The backend
+   * lazily recovers a crashed agent via resume, keyed by the same session id.
+   *
+   * Only when no session id is known (fresh New Task) is a session created.
    */
   async ensureChatSession(cwd?: string, mcpServers?: any[]): Promise<void> {
-    const existing = this.sessionState().sessionId;
-    const agentChanged = this.wrapperAgentId !== (this.selectedAgent()?.id ?? null);
-    if (existing && this.sessionState().isConnected && !agentChanged) {
-      // Pre-bind MCP servers before createAcpSession so the SSE session_created
-      // event (which may arrive before the HTTP response) can read them.
+    if (this.sessionState().sessionId) {
+      // 已有会话：mcpServers 无法事后重绑，仅记录进 state 供保存记录时使用
       if (mcpServers?.length) {
         this.sessionState.update(s => ({ ...s, mcpServers: mcpServers as string[] }));
-      }
-      const acpResult = await this.sseService.createAcpSession(existing, cwd ?? this.sessionState().cwd, mcpServers);
-      this.selectedSessionId.set(acpResult?.sessionId ?? this.selectedSessionId());
-      const resolvedCwd = acpResult?.cwd || cwd;
-      if (resolvedCwd) {
-        this.sessionState.update(s => ({ ...s, cwd: resolvedCwd }));
       }
       await this.applyPendingConfigSelection();
       return;
@@ -674,7 +651,7 @@ export class AcpService {
     const next = title.trim();
     if (!sessionId || !next) return;
 
-    if (this.selectedSessionId() === sessionId) {
+    if (this.sessionState().sessionId === sessionId) {
       this.provisionalTitle = false;
       if (this.sessionState().title !== next) {
         this.sessionState.update(s => ({ ...s, title: next }));
@@ -742,13 +719,13 @@ export class AcpService {
    *  (and retries on the next prompt_complete) if the agent has none yet. */
   private async refreshAgentTitle(): Promise<void> {
     if (!this.provisionalTitle) return;
-    const wrapperId = this.sessionState().sessionId;
-    const acpSessionId = this.selectedSessionId();
-    if (!wrapperId || !acpSessionId) return;
+    const acpSessionId = this.sessionState().sessionId;
+    if (!acpSessionId) return;
 
     const cwd = this.sessionState().cwd || this.selectedProjectPath() || undefined;
     try {
-      const result = await this.sseService.listSessions(wrapperId, cwd);
+      const agentId = this.selectedAgent()?.id || 'opencode';
+      const result = await this.sseService.listSessions(agentId, cwd);
       const list: SessionInfo[] = result?.sessions ?? [];
       const found = list.find(s => s.sessionId === acpSessionId);
       if (found?.title?.trim()) {
@@ -788,8 +765,6 @@ export class AcpService {
     }
     this.provisionalTitle = false;
     this.sseService.disconnect();
-    this.wrapperAgentId = null;
-    this.selectedSessionId.set(null);
     this.sessionState.set({
       sessionId: null,
       isConnected: false,
@@ -951,7 +926,6 @@ export class AcpService {
   }
 
   async saveSelectedSession(sessionId: string | null): Promise<void> {
-    this.selectedSessionId.set(sessionId);
     await this.sseService.saveSelectedProject(this.selectedProjectPath(), sessionId);
   }
 
@@ -1013,7 +987,9 @@ export class AcpService {
       throw new Error(`Agent ${agentId} not found`);
     }
 
-    if (this.wrapperAgentId === agentId && this.sessionState().isConnected) {
+    // 已是当前 agent（且会话存在）→ 无需切换；selectedAgent 只在
+    // switchAgent 内变化，因此它与「当前会话所属 agent」始终一致。
+    if (this.selectedAgent()?.id === agentId) {
       return;
     }
 
@@ -1028,7 +1004,7 @@ export class AcpService {
     this.isSwitchingSession.set(true);
 
     // Phase 1: Switch agent if needed
-    if (agentId && agentId !== this.wrapperAgentId) {
+    if (agentId && agentId !== this.selectedAgent()?.id) {
       this.loadingText.set('Switching agent...');
       await this.switchAgent(agentId, cwd);
     }
@@ -1056,44 +1032,27 @@ export class AcpService {
     // MCP servers bound to this session: prefer the persisted value (survives page reloads),
     // fall back to the caller-supplied argument.
     const persistedMcpServers = loaded?.mcpServers;
+    const resolvedAgentId = this.selectedAgent()?.id || 'opencode';
 
-    let currentSessionId = this.sessionState().sessionId;
-
-    // Phase 3: 复用已有 wrapper session，没有才新建
-    //
-    // 同一个 agent (ACP) session 可能已经被某个 wrapper 持有（浏览器刷新后
-    // 丢失了 wrapper id、或者切走又切回）。新建 wrapper 会把同一个 agent
-    // session 绑到新 wrapper 上，覆盖 SseAcpClient.reverseAcp 里的唯一 owner，
-    // 旧 wrapper 就再也收不到后续的 session/update 事件。因此先按
-    // acpSessionId 反查，命中就复用。
-    if (!currentSessionId) {
-      this.loadingText.set('Connecting to server...');
-      const existing = await this.sseService.findWrapperByAgentSessionId(sessionId);
-      if (existing?.sessionId) {
-        currentSessionId = existing.sessionId;
-        this.sessionState.update(s => ({ ...s, sessionId: currentSessionId }));
-        // 复用的 wrapper 视为属于当前选中的 agent（Phase 1 已按需切换过），
-        // 保持 wrapperAgentId 与 UI 选中项一致，后续 ensureChatSession 才会
-        // 复用这个 wrapper，而不是新建会话把刚加载的上下文丢掉。
-        this.wrapperAgentId = this.selectedAgent()?.id ?? null;
-        // 复用已有 wrapper 同样需要重新建立 SSE 事件流
-        await this.sseService.connect(currentSessionId);
-      } else {
-        const wrapper = await this.createWrapperSession();
-        currentSessionId = wrapper.sessionId;
-        this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
-      }
-    }
-
-    // Phase 4: Load session history
-    this.loadingText.set('Loading session history...');
+    // Phase 3+4: 绑定目标会话并加载历史。sessionState().sessionId 即 ACP session id。
+    // isReplayingHistory 必须在 connect 之前置位：SSE 建立期间服务端可能已
+    // 触发恢复分支（ensureAgentSession → resume）并开始回放，这些事件同样
+    // 要进 replayBuffer，而不是被当作实时消息处理（回放外的 user chunk 会被忽略）。
+    this.loadingText.set('Connecting to server...');
+    this.sessionState.update(s => ({ ...s, sessionId, isConnecting: true, isConnected: false }));
     this.isReplayingHistory.set(true);
     try {
+      // connect 现在等到 SSE onopen 才 resolve（后端订阅已就绪），随后才发
+      // session/load —— load 期间 agent 回放的历史通知不会丢失。
+      // `agentId` 供服务端在记录缺失时（后端重启）兜底建立会话记录。
+      await this.sseService.connect(sessionId, resolvedAgentId);
+
+      // Phase 4: Load session history
+      this.loadingText.set('Loading session history...');
       const result = await this.sseService.loadSession(
-        currentSessionId, sessionId, cwd || undefined, persistedMcpServers ?? mcpServers,
+        sessionId, resolvedAgentId, cwd || undefined, persistedMcpServers ?? mcpServers,
       );
 
-      this.selectedSessionId.set(sessionId);
       // 该会话在服务端可能仍有一轮 prompt 在跑（例如切走又切回）：
       // 恢复处理中状态，等待它真正的 prompt_complete。
       if (result?.prompting) {
@@ -1113,17 +1072,17 @@ export class AcpService {
       }));
     } finally {
       this.isReplayingHistory.set(false);
-      
+
       // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
       if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
         this.activeTodosMessages.set([this.lastTodosMessage]);
         this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
       }
-      
+
       // 清理临时变量
       this.lastTodosMessage = null;
       this.lastTodosAllCompleted = false;
-      
+
       this.flushReplayBuffer();
       this.isSwitchingSession.set(false);
       this.loadingText.set(null);
@@ -1134,7 +1093,7 @@ export class AcpService {
     this.isSwitchingSession.set(true);
 
     // Phase 1: Switch agent if needed
-    if (agentId && agentId !== this.wrapperAgentId) {
+    if (agentId && agentId !== this.selectedAgent()?.id) {
       this.loadingText.set('Switching agent...');
       await this.switchAgent(agentId, cwd);
     }
@@ -1159,34 +1118,22 @@ export class AcpService {
     // MCP servers bound to this session: prefer the persisted value (survives page reloads),
     // fall back to the caller-supplied argument.
     const persistedMcpServers = resumed?.mcpServers;
+    const resolvedAgentId = this.selectedAgent()?.id || 'opencode';
 
-    let currentSessionId = this.sessionState().sessionId;
-
-    // Phase 3: 复用已有 wrapper session，没有才新建（同 loadSession）
-    if (!currentSessionId) {
-      this.loadingText.set('Connecting to server...');
-      const existing = await this.sseService.findWrapperByAgentSessionId(sessionId);
-      if (existing?.sessionId) {
-        currentSessionId = existing.sessionId;
-        this.sessionState.update(s => ({ ...s, sessionId: currentSessionId }));
-        this.wrapperAgentId = this.selectedAgent()?.id ?? null;
-        await this.sseService.connect(currentSessionId);
-      } else {
-        const wrapper = await this.createWrapperSession();
-        currentSessionId = wrapper.sessionId;
-        this.sessionState.update(s => ({ ...s, isConnecting: true, isConnected: false }));
-      }
-    }
-
-    // Phase 4: Resume session
-    this.loadingText.set('Loading session history...');
+    // Phase 3+4: 绑定目标会话并恢复（同 loadSession：replay 标志先于 connect，
+    // connect 等到 onopen 后才发请求，回放通知才不丢失）。
+    this.loadingText.set('Connecting to server...');
+    this.sessionState.update(s => ({ ...s, sessionId, isConnecting: true, isConnected: false }));
     this.isReplayingHistory.set(true);
     try {
+      await this.sseService.connect(sessionId, resolvedAgentId);
+
+      // Phase 4: Resume session
+      this.loadingText.set('Loading session history...');
       const result = await this.sseService.resumeSession(
-        currentSessionId, sessionId, cwd || undefined, persistedMcpServers ?? mcpServers,
+        sessionId, resolvedAgentId, cwd || undefined, persistedMcpServers ?? mcpServers,
       );
 
-      this.selectedSessionId.set(sessionId);
       // 该会话在服务端可能仍有一轮 prompt 在跑：恢复处理中状态。
       if (result?.prompting) {
         this.isProcessing.set(true);
@@ -1204,17 +1151,17 @@ export class AcpService {
       }));
     } finally {
       this.isReplayingHistory.set(false);
-      
+
       // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
       if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
         this.activeTodosMessages.set([this.lastTodosMessage]);
         this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
       }
-      
+
       // 清理临时变量
       this.lastTodosMessage = null;
       this.lastTodosAllCompleted = false;
-      
+
       this.flushReplayBuffer();
       this.isSwitchingSession.set(false);
       this.loadingText.set(null);
@@ -1222,27 +1169,10 @@ export class AcpService {
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    const currentSessionId = this.sessionState().sessionId;
-
-    if (currentSessionId) {
-      // 通过当前活跃的连接同步删除目标 ACP 会话
-      await this.sseService.deleteAcpSession(currentSessionId, sessionId);
-    } else {
-      // 无活跃 wrapper：先创建并连接一次性 wrapper，再通过它删除目标 ACP 会话
-      const wrapper = await this.createWrapperSession();
-      await this.sseService.deleteAcpSession(wrapper.sessionId, sessionId);
-      // 重置一次性 wrapper 的连接状态
-      this.sseService.disconnect();
-      this.wrapperAgentId = null;
-      this.selectedSessionId.set(null);
-      this.sessionState.set({
-        sessionId: null,
-        isConnected: false,
-        isConnecting: false,
-        agentConnected: false,
-        error: null
-      });
-    }
+    // agentId 用于服务端会话记录丢失时（后端重启）解析 agent 进行删除；
+    // 正常路径服务端自己就有记录。
+    const agentId = this.findSessionRecord(sessionId)?.agentId;
+    await this.sseService.deleteAcpSession(sessionId, agentId);
   }
 
   // ============================================================================
@@ -1373,7 +1303,7 @@ export class AcpService {
 
       case 'session_info_update':
         if (update.title) {
-          const targetSessionId = (update as { sessionId?: string }).sessionId ?? this.selectedSessionId();
+          const targetSessionId = (update as { sessionId?: string }).sessionId ?? this.sessionState().sessionId;
           if (targetSessionId) {
             void this.applySessionTitle(targetSessionId, update.title);
           }
