@@ -1,5 +1,5 @@
 import { logger } from '../helpers/logger.js';
-import { client, type ClientApp, type ClientConnection, type ActiveSession, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
+import { client, type ClientApp, type ClientConnection, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 import type * as acp from '@agentclientprotocol/sdk';
 import { AgentProcess } from './agent-process.js';
 import { RedisClient } from '../redis/client.js';
@@ -8,16 +8,6 @@ export interface SseAcpClientConfig {
   agentCommand?: string;
   agentArgs?: string[];
   agentEnv?: Record<string, string>;
-}
-
-/**
- * An ACP session hosted on this shared connection, keyed by its ACP session
- * id. One connection multiplexes many of these (agent process 1:N sessions).
- */
-interface SessionBinding {
-  /** SDK session handle; only present for sessions created via session/new. */
-  activeSession: ActiveSession | null;
-  cwd: string;
 }
 
 const INITIALIZE_TIMEOUT_MS = 30_000;
@@ -49,8 +39,25 @@ export class SseAcpClient {
   private availableCommandsCache: acp.AvailableCommand[] | null = null;
   private pendingPermissions: Map<string, { resolve: (outcome: any) => void; timeout: ReturnType<typeof setTimeout>; acpSessionId?: string }> = new Map();
 
-  /** ACP session id -> session hosted on this connection. */
-  private sessionBindings: Map<string, SessionBinding> = new Map();
+  /**
+   * Connection generation counter.
+   *
+   * Every connect (and every connection loss) bumps it, which invalidates all
+   * session bindings that were established on the previous connection — the
+   * exact semantics the old per-connection binding table provided, without
+   * keeping a session registry inside the client.
+   *
+   * The session manager stores the generation a session was bound at, so
+   * "is this ACP session hosted on the live connection?" is answered by
+   * comparing numbers instead of looking up a table.
+   */
+  private generation = 0;
+
+  /** Current connection generation (see `generation`). */
+  get connectionGeneration(): number {
+    return this.generation;
+  }
+
   /**
    * ACP sessions with a prompt currently in flight.
    */
@@ -111,7 +118,6 @@ export class SseAcpClient {
       this.agentProcess.kill();
       this.agentProcess = null;
       this.clientConnection = null;
-      this.clearBindings();
     }
 
     // 1. Spawn agent process
@@ -131,7 +137,6 @@ export class SseAcpClient {
     this.clientConnection.closed.then(() => {
       logger.log(`[SSE ACP Client] Connection closed for: ${this.logId}`);
       this.clientConnection = null;
-      this.clearBindings();
       this.handleConnectionLost();
     });
 
@@ -160,7 +165,6 @@ export class SseAcpClient {
       this.clientConnection = null;
       this.agentProcess?.kill();
       this.agentProcess = null;
-      this.clearBindings();
       throw error;
     }
 
@@ -170,22 +174,15 @@ export class SseAcpClient {
     this.agentInfo = initResult.agentInfo ?? null;
     this.agentCapabilities = initResult.agentCapabilities ?? null;
 
-    // 8. Notify every ACP session hosted here (none during warmup)
+    // 8. New connection → new generation: every session bound on the previous
+    // connection becomes stale and has to be resumed before use.
+    this.generation++;
     this.notifiedConnected = true;
-    this.broadcastEvent({
-      type: 'status',
-      payload: {
-        connected: true,
-        agentInfo: this.agentInfo,
-        capabilities: this.agentCapabilities,
-      },
-    });
     this.notifyConnectionState(true);
 
     // 9. Handle process exit
     this.agentProcess.onClose(() => {
       this.clientConnection = null;
-      this.clearBindings();
       this.handleConnectionLost();
     });
   }
@@ -193,12 +190,14 @@ export class SseAcpClient {
   private handleConnectionLost(): void {
     this.agentCapabilities = null;
     this.agentInfo = null;
+    // Connection died: bump the generation so all session bindings on it are
+    // considered stale (they are restored via session/resume on next use).
+    this.generation++;
     if (this.notifiedConnected) {
       this.notifiedConnected = false;
-      this.broadcastEvent({
-        type: 'status',
-        payload: { connected: false },
-      });
+      // The session manager publishes the `status` event to the affected
+      // sessions' channels (it owns the session records); the client only
+      // reports the connection state change.
       this.notifyConnectionState(false);
     }
   }
@@ -210,17 +209,6 @@ export class SseAcpClient {
         (value) => { clearTimeout(timer); resolve(value); },
         (error) => { clearTimeout(timer); reject(error); },
       );
-    });
-  }
-
-  /**
-   * Reconnect to the agent process using the original config.
-   */
-  async reconnect(): Promise<void> {
-    await this.connect({
-      command: this.config.agentCommand,
-      args: this.config.agentArgs,
-      env: this.config.agentEnv,
     });
   }
 
@@ -237,62 +225,6 @@ export class SseAcpClient {
 
   getAgentCapabilities(): acp.AgentCapabilities | null {
     return this.agentCapabilities;
-  }
-
-  // ==========================================================================
-  // Session binding (one key = one ACP session id)
-  // ==========================================================================
-
-  private bind(acpSessionId: string, binding: SessionBinding): void {
-    // Drop the previous binding of THIS session only (never touch others).
-    const prev = this.sessionBindings.get(acpSessionId);
-    if (prev?.activeSession) {
-      try {
-        prev.activeSession.dispose();
-      } catch {
-        // ignore: session handle already gone
-      }
-    }
-    this.sessionBindings.set(acpSessionId, binding);
-  }
-
-  /** Dispose the SDK session handle held by a binding. */
-  private static disposeBinding(binding: SessionBinding | undefined): void {
-    if (binding?.activeSession) {
-      try {
-        binding.activeSession.dispose();
-      } catch {
-        // ignore: session handle already gone
-      }
-    }
-  }
-
-  /**
-   * Release an ACP session on this connection (unbind without killing the
-   * agent process — it stays warm for other/future sessions).
-   */
-  releaseSession(acpSessionId: string): void {
-    const binding = this.sessionBindings.get(acpSessionId);
-    if (!binding) return;
-    SseAcpClient.disposeBinding(binding);
-    this.sessionBindings.delete(acpSessionId);
-    // Released sessions can no longer answer: drop their pending permission
-    // requests so the agent request is not stranded for 5 minutes.
-    this.cancelPendingPermissions(acpSessionId);
-  }
-
-  /** Called when the connection dies: every binding is stale (agent-side
-   *  session ids survive on disk and are restored via resume). */
-  private clearBindings(): void {
-    for (const [, binding] of this.sessionBindings) {
-      SseAcpClient.disposeBinding(binding);
-    }
-    this.sessionBindings.clear();
-  }
-
-  /** Working directory the bound agent session lives in. */
-  getAcpSessionCwd(acpSessionId: string): string | undefined {
-    return this.sessionBindings.get(acpSessionId)?.cwd;
   }
 
   // ==========================================================================
@@ -328,12 +260,6 @@ export class SseAcpClient {
       ...event,
       timestamp: Date.now(),
     }));
-  }
-
-  private broadcastEvent(event: any): void {
-    for (const acpSessionId of this.sessionBindings.keys()) {
-      this.publishToSession(acpSessionId, event);
-    }
   }
 
   // ==========================================================================
@@ -421,30 +347,11 @@ export class SseAcpClient {
   // ==========================================================================
 
   /**
-   * Ensure the given ACP session is hosted on a live connection.
-   *
-   * - Reconnects the agent process if the connection was lost.
-   * - If the binding is gone, resumes the session (context continuity).
-   * - Never creates a fresh session here: new sessions are created explicitly by
-   *   the frontend via `session/create`.
-   */
-  async ensureSession(acpSessionId: string, resumeCwd?: string): Promise<void> {
-    if (!this.isConnected()) {
-      await this.reconnect();
-    }
-    if (this.sessionBindings.has(acpSessionId)) {
-      return;
-    }
-
-    const resumeCapability = this.agentCapabilities?.sessionCapabilities?.resume;
-    if (resumeCapability === undefined || resumeCapability === null) {
-      throw new Error('Agent does not support session resume; load the previous session from history or start a new one');
-    }
-    await this.handleResumeSession(acpSessionId, { cwd: resumeCwd || process.cwd() });
-  }
-
-  /**
    * Handle prompt request for a specific ACP session.
+   *
+   * The session manager guarantees the ACP session is hosted on this
+   * connection (it resumes it when the connection was replaced), so no
+   * membership table is needed here.
    */
   async handlePrompt(acpSessionId: string, content: acp.ContentBlock[]): Promise<{ stopReason: string; acpSessionId: string }> {
     if (!this.clientConnection) {
@@ -452,9 +359,6 @@ export class SseAcpClient {
     }
 
     const sessionId = acpSessionId;
-    if (!this.sessionBindings.has(sessionId)) {
-      throw new Error('No active session');
-    }
 
     logger.log(`[SSE ACP Client] Sending prompt to session: ${sessionId}`);
 
@@ -491,7 +395,7 @@ export class SseAcpClient {
    * Cancel the in-flight prompt of a specific ACP session.
    */
   async handleCancel(acpSessionId: string): Promise<void> {
-    if (!this.clientConnection || this.sessionBindings.size === 0) {
+    if (!this.clientConnection) {
       return;
     }
 
@@ -524,6 +428,12 @@ export class SseAcpClient {
 
   /**
    * Create a new ACP session on this connection.
+   *
+   * `session/new` is issued directly instead of via the SDK's session builder:
+   * the builder only wraps the response in an `ActiveSession` handle whose sole
+   * purpose is to tear down the SDK's own local update queue (we route
+   * `session/update` notifications ourselves), so the handle would only add
+   * state to dispose of.
    */
   async handleNewSession(params: { cwd?: string; mcpServers?: acp.McpServer[] }): Promise<any> {
     if (!this.clientConnection) {
@@ -535,19 +445,12 @@ export class SseAcpClient {
       throw new Error('cwd is required to create an ACP session');
     }
 
-    // Create and start a new session with mcpServers support
-    const sessionBuilder = this.clientConnection.agent.buildSession(cwd);
-    params.mcpServers?.forEach(mcpServer => sessionBuilder.withMcpServer(mcpServer));
-    const activeSession = await sessionBuilder.start();
-
-    this.bind(activeSession.sessionId, {
-      activeSession,
+    const sessionResponse = await this.clientConnection.agent.request('session/new', {
       cwd,
+      mcpServers: params.mcpServers ?? [],
     });
 
-    const sessionResponse = activeSession.newSessionResponse;
-
-    logger.log(`[SSE ACP Client] Session created: ${activeSession.sessionId}`);
+    logger.log(`[SSE ACP Client] Session created: ${sessionResponse.sessionId}`);
 
     return {
       ...sessionResponse,
@@ -596,9 +499,8 @@ export class SseAcpClient {
     logger.log(`[SSE ACP Client] Loading session: ${acpSessionId}`);
 
     try {
-      // Bind before the request so updates emitted during load are routed
-      this.bind(acpSessionId, { activeSession: null, cwd });
-
+      // No binding bookkeeping needed: `session/update` notifications carry
+      // their own session id and are routed straight to that session's channel.
       const result = await this.clientConnection.agent.request('session/load', {
         sessionId: acpSessionId,
         cwd,
@@ -612,7 +514,6 @@ export class SseAcpClient {
         availableCommands: this.availableCommandsCache ?? [],
       };
     } catch (error) {
-      this.releaseSession(acpSessionId);
       logger.error(`[SSE ACP Client] Failed to load session ${acpSessionId}:`, error);
       throw error;
     }
@@ -626,14 +527,18 @@ export class SseAcpClient {
       throw new Error('Not connected to agent');
     }
 
+    // Resume is the recovery path for a session whose context was lost
+    // (agent crash / connection replaced): the agent has to support it.
+    const resumeCapability = this.agentCapabilities?.sessionCapabilities?.resume;
+    if (resumeCapability === undefined || resumeCapability === null) {
+      throw new Error('Agent does not support session resume; load the previous session from history or start a new one');
+    }
+
     const cwd = params.cwd;
 
     logger.log(`[SSE ACP Client] Resuming session: ${acpSessionId}`);
 
     try {
-      // Bind before the request so updates emitted during resume are routed
-      this.bind(acpSessionId, { activeSession: null, cwd });
-
       const result = await this.clientConnection.agent.request('session/resume', {
         sessionId: acpSessionId,
         cwd,
@@ -647,7 +552,6 @@ export class SseAcpClient {
         availableCommands: this.availableCommandsCache ?? [],
       };
     } catch (error) {
-      this.releaseSession(acpSessionId);
       logger.error(`[SSE ACP Client] Failed to resume session ${acpSessionId}:`, error);
       throw error;
     }
@@ -674,9 +578,6 @@ export class SseAcpClient {
         sessionId: acpSessionId,
       });
 
-      // Clean up the local binding (only frees if it is hosted here)
-      this.releaseSession(acpSessionId);
-
       logger.log(`[SSE ACP Client] Session deleted: ${acpSessionId}`);
     } catch (error) {
       logger.error(`[SSE ACP Client] Failed to delete session ${acpSessionId}:`, error);
@@ -694,10 +595,6 @@ export class SseAcpClient {
   }): Promise<any> {
     if (!this.clientConnection) {
       throw new Error('Not connected to agent');
-    }
-
-    if (!this.sessionBindings.has(acpSessionId)) {
-      throw new Error('No active session');
     }
 
     logger.log(`[SSE ACP Client] Setting config option: ${params.configId} (session: ${acpSessionId})`);
@@ -747,8 +644,12 @@ export class SseAcpClient {
 
   /**
    * Cancel pending permissions, optionally scoped to one ACP session.
+   *
+   * Public because the session manager drops a session record (e.g. the
+   * session was deleted): its outstanding permission requests would otherwise
+   * stay unanswered until the 5-minute timeout.
    */
-  private cancelPendingPermissions(acpSessionId?: string): void {
+  cancelPendingPermissions(acpSessionId?: string): void {
     for (const [requestId, pending] of this.pendingPermissions) {
       if (acpSessionId !== undefined && pending.acpSessionId !== acpSessionId) {
         continue;
@@ -765,11 +666,6 @@ export class SseAcpClient {
   disconnect(): void {
     this.cancelPendingPermissions();
 
-    for (const [, binding] of this.sessionBindings) {
-      SseAcpClient.disposeBinding(binding);
-    }
-    this.sessionBindings.clear();
-
     this.clientConnection?.close();
     this.clientConnection = null;
 
@@ -780,7 +676,6 @@ export class SseAcpClient {
       this.agentProcess = null;
     }
 
-    this.clearBindings();
     this.handleConnectionLost();
 
     // Unsubscribe from Redis

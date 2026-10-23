@@ -16,6 +16,17 @@ export interface AcpSession {
   createdAt: number;
   lastActivity: number;
   status: 'active' | 'idle' | 'disconnected';
+  /**
+   * Connection generation this session was last bound at (see
+   * `SseAcpClient.connectionGeneration`).
+   *
+   * The session is hosted on the live connection iff this equals the
+   * connection's current generation — a new connection (or a lost one) bumps
+   * the generation and thereby invalidates every binding at once. This
+   * replaces the per-connection session table the client used to keep: the
+   * session registry now lives here, in one place only.
+   */
+  boundGeneration: number;
   /** Whether the connection-state listener is registered on `client`. */
   callbacksBound?: boolean;
   /** Teardown function for the listener registered on `client`. */
@@ -320,6 +331,44 @@ export class AcpSessionManager {
   }
 
   /**
+   * Register the connection-state listener for a session record.
+   *
+   * On a connection change the record's status is updated, its binding is
+   * invalidated (the session has to be resumed before it can be used again)
+   * and the new status is published to the session's own channel — the
+   * manager owns the session records, so it is the single publisher of these
+   * events.
+   */
+  private attachConnectionListener(session: AcpSession, conn: SseAcpClient): void {
+    session.detachFns?.forEach(fn => {
+      try { fn(); } catch { /* ignore */ }
+    });
+
+    const offState = conn.onConnectionState((connected) => {
+      const s = this.sessions.get(session.sessionId);
+      if (!s) return;
+      s.status = connected ? 'active' : 'disconnected';
+      if (!connected) {
+        // The connection died: the binding is gone, the session has to be
+        // resumed before it can be used again.
+        s.boundGeneration = -1;
+      }
+      void this.publishEvent(s.sessionId, {
+        type: 'status',
+        payload: {
+          connected,
+          agentInfo: conn.getAgentInfo(),
+          capabilities: conn.getAgentCapabilities(),
+        },
+        timestamp: Date.now(),
+      });
+    });
+
+    session.detachFns = [offState];
+    session.callbacksBound = true;
+  }
+
+  /**
    * Bind the session record to a (shared) connection and register its listeners.
    */
   private bindConnection(session: AcpSession, conn: SseAcpClient): void {
@@ -329,16 +378,10 @@ export class AcpSessionManager {
         try { fn(); } catch { /* ignore */ }
       });
 
-      const offState = conn.onConnectionState((connected) => {
-        const s = this.sessions.get(session.sessionId);
-        if (s) {
-          s.status = connected ? 'active' : 'disconnected';
-        }
-      });
-
-      session.detachFns = [offState];
+      this.attachConnectionListener(session, conn);
       session.client = conn;
-      session.callbacksBound = true;
+      // A different connection means the session is not bound on it (yet).
+      session.boundGeneration = -1;
     }
 
     session.status = 'active';
@@ -356,6 +399,7 @@ export class AcpSessionManager {
     client: SseAcpClient,
     config: SseAcpClientConfig,
     cwd: string | null,
+    boundGeneration: number = -1,
   ): AcpSession {
     // Same id already tracked (collision or stale record) — clean it first.
     const stale = this.sessions.get(sessionId);
@@ -371,8 +415,11 @@ export class AcpSessionManager {
       createdAt: Date.now(),
       lastActivity: Date.now(),
       status: client.isConnected() ? 'active' : 'disconnected',
+      boundGeneration,
       redisUnsubs: this.setupRedisSubscriptions(sessionId),
     };
+    // Track connection changes (status publishing + binding invalidation).
+    this.attachConnectionListener(session, client);
     this.sessions.set(sessionId, session);
 
     logger.log(`[ACP Session] Registered session: ${sessionId} (total: ${this.sessions.size})`);
@@ -391,7 +438,14 @@ export class AcpSessionManager {
       const conn = await this.registry.getOrCreate(config);
 
       const result = await conn.handleNewSession({ cwd, mcpServers });
-      this.registerRecord(result.sessionId, conn, config, result.cwd ?? cwd ?? null);
+      // The session was just created on this connection → it is bound there.
+      this.registerRecord(
+        result.sessionId,
+        conn,
+        config,
+        result.cwd ?? cwd ?? null,
+        conn.connectionGeneration,
+      );
 
       return result;
     } catch (error) {
@@ -407,6 +461,9 @@ export class AcpSessionManager {
    * Used by the SSE endpoint so the frontend can connect the event stream
    * BEFORE `session/load` runs — the history replay notifications emitted
    * during load need an active subscriber or they are lost.
+   *
+   * The record starts unbound (`boundGeneration = -1`): the subsequent
+   * load/resume establishes the binding.
    */
   async ensureRecord(sessionId: string, agentId?: string): Promise<AcpSession> {
     const existing = this.sessions.get(sessionId);
@@ -423,9 +480,9 @@ export class AcpSessionManager {
 
   async loadAcpSession(sessionId: string, options: SessionOperationOptions = {}): Promise<any> {
     const { cwd, mcpServers, agentId } = options;
+    let session = this.sessions.get(sessionId);
 
     try {
-      let session = this.sessions.get(sessionId);
       if (!session) {
         // Record missing (e.g. backend restart): create it so routing and
         // subscriptions exist. Requires agentId to resolve the agent.
@@ -442,20 +499,24 @@ export class AcpSessionManager {
       });
       session.cwd = resolvedCwd;
       session.lastActivity = Date.now();
+      // 载入成功 → 会话已绑定在当前连接上
+      session.boundGeneration = session.client.connectionGeneration;
       // 该 ACP session 可能仍有一轮 prompt 在跑（例如 UI 切走又切回）：
       // 告诉前端，免得它把「仍在处理中」的状态弄丢。
       return { ...result, prompting: session.client.isPrompting(sessionId) };
     } catch (error) {
       logger.error(`[ACP Session] Load session error (session: ${sessionId}):`, error);
+      // 载入失败 → 绑定不成立
+      if (session) session.boundGeneration = -1;
       throw error;
     }
   }
 
   async resumeAcpSession(sessionId: string, options: SessionOperationOptions = {}): Promise<any> {
     const { cwd, mcpServers, agentId } = options;
+    let session = this.sessions.get(sessionId);
 
     try {
-      let session = this.sessions.get(sessionId);
       if (!session) {
         session = await this.ensureRecord(sessionId, agentId);
       }
@@ -470,9 +531,13 @@ export class AcpSessionManager {
       });
       session.cwd = resolvedCwd;
       session.lastActivity = Date.now();
+      // 恢复成功 → 会话已绑定在当前连接上
+      session.boundGeneration = session.client.connectionGeneration;
       return { ...result, prompting: session.client.isPrompting(sessionId) };
     } catch (error) {
       logger.error(`[ACP Session] Resume session error (session: ${sessionId}):`, error);
+      // 恢复失败 → 绑定不成立
+      if (session) session.boundGeneration = -1;
       throw error;
     }
   }
@@ -573,10 +638,13 @@ export class AcpSessionManager {
   }
 
   /**
-   * Ensure the agent is connected and the ACP session is bound to the
-   * connection. After an agent crash the binding is lost, so the session is
-   * resumed from the persisted cwd to preserve context; if resume is not
-   * supported it throws so the caller can surface the failure.
+   * Ensure the agent is connected and the ACP session is hosted on that
+   * connection.
+   *
+   * After an agent crash the session is no longer bound (the connection
+   * generation moved on), so the session has to be resumed from the persisted
+   * cwd to preserve its context; if resume is not supported it throws so the
+   * caller can surface the failure.
    */
   async ensureAgentSession(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
@@ -587,7 +655,15 @@ export class AcpSessionManager {
     // 检查逻辑：已连接则跳过 spawn+initialize；预热连接直接复用
     await this.ensureConnected(session);
 
-    await session.client.ensureSession(sessionId, session.cwd ?? undefined);
+    // 已绑定在当前连接上 → 无需 resume
+    if (session.boundGeneration === session.client.connectionGeneration) {
+      return;
+    }
+
+    await session.client.handleResumeSession(sessionId, {
+      cwd: session.cwd ?? process.cwd(),
+    });
+    session.boundGeneration = session.client.connectionGeneration;
 
     session.lastActivity = Date.now();
     session.status = session.client.isConnected() ? 'active' : 'disconnected';
@@ -603,9 +679,11 @@ export class AcpSessionManager {
         try { unsub(); } catch { /* ignore */ }
       });
 
-      // 归还共享预热连接：只解绑本会话，不杀进程
+      // 归还共享预热连接：会话不再被跟踪，但它在 agent 侧仍然存在
+      //（可被再次 load/resume）。挂起的权限请求需要取消，否则 agent 侧
+      // 的请求会一直等到超时。
       try {
-        session.client.releaseSession(sessionId);
+        session.client.cancelPendingPermissions(sessionId);
       } catch (error) {
         // 忽略解绑错误
       }
