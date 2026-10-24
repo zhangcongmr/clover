@@ -284,12 +284,14 @@
   font-weight: bold;
 }
 
-:host ::ng-deep .message-text h1 { font-size: 2em; }
-:host ::ng-deep .message-text h2 { font-size: 1.5em; }
-:host ::ng-deep .message-text h3 { font-size: 1.17em; }
+/* Compact scale for chat bubbles: headings stay clearly hierarchical without
+   the oversized UA defaults (2em/1.5em/1.17em/...) blowing up message height. */
+:host ::ng-deep .message-text h1 { font-size: 1.2em; }
+:host ::ng-deep .message-text h2 { font-size: 1.15em; }
+:host ::ng-deep .message-text h3 { font-size: 1.05em; }
 :host ::ng-deep .message-text h4 { font-size: 1em; }
-:host ::ng-deep .message-text h5 { font-size: 0.83em; }
-:host ::ng-deep .message-text h6 { font-size: 0.67em; }
+:host ::ng-deep .message-text h5 { font-size: 0.95em; }
+:host ::ng-deep .message-text h6 { font-size: 0.9em; }
 
 :host ::ng-deep .message-text p {
   margin: 1em 0;
