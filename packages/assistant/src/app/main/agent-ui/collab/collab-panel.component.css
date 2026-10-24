@@ -143,13 +143,19 @@
 
 .collab-agent-option {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--vscode-border-color);
   border-radius: 6px;
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s;
+}
+
+.agent-option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .collab-agent-option:hover {
@@ -159,6 +165,29 @@
 .collab-agent-option.selected {
   border-color: var(--vscode-accent-color);
   background: var(--vscode-list-activeSelectionBackground, rgba(128, 128, 128, 0.15));
+}
+
+/* Per-member role / responsibility editor (create-time) */
+.member-role-editor {
+  display: flex;
+  gap: 8px;
+  padding-left: 26px;
+}
+
+.member-role-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-border-color));
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+}
+
+.member-role-input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
 }
 
 .collab-agent-option input[type='checkbox'] {
@@ -618,3 +647,289 @@
   display: flex;
   gap: 6px;
 }
+
+/* ===== Collaboration mode bar ===== */
+.collab-mode-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--vscode-border-color);
+  background: var(--vscode-sideBar-background, transparent);
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mode-tab {
+  padding: 3px 12px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.mode-tab:hover {
+  background: var(--vscode-hover-background);
+}
+
+.mode-tab.active {
+  border-color: var(--vscode-accent-color);
+  color: var(--vscode-accent-color);
+  background: var(--vscode-list-activeSelectionBackground, rgba(128, 128, 128, 0.15));
+}
+
+.mode-config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  font-size: 12px;
+}
+
+.mode-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.mode-field select,
+.mode-field input[type='number'] {
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-border-color));
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.mode-field input[type='number'] {
+  width: 56px;
+}
+
+.mode-field-label {
+  color: var(--vscode-descriptionForeground);
+}
+
+.pipeline-order {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 10px;
+  color: var(--vscode-foreground);
+}
+
+.stage-move {
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 2px;
+}
+
+.stage-move:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.parallel-config {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subtask-prompt {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-border-color));
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+}
+
+.subtask-target {
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-border-color));
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+.subtask-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.collab-btn.ghost {
+  border-style: dashed;
+}
+
+.collab-btn.small {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+/* ===== Collaboration trace annotations ===== */
+.message-meta {
+  flex-wrap: wrap;
+}
+
+.message-badge {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #fff);
+  font-size: 10px;
+}
+
+.message-badge.role {
+  background: var(--vscode-accent-color);
+  color: #fff;
+}
+
+.message-claim,
+.message-relinquish {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.message-claim {
+  color: var(--vscode-accent-color);
+}
+
+.message-relinquish {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* ===== Session-slot picker (session-primary) ===== */
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 6px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.session-row:hover {
+  background: var(--vscode-hover-background);
+}
+
+.session-index {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #fff);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.session-agent {
+  flex: 0 0 168px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-border-color));
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+.session-role {
+  flex: 0 0 150px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-border-color));
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+.session-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-border-color));
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+}
+
+.session-input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.session-remove {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.session-remove:hover {
+  background: var(--vscode-hover-background);
+  color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.chip-role {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #fff);
+  font-size: 10px;
+}
+
+.settings-agent-role {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+

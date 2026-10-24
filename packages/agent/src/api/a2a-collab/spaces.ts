@@ -4,31 +4,84 @@ import type * as acp from '@agentclientprotocol/sdk';
 import type { AcpSessionManager } from '../../acp/session-manager.js';
 import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
 
+/**
+ * One participating session inside a collaboration space.
+ *
+ * The session (`id`) is the primary key of the collaboration: it owns its ACP
+ * session, its role/responsibility and its bound agent implementation
+ * (`agentId`). Several sessions may bind the same `agentId`.
+ */
+export interface CollabMemberInfo {
+  /** Participant/session key (primary key of the collaboration). */
+  id: string;
+  /** Bound agent implementation, e.g. `opencode` / `claude` / `gemini`. */
+  agentId: string;
+  /** Human role label, e.g. "代码审查专家". */
+  role?: string;
+  /** What this session is responsible for, used in routing / judgement prompts. */
+  responsibility?: string;
+  /** Machine-readable capability tags, e.g. ["code_review", "security_scan"]. */
+  capabilities?: string[];
+}
+
 export interface CollabSpace {
   id: string;
   cwd: string;
-  agentIds: string[];
-  /** agentId → ACP session id (one ACP session per participating agent). */
+  /** participantId → member info (Map order = declaration order). */
+  members: Map<string, CollabMemberInfo>;
+  /** participantId → ACP session id. */
   sessions: Map<string, string>;
-  /** agentId → configOptions returned by session/new (mode/model selectors). */
+  /** participantId → configOptions returned by session/new (mode/model selectors). */
   configOptions: Map<string, acp.SessionConfigOption[]>;
-  /** Optional member agent that routes each prompt to the answering agent. */
-  orchestratorAgentId?: string;
+  /** Optional participant that routes each prompt to the answering session. */
+  orchestratorId?: string;
   createdAt: number;
+}
+
+export interface CollabMemberInput {
+  /** Client-generated participant id; a uuid is assigned when omitted. */
+  id?: string;
+  agentId: string;
+  role?: string;
+  responsibility?: string;
+  capabilities?: string[];
 }
 
 export interface CreateSpaceOptions {
   cwd: string;
-  agentIds: string[];
-  orchestratorAgentId?: string;
+  /** Session slots to create (one ACP session each). */
+  participants: CollabMemberInput[];
+  /** Participant id designated as orchestrator (optional). */
+  orchestratorId?: string;
+}
+
+/** Maximum length kept for a responsibility string (prompt-size guard). */
+const RESPONSIBILITY_MAX_LEN = 200;
+
+function clean(value: unknown): string | undefined {
+  const trimmed = String(value ?? '').trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function cleanCapabilities(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const caps = [...new Set(value.map(item => String(item ?? '').trim()).filter(Boolean))];
+  return caps.length > 0 ? caps : undefined;
+}
+
+/** Ordered participant ids of a space. */
+export function memberIds(space: CollabSpace): string[] {
+  return [...space.members.keys()];
 }
 
 /**
  * Process-local registry of collaboration spaces.
  *
- * A space owns one ACP session per participating agent, all bound to a
- * shared working directory. Spaces are ephemeral: they live until the frontend
- * closes them (or the backend restarts) and are never persisted.
+ * A space owns one ACP session per participating session slot, all bound to a
+ * shared working directory. Sessions are keyed by their participant id (not by
+ * the agent implementation), so the same agent may appear in multiple slots.
+ * Spaces are ephemeral: they live until the frontend closes them (or the
+ * backend restarts) and are never persisted.
  */
 export class CollabSpaceStore {
   private spaces: Map<string, CollabSpace> = new Map();
@@ -41,43 +94,62 @@ export class CollabSpaceStore {
       throw new Error('cwd is required to create a collaboration space');
     }
 
-    const agentIds = [...new Set((options.agentIds ?? []).map(id => String(id).trim()).filter(Boolean))];
-    if (agentIds.length === 0) {
-      throw new Error('agentIds must contain at least one agent');
+    const inputs = Array.isArray(options.participants) ? options.participants : [];
+    if (inputs.length === 0) {
+      throw new Error('participants must contain at least one session');
     }
-    for (const agentId of agentIds) {
+
+    // Build + validate members before touching any ACP session.
+    const members = new Map<string, CollabMemberInfo>();
+    for (const input of inputs) {
+      const agentId = String(input?.agentId ?? '').trim();
+      if (!agentId) {
+        throw new Error('each participant requires an agentId');
+      }
       if (!AVAILABLE_AGENTS.some(agent => agent.id === agentId)) {
         throw new Error(`Unknown agent: ${agentId}`);
       }
+      const participantId = String(input?.id ?? '').trim() || uuidv4();
+      if (members.has(participantId)) {
+        throw new Error(`Duplicate participant id: ${participantId}`);
+      }
+      const responsibility = clean(input?.responsibility);
+      members.set(participantId, {
+        id: participantId,
+        agentId,
+        role: clean(input?.role),
+        responsibility: responsibility ? responsibility.slice(0, RESPONSIBILITY_MAX_LEN) : undefined,
+        capabilities: cleanCapabilities(input?.capabilities),
+      });
     }
 
-    const orchestratorAgentId = String(options.orchestratorAgentId ?? '').trim();
-    if (orchestratorAgentId && !agentIds.includes(orchestratorAgentId)) {
-      throw new Error('orchestratorAgentId must be a member of the collaboration space');
+    const orchestratorId = String(options.orchestratorId ?? '').trim() || undefined;
+    if (orchestratorId && !members.has(orchestratorId)) {
+      throw new Error('orchestratorId must be a participant of the collaboration space');
     }
 
     const space: CollabSpace = {
       id: uuidv4(),
       cwd,
-      agentIds,
+      members,
       sessions: new Map(),
       configOptions: new Map(),
-      orchestratorAgentId: orchestratorAgentId || undefined,
+      orchestratorId,
       createdAt: Date.now(),
     };
     const created: string[] = [];
 
     try {
-      for (const agentId of agentIds) {
-        const newSession = await this.sessionManager.createAcpSession(agentId, cwd);
+      for (const [participantId, info] of members) {
+        const newSession = await this.sessionManager.createAcpSession(info.agentId, cwd);
         const acpSessionId = String(newSession?.sessionId ?? '');
         if (!acpSessionId) {
-          throw new Error(`Agent ${agentId} returned no ACP session id`);
+          throw new Error(`Agent ${info.agentId} returned no ACP session id`);
         }
         created.push(acpSessionId);
-        space.sessions.set(agentId, acpSessionId);
+        space.sessions.set(participantId, acpSessionId);
         space.configOptions.set(
-          agentId,
+          participantId,
           Array.isArray(newSession?.configOptions) ? newSession.configOptions : [],
         );
       }
@@ -94,9 +166,12 @@ export class CollabSpaceStore {
     }
 
     this.spaces.set(space.id, space);
+    const summary = [...members.values()]
+      .map(info => (info.role ? `${info.id}:${info.agentId}(${info.role})` : `${info.id}:${info.agentId}`))
+      .join(', ');
     logger.log(
-      `[A2A Collab] Space created: ${space.id} (agents: ${agentIds.join(', ')}` +
-        `${orchestratorAgentId ? `, orchestrator: ${orchestratorAgentId}` : ''}, cwd: ${cwd})`,
+      `[A2A Collab] Space created: ${space.id} (sessions: ${summary}` +
+        `${orchestratorId ? `, orchestrator: ${orchestratorId}` : ''}, cwd: ${cwd})`,
     );
     return space;
   }

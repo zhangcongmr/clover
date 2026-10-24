@@ -70,24 +70,33 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
 
   app.post('/api/a2a/collab/spaces', express.json(), async (req: Request, res: Response) => {
     const cwd = typeof req.body?.cwd === 'string' ? req.body.cwd : '';
-    const agentIds = Array.isArray(req.body?.agentIds) ? req.body.agentIds : [];
-    const orchestratorAgentId =
-      typeof req.body?.orchestratorAgentId === 'string' ? req.body.orchestratorAgentId : undefined;
+    const participants = Array.isArray(req.body?.participants) ? req.body.participants : [];
+    const orchestratorId =
+      typeof req.body?.orchestratorId === 'string' ? req.body.orchestratorId : undefined;
     try {
-      const space = await spaces.create({ cwd, agentIds, orchestratorAgentId });
+      const space = await spaces.create({ cwd, participants, orchestratorId });
       res.json({
         success: true,
         spaceId: space.id,
         cwd: space.cwd,
-        orchestratorAgentId: space.orchestratorAgentId ?? null,
-        agents: space.agentIds.map(agentId => ({
-          agentId,
-          sessionId: space.sessions.get(agentId)!,
-          configOptions: space.configOptions.get(agentId) ?? [],
+        orchestratorId: space.orchestratorId ?? null,
+        participants: [...space.members.values()].map(member => ({
+          id: member.id,
+          agentId: member.agentId,
+          sessionId: space.sessions.get(member.id)!,
+          configOptions: space.configOptions.get(member.id) ?? [],
+          role: member.role,
+          responsibility: member.responsibility,
+          capabilities: member.capabilities,
         })),
       });
     } catch (error) {
-      logger.error(`[A2A Collab] Create space error (cwd: ${cwd}, agents: ${agentIds.join(', ')}):`, error);
+      logger.error(
+        `[A2A Collab] Create space error (cwd: ${cwd}, sessions: ${participants
+          .map((p: any) => String(p?.agentId ?? '?'))
+          .join(', ')}):`,
+        error,
+      );
       res.status(400).json({ success: false, message: (error as Error).message });
     }
   });

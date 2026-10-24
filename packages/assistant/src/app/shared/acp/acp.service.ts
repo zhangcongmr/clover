@@ -942,7 +942,7 @@ export class AcpService {
       for (const session of task.sessions ?? []) {
         if (!session.sessionId) continue;
         try {
-          await this.deleteSession(session.sessionId);
+          await this.deleteSession(session.sessionId, session.agentId);
         } catch (error) {
           console.error('[ACP] Failed to delete task session:', session.sessionId, error);
         }
@@ -1168,11 +1168,16 @@ export class AcpService {
     }
   }
 
-  async deleteSession(sessionId: string): Promise<void> {
-    // agentId 用于服务端会话记录丢失时（后端重启）解析 agent 进行删除；
-    // 正常路径服务端自己就有记录。
-    const agentId = this.findSessionRecord(sessionId)?.agentId;
-    await this.sseService.deleteAcpSession(sessionId, agentId);
+  /**
+   * 删除 ACP 会话。
+   *
+   * agentId 用于服务端没有该会话的内存记录时（后端重启、或会话只从 agent
+   * 列表里拉到过）解析 agent。调用方若已经/即将删除持久化记录，必须在调用
+   * 前把 agentId 取出来显式传入，否则这里查不到记录。
+   */
+  async deleteSession(sessionId: string, agentId?: string): Promise<void> {
+    const resolvedAgentId = agentId || this.findSessionRecord(sessionId)?.agentId;
+    await this.sseService.deleteAcpSession(sessionId, resolvedAgentId);
   }
 
   // ============================================================================

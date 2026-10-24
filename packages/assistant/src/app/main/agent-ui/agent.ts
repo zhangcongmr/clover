@@ -480,17 +480,21 @@ export class AgentComponent {
     }
   }
 
-  async deleteSession(event: MouseEvent, sessionId: string): Promise<void> {
+  async deleteSession(event: MouseEvent, sessionId: string, agentId?: string): Promise<void> {
     event.stopPropagation();
-    if (confirm('Are you sure you want to delete this session?')) {
-      for (const project of this.acpService.projects()) {
-        if (project.sessions?.some(s => s.sessionId === sessionId)) {
-          await this.acpService.deleteSessionFromProject(project.path, sessionId);
-          break;
-        }
+    if (!confirm('Are you sure you want to delete this session?')) return;
+
+    for (const project of this.acpService.projects()) {
+      const record = project.sessions?.find(s => s.sessionId === sessionId);
+      if (record) {
+        // 服务端没有该会话的内存记录时（后端重启 / 会话只出现在 agent 列表里），
+        // 需要 agentId 才能解析 agent 完成删除。记录先被移除，所以必须提前取。
+        agentId = agentId || record.agentId;
+        await this.acpService.deleteSessionFromProject(project.path, sessionId);
+        break;
       }
-      await this.acpService.deleteSession(sessionId);
     }
+    await this.acpService.deleteSession(sessionId, agentId);
   }
 
   /** Opens the custom context menu on a session row (suppresses the browser's native menu). */
@@ -516,7 +520,7 @@ export class AgentComponent {
     } else if (action === 'resume') {
       void this.resumeSession(session.sessionId);
     } else {
-      void this.deleteSession(evt, session.sessionId);
+      void this.deleteSession(evt, session.sessionId, session.agentId);
     }
   }
 
