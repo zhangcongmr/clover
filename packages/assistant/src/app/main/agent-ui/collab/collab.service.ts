@@ -17,20 +17,42 @@ import { AcpSseService, type AgentStatusInfo } from '../../../shared/acp/acp-sse
 import type { ConfigOption } from '../../../shared/acp/acp.model';
 import type { ProjectInfo } from '../../../shared/acp/acp.service';
 
-/** One wrapper session inside a collaboration space (backend response). */
+/**
+ * One participating session inside a collaboration space (backend response).
+ * `id` is the participant/session key (primary key of the collaboration);
+ * `agentId` is the agent implementation bound to this session.
+ */
 export interface CollabSpaceAgent {
+  id: string;
   agentId: string;
   sessionId: string;
   /** mode/model selectors from session/new; live values updated via set_config_option. */
   configOptions?: ConfigOption[];
+  /** Session-level role label, e.g. "代码审查专家". */
+  role?: string;
+  /** What this session is responsible for (used in routing / judgement prompts). */
+  responsibility?: string;
+  /** Machine-readable capability tags, e.g. ["code_review"]. */
+  capabilities?: string[];
 }
 
 export interface CollabSpace {
   spaceId: string;
   cwd: string;
+  /** Participating sessions (session-primary; several may share an agentId). */
   agents: CollabSpaceAgent[];
-  /** Member agent that routes each prompt to the answering agent (optional). */
-  orchestratorAgentId?: string | null;
+  /** Participant id designated as orchestrator (optional). */
+  orchestratorId?: string | null;
+}
+
+/** One editable session slot in the picker (before the space is created). */
+export interface ParticipantDraft {
+  /** Client-generated participant id. */
+  id: string;
+  /** Bound agent implementation; empty until chosen. */
+  agentId: string;
+  role: string;
+  responsibility: string;
 }
 
 export type CollabMessageStatus = 'streaming' | 'completed' | 'failed' | 'canceled';
@@ -39,14 +61,46 @@ export interface CollabMessage {
   id: string;
   role: 'user' | 'agent';
   text: string;
+  /** Participant/session key that produced this message. */
+  participantId?: string;
   agentId?: string;
   agentLabel?: string;
+  /** ACP session id that produced this message (collaboration trace). */
+  sessionId?: string;
+  /** Collaboration turn this message belongs to. */
+  turn?: number;
+  /** Session id whose output this turn continued from. */
+  prevSessionId?: string;
+  /** Participant id whose output this turn continued from. */
+  prevParticipantId?: string;
+  /** Voluntary-claim reason (agent messages only). */
+  claimReason?: string;
+  /** Sessions that passed on this turn (voluntary mode). */
+  relinquishedBy?: string[];
+  /** Parallel sub-task id (parallel mode). */
+  subTaskId?: string;
+  /** Role label of the producing session. */
+  agentRole?: string;
   status?: CollabMessageStatus;
   statusText?: string;
   time: number;
 }
 
+/** Collaboration strategy selected in the panel. */
+export type CollabMode = 'single' | 'pipeline' | 'parallel' | 'voluntary';
+
+export interface ParallelSubTaskDraft {
+  id: string;
+  prompt: string;
+  /** Route by session role (empty = by targetParticipantId / keyword). */
+  targetRole: string;
+  /** Route by participant id (empty = by role / keyword). */
+  targetParticipantId: string;
+}
+
 const ORCHESTRATOR_PATH = 'api/a2a/orchestrator/';
+/** Client-side cap before the backend clamps again. */
+const MAX_TURNS = 30;
 
 @Injectable({ providedIn: 'root' })
 export class CollabService {
@@ -56,23 +110,45 @@ export class CollabService {
   /** Whether the collaboration panel replaces the ACP panel. */
   readonly panelOpen = signal(false);
   readonly project = signal<ProjectInfo | null>(null);
-  /** All agents reported by the backend registry (unfiltered). */
+  /** All agents reported by the backend registry (unfiltered, bindable targets). */
   readonly availableAgents = signal<AgentStatusInfo[]>([]);
-  /** Agents chosen for the space (before it is created). */
-  readonly selectedAgentIds = signal<string[]>([]);
-  /** Chosen orchestrator agent (must be a selected agent; empty = none). */
-  readonly orchestratorAgentId = signal<string>('');
+  /** Editable session slots (session-primary picker). */
+  readonly participants = signal<ParticipantDraft[]>([]);
+  /** Chosen orchestrator participant id (must be a participant; empty = none). */
+  readonly orchestratorId = signal<string>('');
   readonly space = signal<CollabSpace | null>(null);
   readonly messages = signal<CollabMessage[]>([]);
   readonly sending = signal(false);
   readonly creating = signal(false);
   readonly error = signal<string | null>(null);
-  /** Explicit routing target; empty string = auto (keyword / first agent). */
-  readonly targetAgentId = signal('');
+  /** Explicit routing target participant id; empty = auto (role / keyword / first session). */
+  readonly targetParticipantId = signal('');
+  /** Route by session role (01 单点协作); empty = auto. */
+  readonly targetRole = signal('');
+
+  // === Collaboration mode (shared metadata contract with the backend) ===
+  readonly collabMode = signal<CollabMode>('single');
+
+  // 02 流水线
+  readonly pipelineMode = signal<'static' | 'orchestrated'>('static');
+  readonly pipelineMaxTurns = signal(8);
+  /** Static pipeline order (participant ids); empty = the space declaration order. */
+  readonly pipelineOrder = signal<string[]>([]);
+
+  // 03 并行
+  readonly parallelSubTasks = signal<ParallelSubTaskDraft[]>([]);
+  readonly parallelAggregator = signal('');
+  readonly parallelMaxConcurrency = signal(4);
+
+  // 04 自愿认领
+  readonly voluntaryConflict = signal<'first-come' | 'priority' | 'random'>('first-come');
+  readonly voluntaryMaxTurns = signal(8);
 
   private wrapperSources = new Map<string, EventSource>();
   private currentAbort: AbortController | null = null;
   private messageSeq = 0;
+  private participantSeq = 0;
+  private subTaskSeq = 0;
 
   // ==========================================================================
   // Space lifecycle
@@ -84,6 +160,9 @@ export class CollabService {
     this.error.set(null);
     if (this.availableAgents().length === 0) {
       await this.refreshAgents();
+    }
+    if (this.participants().length === 0) {
+      this.addParticipant();
     }
   }
 
@@ -111,30 +190,54 @@ export class CollabService {
     }
   }
 
-  toggleAgent(agentId: string): void {
-    this.selectedAgentIds.update(ids =>
-      ids.includes(agentId) ? ids.filter(id => id !== agentId) : [...ids, agentId],
-    );
-    if (!this.selectedAgentIds().includes(agentId) && this.orchestratorAgentId() === agentId) {
-      this.orchestratorAgentId.set('');
-    }
+  // --- Session slots (participants) -----------------------------------------
+
+  /** Adds a new session slot, optionally pre-bound to an agent. */
+  addParticipant(agentId?: string): void {
+    const fallback = agentId ?? this.availableAgents()[0]?.id ?? '';
+    this.participants.update(list => [
+      ...list,
+      { id: `s${++this.participantSeq}`, agentId: fallback, role: '', responsibility: '' },
+    ]);
   }
 
-  /** Toggles the orchestrator role for a selected agent (clicking again clears it). */
-  setOrchestrator(agentId: string): void {
-    if (!this.selectedAgentIds().includes(agentId)) return;
-    this.orchestratorAgentId.update(current => (current === agentId ? '' : agentId));
+  removeParticipant(id: string): void {
+    this.participants.update(list => list.filter(participant => participant.id !== id));
+    if (this.orchestratorId() === id) this.orchestratorId.set('');
+  }
+
+  updateParticipant(id: string, patch: Partial<Omit<ParticipantDraft, 'id'>>): void {
+    this.participants.update(list =>
+      list.map(participant => (participant.id === id ? { ...participant, ...patch } : participant)),
+    );
+  }
+
+  /** Toggles the orchestrator role for a session slot (clicking again clears it). */
+  setOrchestrator(id: string): void {
+    this.orchestratorId.update(current => (current === id ? '' : id));
+  }
+
+  /** Whether a space can be created from the current session slots. */
+  canCreateSpace(): boolean {
+    const list = this.participants();
+    return !this.creating() && list.length > 0 && list.every(participant => Boolean(participant.agentId));
   }
 
   async createSpace(): Promise<void> {
     const project = this.project();
-    const agentIds = this.selectedAgentIds();
-    if (!project || agentIds.length === 0 || this.creating() || this.space()) return;
+    const list = this.participants();
+    if (!project || !this.canCreateSpace() || this.space()) return;
 
     this.creating.set(true);
     this.error.set(null);
     try {
       const token = await this.localAgent.getToken();
+      const participants = list.map(participant => ({
+        id: participant.id,
+        agentId: participant.agentId,
+        role: participant.role.trim() || undefined,
+        responsibility: participant.responsibility.trim() || undefined,
+      }));
       const res = await fetch(`${this.localAgent.getBaseUrl()}/api/a2a/collab/spaces`, {
         method: 'POST',
         headers: {
@@ -143,8 +246,8 @@ export class CollabService {
         },
         body: JSON.stringify({
           cwd: project.path,
-          agentIds,
-          orchestratorAgentId: this.orchestratorAgentId() || undefined,
+          participants,
+          orchestratorId: this.orchestratorId() || undefined,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -154,13 +257,17 @@ export class CollabService {
       const space: CollabSpace = {
         spaceId: data.spaceId,
         cwd: data.cwd,
-        agents: (Array.isArray(data.agents) ? data.agents : []).map((agent: CollabSpaceAgent) => ({
-          ...agent,
-          configOptions: this.sortConfigOptions(agent.configOptions),
-        })),
-        orchestratorAgentId: data.orchestratorAgentId ?? null,
+        agents: (Array.isArray(data.participants) ? data.participants : []).map(
+          (participant: CollabSpaceAgent) => ({
+            ...participant,
+            configOptions: this.sortConfigOptions(participant.configOptions),
+          }),
+        ),
+        orchestratorId: data.orchestratorId ?? null,
       };
       this.space.set(space);
+      this.pipelineOrder.set(space.agents.map(agent => agent.id));
+      this.parallelAggregator.set('');
       this.openWrapperSse(space, token);
     } catch (error) {
       this.error.set((error as Error).message || 'Failed to create collaboration space');
@@ -179,22 +286,67 @@ export class CollabService {
   }
 
   // ==========================================================================
+  // Collaboration mode configuration
+  // ==========================================================================
+
+  /** Roles available on the current space (for routing dropdowns). */
+  availableRoles(): string[] {
+    const space = this.space();
+    if (!space) return [];
+    return [...new Set(space.agents.map(agent => agent.role).filter((role): role is string => Boolean(role)))];
+  }
+
+  addSubTask(): void {
+    this.parallelSubTasks.update(list => [
+      ...list,
+      { id: `task-${++this.subTaskSeq}`, prompt: '', targetRole: '', targetParticipantId: '' },
+    ]);
+  }
+
+  removeSubTask(id: string): void {
+    this.parallelSubTasks.update(list => list.filter(subTask => subTask.id !== id));
+  }
+
+  updateSubTask(id: string, patch: Partial<ParallelSubTaskDraft>): void {
+    this.parallelSubTasks.update(list =>
+      list.map(subTask => (subTask.id === id ? { ...subTask, ...patch } : subTask)),
+    );
+  }
+
+  /** Moves a pipeline stage up/down in the static order. */
+  movePipelineStage(participantId: string, delta: number): void {
+    this.pipelineOrder.update(order => {
+      const index = order.indexOf(participantId);
+      const target = index + delta;
+      if (index < 0 || target < 0 || target >= order.length) return order;
+      const next = [...order];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  clampTurns(value: number): number {
+    if (!Number.isFinite(value)) return 8;
+    return Math.max(1, Math.min(Math.floor(value), MAX_TURNS));
+  }
+
+  // ==========================================================================
   // Agent config (mode/model) — session-level state applied to later prompts
   // ==========================================================================
 
   /**
-   * Applies a config option (mode/model/…) to one space agent's ACP session.
-   * The new value takes effect on that agent's next prompt; updating between
-   * turns is race-free because prompts are serialized per wrapper (FIFO lock).
+   * Applies a config option (mode/model/…) to one participating session.
+   * The new value takes effect on that session's next prompt; updating between
+   * turns is race-free because prompts are serialized per session (FIFO lock).
    */
   async setAgentConfigOption(
-    agentId: string,
+    participantId: string,
     configId: string,
     type: 'id' | 'boolean',
     value: string | boolean,
   ): Promise<void> {
     const space = this.space();
-    const agent = space?.agents.find(a => a.agentId === agentId);
+    const agent = space?.agents.find(a => a.id === participantId);
     if (!space || !agent) return;
 
     try {
@@ -207,14 +359,14 @@ export class CollabService {
             ? {
                 ...current,
                 agents: current.agents.map(a =>
-                  a.agentId === agentId ? { ...a, configOptions: sorted } : a,
+                  a.id === participantId ? { ...a, configOptions: sorted } : a,
                 ),
               }
             : current,
         );
       }
     } catch (error) {
-      console.error(`[Collab] Failed to set ${configId} on ${agentId}:`, error);
+      console.error(`[Collab] Failed to set ${configId} on ${participantId}:`, error);
       this.error.set((error as Error)?.message || `Failed to update ${configId}`);
     }
   }
@@ -310,19 +462,65 @@ export class CollabService {
   // Messaging
   // ==========================================================================
 
+  /** Whether the current mode has a dispatchable payload. */
+  canSend(draft: string): boolean {
+    if (this.sending()) return false;
+    if (draft.trim()) return true;
+    return this.collabMode() === 'parallel' && this.parallelSubTasks().some(subTask => subTask.prompt.trim());
+  }
+
   async send(text: string): Promise<void> {
     const space = this.space();
     const trimmed = text.trim();
-    if (!space || !trimmed || this.sending()) return;
+    if (!space || this.sending()) return;
+    const parallelReady = this.collabMode() === 'parallel' && this.parallelSubTasks().some(subTask => subTask.prompt.trim());
+    if (!trimmed && !parallelReady) return;
 
     this.error.set(null);
-    this.appendMessage({ role: 'user', text: trimmed });
+    if (trimmed) this.appendMessage({ role: 'user', text: trimmed });
     this.sending.set(true);
 
     const controller = new AbortController();
     this.currentAbort = controller;
 
-    let agentMessageId: string | null = null;
+    // Each artifact (turn / sub-task) maps to its own transcript message.
+    const messagesByArtifact = new Map<string, string>();
+    // Turn → transcript message id (so per-turn status updates land on the
+    // same message the turn's artifact streams into).
+    const turnMessageIds = new Map<number, string>();
+    let activeId: string | null = null;
+    let statusId: string | null = null;
+
+    const finalize = (id: string | null, status: CollabMessageStatus, statusText?: string): void => {
+      if (!id) return;
+      const current = this.messageById(id);
+      if (current?.status === 'streaming') {
+        this.updateMessage(id, statusText ? { status, statusText } : { status });
+      }
+    };
+
+    const finalizeActive = (status: CollabMessageStatus, statusText?: string): void => {
+      finalize(activeId, status, statusText);
+    };
+
+    const ensureTurnMessage = (turn: number, fields: Partial<CollabMessage>): string => {
+      const existing = turnMessageIds.get(turn);
+      if (existing) return existing;
+      // Starting a new turn: close out the previous streaming message.
+      finalizeActive('completed');
+      let id: string;
+      if (statusId && activeId === null) {
+        // Reuse the routing status message for the first turn.
+        id = statusId;
+        this.updateMessage(id, { turn, ...fields, status: 'streaming' });
+        statusId = null;
+      } else {
+        id = this.appendMessage({ role: 'agent', text: '', status: 'streaming', turn, ...fields }).id;
+      }
+      turnMessageIds.set(turn, id);
+      return id;
+    };
+
     try {
       const client = await this.createOrchestratorClient();
       const request = this.buildRequest(space, trimmed);
@@ -341,20 +539,31 @@ export class CollabService {
             const status = payload.value.status;
             const state = status?.state;
             const statusText = status?.message ? this.extractMessageText(status.message) : '';
-            if (!agentMessageId && (statusText || state !== TaskState.TASK_STATE_SUBMITTED)) {
-              agentMessageId = this.appendMessage({
-                role: 'agent',
-                text: '',
-                status: 'streaming',
-                statusText: statusText || undefined,
-              }).id;
-            }
-            if (agentMessageId && statusText) {
-              this.updateMessage(agentMessageId, { statusText });
-            }
             const mapped = this.mapState(state);
-            if (agentMessageId && mapped) {
-              this.updateMessage(agentMessageId, statusText ? { status: mapped, statusText } : { status: mapped });
+            const meta = (payload.value.metadata ?? {}) as Record<string, any>;
+            const fields = this.metaToFields(meta);
+            const turn = typeof meta['turn'] === 'number' ? (meta['turn'] as number) : undefined;
+
+            let targetId: string | null;
+            if (turn !== undefined) {
+              targetId = ensureTurnMessage(turn, fields);
+            } else {
+              targetId = activeId ?? statusId;
+              if (!targetId && (statusText || (state !== undefined && state !== TaskState.TASK_STATE_SUBMITTED))) {
+                targetId = this.appendMessage({
+                  role: 'agent',
+                  text: '',
+                  status: mapped ?? 'streaming',
+                  statusText: statusText || undefined,
+                }).id;
+                statusId = targetId;
+              }
+            }
+            if (targetId) {
+              if (statusText) this.updateMessage(targetId, { statusText });
+              if (mapped) {
+                this.updateMessage(targetId, statusText ? { status: mapped, statusText } : { status: mapped });
+              }
             }
             break;
           }
@@ -362,22 +571,35 @@ export class CollabService {
           case 'artifactUpdate': {
             const artifact = payload.value.artifact;
             if (!artifact) break;
+            const artifactId = artifact.artifactId || 'default';
+            const meta = (artifact.metadata ?? {}) as Record<string, any>;
+            const fields = this.metaToFields(meta);
+            const turn = typeof meta['turn'] === 'number' ? (meta['turn'] as number) : undefined;
+
+            let id = messagesByArtifact.get(artifactId);
+            if (!id) {
+              if (turn !== undefined) {
+                // Reuse the message opened by this turn's status updates.
+                id = ensureTurnMessage(turn, fields);
+                this.updateMessage(id, { ...fields, status: 'streaming' });
+              } else if (statusId && activeId === null) {
+                // Adopt the pending status-only message on the first turn.
+                id = statusId;
+                this.updateMessage(id, { ...fields, status: 'streaming' });
+                statusId = null;
+              } else {
+                id = this.appendMessage({ role: 'agent', text: '', status: 'streaming', ...fields }).id;
+              }
+              messagesByArtifact.set(artifactId, id);
+            }
+            activeId = id;
+
             const chunk = this.extractArtifactText(artifact.parts);
-            const initialAgentId = artifact.metadata?.['agentId'];
-            if (!agentMessageId) {
-              agentMessageId = this.appendMessage({
-                role: 'agent',
-                text: '',
-                agentId: typeof initialAgentId === 'string' ? initialAgentId : undefined,
-                status: 'streaming',
-              }).id;
-            }
-            if (chunk) {
-              this.updateMessage(agentMessageId, { text: chunk }, true);
-            }
-            const artifactAgentId = artifact.metadata?.['agentId'];
-            if (typeof artifactAgentId === 'string' && !this.messageById(agentMessageId)?.agentId) {
-              this.updateMessage(agentMessageId, { agentId: artifactAgentId });
+            if (chunk) this.updateMessage(id, { text: chunk }, true);
+
+            if (payload.value.lastChunk) {
+              const current = this.messageById(id);
+              if (current?.status === 'streaming') this.updateMessage(id, { status: 'completed' });
             }
             break;
           }
@@ -385,30 +607,26 @@ export class CollabService {
           case 'message': {
             const direct = this.extractMessageText(payload.value);
             if (direct) {
-              if (!agentMessageId) {
-                agentMessageId = this.appendMessage({ role: 'agent', text: direct, status: 'completed' }).id;
-              } else {
-                this.updateMessage(agentMessageId, { text: direct }, true);
-              }
+              const id: string =
+                activeId ?? statusId ?? this.appendMessage({ role: 'agent', text: '', status: 'streaming' }).id;
+              this.updateMessage(id, { text: direct }, true);
+              activeId = id;
             }
             break;
           }
         }
       }
 
-      if (agentMessageId) {
-        const current = this.messageById(agentMessageId);
-        if (current?.status === 'streaming') {
-          this.updateMessage(agentMessageId, { status: 'completed' });
-        }
-      } else {
+      finalizeActive('completed');
+      if (!activeId && !statusId) {
         this.appendMessage({ role: 'agent', text: '', status: 'completed', statusText: '' });
       }
     } catch (error) {
       const aborted = controller.signal.aborted;
       const message = (error as Error)?.message || 'Stream failed';
-      if (agentMessageId) {
-        this.updateMessage(agentMessageId, {
+      const id = activeId ?? statusId;
+      if (id) {
+        this.updateMessage(id, {
           status: aborted ? 'canceled' : 'failed',
           statusText: aborted ? 'Canceled' : message,
         });
@@ -456,12 +674,49 @@ export class CollabService {
   }
 
   private buildRequest(space: CollabSpace, prompt: string): SendMessageRequest {
+    const participantIds = space.agents.map(agent => agent.id);
     const collab: Record<string, unknown> = {
       spaceId: space.spaceId,
+      participantIds,
       agentIds: space.agents.map(agent => agent.agentId),
       cwd: space.cwd,
-      targetAgentId: this.targetAgentId() || undefined,
+      targetParticipantId: this.targetParticipantId() || undefined,
+      targetRole: this.targetRole() || undefined,
     };
+
+    const mode = this.collabMode();
+    if (mode === 'pipeline') {
+      const order = this.pipelineOrder().length ? this.pipelineOrder() : participantIds;
+      collab['pipeline'] = {
+        mode: this.pipelineMode(),
+        order,
+        orchestratorAgentId: this.orchestratorId() || undefined,
+        maxTurns: this.clampTurns(this.pipelineMaxTurns()),
+      };
+    } else if (mode === 'parallel') {
+      const subTasks = this.parallelSubTasks()
+        .filter(subTask => subTask.prompt.trim())
+        .map(subTask => ({
+          id: subTask.id,
+          prompt: subTask.prompt.trim(),
+          targetAgentId: subTask.targetParticipantId || undefined,
+          targetRole: subTask.targetRole || undefined,
+        }));
+      collab['parallel'] = {
+        enabled: true,
+        subTasks,
+        aggregatorAgentId: this.parallelAggregator() || undefined,
+        maxConcurrency: this.parallelMaxConcurrency(),
+      };
+    } else if (mode === 'voluntary') {
+      collab['voluntary'] = {
+        enabled: true,
+        maxTurns: this.clampTurns(this.voluntaryMaxTurns()),
+        conflictResolution: this.voluntaryConflict(),
+        priorityOrder: participantIds,
+      };
+    }
+
     return {
       tenant: '',
       message: {
@@ -508,6 +763,46 @@ export class CollabService {
         };
       }),
     );
+  }
+
+  /** Maps A2A artifact/status metadata onto transcript message fields. */
+  private metaToFields(meta: Record<string, any>): Partial<CollabMessage> {
+    const fields: Partial<CollabMessage> = {};
+    if (typeof meta['participantId'] === 'string') fields.participantId = meta['participantId'];
+    if (typeof meta['agentId'] === 'string') {
+      fields.agentId = meta['agentId'];
+      fields.agentLabel = this.agentLabelOf(meta['agentId']);
+    }
+    if (typeof meta['sessionId'] === 'string') fields.sessionId = meta['sessionId'];
+    if (typeof meta['role'] === 'string') fields.agentRole = meta['role'];
+    if (typeof meta['turn'] === 'number') fields.turn = meta['turn'];
+    if (typeof meta['prevParticipantId'] === 'string') fields.prevParticipantId = meta['prevParticipantId'];
+    if (typeof meta['prevSessionId'] === 'string') fields.prevSessionId = meta['prevSessionId'];
+    if (typeof meta['claimReason'] === 'string') fields.claimReason = meta['claimReason'];
+    if (Array.isArray(meta['relinquishedBy'])) fields.relinquishedBy = meta['relinquishedBy'].map(String);
+    if (typeof meta['subTaskId'] === 'string') fields.subTaskId = meta['subTaskId'];
+    return fields;
+  }
+
+  agentLabelOf(agentId: string | undefined): string {
+    if (!agentId) return '';
+    return this.availableAgents().find(agent => agent.id === agentId)?.name ?? agentId;
+  }
+
+  /** Human label of a participating session (agent name + role). */
+  participantLabel(participantId: string | undefined): string {
+    if (!participantId) return '';
+    const participant = this.space()?.agents.find(agent => agent.id === participantId);
+    if (!participant) return participantId;
+    const name = this.agentLabelOf(participant.agentId);
+    return participant.role ? `${name}·${participant.role}` : name;
+  }
+
+  /** Resolves the participant label owning an ACP session id. */
+  participantLabelBySession(sessionId: string | undefined): string {
+    if (!sessionId) return '';
+    const participant = this.space()?.agents.find(agent => agent.sessionId === sessionId);
+    return participant ? this.participantLabel(participant.id) : sessionId;
   }
 
   private mapState(state: TaskState | undefined): CollabMessageStatus | undefined {
