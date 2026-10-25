@@ -224,6 +224,32 @@ export class AcpSessionManager {
     await this.redis.publish(channel, JSON.stringify(event));
   }
 
+  /**
+   * Publishes the ordered "history replay complete" marker consumed by the
+   * frontend to end replay mode (see `loadAcpSession` / `resumeAcpSession`).
+   *
+   * <p>Only the explicit load/resume operations emit it — NOT the internal
+   * `ensureAgentSession` recovery resume — so a connect-time auto-resume cannot
+   * prematurely end the client's replay window.
+   *
+   * <p>Failure to publish must not fail the load/resume itself: the client falls
+   * back to a timeout when the marker never arrives.
+   */
+  private async publishReplayComplete(
+    sessionId: string,
+    type: 'session_loaded' | 'session_resumed',
+  ): Promise<void> {
+    try {
+      await this.publishEvent(sessionId, {
+        type,
+        payload: { sessionId },
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      logger.warn(`[ACP Session] Failed to publish ${type} marker (session: ${sessionId}):`, error);
+    }
+  }
+
   // ==========================================================================
   // Direct in-process prompt (A2A bridge)
   // ==========================================================================
@@ -501,6 +527,14 @@ export class AcpSessionManager {
       session.lastActivity = Date.now();
       // 载入成功 → 会话已绑定在当前连接上
       session.boundGeneration = session.client.connectionGeneration;
+      // History replay is complete. The ACP connection delivers every
+      // `session/update` emitted during the load BEFORE resolving the request,
+      // and each was routed to `acp:events:{sessionId}`. Publishing the marker on
+      // that same channel (same Redis publisher) therefore lands AFTER all replay
+      // notifications, giving the client an ordered "replay complete" signal —
+      // the `session/load` HTTP response cannot serve as that barrier because it
+      // travels on a separate connection.
+      await this.publishReplayComplete(sessionId, 'session_loaded');
       // 该 ACP session 可能仍有一轮 prompt 在跑（例如 UI 切走又切回）：
       // 告诉前端，免得它把「仍在处理中」的状态弄丢。
       return { ...result, prompting: session.client.isPrompting(sessionId) };
@@ -533,6 +567,8 @@ export class AcpSessionManager {
       session.lastActivity = Date.now();
       // 恢复成功 → 会话已绑定在当前连接上
       session.boundGeneration = session.client.connectionGeneration;
+      // Same ordered "replay complete" marker as `loadAcpSession` (see there).
+      await this.publishReplayComplete(sessionId, 'session_resumed');
       return { ...result, prompting: session.client.isPrompting(sessionId) };
     } catch (error) {
       logger.error(`[ACP Session] Resume session error (session: ${sessionId}):`, error);

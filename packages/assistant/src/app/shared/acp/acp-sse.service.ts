@@ -63,6 +63,8 @@ export class AcpSseService {
   private onErrorCallback: ((message: string, source: ErrorSource, acpSessionId?: string) => void) | null = null;
   private onDisconnectedCallback: (() => void) | null = null;
   private onStatusCallback: ((payload: any) => void) | null = null;
+  /** Server-published "history replay complete" marker (`session_loaded` / `session_resumed`). */
+  private onSessionLoadedCallback: ((payload: any) => void) | null = null;
 
   constructor(private localAgentService: LocalAgentService) {}
 
@@ -96,6 +98,16 @@ export class AcpSseService {
 
   onStatus(callback: (payload: any) => void): void {
     this.onStatusCallback = callback;
+  }
+
+  /**
+   * Registers the handler for the server's "history replay complete" marker.
+   * The backend publishes `session_loaded` / `session_resumed` on the session's
+   * SSE channel AFTER all replay `session_update` events, so receiving it proves
+   * every replayed update has already been delivered (SSE is ordered).
+   */
+  onSessionLoaded(callback: (payload: any) => void): void {
+    this.onSessionLoadedCallback = callback;
   }
 
   // ============================================================================
@@ -226,6 +238,13 @@ export class AcpSseService {
 
       case 'session_update':
         this.onSessionUpdateCallback?.(event.payload.update);
+        break;
+
+      case 'session_loaded':
+      case 'session_resumed':
+        // Ordered "history replay complete" marker: every `session_update`
+        // published before it has already been dispatched above.
+        this.onSessionLoadedCallback?.(event.payload);
         break;
 
       case 'permission_request':
