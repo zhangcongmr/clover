@@ -273,7 +273,7 @@
 }
 
 .session-id-text {
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-mono);
   opacity: 0.6;
 }
 
