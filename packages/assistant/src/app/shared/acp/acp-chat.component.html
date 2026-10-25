@@ -258,6 +258,45 @@
           <app-rag-result [result]="rag" [collapsed]="!isExpanded(message)" />
         </div>
       </div>
+    } @else if (message | grepInfo; as grep) {
+      <div class="acp-message tool-call">
+        <div class="message-content">
+          <div class="tool-call-search" [class.search-failed]="message.toolStatus === 'failed'">
+            <span class="search-label">Grep</span>
+            @if (grep.path) {
+              <span class="search-path" [title]="grep.path">{{ grep.path }}</span>
+            }
+            <span class="search-pattern">pattern={{ grep.pattern }}</span>
+            @if (grep.include) {
+              <span class="search-include">include={{ grep.include }}</span>
+            }
+            @if (message.toolStatus === 'completed') {
+              <span class="search-separator">·</span>
+              <span class="search-count">{{ searchSummary(grep) }}</span>
+            } @else if (message.toolStatus === 'failed') {
+              <span class="search-separator">·</span>
+              <span class="search-count">搜索失败</span>
+            }
+          </div>
+        </div>
+      </div>
+    } @else if (message | globInfo; as glob) {
+      <div class="acp-message tool-call">
+        <div class="message-content">
+          <div class="tool-call-search" [class.search-failed]="message.toolStatus === 'failed'">
+            <span class="search-label">Glob</span>
+            <span class="search-path" [title]="glob.path">{{ glob.path }}</span>
+            <span class="search-pattern">pattern={{ glob.pattern }}</span>
+            @if (message.toolStatus === 'completed') {
+              <span class="search-separator">·</span>
+              <span class="search-count">{{ searchSummary(glob) }}</span>
+            } @else if (message.toolStatus === 'failed') {
+              <span class="search-separator">·</span>
+              <span class="search-count">搜索失败</span>
+            }
+          </div>
+        </div>
+      </div>
     } @else {
       <div class="acp-message tool-call">
         <div class="message-content">
@@ -292,8 +331,8 @@
             @if (message.toolKind === 'execute') {
               @if (!isShellCollapsed(message)) {
                 <div class="shell-panel">
-                  <pre class="shell-command"><code>{{ shellCommand(message) }}</code></pre>
-                  @if (shellOutput(message); as output) {
+                  <pre class="shell-command"><code>{{ message | shellCommand }}</code></pre>
+                  @if (message | shellOutput; as output) {
                     <pre class="shell-output"><code>{{ output }}</code></pre>
                   }
                 </div>

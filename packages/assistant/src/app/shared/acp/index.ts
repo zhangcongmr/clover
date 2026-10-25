@@ -73,8 +73,8 @@ export { AcpPermissionDialogComponent } from './acp-permission-dialog.component'
 export { AcpQuestionComponent } from './acp-question.component';
 export type { QuestionItem, QuestionOption } from './acp-question.component';
 export { RagResultComponent } from './rag-result.component';
-export { extractRagResult } from './tool-call-info.pipe';
-export type { RagExtractResult, RagToolKind, RagSearchHit, RagDocumentInfo } from './tool-call-info.pipe';
+export { extractRagResult, extractGrepInfo, extractGlobInfo, extractShellCommand, extractShellOutput } from './tool-call-info.pipe';
+export type { RagExtractResult, RagToolKind, RagSearchHit, RagDocumentInfo, GrepInfo, GlobInfo } from './tool-call-info.pipe';
 export { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
 export { A2uiThemeBridgeService } from './a2ui-theme-bridge.service';
 export type { A2uiThemeFields } from './a2ui-theme-mapping';
