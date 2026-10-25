@@ -24,6 +24,15 @@ import { LocalAgentService } from '../local-agent/local-agent.service';
 
 const AGENT_STORAGE_KEY = 'clover_selected_agent';
 
+/**
+ * Fallback wait for the server's "history replay complete" marker
+ * (`session_loaded` / `session_resumed`, see `waitForReplayComplete`).
+ * The marker is published right after `session/load` resolves, so it normally
+ * arrives within milliseconds; this only bounds the case where an older backend
+ * does not send it at all, so session switching can never hang.
+ */
+const REPLAY_COMPLETE_TIMEOUT_MS = 10_000;
+
 function getInitialAgent(): AgentConfig {
   if (typeof localStorage !== 'undefined') {
     const id = localStorage.getItem(AGENT_STORAGE_KEY);
@@ -190,6 +199,15 @@ export class AcpService {
   private lastTodosMessage: AcpMessage | null = null;
   private lastTodosAllCompleted: boolean = false;
 
+  /**
+   * Pending resolver for the server's "history replay complete" marker
+   * (`session_loaded` / `session_resumed`). Registered right after the SSE
+   * stream opens and before `session/load` / `session/resume` is issued, so the
+   * marker cannot arrive before the waiter exists.
+   */
+  private replayCompleteWaiter: { sessionId: string; resolve: () => void } | null = null;
+  private replayCompleteTimer: ReturnType<typeof setTimeout> | null = null;
+
   /** Whether `sessionState().title` is a local placeholder (first user message)
    *  still awaiting the agent's own (LLM) title. Cleared once an agent title is
    *  adopted via `applySessionTitle`. */
@@ -307,6 +325,12 @@ export class AcpService {
   private setupSseCallbacks(): void {
     this.sseService.onSessionUpdate((update) => {
       this.handleSessionUpdate(update);
+    });
+    // Server-published "history replay complete" marker. Because the SSE channel
+    // is ordered, this resolves only after every replay `session_update` has been
+    // handled — the load/resume HTTP response cannot provide that guarantee.
+    this.sseService.onSessionLoaded((payload) => {
+      this.handleReplayComplete(payload);
     });
     this.sseService.onPermissionRequest((request) => {
       this.handlePermissionRequest(request);
@@ -763,6 +787,9 @@ export class AcpService {
       clearTimeout(this.titleRefreshTimer);
       this.titleRefreshTimer = null;
     }
+    // Drop any in-flight replay-complete waiter: the session is going away, so a
+    // late marker must not resolve a stale wait.
+    this.clearReplayCompleteWaiter();
     this.provisionalTitle = false;
     this.sseService.disconnect();
     this.sessionState.set({
@@ -1047,6 +1074,10 @@ export class AcpService {
       // `agentId` 供服务端在记录缺失时（后端重启）兜底建立会话记录。
       await this.sseService.connect(sessionId, resolvedAgentId);
 
+      // 注册「回放结束」等待器：必须在发起 load 之前完成注册（同一微任务内），
+      // 否则服务端标记可能先于等待器到达而被丢弃。
+      const replayComplete = this.waitForReplayComplete(sessionId);
+
       // Phase 4: Load session history
       this.loadingText.set('Loading session history...');
       const result = await this.sseService.loadSession(
@@ -1070,20 +1101,13 @@ export class AcpService {
         // 将本次加载所用的 mcpServers 写入 sessionState，供后续保存记录时使用
         mcpServers: persistedMcpServers ?? mcpServers,
       }));
+
+      // 等 SSE 的「回放结束」标记，而不是等上面的 HTTP 响应：两者是不同的连接，
+      // 响应到达不代表历史通知已全部送达。SSE 单通道有序，标记到达即代表此前
+      // 所有 session_update 都已处理完，此时结束回放态才不会丢消息。
+      await replayComplete;
     } finally {
-      this.isReplayingHistory.set(false);
-
-      // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
-      if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
-        this.activeTodosMessages.set([this.lastTodosMessage]);
-        this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
-      }
-
-      // 清理临时变量
-      this.lastTodosMessage = null;
-      this.lastTodosAllCompleted = false;
-
-      this.flushReplayBuffer();
+      this.finishHistoryReplay();
       this.isSwitchingSession.set(false);
       this.loadingText.set(null);
     }
@@ -1128,6 +1152,9 @@ export class AcpService {
     try {
       await this.sseService.connect(sessionId, resolvedAgentId);
 
+      // 注册「回放结束」等待器（必须在发起 resume 之前，理由同 loadSession）。
+      const replayComplete = this.waitForReplayComplete(sessionId);
+
       // Phase 4: Resume session
       this.loadingText.set('Loading session history...');
       const result = await this.sseService.resumeSession(
@@ -1149,20 +1176,11 @@ export class AcpService {
         // 将本次恢复所用的 mcpServers 写入 sessionState，供后续保存记录时使用
         mcpServers: persistedMcpServers ?? mcpServers,
       }));
+
+      // 同 loadSession：以 SSE 的「回放结束」标记为准，而非 HTTP 响应。
+      await replayComplete;
     } finally {
-      this.isReplayingHistory.set(false);
-
-      // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
-      if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
-        this.activeTodosMessages.set([this.lastTodosMessage]);
-        this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
-      }
-
-      // 清理临时变量
-      this.lastTodosMessage = null;
-      this.lastTodosAllCompleted = false;
-
-      this.flushReplayBuffer();
+      this.finishHistoryReplay();
       this.isSwitchingSession.set(false);
       this.loadingText.set(null);
     }
@@ -1614,6 +1632,73 @@ export class AcpService {
       this.messages.set(this.replayBuffer);
       this.replayBuffer = [];
     }
+  }
+
+  /**
+   * Waits for the server's "history replay complete" marker for `sessionId`.
+   *
+   * <p>Must be called right after the SSE stream is open and BEFORE issuing
+   * `session/load` / `session/resume`: the marker is published on the same SSE
+   * channel after every replay `session_update`, so it can only be trusted if the
+   * waiter already exists when it arrives.
+   *
+   * <p>Falls back to a timeout so a backend that does not publish the marker
+   * (older version) cannot hang session switching.
+   */
+  private waitForReplayComplete(sessionId: string, timeoutMs = REPLAY_COMPLETE_TIMEOUT_MS): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const settle = () => {
+        this.clearReplayCompleteWaiter();
+        resolve();
+      };
+      this.clearReplayCompleteWaiter();
+      this.replayCompleteWaiter = { sessionId, resolve: settle };
+      this.replayCompleteTimer = setTimeout(() => {
+        console.warn(`[ACP] replay-complete marker timed out for session ${sessionId}; ending replay by fallback`);
+        settle();
+      }, timeoutMs);
+    });
+  }
+
+  /** Resolves the pending replay-complete waiter when its session's marker arrives. */
+  private handleReplayComplete(payload: any): void {
+    const waiter = this.replayCompleteWaiter;
+    if (!waiter) return;
+    const markerSessionId = payload?.sessionId as string | undefined;
+    // Ignore markers for other sessions (a stale/late marker must not end the
+    // current session's replay).
+    if (markerSessionId && markerSessionId !== waiter.sessionId) return;
+    waiter.resolve();
+  }
+
+  private clearReplayCompleteWaiter(): void {
+    if (this.replayCompleteTimer) {
+      clearTimeout(this.replayCompleteTimer);
+      this.replayCompleteTimer = null;
+    }
+    this.replayCompleteWaiter = null;
+  }
+
+  /**
+   * Ends history-replay mode: restores the todos state and flushes the replay
+   * buffer in one shot. Idempotent — safe to call from a `finally` even when the
+   * marker already resolved the wait.
+   */
+  private finishHistoryReplay(): void {
+    this.clearReplayCompleteWaiter();
+    this.isReplayingHistory.set(false);
+
+    // 回放结束后，根据最后一轮todos的状态决定是否清空activeTodosMessages
+    if (this.lastTodosMessage && !this.lastTodosAllCompleted) {
+      this.activeTodosMessages.set([this.lastTodosMessage]);
+      this.activeTodosId.set(this.lastTodosMessage.toolCallId ?? null);
+    }
+
+    // 清理临时变量
+    this.lastTodosMessage = null;
+    this.lastTodosAllCompleted = false;
+
+    this.flushReplayBuffer();
   }
 
   private appendAssistantChunk(content: ContentBlock): void {
