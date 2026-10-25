@@ -12,7 +12,7 @@
   --vscode-line-height: 1.5;
 
   /* Mono typography */
-  --vscode-font-mono: 'Courier New', monospace;
+  --vscode-font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   --vscode-code-font-size: 13px;
   --vscode-terminal-font-family: var(--vscode-font-mono);
   --vscode-terminal-font-size: var(--vscode-code-font-size);
@@ -189,7 +189,7 @@
   --vscode-line-height: 1.5;
 
   /* Mono typography */
-  --vscode-font-mono: 'Courier New', monospace;
+  --vscode-font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   --vscode-code-font-size: 13px;
   --vscode-terminal-font-family: var(--vscode-font-mono);
   --vscode-terminal-font-size: var(--vscode-code-font-size);

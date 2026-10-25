@@ -313,7 +313,7 @@
   padding: 12px 15px;
   border-radius: 4px;
   overflow-x: auto;
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-mono);
   font-size: var(--vscode-code-font-size);
 }
 
@@ -349,7 +349,7 @@
 }
 
 :host ::ng-deep .message-text code {
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-mono);
   background-color: var(--vscode-background);
   padding: 2px 4px;
   border-radius: 3px;
@@ -620,7 +620,7 @@
   position: relative;
   margin: 0;
   padding: 10px 12px;
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-mono);
   font-size: var(--vscode-code-font-size);
   line-height: 1.5;
   color: var(--vscode-foreground);
@@ -946,7 +946,7 @@
   overflow: auto;
   background-color: var(--vscode-textCodeBlock-background);
   border-radius: 6px;
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-mono);
   font-size: 11px;
   line-height: 1.4;
   white-space: pre-wrap;

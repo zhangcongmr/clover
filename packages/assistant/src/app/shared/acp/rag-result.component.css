@@ -184,7 +184,7 @@
 
 .rag-doc-id {
   font-size: 12px;
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-mono);
   color: var(--vscode-foreground);
   overflow: hidden;
   text-overflow: ellipsis;
