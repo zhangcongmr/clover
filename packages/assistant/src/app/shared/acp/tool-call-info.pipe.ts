@@ -18,6 +18,32 @@ export interface ReadInfo {
   totalLines?: number;
 }
 
+/** Extracted input/output of a `grep` (content search) tool call. */
+export interface GrepInfo {
+  /** Search root reported by the tool (`rawInput.path`, else the tool location). */
+  path: string;
+  /** Pattern that was searched for. */
+  pattern: string;
+  /** Optional `include`/glob filter applied to the search. */
+  include?: string;
+  /** Number of matches, when the tool reported one. */
+  matchCount?: number;
+  /** Whether the tool truncated the result set. */
+  truncated: boolean;
+}
+
+/** Extracted input/output of a `glob` (file search) tool call. */
+export interface GlobInfo {
+  /** Search root reported by the tool; `/` when the tool searched from the workspace root. */
+  path: string;
+  /** Glob pattern that was matched. */
+  pattern: string;
+  /** Number of matched paths, when the tool reported one. */
+  matchCount?: number;
+  /** Whether the tool truncated the result set. */
+  truncated: boolean;
+}
+
 export interface DiffLine {
   type: 'add' | 'del' | 'context';
   lineNum?: number;
@@ -480,6 +506,207 @@ export class ReadInfoPipe implements PipeTransform {
       lineEnd: display?.lineEnd,
       totalLines: display?.totalLines
     };
+  }
+}
+
+/** Command executed by an `execute` (shell) tool call. */
+export function extractShellCommand(message: AcpMessage): string {
+  const rawInput = message.toolRawInput as any;
+  return rawInput?.command || rawInput?.cmd || message.toolTitle || '';
+}
+
+/** Combined stdout/stderr text of an `execute` (shell) tool call. */
+export function extractShellOutput(message: AcpMessage): string {
+  const parts: string[] = [];
+
+  for (const block of message.toolContent ?? []) {
+    if (!block || block.type !== 'content') continue;
+    const inner = block.content as any;
+    if (inner?.type === 'text' && typeof inner.text === 'string') {
+      parts.push(inner.text);
+    } else if (typeof inner?.text === 'string') {
+      parts.push(inner.text);
+    }
+  }
+
+  if (parts.length === 0) {
+    const rawOutput = message.toolRawOutput as any;
+    for (const key of ['stdout', 'stderr', 'output', 'text']) {
+      if (typeof rawOutput?.[key] === 'string' && rawOutput[key]) {
+        parts.push(rawOutput[key]);
+      }
+    }
+  }
+
+  // Keep leading spaces (git status/diff output relies on the first column),
+  // only drop blank lines at both ends.
+  return parts.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+}
+
+@Pipe({ name: 'shellCommand', standalone: true, pure: true })
+export class ShellCommandPipe implements PipeTransform {
+  transform(message: AcpMessage): string {
+    return extractShellCommand(message);
+  }
+}
+
+@Pipe({ name: 'shellOutput', standalone: true, pure: true })
+export class ShellOutputPipe implements PipeTransform {
+  transform(message: AcpMessage): string {
+    return extractShellOutput(message);
+  }
+}
+
+/** Textual result of a tool call, harvested from its content blocks / raw output. */
+function toolResultText(message: AcpMessage): string {
+  const parts: string[] = [];
+  for (const block of message.toolContent ?? []) {
+    if (!block || block.type !== 'content') continue;
+    const inner = block.content as any;
+    if (typeof inner?.text === 'string') parts.push(inner.text);
+    else if (inner?.type === 'resource' && typeof inner.resource?.text === 'string') {
+      parts.push(inner.resource.text);
+    }
+  }
+  if (parts.length === 0) {
+    const rawOutput = message.toolRawOutput as any;
+    for (const key of ['text', 'output', 'stdout']) {
+      if (typeof rawOutput?.[key] === 'string' && rawOutput[key]) parts.push(rawOutput[key]);
+    }
+  }
+  return parts.join('\n');
+}
+
+/**
+ * Whether the tool call is a content search (`grep`) rather than some other
+ * `search`-kind tool (glob, web search, ...).
+ *
+ * ACP tool calls carry no stable tool name, only a free-form title, so the check
+ * combines the title with the shape of the payload: grep always has a `pattern`
+ * input and reports either "Found N matches" or per-line "Line N: ..." entries.
+ */
+function isGrepToolCall(message: AcpMessage): boolean {
+  const title = (message.toolTitle || '').toLowerCase();
+  if (/(^|[^a-z])grep([^a-z]|$)/.test(title)) return true;
+  if (/(glob|find files|file search|web search|search the web)/.test(title)) return false;
+  if (message.toolKind !== 'search') return false;
+  const output = toolResultText(message);
+  return /found\s+\d+\s+match/i.test(output) || /^\s*Line\s+\d+:/m.test(output);
+}
+
+/** Recognises a `grep` tool call and extracts what the compact row displays. */
+export function extractGrepInfo(message: AcpMessage): GrepInfo | null {
+  if (message.role !== 'tool_call' && message.role !== 'tool_call_update') return null;
+
+  const rawInput = message.toolRawInput as any;
+  const pattern = typeof rawInput?.pattern === 'string' ? rawInput.pattern : '';
+  if (!pattern) return null;
+  if (!isGrepToolCall(message)) return null;
+
+  const rawPath = typeof rawInput?.path === 'string' && rawInput.path
+    ? rawInput.path
+    : message.toolLocations?.[0]?.path || '';
+
+  const rawOutput = message.toolRawOutput as any;
+  let matchCount: number | undefined;
+  if (typeof rawOutput?.metadata?.matches === 'number') {
+    matchCount = rawOutput.metadata.matches;
+  } else {
+    const output = toolResultText(message);
+    const found = output.match(/found\s+(\d+)\s+match/i);
+    if (found) {
+      matchCount = parseInt(found[1], 10);
+    } else if (/no matches found/i.test(output)) {
+      matchCount = 0;
+    } else if (output) {
+      // Matches are listed as `Line <n>: <text>`; only trust the fallback when
+      // the payload actually has that shape.
+      const lines = output.match(/^\s*Line\s+\d+:/gm);
+      if (lines) matchCount = lines.length;
+    }
+  }
+
+  const rawInclude = rawInput?.include;
+  const include = Array.isArray(rawInclude)
+    ? rawInclude.filter((v: unknown) => typeof v === 'string').join(', ')
+    : typeof rawInclude === 'string' ? rawInclude : undefined;
+
+  return {
+    path: (rawPath || '').replace(/\\/g, '/'),
+    pattern,
+    include: include || undefined,
+    matchCount,
+    truncated: rawOutput?.metadata?.truncated === true
+  };
+}
+
+@Pipe({ name: 'grepInfo', standalone: true, pure: true })
+export class GrepInfoPipe implements PipeTransform {
+  transform(message: AcpMessage): GrepInfo | null {
+    return extractGrepInfo(message);
+  }
+}
+
+/**
+ * Whether the tool call is a file-name search (`glob`) rather than some other
+ * `search`-kind tool (grep, web search, ...).
+ *
+ * Like grep, glob carries a `pattern` input and is usually titled with the tool
+ * name. When the title is generic, the result shape decides: glob returns a bare
+ * list of paths, while grep reports match counts or `Line N:` entries.
+ */
+function isGlobToolCall(message: AcpMessage): boolean {
+  const title = (message.toolTitle || '').toLowerCase();
+  if (/(^|[^a-z])glob([^a-z]|$)/.test(title)) return true;
+  if (/(grep|web search|search the web)/.test(title)) return false;
+  if (message.toolKind !== 'search') return false;
+  const output = toolResultText(message);
+  if (!output) return false;
+  if (/found\s+\d+\s+match/i.test(output) || /no matches found/i.test(output)) return false;
+  if (/^\s*Line\s+\d+:/m.test(output)) return false;
+  return true;
+}
+
+/** Recognises a `glob` tool call and extracts what the compact row displays. */
+export function extractGlobInfo(message: AcpMessage): GlobInfo | null {
+  if (message.role !== 'tool_call' && message.role !== 'tool_call_update') return null;
+
+  const rawInput = message.toolRawInput as any;
+  const pattern = typeof rawInput?.pattern === 'string' ? rawInput.pattern : '';
+  if (!pattern) return null;
+  if (!isGlobToolCall(message)) return null;
+
+  const rawPath = typeof rawInput?.path === 'string' && rawInput.path
+    ? rawInput.path
+    : message.toolLocations?.[0]?.path || '';
+
+  const rawOutput = message.toolRawOutput as any;
+  let matchCount: number | undefined;
+  if (typeof rawOutput?.metadata?.count === 'number') {
+    matchCount = rawOutput.metadata.count;
+  } else {
+    const output = toolResultText(message);
+    if (/no files found/i.test(output)) {
+      matchCount = 0;
+    } else if (output) {
+      // Glob results are one path per line.
+      const lines = output.split(/\r?\n/).filter(line => line.trim().length > 0);
+      if (lines.length > 0) matchCount = lines.length;
+    }
+  }
+
+  return {
+    path: (rawPath || '/').replace(/\\/g, '/'),
+    pattern,
+    matchCount,
+    truncated: rawOutput?.metadata?.truncated === true
+  };
+}
+
+@Pipe({ name: 'globInfo', standalone: true, pure: true })
+export class GlobInfoPipe implements PipeTransform {
+  transform(message: AcpMessage): GlobInfo | null {
+    return extractGlobInfo(message);
   }
 }
 

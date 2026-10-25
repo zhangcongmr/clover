@@ -692,6 +692,47 @@
   opacity: 0.8;
 }
 
+/* Grep / glob (search) tool calls: one compact command line */
+.tool-call-search {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--vscode-small-font-size);
+  line-height: 1.6;
+  color: var(--vscode-foreground);
+  opacity: 0.85;
+}
+
+.search-label {
+  flex-shrink: 0;
+  font-size: var(--vscode-font-size);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.search-path,
+.search-pattern,
+.search-include {
+  font-family: var(--vscode-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.search-separator {
+  opacity: 0.45;
+}
+
+.search-count {
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.tool-call-search.search-failed .search-count {
+  color: var(--vscode-errorForeground, #f14c4c);
+  opacity: 1;
+}
+
 .todos-card {
   display: flex;
   flex-direction: column;

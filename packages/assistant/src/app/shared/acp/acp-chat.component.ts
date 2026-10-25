@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
-import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, buildChangedFiles, extractRagResult, resolveEditFilePath, type ChangedFile } from './tool-call-info.pipe';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, GrepInfoPipe, GlobInfoPipe, ShellCommandPipe, ShellOutputPipe, buildChangedFiles, extractRagResult, resolveEditFilePath, type ChangedFile, type GrepInfo, type GlobInfo } from './tool-call-info.pipe';
 import { RagResultComponent } from './rag-result.component';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
@@ -20,7 +20,7 @@ export interface MessageGroup {
 @Component({
   selector: 'app-acp-chat',
   standalone: true,
-  imports: [CommonModule, ScrollingModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, RagResultComponent, CopyCodeButtonDirective, A2uiJsonRendererComponent],
+  imports: [CommonModule, ScrollingModule, AcpPlanComponent, AcpQuestionComponent, EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, GrepInfoPipe, GlobInfoPipe, ShellCommandPipe, ShellOutputPipe, RagResultComponent, CopyCodeButtonDirective, A2uiJsonRendererComponent],
   providers: [DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER],
   templateUrl: './acp-chat.component.html',
   styleUrls: ['./acp-chat.component.css']
@@ -251,38 +251,10 @@ export class AcpChatComponent implements OnDestroy {
     return this.collapsedShells().has(`shell-${message.toolCallId ?? message.id}`);
   }
 
-  /** Executed command of an `execute` tool call. */
-  shellCommand(message: AcpMessage): string {
-    const rawInput = message.toolRawInput as any;
-    return rawInput?.command || rawInput?.cmd || message.toolTitle || '';
-  }
-
-  /** Combined stdout/stderr text of an `execute` tool call. */
-  shellOutput(message: AcpMessage): string {
-    const parts: string[] = [];
-
-    for (const block of message.toolContent ?? []) {
-      if (!block || block.type !== 'content') continue;
-      const inner = block.content as any;
-      if (inner?.type === 'text' && typeof inner.text === 'string') {
-        parts.push(inner.text);
-      } else if (typeof inner?.text === 'string') {
-        parts.push(inner.text);
-      }
-    }
-
-    if (parts.length === 0) {
-      const rawOutput = message.toolRawOutput as any;
-      for (const key of ['stdout', 'stderr', 'output', 'text']) {
-        if (typeof rawOutput?.[key] === 'string' && rawOutput[key]) {
-          parts.push(rawOutput[key]);
-        }
-      }
-    }
-
-    // Keep leading spaces (git status/diff output relies on the first column),
-    // only drop blank lines at both ends.
-    return parts.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+  /** Trailing summary of a grep/glob tool call row, e.g. `（4 个匹配项）`. */
+  searchSummary(info: GrepInfo | GlobInfo): string {
+    if (info.matchCount === undefined) return '搜索完成';
+    return `（${info.matchCount}${info.truncated ? '+' : ''} 个匹配项）`;
   }
 
   private groupMessages(messages: AcpMessage[]): MessageGroup[] {
