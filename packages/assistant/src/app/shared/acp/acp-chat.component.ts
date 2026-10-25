@@ -38,6 +38,16 @@ export class AcpChatComponent implements OnDestroy {
   /** Tracks which intermediate sections are collapsed (keyed by first message id). */
   private collapsedSections = new Set<string>();
 
+  /**
+   * Intermediate sections that are open. History defaults to collapsed; the round
+   * currently streaming is opened automatically and stays open after it finishes.
+   * Reset whenever the bound session changes (load/resume).
+   */
+  private readonly expandedSections = signal<ReadonlySet<string>>(new Set());
+
+  /** Session the section state belongs to; used to avoid resetting on every sessionState update. */
+  private sectionSessionId: string | null = null;
+
   readonly activeTodosMessages = computed(() => this.acpService.activeTodosMessages());
 
   readonly activeQuestionsMessages = computed(() => this.acpService.activeQuestionsMessages());
@@ -138,6 +148,29 @@ export class AcpChatComponent implements OnDestroy {
         this.collapsedSections.clear();
       }
     });
+
+    // 加载/切换会话后，历史步骤全部回到「收起」的默认状态。
+    effect(() => {
+      const sessionId = this.acpService.sessionState().sessionId;
+      if (sessionId === this.sectionSessionId) return;
+      this.sectionSessionId = sessionId;
+      this.expandedSections.set(new Set());
+    });
+
+    // 正在流式输出的这一轮保持展开；结束后这些 key 留在集合里，步骤不会突然收起。
+    effect(() => {
+      if (!this.acpService.isProcessing()) return;
+      const liveKeys = this.groupedMessages()
+        .filter(group => group.type === 'intermediate' && group.isNew)
+        .map(group => this.sectionKey(group))
+        .filter(key => !!key);
+      if (liveKeys.length === 0) return;
+      this.expandedSections.update(prev => {
+        const missing = liveKeys.filter(key => !prev.has(key));
+        if (missing.length === 0) return prev;
+        return new Set([...prev, ...missing]);
+      });
+    });
   }
 
   ngOnDestroy(): void {
@@ -150,25 +183,26 @@ export class AcpChatComponent implements OnDestroy {
     this.todosCollapsed = !this.todosCollapsed;
   }
 
-  isIntermediateSectionCollapsed(sectionId: string): boolean {
-    // 对于新消息（processing开始后），默认展开
-    if (this.acpService.isProcessing() && this.acpService.processingStartTime() !== null) {
-      // 检查 sectionId 对应的消息是否是新消息
-      const messages = this.acpService.messages();
-      const msg = messages.find(m => m.id === sectionId);
-      if (msg && msg.timestamp.getTime() >= this.acpService.processingStartTime()!) {
-        return false; // 新消息默认展开
-      }
-    }
-    return !this.collapsedSections.has(sectionId);
+  private sectionKey(group: MessageGroup): string {
+    return group.messages[0]?.id ?? '';
   }
 
-  toggleIntermediateSection(sectionId: string): void {
-    if (this.collapsedSections.has(sectionId)) {
-      this.collapsedSections.delete(sectionId);
-    } else {
-      this.collapsedSections.add(sectionId);
-    }
+  isIntermediateSectionCollapsed(group: MessageGroup): boolean {
+    // 新消息（processing 开始后）默认展开，历史步骤默认收起。
+    if (group.isNew) return false;
+    return !this.expandedSections().has(this.sectionKey(group));
+  }
+
+  toggleIntermediateSection(group: MessageGroup): void {
+    const key = this.sectionKey(group);
+    if (!key) return;
+    this.expandedSections.update(prev => {
+      const next = new Set(prev);
+      if (!next.delete(key)) {
+        next.add(key);
+      }
+      return next;
+    });
   }
 
   isExpanded(message: AcpMessage): boolean {
@@ -326,13 +360,13 @@ export class AcpChatComponent implements OnDestroy {
     return `data:${mime};base64,${block.resource.blob ?? ''}`;
   }
 
-  getToolStatusIcon(status?: string): string {
+  getToolStatusLabel(status?: string): string {
     switch (status) {
-      case 'pending': return '⏳';
-      case 'in_progress': return '🔄';
-      case 'completed': return '✅';
-      case 'failed': return '❌';
-      default: return '❓';
+      case 'pending': return '等待中';
+      case 'in_progress': return '进行中';
+      case 'completed': return '已完成';
+      case 'failed': return '失败';
+      default: return '未知';
     }
   }
 
