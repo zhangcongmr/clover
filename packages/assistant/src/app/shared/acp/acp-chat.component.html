@@ -289,6 +289,9 @@
             @if (message.toolKind === 'edit' && message.toolStatus === 'completed' && (message | editDiff); as editDiff) {
               @if (isExpanded(message)) {
                 <div class="tool-call-diff custom-scroll">
+                  @if (editFilePath(message); as filePath) {
+                    <div class="diff-file-header" [title]="filePath">{{ filePath }}</div>
+                  }
                   @for (diffLine of editDiff.diff | parseDiff; track $index) {
                     <div class="diff-line" [class.diff-line-add]="diffLine.type === 'add'" [class.diff-line-del]="diffLine.type === 'del'">
                       @if (diffLine.type === 'add') {

@@ -543,6 +543,26 @@
   overflow-y: auto;
 }
 
+/* File path pinned above the diff lines of an edit tool call */
+.diff-file-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--vscode-border-color);
+  /* Opaque tint mixed with the panel background: the panel is a scroll
+     container, so a translucent header would show diff lines passing under it. */
+  background-color: color-mix(in srgb, var(--vscode-foreground, #1f1f1f) 6%, var(--vscode-background, #ffffff));
+  font-family: var(--vscode-font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .diff-line {
   display: flex;
   font-family: var(--vscode-font-mono);

@@ -68,7 +68,70 @@ export function extractEditDiff(message: AcpMessage): EditDiffInfo | null {
     const deletions = (diff.match(/^-[^-]/gm) || []).length;
     return { additions, deletions, diff };
   }
+  // Some agents (e.g. opencode) report edits as `rawOutput.metadata.files[]`,
+  // one entry per touched file, instead of a single `filediff`/`diff`.
+  const files = metadataFiles(rawOutput);
+  if (files.length > 0) {
+    const patches: string[] = [];
+    let additions = 0;
+    let deletions = 0;
+    let hasCounts = false;
+
+    for (const file of files) {
+      if (!file || typeof file !== 'object') continue;
+      const patch = typeof file.patch === 'string' ? file.patch.replace(/\r\n/g, '\n') : '';
+      if (patch) patches.push(patch);
+      if (typeof file.additions === 'number' || typeof file.deletions === 'number') {
+        additions += typeof file.additions === 'number' ? file.additions : 0;
+        deletions += typeof file.deletions === 'number' ? file.deletions : 0;
+        hasCounts = true;
+      }
+    }
+
+    const patch = patches.join('\n');
+    if (patch) {
+      return {
+        additions: hasCounts ? additions : countPatchLines(patch, '+'),
+        deletions: hasCounts ? deletions : countPatchLines(patch, '-'),
+        diff: patch
+      };
+    }
+  }
   return null;
+}
+
+/**
+ * Normalises `rawOutput.metadata.files` into a list of entries. Agents use either
+ * an array (`[{ file, patch, additions, deletions }]`) or a map keyed by path
+ * (`{ 'src/a.ts': { patch, additions, deletions } }`).
+ */
+function metadataFiles(rawOutput: any): any[] {
+  const files = rawOutput?.metadata?.files;
+  if (Array.isArray(files)) return files;
+  if (files && typeof files === 'object') {
+    return Object.entries(files).map(([file, value]) => (
+      value && typeof value === 'object' ? { file, ...(value as Record<string, unknown>) } : { file, patch: value }
+    ));
+  }
+  return [];
+}
+
+/** Counts added/removed lines in a unified patch (skipping `+++`/`---` headers). */
+function countPatchLines(patch: string, sign: '+' | '-'): number {
+  const pattern = sign === '+' ? /^\+[^+]/gm : /^-[^-]/gm;
+  return (patch.match(pattern) || []).length;
+}
+
+/**
+ * Display path for an edit tool call (relative to the workspace when possible).
+ * Falls back to the tool title when the payload carries no path.
+ */
+export function resolveEditFilePath(message: AcpMessage, cwd?: string): string {
+  const diff = extractEditDiff(message);
+  if (!diff) return '';
+  const rawPath = resolveFilePath(message, diff);
+  if (!rawPath) return '';
+  return toDisplayPath(message, rawPath, cwd);
 }
 
 function normalizePath(path: string): string {
@@ -88,8 +151,10 @@ function relativizePath(path: string, cwd?: string): string {
 function resolveFilePath(message: AcpMessage, diff: EditDiffInfo): string {
   const rawOutput = message.toolRawOutput as any;
   const rawInput = message.toolRawInput as any;
+  const firstFile = metadataFiles(rawOutput)[0];
   return (
     rawOutput?.metadata?.filediff?.file ||
+    firstFile?.file ||
     rawInput?.filePath ||
     message.toolLocations?.[0]?.path ||
     message.toolTitle ||
@@ -531,7 +596,14 @@ export class FormatMessagePipe implements PipeTransform {
   private readonly sanitizer = inject(DomSanitizer);
 
   transform(content: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(renderMarkdownSync(content));
+    const html = renderMarkdownSync(content);
+    if (!html) return this.sanitizer.bypassSecurityTrustHtml('');
+    // Wrap the rendered markdown so long lines soft-wrap inside the bubble:
+    // chat bubbles are sized to their content, so an unbreakable token (path,
+    // URL, long code line) would otherwise widen the bubble and overflow the
+    // viewport. The class lives in the global stylesheet because this pipe is
+    // shared by the chat, thought and A2UI renderers.
+    return this.sanitizer.bypassSecurityTrustHtml(`<div class="md-content">${html}</div>`);
   }
 }
 

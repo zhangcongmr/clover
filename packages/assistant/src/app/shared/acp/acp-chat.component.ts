@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
-import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, buildChangedFiles, extractRagResult, type ChangedFile } from './tool-call-info.pipe';
+import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceNamePipe, CompletedCountPipe, FileDiffViewPipe, RagResultPipe, buildChangedFiles, extractRagResult, resolveEditFilePath, type ChangedFile } from './tool-call-info.pipe';
 import { RagResultComponent } from './rag-result.component';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
@@ -70,6 +70,12 @@ export class AcpChatComponent implements OnDestroy {
 
   totalDeletions(files: ChangedFile[]): number {
     return files.reduce((sum, f) => sum + f.deletions, 0);
+  }
+
+  /** Display path shown in the header of an edit tool call's diff panel. */
+  editFilePath(message: AcpMessage): string {
+    const cwd = this.acpService.sessionState().cwd || this.acpService.selectedProjectPath() || undefined;
+    return resolveEditFilePath(message, cwd);
   }
 
   private expandedFileChanges = new Set<string>();
