@@ -476,3 +476,34 @@ img, svg {
 .tooltip-bubble {
   display: none;
 }
+
+/*
+ * Markdown rendered by `FormatMessagePipe` (`<div class="md-content">`).
+ *
+ * Chat bubbles shrink-wrap their content, so a single unbreakable token (a long
+ * path, URL or inline code) used to widen the bubble past the message column and
+ * overflow the viewport. Breaking inside words is the last resort here: normal
+ * text still wraps at spaces first. Fenced code blocks soft-wrap as well instead
+ * of forcing a horizontal scrollbar.
+ *
+ * Global (not component-scoped) because the pipe is used by acp-chat,
+ * a2ui-json-renderer and the collab panel.
+ */
+.md-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.md-content pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.md-content img,
+.md-content video {
+  max-width: 100%;
+  height: auto;
+}
