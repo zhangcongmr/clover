@@ -48,6 +48,9 @@ export class AcpChatComponent implements OnDestroy {
   /** Session the section state belongs to; used to avoid resetting on every sessionState update. */
   private sectionSessionId: string | null = null;
 
+  /** Execute tool calls whose body has been collapsed by the user. */
+  private readonly collapsedShells = signal<ReadonlySet<string>>(new Set());
+
   readonly activeTodosMessages = computed(() => this.acpService.activeTodosMessages());
 
   readonly activeQuestionsMessages = computed(() => this.acpService.activeQuestionsMessages());
@@ -161,6 +164,7 @@ export class AcpChatComponent implements OnDestroy {
       if (sessionId === this.sectionSessionId) return;
       this.sectionSessionId = sessionId;
       this.expandedSections.set(new Set());
+      this.collapsedShells.set(new Set());
     });
 
     // 正在流式输出的这一轮保持展开；结束后这些 key 留在集合里，步骤不会突然收起。
@@ -223,6 +227,17 @@ export class AcpChatComponent implements OnDestroy {
   }
 
   toggleExpand(message: AcpMessage): void {
+    if (message.toolKind === 'execute') {
+      const key = `shell-${message.toolCallId ?? message.id}`;
+      this.collapsedShells.update(prev => {
+        const next = new Set(prev);
+        if (!next.delete(key)) {
+          next.add(key);
+        }
+        return next;
+      });
+      return;
+    }
     if (message.toolKind !== 'edit' && message.toolKind !== 'read' && !extractRagResult(message)) return;
     const key = `expand-${message.toolCallId}`;
     if (this.collapsedSections.has(key)) {
@@ -230,6 +245,44 @@ export class AcpChatComponent implements OnDestroy {
     } else {
       this.collapsedSections.add(key);
     }
+  }
+
+  isShellCollapsed(message: AcpMessage): boolean {
+    return this.collapsedShells().has(`shell-${message.toolCallId ?? message.id}`);
+  }
+
+  /** Executed command of an `execute` tool call. */
+  shellCommand(message: AcpMessage): string {
+    const rawInput = message.toolRawInput as any;
+    return rawInput?.command || rawInput?.cmd || message.toolTitle || '';
+  }
+
+  /** Combined stdout/stderr text of an `execute` tool call. */
+  shellOutput(message: AcpMessage): string {
+    const parts: string[] = [];
+
+    for (const block of message.toolContent ?? []) {
+      if (!block || block.type !== 'content') continue;
+      const inner = block.content as any;
+      if (inner?.type === 'text' && typeof inner.text === 'string') {
+        parts.push(inner.text);
+      } else if (typeof inner?.text === 'string') {
+        parts.push(inner.text);
+      }
+    }
+
+    if (parts.length === 0) {
+      const rawOutput = message.toolRawOutput as any;
+      for (const key of ['stdout', 'stderr', 'output', 'text']) {
+        if (typeof rawOutput?.[key] === 'string' && rawOutput[key]) {
+          parts.push(rawOutput[key]);
+        }
+      }
+    }
+
+    // Keep leading spaces (git status/diff output relies on the first column),
+    // only drop blank lines at both ends.
+    return parts.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
   }
 
   private groupMessages(messages: AcpMessage[]): MessageGroup[] {
