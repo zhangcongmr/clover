@@ -271,9 +271,12 @@
                 <span class="tool-call-status-dot"></span>
                 <span class="tool-call-status-label">{{ getToolStatusLabel(message.toolStatus) }}</span>
               </span>
-              <span class="tool-call-title-text">{{ message.toolTitle }}</span>
-              @if (message.toolKind) {
+              <span class="tool-call-title-text">{{ message.toolKind === 'execute' ? 'Shell' : message.toolTitle }}</span>
+              @if (message.toolKind && message.toolKind !== 'execute') {
                 <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
+              }
+              @if (message.toolKind === 'execute') {
+                <span class="diff-toggle-icon" [class.collapsed]="!isShellCollapsed(message)">▶</span>
               }
               @if (message.toolKind === 'edit' && message.toolStatus === 'completed' && (message | editDiff); as editDiff) {
                 <span class="diff-stats">
@@ -286,6 +289,16 @@
                 <span class="diff-toggle-icon" [class.collapsed]="isExpanded(message)">▶</span>
               }
             </div>
+            @if (message.toolKind === 'execute') {
+              @if (!isShellCollapsed(message)) {
+                <div class="shell-panel">
+                  <pre class="shell-command"><code>{{ shellCommand(message) }}</code></pre>
+                  @if (shellOutput(message); as output) {
+                    <pre class="shell-output"><code>{{ output }}</code></pre>
+                  }
+                </div>
+              }
+            }
             @if (message.toolKind === 'edit' && message.toolStatus === 'completed' && (message | editDiff); as editDiff) {
               @if (isExpanded(message)) {
                 <div class="tool-call-diff custom-scroll">

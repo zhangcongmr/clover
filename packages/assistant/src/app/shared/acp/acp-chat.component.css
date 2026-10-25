@@ -607,6 +607,72 @@
   color: var(--vscode-foreground);
 }
 
+/* Execute (shell) tool calls: command on top, output below */
+.shell-panel {
+  border: 1px solid var(--vscode-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--vscode-background);
+}
+
+.shell-command,
+.shell-output {
+  position: relative;
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: var(--vscode-code-font-size);
+  line-height: 1.5;
+  color: var(--vscode-foreground);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Copy buttons are injected into every `pre` by `appCopyCodeButton`; the ones
+   inside the shell panel need the same out-of-flow placement as chat code
+   blocks, otherwise they render inside the text flow. */
+:host ::ng-deep .shell-panel pre .copy-code-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+:host ::ng-deep .shell-panel pre:hover .copy-code-btn {
+  opacity: 1;
+}
+
+:host ::ng-deep .shell-panel pre .copy-code-btn:hover {
+  background-color: var(--vscode-hover-background);
+}
+
+:host ::ng-deep .shell-panel pre .copy-code-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shell-command:not(:last-child) {
+  border-bottom: 1px solid var(--vscode-border-color);
+}
+
+.shell-output {
+  background-color: color-mix(in srgb, var(--vscode-foreground, #1f1f1f) 4%, var(--vscode-background, #ffffff));
+  max-height: 360px;
+  overflow-y: auto;
+}
+
 /* Read tool call info */
 .tool-call-read-info {
   display: flex;
