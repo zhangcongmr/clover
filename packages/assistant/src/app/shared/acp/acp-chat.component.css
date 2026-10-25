@@ -432,9 +432,52 @@
   cursor: pointer;
 }
 
-.tool-call-status-icon {
-  font-size: 14px;
+/* Status marker for tool calls */
+.tool-call-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: var(--vscode-small-font-size);
   line-height: 1;
+  color: var(--vscode-foreground);
+  opacity: 0.75;
+}
+
+.tool-call-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
+.tool-call-status-tag.status-pending .tool-call-status-dot {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.tool-call-status-tag.status-in_progress {
+  color: var(--vscode-accent-color);
+  opacity: 1;
+}
+
+.tool-call-status-tag.status-in_progress .tool-call-status-dot {
+  animation: tool-call-status-pulse 1s ease-in-out infinite;
+}
+
+.tool-call-status-tag.status-completed {
+  color: #4caf50;
+}
+
+.tool-call-status-tag.status-failed {
+  color: var(--vscode-errorForeground, #f14c4c);
+  opacity: 1;
+}
+
+@keyframes tool-call-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
 }
 
 .tool-call-title-text {
