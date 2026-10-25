@@ -204,8 +204,8 @@ export class AcpChatComponent implements OnDestroy {
         }
         groups.push({ type: 'user', messages: [msg] });
       } else if (msg.role === 'error') {
-        // 错误消息独立成组：flushRound 只保留到最后一条 assistant 为止，
-        // 混入 round 会被丢弃（末尾）或落入 intermediate 组后不渲染（无 assistant）。
+        // 错误消息独立成组：intermediate 组的模板没有 error 分支，
+        // 混入 round 会不可见。
         if (currentRound.length > 0) {
           this.flushRound(groups, currentRound);
           currentRound = [];
@@ -223,22 +223,32 @@ export class AcpChatComponent implements OnDestroy {
     return groups;
   }
 
+  /**
+   * 一轮会话（两条 user 消息之间）内可能存在 1 : N 的 assistant 消息：
+   * ACP 回放与实时推送都按 part 顺序给出 assistant → thought/tool_call → assistant …，
+   * 只要中间插入了非 assistant 消息，就会新起一条 assistant 消息。
+   *
+   * 因此这里按出现顺序切分：每遇到一条 assistant 就单独成组（保留全部 N 条），
+   * 它与下一条 assistant 之间的 thought/tool_call 归入一个可折叠的 intermediate 组；
+   * 轮次末尾的步骤同样单独成组，不会被丢弃。
+   */
   private flushRound(groups: MessageGroup[], round: AcpMessage[]): void {
-    let lastAssistantIdx = -1;
-    for (let i = round.length - 1; i >= 0; i--) {
-      if (round[i].role === 'assistant') {
-        lastAssistantIdx = i;
-        break;
+    let steps: AcpMessage[] = [];
+
+    for (const msg of round) {
+      if (msg.role === 'assistant') {
+        if (steps.length > 0) {
+          groups.push({ type: 'intermediate', messages: steps });
+          steps = [];
+        }
+        groups.push({ type: 'assistant', messages: [msg] });
+      } else {
+        steps.push(msg);
       }
     }
 
-    if (lastAssistantIdx === -1) {
-      groups.push({ type: 'intermediate', messages: round });
-    } else {
-      if (lastAssistantIdx > 0) {
-        groups.push({ type: 'intermediate', messages: round.slice(0, lastAssistantIdx) });
-      }
-      groups.push({ type: 'assistant', messages: [round[lastAssistantIdx]] });
+    if (steps.length > 0) {
+      groups.push({ type: 'intermediate', messages: steps });
     }
   }
 
