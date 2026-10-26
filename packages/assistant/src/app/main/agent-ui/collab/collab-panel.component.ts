@@ -11,6 +11,12 @@ interface ModeTab {
   hint: string;
 }
 
+interface RolePreset {
+  role: string;
+  /** Default responsibility text auto-filled when this role is picked. */
+  responsibility: string;
+}
+
 @Component({
   selector: 'app-collab-panel',
   standalone: true,
@@ -30,8 +36,24 @@ export class CollabPanelComponent {
     { id: 'voluntary', label: '自愿认领', hint: '完成后广播，其余 Session 自行判断是否接手' },
   ];
 
-  /** Preset session roles offered by the picker dropdown. */
-  protected readonly rolePresets: string[] = ['代码审查专家', '文档撰写专家', '文档评审专家'];
+  /** Preset session roles offered by the picker dropdown, each with a default responsibility. */
+  protected readonly rolePresets: RolePreset[] = [
+    {
+      role: '代码审查专家',
+      responsibility:
+        '审查代码改动的正确性、安全性与性能：检查边界条件与错误处理，发现潜在缺陷与安全隐患，指出性能瓶颈，并给出可执行的修改建议与优先级。',
+    },
+    {
+      role: '文档撰写专家',
+      responsibility:
+        '撰写与维护清晰准确的文档：梳理结构与信息层次，补齐使用示例与配置说明，统一术语与写作风格，确保文档内容与实现保持一致。',
+    },
+    {
+      role: '文档评审专家',
+      responsibility:
+        '评审文档的准确性与可读性：核对内容与代码实现是否一致，验证步骤可复现、示例正确、术语统一，指出遗漏信息并给出具体修改建议。',
+    },
+  ];
 
   @ViewChild('messageScroll') private messageScroll?: ElementRef<HTMLElement>;
 
@@ -76,6 +98,16 @@ export class CollabPanelComponent {
 
   protected onParticipantRole(id: string, field: 'role' | 'responsibility', value: string): void {
     this.collab.updateParticipant(id, { [field]: value });
+  }
+
+  /** Picks a preset role and pre-fills its default responsibility (unless the role is cleared). */
+  protected onParticipantRolePreset(id: string, role: string): void {
+    const preset = this.rolePresets.find(item => item.role === role);
+    if (!preset) {
+      this.collab.updateParticipant(id, { role });
+      return;
+    }
+    this.collab.updateParticipant(id, { role: preset.role, responsibility: preset.responsibility });
   }
 
   // --- Mode configuration ---------------------------------------------------
