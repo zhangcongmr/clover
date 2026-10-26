@@ -484,6 +484,11 @@ export class AgentComponent {
     event.stopPropagation();
     if (!confirm('Are you sure you want to delete this session?')) return;
 
+    const owner = this.acpService.projects()
+      .find(p => p.sessions?.some(s => s.sessionId === sessionId));
+    const wasActive = this.activeSessionId() === sessionId;
+    const index = owner ? this.sessionsOf(owner).findIndex(s => s.sessionId === sessionId) : -1;
+
     for (const project of this.acpService.projects()) {
       const record = project.sessions?.find(s => s.sessionId === sessionId);
       if (record) {
@@ -495,6 +500,24 @@ export class AgentComponent {
       }
     }
     await this.acpService.deleteSession(sessionId, agentId);
+
+    // 只有删除的是当前激活会话时才自动跳转
+    if (!wasActive) return;
+    if (!owner) {
+      await this.resetToNewTask();
+      return;
+    }
+
+    const refreshed = this.acpService.projects().find(p => p.name === owner.name);
+    const next = refreshed ? this.pickNeighbor(this.sessionsOf(refreshed), index) : null;
+    if (next) {
+      await this.loadSession(next.sessionId);
+    } else if (refreshed) {
+      // 该项目已无会话：停留在项目上，仅清空右侧面板
+      await this.resetSessionPanelKeepingSelection(refreshed.path);
+    } else {
+      await this.resetToNewTask();
+    }
   }
 
   /** Opens the custom context menu on a session row (suppresses the browser's native menu). */
@@ -626,14 +649,62 @@ export class AgentComponent {
 
   async deleteTask(event: MouseEvent, taskId: string): Promise<void> {
     event.stopPropagation();
-    if (confirm('Are you sure you want to delete this task?')) {
-      const wasSelected = this.selectedProject()?.id === taskId;
-      await this.acpService.deleteTask(taskId);
-      if (wasSelected) {
-        this.acpService.saveSelectedProject(null);
-        this.acpService.saveSelectedSession(null);
-      }
+    if (!confirm('Are you sure you want to delete this task?')) return;
+
+    const selected = this.selectedProject();
+    const wasActive = selected?.type === 'task' && selected.id === taskId;
+    const index = this.filteredTasks().findIndex(t => t.id === taskId);
+
+    await this.acpService.deleteTask(taskId);
+
+    // 只有删除的是当前激活任务时才自动跳转，删除背景项保持当前视图不变
+    if (!wasActive) return;
+
+    const next = this.pickNeighbor(this.filteredTasks(), index);
+    if (!next) {
+      // 列表已空：回到 New Task
+      await this.resetToNewTask();
+      return;
     }
+
+    const nextSessionId = next.sessions?.[0]?.sessionId;
+    if (next.id && nextSessionId) {
+      await this.loadTaskSession(next.id, nextSessionId);
+    } else {
+      // 兜底：任务没有可加载的会话时，选中该任务并清空右侧面板
+      await this.resetSessionPanelKeepingSelection(next.path);
+    }
+  }
+
+  /**
+   * 删除后选取相邻项：优先取删除位置上的下一项，没有则回退到上一项。
+   * `indexBeforeRemoval` 是被删项在「删除前可见列表」中的下标。
+   */
+  private pickNeighbor<T>(remaining: T[], indexBeforeRemoval: number): T | null {
+    if (!remaining.length) return null;
+    const index = Math.min(Math.max(indexBeforeRemoval, 0), remaining.length - 1);
+    return remaining[index] ?? null;
+  }
+
+  /** 删除后没有可跳转项时，回到 New Task 初始状态（不改动布局）。 */
+  private async resetToNewTask(): Promise<void> {
+    this.leaveCollab();
+    this.panelError.set(null);
+    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedProject(null);
+    await this.acpService.disconnect();
+    this.acpService.isNewSession.set(true);
+    void this.acpService.reloadConfigOptions();
+  }
+
+  /** 清空当前会话并重置右侧面板，但保留指定项目/任务为选中项。 */
+  private async resetSessionPanelKeepingSelection(path: string): Promise<void> {
+    this.panelError.set(null);
+    await this.acpService.saveSelectedSession(null);
+    await this.acpService.disconnect();
+    await this.acpService.saveSelectedProject(path);
+    this.acpService.isNewSession.set(true);
+    void this.acpService.reloadConfigOptions();
   }
 
   async loadTaskSession(taskId: string, sessionId: string): Promise<void> {
@@ -736,14 +807,23 @@ export class AgentComponent {
 
   async deleteProject(event: MouseEvent, name: string): Promise<void> {
     event.stopPropagation();
-    if (confirm(`Delete project "${name}"?`)) {
-      const wasSelected = this.selectedProject()?.name === name;
-      // 先删除（deleteProject 内部会刷新 projects 列表），再清除选中状态，保证编辑器能感知项目已删除
-      await this.acpService.deleteProject(name);
-      if (wasSelected) {
-        await this.acpService.saveSelectedProject(null);
-        await this.acpService.saveSelectedSession(null);
-      }
+    if (!confirm(`Delete project "${name}"?`)) return;
+
+    const selected = this.selectedProject();
+    const wasActive = selected?.type === 'project' && selected.name === name;
+    const index = this.projects().findIndex(p => p.name === name);
+
+    // deleteProject 内部会刷新 projects 列表
+    await this.acpService.deleteProject(name);
+
+    // 只有删除的是当前选中项目时才自动跳转
+    if (!wasActive) return;
+
+    const next = this.pickNeighbor(this.projects(), index);
+    // 先回到 New Task 清空旧项目残留，再选中下一个项目
+    await this.resetToNewTask();
+    if (next) {
+      this.selectProject(next.name);
     }
   }
 }
