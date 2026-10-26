@@ -12,7 +12,7 @@ import { DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER } from './dynamic-virtual-scro
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp.model';
 
 export interface MessageGroup {
-  type: 'user' | 'assistant' | 'intermediate' | 'error';
+  type: 'user' | 'assistant' | 'intermediate' | 'error' | 'interrupted';
   messages: AcpMessage[];
   isNew?: boolean;
 }
@@ -314,6 +314,13 @@ export class AcpChatComponent implements OnDestroy {
 
     if (steps.length > 0) {
       groups.push({ type: 'intermediate', messages: steps });
+    }
+
+    // 一轮对话没有以 assistant 回复收尾（缺少 assistant 消息，或最后只有
+    // 思考/工具步骤），说明生成被中断（取消 / 断开 / 只执行了工具）；在轮次
+    // 末尾补一条分隔线，避免步骤区看起来像正常结束。
+    if (round.length > 0 && round[round.length - 1].role !== 'assistant') {
+      groups.push({ type: 'interrupted', messages: [] });
     }
   }
 

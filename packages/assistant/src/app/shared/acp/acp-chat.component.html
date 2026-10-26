@@ -35,6 +35,10 @@
               }
             }
           </div>
+        } @else if (group.type === 'interrupted') {
+          <div class="interrupted-divider" role="separator" aria-label="已中断">
+            <span class="interrupted-label">已中断</span>
+          </div>
         } @else {
           @for (message of group.messages; track trackByMessageId($index, message)) {
             <div class="acp-message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'" [class.error]="message.role === 'error'">
