@@ -178,10 +178,17 @@ function resolveFilePath(message: AcpMessage, diff: EditDiffInfo): string {
   const rawOutput = message.toolRawOutput as any;
   const rawInput = message.toolRawInput as any;
   const firstFile = metadataFiles(rawOutput)[0];
+  // Agents put the target path in different places: `rawInput.filePath` (ACP),
+  // `rawInput.path` (e.g. the Edit tool) or a `diff` content block.
+  const diffBlockPath = (message.toolContent ?? [])
+    .find(block => block?.type === 'diff' && typeof block.path === 'string')
+    ?.path;
   return (
     rawOutput?.metadata?.filediff?.file ||
     firstFile?.file ||
     rawInput?.filePath ||
+    rawInput?.path ||
+    diffBlockPath ||
     message.toolLocations?.[0]?.path ||
     message.toolTitle ||
     diff.diff.split('\n').find(l => l.startsWith('Index:'))?.slice('Index:'.length).trim() ||
@@ -193,12 +200,21 @@ function isAbsolutePath(path: string): boolean {
   return /^[A-Za-z]:\//.test(path) || path.startsWith('/');
 }
 
+/** Whether a tool title actually names the same file as the resolved path. */
+function sharesFileName(title: string, path: string): boolean {
+  const titleName = title.split('/').pop()?.toLowerCase() ?? '';
+  const pathName = path.split('/').pop()?.toLowerCase() ?? '';
+  return !!titleName && titleName === pathName;
+}
+
 /** Picks the shortest sensible display path (relative to cwd, else the title). */
 function toDisplayPath(message: AcpMessage, rawPath: string, cwd?: string): string {
   const rel = relativizePath(rawPath, cwd);
   if (!isAbsolutePath(rel)) return rel;
   const title = message.toolTitle ? normalizePath(message.toolTitle) : '';
-  if (title && !isAbsolutePath(title)) return title;
+  // Only trust the title when it names the same file. Agents often send generic
+  // titles ("edit", "write"), which would hide the actual path.
+  if (title && !isAbsolutePath(title) && sharesFileName(title, rel)) return title;
   return rel;
 }
 

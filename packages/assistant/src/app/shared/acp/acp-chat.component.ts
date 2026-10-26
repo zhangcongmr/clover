@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
@@ -35,8 +35,11 @@ export class AcpChatComponent implements OnDestroy {
   isNearBottom = signal(true);
   private rafId: number | null = null;
 
-  /** Tracks which intermediate sections are collapsed (keyed by first message id). */
-  private collapsedSections = new Set<string>();
+  /**
+   * Tool detail panels (edit diff / read info) the user expanded, keyed by tool
+   * call. Only expanded entries are stored: every panel defaults to collapsed.
+   */
+  private readonly expandedToolDetails = signal<ReadonlySet<string>>(new Set());
 
   /**
    * Intermediate sections that are open. History defaults to collapsed; the round
@@ -48,8 +51,8 @@ export class AcpChatComponent implements OnDestroy {
   /** Session the section state belongs to; used to avoid resetting on every sessionState update. */
   private sectionSessionId: string | null = null;
 
-  /** Execute tool calls whose body has been collapsed by the user. */
-  private readonly collapsedShells = signal<ReadonlySet<string>>(new Set());
+  /** Execute tool calls whose shell body is expanded. Collapsed by default. */
+  private readonly expandedShells = signal<ReadonlySet<string>>(new Set());
 
   readonly activeTodosMessages = computed(() => this.acpService.activeTodosMessages());
 
@@ -151,20 +154,14 @@ export class AcpChatComponent implements OnDestroy {
       }
     });
 
-    effect(() => {
-      const processing = this.acpService.isProcessing();
-      if (!processing) {
-        this.collapsedSections.clear();
-      }
-    });
-
-    // 加载/切换会话后，历史步骤全部回到「收起」的默认状态。
+    // 加载/切换会话后，所有展开状态回到默认（收起）。
     effect(() => {
       const sessionId = this.acpService.sessionState().sessionId;
       if (sessionId === this.sectionSessionId) return;
       this.sectionSessionId = sessionId;
       this.expandedSections.set(new Set());
-      this.collapsedShells.set(new Set());
+      this.expandedToolDetails.set(new Set());
+      this.expandedShells.set(new Set());
     });
 
     // 正在流式输出的这一轮保持展开；结束后这些 key 留在集合里，步骤不会突然收起。
@@ -215,40 +212,42 @@ export class AcpChatComponent implements OnDestroy {
     });
   }
 
+  /** Expanded detail panel key for a tool call (diff / read info / RAG result). */
+  private detailKey(message: AcpMessage): string {
+    return `expand-${message.toolCallId ?? message.id}`;
+  }
+
+  /** Expanded shell body key for a tool call. */
+  private shellKey(message: AcpMessage): string {
+    return `shell-${message.toolCallId ?? message.id}`;
+  }
+
   isExpanded(message: AcpMessage): boolean {
-    const key = `expand-${message.toolCallId}`;
-    if (this.collapsedSections.has(key)) {
-      return false;
-    }
-    if (this.acpService.isProcessing() && this.acpService.processingStartTime() !== null) {
-      return message.timestamp.getTime() < this.acpService.processingStartTime()!;
-    }
-    return true;
+    // Only panels the user opened are stored: everything defaults to collapsed.
+    return this.expandedToolDetails().has(this.detailKey(message));
   }
 
   toggleExpand(message: AcpMessage): void {
     if (message.toolKind === 'execute') {
-      const key = `shell-${message.toolCallId ?? message.id}`;
-      this.collapsedShells.update(prev => {
-        const next = new Set(prev);
-        if (!next.delete(key)) {
-          next.add(key);
-        }
-        return next;
-      });
+      this.toggleExpandedEntry(this.expandedShells, this.shellKey(message));
       return;
     }
     if (message.toolKind !== 'edit' && message.toolKind !== 'read' && !extractRagResult(message)) return;
-    const key = `expand-${message.toolCallId}`;
-    if (this.collapsedSections.has(key)) {
-      this.collapsedSections.delete(key);
-    } else {
-      this.collapsedSections.add(key);
-    }
+    this.toggleExpandedEntry(this.expandedToolDetails, this.detailKey(message));
   }
 
-  isShellCollapsed(message: AcpMessage): boolean {
-    return this.collapsedShells().has(`shell-${message.toolCallId ?? message.id}`);
+  isShellExpanded(message: AcpMessage): boolean {
+    return this.expandedShells().has(this.shellKey(message));
+  }
+
+  private toggleExpandedEntry(target: WritableSignal<ReadonlySet<string>>, key: string): void {
+    target.update(prev => {
+      const next = new Set(prev);
+      if (!next.delete(key)) {
+        next.add(key);
+      }
+      return next;
+    });
   }
 
   /** Trailing summary of a grep/glob tool call row, e.g. `（4 个匹配项）`. */
