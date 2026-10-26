@@ -319,7 +319,7 @@
                 <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
               }
               @if (message.toolKind === 'execute') {
-                <span class="diff-toggle-icon" [class.collapsed]="!isShellCollapsed(message)">▶</span>
+                <span class="diff-toggle-icon" [class.collapsed]="isShellExpanded(message)">▶</span>
               }
               @if (message.toolKind === 'edit' && message.toolStatus === 'completed' && (message | editDiff); as editDiff) {
                 <span class="diff-stats">
@@ -333,7 +333,7 @@
               }
             </div>
             @if (message.toolKind === 'execute') {
-              @if (!isShellCollapsed(message)) {
+              @if (isShellExpanded(message)) {
                 <div class="shell-panel">
                   <pre class="shell-command"><code>{{ message | shellCommand }}</code></pre>
                   @if (message | shellOutput; as output) {
