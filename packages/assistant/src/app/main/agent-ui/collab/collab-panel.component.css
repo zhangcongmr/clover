@@ -362,20 +362,10 @@
   flex: 1;
 }
 
-.target-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.mode-hint {
   color: var(--vscode-descriptionForeground);
-}
-
-.target-select {
-  background: var(--vscode-dropdown-background);
-  color: var(--vscode-dropdown-foreground);
-  border: 1px solid var(--vscode-dropdown-border, var(--vscode-border-color));
-  border-radius: 3px;
-  padding: 2px 6px;
-  font-size: 12px;
+  opacity: 0.8;
+  font-size: 11px;
 }
 
 /* ===== Agent settings (mode / model) ===== */

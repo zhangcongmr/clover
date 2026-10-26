@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   Client,
   ClientFactory,
@@ -125,6 +125,17 @@ export class CollabService {
   readonly targetParticipantId = signal('');
   /** Route by session role (01 单点协作); empty = auto. */
   readonly targetRole = signal('');
+
+  /**
+   * Unified routing selection for 01 单点协作: `''` (auto) / `role:<role>` /
+   * `participant:<id>`. Only one of `targetRole` / `targetParticipantId` is set.
+   */
+  readonly targetRoute = computed(() => {
+    const role = this.targetRole();
+    if (role) return `role:${role}`;
+    const participantId = this.targetParticipantId();
+    return participantId ? `participant:${participantId}` : '';
+  });
 
   // === Collaboration mode (shared metadata contract with the backend) ===
   readonly collabMode = signal<CollabMode>('single');
@@ -294,6 +305,25 @@ export class CollabService {
     const space = this.space();
     if (!space) return [];
     return [...new Set(space.agents.map(agent => agent.role).filter((role): role is string => Boolean(role)))];
+  }
+
+  /** Applies a unified routing selection, clearing the other routing signal. */
+  setTargetRoute(value: string): void {
+    const separator = value.indexOf(':');
+    const kind = separator >= 0 ? value.slice(0, separator) : '';
+    const target = separator >= 0 ? value.slice(separator + 1) : '';
+    if (kind === 'role' && target) {
+      this.targetParticipantId.set('');
+      this.targetRole.set(target);
+      return;
+    }
+    if (kind === 'participant' && target) {
+      this.targetRole.set('');
+      this.targetParticipantId.set(target);
+      return;
+    }
+    this.targetParticipantId.set('');
+    this.targetRole.set('');
   }
 
   addSubTask(): void {
@@ -675,16 +705,21 @@ export class CollabService {
 
   private buildRequest(space: CollabSpace, prompt: string): SendMessageRequest {
     const participantIds = space.agents.map(agent => agent.id);
+    const mode = this.collabMode();
     const collab: Record<string, unknown> = {
       spaceId: space.spaceId,
       participantIds,
       agentIds: space.agents.map(agent => agent.agentId),
       cwd: space.cwd,
-      targetParticipantId: this.targetParticipantId() || undefined,
-      targetRole: this.targetRole() || undefined,
     };
 
-    const mode = this.collabMode();
+    // Explicit routing only applies to 01 单点协作; the other modes decide
+    // their entry themselves (pipeline order / sub-task targets / broadcast claim).
+    if (mode === 'single') {
+      collab['targetParticipantId'] = this.targetParticipantId() || undefined;
+      collab['targetRole'] = this.targetRole() || undefined;
+    }
+
     if (mode === 'pipeline') {
       const order = this.pipelineOrder().length ? this.pipelineOrder() : participantIds;
       collab['pipeline'] = {

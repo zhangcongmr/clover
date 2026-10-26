@@ -53,10 +53,10 @@
             <select
               class="session-role"
               [ngModel]="participant.role"
-              (ngModelChange)="onParticipantRole(participant.id, 'role', $event)">
+              (ngModelChange)="onParticipantRolePreset(participant.id, $event)">
               <option value="">角色（可选）</option>
-              @for (role of rolePresets; track role) {
-                <option [value]="role">{{ role }}</option>
+              @for (preset of rolePresets; track preset.role) {
+                <option [value]="preset.role">{{ preset.role }}</option>
               }
             </select>
             <input
@@ -106,7 +106,7 @@
         @for (participant of collab.space()!.agents; track participant.id) {
           <span
             class="participant-chip"
-            [class.target]="collab.targetParticipantId() === participant.id">
+            [class.target]="collab.collabMode() === 'single' && collab.targetParticipantId() === participant.id">
             {{ participant.agentId }}
             @if (participant.role) {
               <span class="chip-role">{{ participant.role }}</span>
@@ -117,20 +117,6 @@
           </span>
         }
         <span class="participants-spacer"></span>
-        <label class="target-label">
-          Route to
-          <select
-            class="target-select"
-            [ngModel]="collab.targetParticipantId()"
-            (ngModelChange)="collab.targetParticipantId.set($event)">
-            <option value="">Auto</option>
-            @for (participant of collab.space()!.agents; track participant.id) {
-              <option [value]="participant.id">
-                {{ participant.agentId }}{{ participant.role ? ' · ' + participant.role : '' }}
-              </option>
-            }
-          </select>
-        </label>
         <button
           class="collab-icon-btn settings-toggle"
           [class.active]="showAgentSettings()"
@@ -244,14 +230,26 @@
           @default {
             <div class="mode-config">
               <label class="mode-field">
-                路由到角色
-                <select [ngModel]="collab.targetRole()" (ngModelChange)="collab.targetRole.set($event)">
+                路由
+                <select [ngModel]="collab.targetRoute()" (ngModelChange)="collab.setTargetRoute($event)">
                   <option value="">自动</option>
-                  @for (role of collab.availableRoles(); track role) {
-                    <option [value]="role">{{ role }}</option>
+                  @if (collab.availableRoles().length) {
+                    <optgroup label="按角色">
+                      @for (role of collab.availableRoles(); track role) {
+                        <option [value]="'role:' + role">{{ role }}</option>
+                      }
+                    </optgroup>
                   }
+                  <optgroup label="指定 Session">
+                    @for (participant of collab.space()!.agents; track participant.id) {
+                      <option [value]="'participant:' + participant.id">
+                        {{ participant.agentId }}{{ participant.role ? ' · ' + participant.role : '' }}
+                      </option>
+                    }
+                  </optgroup>
                 </select>
               </label>
+              <span class="mode-hint">自动 = Orchestrator 决策 → 关键词匹配；指定后优先按所选目标路由</span>
             </div>
           }
         }
