@@ -73,11 +73,15 @@
           <div class="ast-content-empty-card">
             <div class="ast-content-empty-title">NO FOLDER/FILE OPENED</div>
             <div class="ast-content-empty-desc">You have not yet opened a folder or file.</div>
-            <div class="ast-content-empty-actions">
-              <button (click)="openFolderInContent('readwrite')" class="ast-content-empty-primary-btn">Open Folder</button>
-              <button (click)="openFileInContent()" class="ast-content-empty-secondary-btn">Open File</button>
-            </div>
-            <div class="ast-content-empty-hint">Click to browse and select a local folder or file.</div>
+            @if (layoutService.dockMode() === 'content-first') {
+              <div class="ast-content-empty-actions">
+                <button (click)="openFolderInContent('readwrite')" class="ast-content-empty-primary-btn">Open Folder</button>
+                <button (click)="openFileInContent()" class="ast-content-empty-secondary-btn">Open File</button>
+              </div>
+              <div class="ast-content-empty-hint">Click to browse and select a local folder or file.</div>
+            } @else {
+              <div class="ast-content-empty-hint">Pick a project in the Agent panel to browse its files here.</div>
+            }
           </div>
         </div>
       } @else {

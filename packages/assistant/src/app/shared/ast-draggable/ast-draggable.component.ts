@@ -36,7 +36,7 @@ export class AstDraggableComponent {
   }
 
   protected getDefaultLeftPct(): number {
-    return 0.25;
+    return 0.20;
   }
 
   protected getDefaultTopPct(): number {

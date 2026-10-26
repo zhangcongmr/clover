@@ -9,6 +9,7 @@ import type { ProjectInfo } from './acp.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { SkillService } from '../skills/skill.service';
+import { LayoutService } from '../../main/layout.service';
 import {
   buildThemePrompt,
   THEME_PROMPT_SEEDS,
@@ -936,6 +937,8 @@ export class AcpChatInputComponent {
   protected acpService = inject(AcpService);
   private readonly skillService = inject(SkillService);
   private readonly platformId = inject(PLATFORM_ID);
+  /** 项目选择入口只在 agent-first 渲染（content-first 下项目由内容区/文档侧决定） */
+  protected readonly layoutService = inject(LayoutService);
 
   @ViewChild('messageInput') private messageInput!: ElementRef;
   @ViewChild('fileInput') private fileInput!: ElementRef<HTMLInputElement>;

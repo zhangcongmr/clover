@@ -746,9 +746,44 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     this.captureExpandedState();
     this.syncDockLayoutParams();
     const next: DockMode = current === 'agent-first' ? 'content-first' : 'agent-first';
+    // 切换前把两侧的项目真源对齐，避免切换后 Agent 与内容区指向不同目录
+    this.syncProjectOnDockModeChange(current, next);
     // overviewOpen 是全局开关：agent-first 由 content 分段控件消费，content-first 由 agent 面板浮层消费，
     // 切模式时状态可沿用，无需强制关闭
     this.applyDockMode(next);
+  }
+
+  /**
+   * dock 模式切换时对齐两侧的项目：
+   * - agent-first → content-first：content 的 dataList 以 Agent 选中的项目为目录重建；
+   * - content-first → agent-first：Agent 的 selectedProjectPath 回写为 content 树的根目录。
+   */
+  private syncProjectOnDockModeChange(current: DockMode, next: DockMode): void {
+    if (current === 'agent-first' && next === 'content-first') {
+      const path = this.acpService.selectedProjectPath();
+      if (!path) return;
+      // 内容面板由 *appKeepAlive 懒创建：切换瞬间 contentComp 可能还不存在（视图尚未创建）。
+      // applyDockMode 之后会展开面板并触发渲染，等这一轮渲染完成、viewChild 解析后再同步。
+      afterNextRender(() => {
+        if (this.layoutService.dockMode() !== 'content-first') return;
+        const contentComp = this.contentComp();
+        if (!contentComp) return;
+        void contentComp
+          .syncContentToProject(path)
+          .catch(err => console.warn('[Layout] Failed to sync content to agent project:', err));
+      }, { injector: this.injector });
+      return;
+    }
+
+    // 内容区没有文件夹根目录（doc 驱动 / 仅打开单文件 / 空态）时保持 Agent 现状
+    const contentComp = this.contentComp();
+    if (!contentComp) return;
+    const rootPath = contentComp.getContentRootPath();
+    if (rootPath && rootPath !== this.acpService.selectedProjectPath()) {
+      void this.acpService
+        .saveSelectedProject(rootPath)
+        .catch(err => console.warn('[Layout] Failed to sync agent project to content root:', err));
+    }
   }
 
   /** 把当前展开态写回当前布局的参数集（agent-first 记内容面板，content-first 记 Agent 面板） */

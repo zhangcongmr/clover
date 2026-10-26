@@ -5,7 +5,7 @@
 				<svg class="icon" width="20" height="20"><use href="#icon-shrink-close"></use></svg>
 			</button>
 		}
-		@if(hasMessages() || acpService.sessionState().title) {
+		@if(hasSession() || acpService.sessionState().title) {
 			<svg class="acp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<circle cx="12" cy="12" r="10" />
 				<path d="M12 16v-4m0-4h.01" />
