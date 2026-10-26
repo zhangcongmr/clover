@@ -141,6 +141,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   // 当前已加载的 agent 选中项目路径（普通字段，不进 effect 依赖，避免 dataList 触发重跑）
   private currentProjectPath: string | null = null;
+  // 正在加载的项目路径：合并同一目录的并发加载（如内容视图刚创建时 init 与切模式补做同步同时触发）
+  private loadingProjectPath: string | null = null;
   // 项目加载令牌，用于极速切换时以最新选中为准
   private projectLoadToken = 0;
 
@@ -918,6 +920,8 @@ Always use the welcome_greeting tool.`;
   }
 
   async openFolderInContent(mode: 'read' | 'readwrite' = 'read') {
+    // agent-first 下项目统一在 Agent 面板选择，内容区不再弹出文件选择器
+    if (this.layoutService.dockMode() === 'agent-first') return;
     // Open the FilePickerDialog for folder selection
     const picker = this.filePicker();
     if (picker) {
@@ -926,6 +930,8 @@ Always use the welcome_greeting tool.`;
   }
 
   async openFileInContent() {
+    // agent-first 下文件入口同样收敛到 Agent 的项目选择
+    if (this.layoutService.dockMode() === 'agent-first') return;
     // Open the FilePickerDialog for file selection
     const picker = this.filePicker();
     if (picker) {
@@ -933,7 +939,7 @@ Always use the welcome_greeting tool.`;
     }
   }
 
-  // Callback from FilePickerDialog when a folder is selected
+  // Callback from FilePickerDialog when a folder or file is selected
   async onFilePickerSelected(result: { path: string; kind: 'folder' | 'file' }) {
     if (result.kind === 'folder') {
       // saveSelectedProject triggers setupProjectSyncEffect → loadAgentProject
@@ -941,6 +947,25 @@ Always use the welcome_greeting tool.`;
     } else {
       await this.openFileViaNodeApi(result.path);
     }
+  }
+
+  /**
+   * 内容树当前使用的根目录（仅「以文件夹为根」的树才有意义）。
+   * 供 dock 切换 content-first → agent-first 时回写给 Agent 的 selectedProjectPath。
+   */
+  getContentRootPath(): string | null {
+    const root = this.dataList()[0];
+    if (!root || root.nodeType !== 'folder' || !root.rootPath) return null;
+    return root.rootPath;
+  }
+
+  /**
+   * dock 切换 agent-first → content-first 时调用：以 Agent 已选项目为目录重建内容树。
+   * path 为空时保留内容区现状，不清空用户已有内容。
+   */
+  async syncContentToProject(path: string | null): Promise<void> {
+    if (!path || path === this.getContentRootPath()) return;
+    await this.loadAgentProject(path);
   }
 
   // Open folder via Node.js API (SSR scan endpoint)
@@ -987,7 +1012,10 @@ Always use the welcome_greeting tool.`;
 
   // 加载 agent 选中的项目到 dataList（实时联动与初始加载共用；只依赖 selectedProjectPath）
   private async loadAgentProject(path: string): Promise<void> {
-    if (!path || path === this.currentProjectPath) return;
+    // 以内容树实际的根目录判断是否需要重扫（currentProjectPath 只是上次 agent 驱动的记录，
+    // 内容区也可能在 content-first 下自行换过目录），已指向同一目录时重扫会白清已打开的文件 tab
+    if (!path || path === this.getContentRootPath() || path === this.loadingProjectPath) return;
+    this.loadingProjectPath = path;
     const token = ++this.projectLoadToken;
     this.currentProjectPath = path;
     this.openedList.set([]); // 切换项目时清空已打开的文件 tab
@@ -1003,6 +1031,9 @@ Always use the welcome_greeting tool.`;
         void this.loadAgentProject(this.currentProjectPath!);
       }
     } finally {
+      if (this.loadingProjectPath === path) {
+        this.loadingProjectPath = null;
+      }
       this.agentProjectLoading.set(false);
     }
   }
