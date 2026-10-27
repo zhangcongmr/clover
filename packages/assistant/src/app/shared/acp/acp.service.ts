@@ -21,6 +21,7 @@ import {
 import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 import { LocalAgentService } from '../local-agent/local-agent.service';
+import { ACP_READ_ONLY } from './acp-readonly.token';
 
 const AGENT_STORAGE_KEY = 'clover_selected_agent';
 
@@ -120,6 +121,13 @@ export interface AcpSessionState {
 export class AcpService {
   private sseService = inject(AcpSseService);
   private localAgentService = inject(LocalAgentService);
+
+  /**
+   * Read-only viewer instance (see `ACP_READ_ONLY`): used by the collaboration
+   * session detail panel to `session/load` another session in isolation. Such an
+   * instance renders history only and must never persist local preferences.
+   */
+  private readonly readOnly = inject(ACP_READ_ONLY, { optional: true }) ?? false;
 
   /** Placeholder session title used until the agent provides its own (LLM) title. */
   private static readonly PLACEHOLDER_TITLE = 'New Session';
@@ -233,7 +241,8 @@ export class AcpService {
   constructor() {
     effect(() => {
       const agent = this.selectedAgent();
-      if (typeof localStorage !== 'undefined') {
+      if (typeof localStorage !== 'undefined' && !this.readOnly) {
+        // 只读查看实例不得改写用户的 agent 偏好
         if (agent) localStorage.setItem(AGENT_STORAGE_KEY, agent.id);
         else localStorage.removeItem(AGENT_STORAGE_KEY);
       }
@@ -242,6 +251,7 @@ export class AcpService {
       // 必须 untracked：reloadConfigOptions 会同步读 sessionState，
       // 否则 sessionState 变化会反过来触发本 effect，形成请求死循环
       untracked(() => {
+        if (this.readOnly) return;
         void this.reloadConfigOptions();
       });
     });
@@ -288,6 +298,7 @@ export class AcpService {
    *  （~/.clover/agent-config.json），页面刷新后无需真实会话即可恢复选择器。
    *  写入失败静默，不影响会话流程。 */
   private persistConfigOptions(options?: ConfigOption[]): void {
+    if (this.readOnly) return;
     const agentId = this.selectedAgent()?.id;
     if (!agentId || !options?.length) return;
     this.sseService.saveAgentConfig(agentId, options).catch(() => {});
@@ -927,6 +938,8 @@ export class AcpService {
   }
 
   async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<void> {
+    // 只读查看实例不得写入项目/任务记录
+    if (this.readOnly) return;
     try {
       await this.sseService.saveSessionToProject(projectPath, session);
     } catch (error) {
@@ -1605,6 +1618,9 @@ export class AcpService {
   }
 
   private handlePermissionRequest(request: PermissionRequest): void {
+    // 只读查看实例不参与权限应答：协作空间自身的 SSE 订阅（CollabService）
+    // 已负责派发同一会话的权限请求，这里再派发会导致同一请求重复进入对话框。
+    if (this.readOnly) return;
     const sessionId = this.sessionState().sessionId;
     const event = new CustomEvent('acp-permission-request', {
       detail: {
