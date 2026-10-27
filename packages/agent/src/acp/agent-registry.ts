@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig } from './acp-agent.types.js';
+import type { EventSink } from '../events/event-sink.js';
 
 /**
  * Runtime status of an agent.
@@ -70,7 +71,7 @@ function probeCommand(command: string): Promise<boolean> {
  *
  * - Server startup calls `warmupAll()`: probes each agent on PATH and then
  *   spawns + initializes the subprocess IN PARALLEL — without creating any
- *   session or Redis subscription.
+ *   session or event-stream subscription.
  * - Session code calls `getOrCreate()`: reuses the warm connection when it
  *   is ready, otherwise falls back to spawn+initialize on the spot.
  * - Settings calls `getStatus()` / `checkNow()` for the Agents management UI.
@@ -81,7 +82,11 @@ export class AgentRegistry {
   /** All states by `command|args|env` key (includes ad-hoc session states). */
   private stateByKey: Map<string, AgentState> = new Map();
 
-  constructor(private agentConfigs: AgentConfig[] = []) {
+  constructor(
+    private agentConfigs: AgentConfig[] = [],
+    /** 事件面出口：注入后所有 agent 连接共用同一个事件流实现。 */
+    private sink?: EventSink,
+  ) {
     for (const config of this.agentConfigs) {
       const state: AgentState = {
         config,
@@ -111,7 +116,7 @@ export class AgentRegistry {
 
   /**
    * Probe + spawn + initialize every known agent, all in parallel.
-   * Never creates session records or Redis subscriptions (startup phase
+   * Never creates session records or event-stream subscriptions (startup phase
    * deliberately skips session-record creation).
    */
   async warmupAll(): Promise<void> {
@@ -225,7 +230,7 @@ export class AgentRegistry {
         agentCommand: command,
         agentArgs: args,
         agentEnv: env,
-      });
+      }, this.sink);
       state.connection = connection;
 
       // Track runtime status transitions driven by the connection itself.

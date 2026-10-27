@@ -83,9 +83,10 @@ export { createSkillRoutes } from './api/skill-routes.js';
 export { setupWebSocket } from './ws/index.js';
 export type { WebSocketServices, WebSocketOptions } from './ws/index.js';
 
-// Redis
-export { RedisClient } from './redis/client.js';
-export type { RedisConfig } from './redis/client.js';
+// Event bus (session event stream, in-process)
+export { InProcessEventSink, getSharedEventSink } from './events/in-process-event-sink.js';
+export type { InProcessEventSinkOptions } from './events/in-process-event-sink.js';
+export type { EventSink, SessionEvent, AttachOptions } from './events/event-sink.js';
 
 // Helpers
 export { loadSslConfig, isJson } from './helpers/index.js';
@@ -100,8 +101,8 @@ export { createServer, setupAgentMiddleware } from './server.js';
 export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';
 
 // ACP SSE + Redis
-export { SseManager } from './acp/sse-manager.js';
-export type { SseConnection, ServerEvent } from './acp/sse-manager.js';
+export { SseManager, StreamConflictError } from './acp/sse-manager.js';
+export type { SseConnection, SseConnectionOptions, SseAttachResult, ServerEvent } from './acp/sse-manager.js';
 export { AcpSessionManager } from './acp/session-manager.js';
 export type { AcpSession, SessionMessage, AcpSessionEvent, SessionOperationOptions } from './acp/session-manager.js';
 export { SseAcpClient } from './acp/sse-client.js';

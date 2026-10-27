@@ -1,6 +1,7 @@
 import { logger } from '../helpers/logger.js';
 import { SseAcpClient } from './sse-client.js';
-import { RedisClient } from '../redis/client.js';
+import { getSharedEventSink } from '../events/in-process-event-sink.js';
+import type { EventSink } from '../events/event-sink.js';
 import type { AgentRegistry } from './agent-registry.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type * as acp from '@agentclientprotocol/sdk';
@@ -31,8 +32,6 @@ export interface AcpSession {
   callbacksBound?: boolean;
   /** Teardown function for the listener registered on `client`. */
   detachFns?: Array<() => void>;
-  /** Redis channel unsubscribers for this session. */
-  redisUnsubs?: Array<() => void>;
 }
 
 export interface SessionMessage {
@@ -43,7 +42,7 @@ export interface SessionMessage {
   timestamp: number;
 }
 
-/** Event published to `acp:events:{acpSessionId}` (may omit `sessionId`). */
+/** 追加到会话事件流的事件（由 `EventSink.append` 投递，可省略 `sessionId`）。 */
 export interface AcpSessionEvent {
   type: string;
   sessionId?: string;
@@ -62,16 +61,17 @@ export interface SessionOperationOptions {
 export class AcpSessionManager {
   /** ACP session id -> session record. */
   private sessions: Map<string, AcpSession> = new Map();
-  private redis: RedisClient;
+  /** 事件面出口（唯一的会话事件流）。 */
+  private sink: EventSink;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private publishCallbacks: Map<string, (event: any) => void> = new Map();
 
   constructor(
     /** Required registry providing pre-warmed shared agent connections. */
     private registry: AgentRegistry,
-    redis?: RedisClient,
+    sink?: EventSink,
   ) {
-    this.redis = redis || RedisClient.getInstance();
+    this.sink = sink || getSharedEventSink();
     this.startCleanupInterval();
   }
 
@@ -93,41 +93,84 @@ export class AcpSessionManager {
     return config;
   }
 
+  // ==========================================================================
+  // Control plane (in-process)
+  //
+  // 命令直接派发到持有会话的连接，不再经过 Redis：一个 session 的命令只能
+  // 被执行一次，多一个订阅者就会重复跑 prompt。事件面仍走 EventSink。
+  // ==========================================================================
+
   /**
-   * Subscribe the Redis prompt/permission channels of an ACP session.
-   * Called AFTER the ACP session exists (created/loaded/resumed).
+   * 派发一次 prompt（**不等待本轮结束**）。
+   *
+   * 与改造前的 `PUBLISH acp:prompt:{sid}` 语义一致：调用方立即返回，
+   * 后续所有输出通过会话事件流推送；差异只是不再有「多个订阅者重复执行」
+   * 的可能。
    */
-  private setupRedisSubscriptions(sessionId: string): Array<() => void> {
-    // 订阅 prompt 请求（handler 运行时解析会话与连接，允许连接被换绑/复用）
-    const unsubPrompt = this.redis.subscribe(`acp:prompt:${sessionId}`, async (message) => {
-      const session = this.sessions.get(sessionId);
-      if (!session) return;
-      try {
-        const msg: SessionMessage = JSON.parse(message);
-        await this.handleClientMessage(sessionId, msg, session.client);
-      } catch (error) {
-        logger.error(`[ACP Session] Error handling prompt message (session: ${sessionId}):`, error);
-        await this.publishEvent(sessionId, {
-          type: 'error',
-          payload: { message: (error as Error).message },
-          timestamp: Date.now(),
-        });
-      }
-    });
+  dispatchPrompt(sessionId: string, content: acp.ContentBlock[], requestId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      logger.warn(`[ACP Session] Dropped prompt for unknown session: ${sessionId}`);
+      return;
+    }
 
-    // 订阅权限响应
-    const unsubPermission = this.redis.subscribe(`acp:permission:${sessionId}`, async (message) => {
-      const session = this.sessions.get(sessionId);
-      if (!session) return;
-      try {
-        const msg: SessionMessage = JSON.parse(message);
-        await this.handlePermissionResponse(sessionId, msg, session.client);
-      } catch (error) {
-        logger.error(`[ACP Session] Error handling permission message (session: ${sessionId}):`, error);
-      }
+    void this.handleClientMessage(
+      sessionId,
+      {
+        type: 'prompt',
+        sessionId,
+        payload: { content },
+        requestId,
+        timestamp: Date.now(),
+      },
+      session.client,
+    ).catch((error) => {
+      logger.error(`[ACP Session] Error handling prompt (session: ${sessionId}):`, error);
     });
+  }
 
-    return [unsubPrompt, unsubPermission];
+  /** 派发一次取消（fire-and-forget，结束时发布 `cancel_complete`）。 */
+  dispatchCancel(sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      logger.warn(`[ACP Session] Dropped cancel for unknown session: ${sessionId}`);
+      return;
+    }
+
+    void this.handleClientMessage(
+      sessionId,
+      { type: 'cancel', sessionId, timestamp: Date.now() },
+      session.client,
+    ).catch((error) => {
+      logger.error(`[ACP Session] Error handling cancel (session: ${sessionId}):`, error);
+    });
+  }
+
+  /** 派发一次权限响应（对应 `session/request_permission` 的答复）。 */
+  dispatchPermissionResponse(
+    sessionId: string,
+    requestId: string,
+    outcome: acp.RequestPermissionOutcome,
+  ): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      logger.warn(`[ACP Session] Dropped permission response for unknown session: ${sessionId}`);
+      return;
+    }
+
+    void this.handlePermissionResponse(
+      sessionId,
+      {
+        type: 'permission_response',
+        sessionId,
+        requestId,
+        payload: { outcome },
+        timestamp: Date.now(),
+      },
+      session.client,
+    ).catch((error) => {
+      logger.error(`[ACP Session] Error handling permission response (session: ${sessionId}):`, error);
+    });
   }
 
   private async handleClientMessage(
@@ -219,9 +262,14 @@ export class AcpSessionManager {
     }
   }
 
+  /**
+   * 向会话事件流追加一条事件（事件面唯一出口）。
+   *
+   * 控制面（prompt/cancel/permission 命令）不经过这里，仍由
+   * `acp:prompt:*` / `acp:permission:*` 承担。
+   */
   async publishEvent(sessionId: string, event: any): Promise<void> {
-    const channel = `acp:events:${sessionId}`;
-    await this.redis.publish(channel, JSON.stringify(event));
+    await this.sink.append(sessionId, event);
   }
 
   /**
@@ -255,7 +303,7 @@ export class AcpSessionManager {
   // ==========================================================================
 
   /**
-   * Send a prompt directly (bypassing the Redis prompt channel) and wait until
+   * Send a prompt directly (bypassing the HTTP prompt endpoint) and wait until
    * the agent finishes. Session events (`session_update` chunks, permission
    * requests, …) are forwarded to `onEvent` for the duration of the prompt, so
    * callers can stream ACP message chunks without opening an SSE connection.
@@ -278,14 +326,9 @@ export class AcpSessionManager {
 
     let unsub: (() => void) | undefined;
     if (onEvent) {
-      const listener = (raw: string) => {
-        try {
-          onEvent(JSON.parse(raw) as AcpSessionEvent);
-        } catch {
-          /* malformed event — ignore */
-        }
-      };
-      unsub = this.redis.subscribe(`acp:events:${sessionId}`, listener);
+      unsub = this.sink.attach(sessionId, (event) => {
+        onEvent(event as AcpSessionEvent);
+      });
     }
 
     try {
@@ -415,11 +458,10 @@ export class AcpSessionManager {
   }
 
   // ==========================================================================
-  // Record creation (Redis subscriptions are attached after the ACP session
-  // exists, since every channel is keyed by the ACP session id)
+  // Record creation
   // ==========================================================================
 
-  /** 存储「已存在 ACP session」的服务端记录（含 Redis 订阅与监听器）。 */
+  /** 存储「已存在 ACP session」的服务端记录（含事件面与连接监听器）。 */
   private registerRecord(
     sessionId: string,
     client: SseAcpClient,
@@ -442,7 +484,6 @@ export class AcpSessionManager {
       lastActivity: Date.now(),
       status: client.isConnected() ? 'active' : 'disconnected',
       boundGeneration,
-      redisUnsubs: this.setupRedisSubscriptions(sessionId),
     };
     // Track connection changes (status publishing + binding invalidation).
     this.attachConnectionListener(session, client);
@@ -454,7 +495,7 @@ export class AcpSessionManager {
 
   /**
    * Create a new ACP session for an agent (resolved by agentId) and register
-   * the server-side record with its Redis subscriptions afterwards.
+   * the server-side record afterwards.
    */
   async createAcpSession(agentId: string, cwd?: string, mcpServers?: acp.McpServer[]): Promise<any> {
     const config = this.resolveAgentConfig(agentId);
@@ -529,11 +570,11 @@ export class AcpSessionManager {
       session.boundGeneration = session.client.connectionGeneration;
       // History replay is complete. The ACP connection delivers every
       // `session/update` emitted during the load BEFORE resolving the request,
-      // and each was routed to `acp:events:{sessionId}`. Publishing the marker on
-      // that same channel (same Redis publisher) therefore lands AFTER all replay
-      // notifications, giving the client an ordered "replay complete" signal —
-      // the `session/load` HTTP response cannot serve as that barrier because it
-      // travels on a separate connection.
+      // and each was appended to the session event stream. Appending the marker
+      // through that same EventSink (same underlying publisher) therefore lands
+      // AFTER all replay notifications, giving the client an ordered
+      // "replay complete" signal — the `session/load` HTTP response cannot serve
+      // as that barrier because it travels on a separate connection.
       await this.publishReplayComplete(sessionId, 'session_loaded');
       // 该 ACP session 可能仍有一轮 prompt 在跑（例如 UI 切走又切回）：
       // 告诉前端，免得它把「仍在处理中」的状态弄丢。
@@ -711,9 +752,6 @@ export class AcpSessionManager {
       session.detachFns?.forEach(fn => {
         try { fn(); } catch { /* ignore */ }
       });
-      session.redisUnsubs?.forEach(unsub => {
-        try { unsub(); } catch { /* ignore */ }
-      });
 
       // 归还共享预热连接：会话不再被跟踪，但它在 agent 侧仍然存在
       //（可被再次 load/resume）。挂起的权限请求需要取消，否则 agent 侧
@@ -760,7 +798,6 @@ export class AcpSessionManager {
     for (const [, session] of this.sessions) {
       try {
         session.detachFns?.forEach(fn => fn());
-        session.redisUnsubs?.forEach(unsub => unsub());
       } catch (error) {
         // 忽略错误
       }

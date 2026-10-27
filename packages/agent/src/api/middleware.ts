@@ -28,7 +28,10 @@ export function createCORSMiddleware(ports: number[], extraHosts?: string[]): ex
       } catch {}
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, Last-Event-ID, X-Client-Id, X-Epoch, X-Takeover',
+    );
     res.setHeader('Access-Control-Allow-Credentials', 'true');
 
     if (req.method === 'OPTIONS') {

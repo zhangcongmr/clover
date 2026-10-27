@@ -14,6 +14,7 @@ import {
 } from '@a2a-js/sdk';
 import { LocalAgentService } from '../../../shared/local-agent/local-agent.service';
 import { AcpSseService, type AgentStatusInfo } from '../../../shared/acp/acp-sse.service';
+import { openSseRequest, readSseFrames } from '../../../shared/acp/sse-transport';
 import type { ConfigOption } from '../../../shared/acp/acp.model';
 import type { ProjectInfo } from '../../../shared/acp/acp.service';
 
@@ -169,7 +170,10 @@ export class CollabService {
   readonly voluntaryConflict = signal<'first-come' | 'priority' | 'random'>('first-come');
   readonly voluntaryMaxTurns = signal(8);
 
-  private wrapperSources = new Map<string, EventSource>();
+  private wrapperAborts = new Map<string, AbortController>();
+  /** wrapper 流的 clientId / epoch：权限响应要用它通过所有权栅栏。 */
+  private wrapperClientId: string | null = null;
+  private wrapperEpochs = new Map<string, number>();
   private currentAbort: AbortController | null = null;
   private messageSeq = 0;
   private participantSeq = 0;
@@ -444,34 +448,103 @@ export class CollabService {
   private openWrapperSse(space: CollabSpace, token: string): void {
     this.closeWrapperSse();
     const base = this.localAgent.getBaseUrl();
+    const clientId = `collab:${space.spaceId}`;
+    this.wrapperClientId = clientId;
+
     for (const { sessionId } of space.agents) {
-      const source = new EventSource(`${base}/api/acp/events/${sessionId}?token=${encodeURIComponent(token)}`);
-      source.onmessage = event => {
+      const controller = new AbortController();
+      this.wrapperAborts.set(sessionId, controller);
+      void this.loopWrapperStream(base, sessionId, token, clientId, controller.signal);
+    }
+  }
+
+  /** wrapper 事件流：有限次重试，避免后台无限重连。 */
+  private async loopWrapperStream(
+    base: string,
+    sessionId: string,
+    token: string,
+    clientId: string,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const maxAttempts = 10;
+
+    for (let attempt = 0; attempt < maxAttempts && !signal.aborted; attempt++) {
+      await this.runWrapperStream(base, sessionId, token, clientId, signal);
+      if (signal.aborted) return;
+      await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+    }
+
+    if (!signal.aborted) {
+      console.warn(`[Collab] Giving up wrapper stream for ${sessionId} after ${maxAttempts} attempts`);
+    }
+  }
+
+  private async runWrapperStream(
+    base: string,
+    sessionId: string,
+    token: string,
+    clientId: string,
+    signal: AbortSignal,
+  ): Promise<void> {
+    try {
+      const response = await openSseRequest(
+        `${base}/api/acp/stream/${encodeURIComponent(sessionId)}`,
+        {
+          headers: {
+            Accept: 'text/event-stream',
+            Authorization: `Bearer ${token}`,
+            // 'X-Client-Id': clientId,
+            // wrapper session 只由协作面板消费
+            'X-Takeover': '1',
+          },
+          signal,
+        },
+      );
+
+      if (!response.ok || !response.body) {
+        console.warn(`[Collab] Wrapper stream failed (${sessionId}): HTTP ${response.status}`);
+        return;
+      }
+
+      for await (const frame of readSseFrames(response.body, signal)) {
+        if (!frame.data) continue;
         try {
-          this.handleWrapperEvent(sessionId, JSON.parse(event.data));
+          this.handleWrapperEvent(sessionId, JSON.parse(frame.data));
         } catch (error) {
           console.error('[Collab] Failed to parse wrapper event:', error);
         }
-      };
-      // EventSource reconnects automatically; ignore transient errors.
-      source.onerror = () => undefined;
-      this.wrapperSources.set(sessionId, source);
+      }
+    } catch (error) {
+      if (!signal.aborted) {
+        console.warn(`[Collab] Wrapper stream error (${sessionId}):`, error);
+      }
     }
   }
 
   private closeWrapperSse(): void {
-    for (const source of this.wrapperSources.values()) {
-      source.close();
+    for (const controller of this.wrapperAborts.values()) {
+      controller.abort();
     }
-    this.wrapperSources.clear();
+    this.wrapperAborts.clear();
+    this.wrapperEpochs.clear();
+    this.wrapperClientId = null;
   }
 
   /**
    * Mirrors `AcpService.handlePermissionRequest`: dispatches the shared
    * `acp-permission-request` window event so the existing permission dialog
-   * can answer through `/api/acp/permission` on the wrapper session.
+   * can answer through the wrapper session's stream command channel.
    */
   private handleWrapperEvent(sessionId: string, event: { type?: string; payload?: any }): void {
+    // `connected` 携带本次连接的所有权 epoch，权限响应要用它通过栅栏
+    if (event.type === 'connected') {
+      const epoch = event.payload?.epoch;
+      if (typeof epoch === 'number') {
+        this.wrapperEpochs.set(sessionId, epoch);
+      }
+      return;
+    }
+
     if (event.type !== 'permission_request') return;
     const payload = event.payload ?? {};
     const options = (Array.isArray(payload.options) ? payload.options : []).map((option: any) => ({
@@ -483,13 +556,16 @@ export class CollabService {
     const resolve = async (outcome: any): Promise<void> => {
       try {
         const token = await this.localAgent.getToken();
-        await fetch(`${this.localAgent.getBaseUrl()}/api/acp/permission`, {
+        const epoch = this.wrapperEpochs.get(sessionId);
+        await fetch(`${this.localAgent.getBaseUrl()}/api/acp/stream/${encodeURIComponent(sessionId)}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
+            // ...(this.wrapperClientId ? { 'X-Client-Id': this.wrapperClientId } : {}),
+            // ...(epoch !== undefined ? { 'X-Epoch': String(epoch) } : {}),
           },
-          body: JSON.stringify({ sessionId, requestId, outcome }),
+          body: JSON.stringify({ method: 'permission', params: { requestId, outcome } }),
         });
       } catch (error) {
         console.error('[Collab] Failed to answer permission request:', error);

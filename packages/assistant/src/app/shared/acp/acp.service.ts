@@ -343,6 +343,11 @@ export class AcpService {
     this.sseService.onSessionLoaded((payload) => {
       this.handleReplayComplete(payload);
     });
+    // Resume failed (server could not replay the requested gap): the only
+    // recovery is a full history reload. See `handleReplayGap`.
+    this.sseService.onReplayGap((payload) => {
+      this.handleReplayGap(payload);
+    });
     this.sseService.onPermissionRequest((request) => {
       this.handlePermissionRequest(request);
     });
@@ -398,7 +403,7 @@ export class AcpService {
         this.appendErrorMessage(message);
         return;
       }
-      // 连接级错误（EventSource 断开）：维持既有行为，标记会话断开。
+      // 连接级错误（事件流断开）：维持既有行为，标记会话断开。
       this.sessionState.update(s => ({
         ...s,
         isConnected: false,
@@ -416,8 +421,28 @@ export class AcpService {
       }));
     });
 
+    // 单消费者：会话被另一个标签页占用/接管。本页停止驱动会话，
+    // 且 SSE 服务不会再自动重连（否则两个 tab 会互相抢）。
+    this.sseService.onSuperseded((reason) => {
+      this.isProcessing.set(false);
+      this.processingStartTime.set(null);
+      this.sessionState.update(s => ({
+        ...s,
+        isConnected: false,
+        isConnecting: false,
+        error:
+          reason === 'conflict'
+            ? 'This session is already open in another tab. Close that tab or reload this one to take over.'
+            : 'This session was taken over by another tab. This view is now read-only until you reload it.',
+      }));
+    });
+
     // Sync connection state from SSE service
     const syncState = () => {
+      // 会话已被其他标签页占用/接管：错误信息由 onSuperseded 维护，
+      // 不能被这里的连接状态同步覆盖掉。
+      if (this.sseService.superseded()) return;
+
       const sseState = this.sseService.connectionState();
       const isConnected = sseState === 'connected';
       const isConnecting = sseState === 'connecting';
@@ -494,8 +519,9 @@ export class AcpService {
     // Reset isNewSession after task/session creation logic has read it
     this.isNewSession.set(false);
 
-    // Open the event stream after the ACP session exists
-    await this.sseService.connect(acpSessionId, agent.id);
+    // Open the event stream after the ACP session exists. Brand-new session:
+    // there is no history to resume from, so never send a cursor.
+    await this.sseService.connect(acpSessionId, agent.id, { resume: false, takeover: true });
 
     return acpSessionId;
   }
@@ -1085,7 +1111,9 @@ export class AcpService {
       // connect 现在等到 SSE onopen 才 resolve（后端订阅已就绪），随后才发
       // session/load —— load 期间 agent 回放的历史通知不会丢失。
       // `agentId` 供服务端在记录缺失时（后端重启）兜底建立会话记录。
-      await this.sseService.connect(sessionId, resolvedAgentId);
+      // load/resume 会通过 agent 完整回放历史，不能同时带续传游标，
+      // 否则补发的增量会和历史重复。
+      await this.sseService.connect(sessionId, resolvedAgentId, { resume: false, takeover: false });
 
       // 注册「回放结束」等待器：必须在发起 load 之前完成注册（同一微任务内），
       // 否则服务端标记可能先于等待器到达而被丢弃。
@@ -1163,7 +1191,9 @@ export class AcpService {
     this.sessionState.update(s => ({ ...s, sessionId, isConnecting: true, isConnected: false }));
     this.isReplayingHistory.set(true);
     try {
-      await this.sseService.connect(sessionId, resolvedAgentId);
+      // load/resume 会通过 agent 完整回放历史，不能同时带续传游标，
+      // 否则补发的增量会和历史重复。
+      await this.sseService.connect(sessionId, resolvedAgentId, { resume: false, takeover: false });
 
       // 注册「回放结束」等待器（必须在发起 resume 之前，理由同 loadSession）。
       const replayComplete = this.waitForReplayComplete(sessionId);
@@ -1693,6 +1723,37 @@ export class AcpService {
       this.replayCompleteTimer = null;
     }
     this.replayCompleteWaiter = null;
+  }
+
+  /**
+   * Handles a failed resume: the server could not replay the requested gap
+   * (ring overwritten, or the stream was recreated so the cursor is ahead).
+   *
+   * Recovery = drop the cursor and run a full `session/load`. The cursor must be
+   * cleared first, otherwise the reconnect performed by `loadSession` would send
+   * the same unusable cursor and the server would report the gap again.
+   */
+  private handleReplayGap(payload: any): void {
+    // A load/resume is already in flight — its history replay covers the gap,
+    // and re-entering would fight over `replayBuffer`.
+    if (this.isReplayingHistory() || this.isSwitchingSession()) return;
+
+    const sessionId = this.sessionState().sessionId;
+    if (!sessionId) return;
+
+    console.warn(
+      `[ACP] Event replay gap (session ${sessionId}, after ${payload?.requestedAfter}); reloading history`,
+    );
+    this.sseService.clearCursor();
+
+    void this.loadSession(
+      sessionId,
+      this.sessionState().cwd || undefined,
+      this.selectedAgent()?.id,
+      this.sessionState().mcpServers,
+    ).catch((error) => {
+      console.error('[ACP] History reload after replay gap failed:', error);
+    });
   }
 
   /**

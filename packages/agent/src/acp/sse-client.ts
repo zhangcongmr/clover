@@ -2,7 +2,8 @@ import { logger } from '../helpers/logger.js';
 import { client, type ClientApp, type ClientConnection, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 import type * as acp from '@agentclientprotocol/sdk';
 import { AgentProcess } from './agent-process.js';
-import { RedisClient } from '../redis/client.js';
+import { getSharedEventSink } from '../events/in-process-event-sink.js';
+import type { EventSink } from '../events/event-sink.js';
 
 export interface SseAcpClientConfig {
   agentCommand?: string;
@@ -13,15 +14,15 @@ export interface SseAcpClientConfig {
 const INITIALIZE_TIMEOUT_MS = 30_000;
 
 /**
- * SSE-based ACP Client that bridges Redis pub/sub to an ACP agent process.
+ * SSE-based ACP Client that bridges the session event bus to an ACP agent process.
  *
  * Architecture (multi-session / multiplexed):
- *   Browser ←→ Redis Pub/Sub ←→ SseAcpClient ←→ stdio ←→ Agent Process
+ *   Browser ←→ EventSink (in-process today) ←→ SseAcpClient ←→ stdio ←→ Agent Process
  *
  * One SseAcpClient owns ONE agent process + ONE ACP connection, and serves
  * MANY ACP sessions concurrently. Every inbound call is keyed by the ACP
- * session id and every outbound event is routed directly to that session's
- * Redis channel (`acp:events:${acpSessionId}`) — no reverse lookup needed.
+ * session id and every outbound event is appended to that session's stream
+ * (see `EventSink`) — no reverse lookup needed.
  */
 export class SseAcpClient {
   private agentProcess: AgentProcess | null = null;
@@ -68,18 +69,17 @@ export class SseAcpClient {
   private notifiedConnected = false;
 
   private config: SseAcpClientConfig;
-  private redis: RedisClient;
-  private unsubscribers: (() => void)[] = [];
+  private sink: EventSink;
   private connectPromise: Promise<void> | null = null;
 
   constructor(
     /** Logical id used for log lines only (e.g. `agent:<id>`). */
     private readonly logId: string,
     config: SseAcpClientConfig,
-    redis?: RedisClient,
+    sink?: EventSink,
   ) {
     this.config = config;
-    this.redis = redis || RedisClient.getInstance();
+    this.sink = sink || getSharedEventSink();
   }
 
   // ==========================================================================
@@ -251,15 +251,18 @@ export class SseAcpClient {
   }
 
   // ==========================================================================
-  // Event routing (agent -> session channel)
+  // Event routing (agent -> session event stream)
   // ==========================================================================
 
-  private publishToSession(acpSessionId: string, event: any): void {
-    const channel = `acp:events:${acpSessionId}`;
-    this.redis.publish(channel, JSON.stringify({
-      ...event,
-      timestamp: Date.now(),
-    }));
+  private publishToSession(acpSessionId: string, event: { type: string; payload?: any }): void {
+    void this.sink
+      .append(acpSessionId, { ...event, timestamp: Date.now() })
+      .catch((error) => {
+        logger.error(
+          `[SSE ACP Client] Failed to publish event (session: ${acpSessionId}):`,
+          (error as Error).message,
+        );
+      });
   }
 
   // ==========================================================================
@@ -285,7 +288,7 @@ export class SseAcpClient {
         if (update?.sessionUpdate === 'available_commands_update' && update.availableCommands) {
           this.availableCommandsCache = update.availableCommands;
         }
-        // Route the update directly to the session's own Redis channel
+        // Route the update directly to the session's own event stream
         if (sessionId) {
           this.publishToSession(sessionId, {
             type: 'session_update',
@@ -318,7 +321,7 @@ export class SseAcpClient {
           },
         });
 
-        // Wait for frontend response via Redis
+        // Wait for the frontend response (POST /api/acp/stream/:sid, method=permission)
         const outcome = await new Promise<acp.RequestPermissionOutcome>((resolve) => {
           const timeout = setTimeout(() => {
             logger.log(`[SSE ACP Client] Permission request timed out: ${requestId}`);
@@ -677,12 +680,6 @@ export class SseAcpClient {
     }
 
     this.handleConnectionLost();
-
-    // Unsubscribe from Redis
-    for (const unsubscribe of this.unsubscribers) {
-      unsubscribe();
-    }
-    this.unsubscribers = [];
   }
 }
 
