@@ -607,7 +607,13 @@ export class CollabService {
     const messagesByArtifact = new Map<string, string>();
     // Turn → transcript message id (so per-turn status updates land on the
     // same message the turn's artifact streams into).
-    const turnMessageIds = new Map<number, string>();
+    // Parallel mode: several sub-tasks share the same `turn`, so the key also
+    // carries `subTaskId` — otherwise concurrent sub-tasks would collapse into
+    // a single bubble and overwrite each other.
+    const turnMessageIds = new Map<string, string>();
+    // Transcript message currently streaming per turn key; finalized per key so
+    // finishing one parallel sub-task does not close the others.
+    const streamingByKey = new Map<string, string>();
     let activeId: string | null = null;
     let statusId: string | null = null;
 
@@ -619,25 +625,37 @@ export class CollabService {
       }
     };
 
-    const finalizeActive = (status: CollabMessageStatus, statusText?: string): void => {
-      finalize(activeId, status, statusText);
+    /** Closes every still-streaming message (used at stream end / on error). */
+    const finalizeAll = (status: CollabMessageStatus, statusText?: string): void => {
+      for (const id of streamingByKey.values()) {
+        finalize(id, status, statusText);
+      }
+      streamingByKey.clear();
     };
 
+    /** Turn + sub-task identity of a message (sub-task id may be undefined). */
+    const streamKey = (turn: number, fields: Partial<CollabMessage>): string =>
+      `${turn}::${fields.subTaskId ?? ''}`;
+
     const ensureTurnMessage = (turn: number, fields: Partial<CollabMessage>): string => {
-      const existing = turnMessageIds.get(turn);
+      const key = streamKey(turn, fields);
+      const existing = turnMessageIds.get(key);
       if (existing) return existing;
-      // Starting a new turn: close out the previous streaming message.
-      finalizeActive('completed');
+      // Starting a new stream for this sub-task: close out its previous
+      // streaming message (per key — other parallel sub-tasks keep streaming).
+      finalize(streamingByKey.get(key) ?? null, 'completed');
+      streamingByKey.delete(key);
       let id: string;
-      if (statusId && activeId === null) {
-        // Reuse the routing status message for the first turn.
+      if (statusId && activeId === null && streamingByKey.size === 0) {
+        // Reuse the routing status message for the first stream.
         id = statusId;
         this.updateMessage(id, { turn, ...fields, status: 'streaming' });
         statusId = null;
       } else {
         id = this.appendMessage({ role: 'agent', text: '', status: 'streaming', turn, ...fields }).id;
       }
-      turnMessageIds.set(turn, id);
+      turnMessageIds.set(key, id);
+      streamingByKey.set(key, id);
       return id;
     };
 
@@ -737,21 +755,31 @@ export class CollabService {
         }
       }
 
-      finalizeActive('completed');
-      if (!activeId && !statusId) {
+      finalizeAll('completed');
+      if (!activeId && !statusId && streamingByKey.size === 0) {
         this.appendMessage({ role: 'agent', text: '', status: 'completed', statusText: '' });
       }
     } catch (error) {
       const aborted = controller.signal.aborted;
       const message = (error as Error)?.message || 'Stream failed';
-      const id = activeId ?? statusId;
-      if (id) {
-        this.updateMessage(id, {
-          status: aborted ? 'canceled' : 'failed',
-          statusText: aborted ? 'Canceled' : message,
-        });
-      } else if (!aborted) {
-        this.error.set(message);
+      const status = aborted ? 'canceled' : 'failed';
+      const statusText = aborted ? 'Canceled' : message;
+      const hadStreams = streamingByKey.size > 0;
+      finalizeAll(status, statusText);
+      if (hadStreams) {
+        // Non-streaming tracked ids (e.g. the routing status bubble) also land.
+        const id = activeId ?? statusId;
+        const current = id ? this.messageById(id) : null;
+        if (current?.status === 'streaming') {
+          this.updateMessage(id!, { status, statusText });
+        }
+      } else {
+        const id = activeId ?? statusId;
+        if (id) {
+          this.updateMessage(id, { status, statusText });
+        } else if (!aborted) {
+          this.error.set(message);
+        }
       }
     } finally {
       this.sending.set(false);
