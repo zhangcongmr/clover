@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output, WritableSignal } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output, WritableSignal, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
@@ -27,6 +27,13 @@ export interface MessageGroup {
 })
 export class AcpChatComponent implements OnDestroy {
   @ViewChild('messagesContainer', { read: ElementRef }) private messagesContainer?: ElementRef<HTMLElement>;
+
+  /**
+   * Read-only rendering (collaboration session detail panel): hides the
+   * interactive question panel so a historical session's unanswered questions
+   * cannot be submitted to the agent from a viewer.
+   */
+  readonly readOnly = input(false, { alias: 'readonly' });
 
   themeApply = output<Record<string, any>>();
 

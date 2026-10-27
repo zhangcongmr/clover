@@ -171,7 +171,7 @@
     </button>
   }
 
-  @if (activeQuestionsMessages().length > 0; as hasQuestions) {
+  @if (!readOnly() && activeQuestionsMessages().length > 0; as hasQuestions) {
     <div class="acp-question-pinned">
       <app-acp-question
         [questions]="getQuestions(activeQuestionsMessages()[0])"

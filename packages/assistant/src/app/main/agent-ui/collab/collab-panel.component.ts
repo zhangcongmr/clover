@@ -1,7 +1,8 @@
 import { Component, ElementRef, effect, HostListener, inject, output, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CollabService, type CollabMessage, type CollabMode } from './collab.service';
+import { CollabService, type CollabMessage, type CollabMode, type CollabSessionTarget } from './collab.service';
+import { CollabSessionDetailComponent } from './collab-session-detail.component';
 import { AcpPermissionDialogComponent } from '../../../shared/acp/acp-permission-dialog.component';
 import type { ConfigOption } from '../../../shared/acp/acp.model';
 
@@ -20,7 +21,7 @@ interface RolePreset {
 @Component({
   selector: 'app-collab-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, AcpPermissionDialogComponent],
+  imports: [CommonModule, FormsModule, AcpPermissionDialogComponent, CollabSessionDetailComponent],
   templateUrl: './collab-panel.component.html',
   styleUrls: ['./collab-panel.component.css'],
 })
@@ -65,6 +66,9 @@ export class CollabPanelComponent {
   protected openSelectKey = signal<string | null>(null);
   /** Viewport position/size computed when a dropdown opens (escapes the scroll clip via `position: fixed`). */
   protected openSelectPos = signal<{ left: number; top: number; width: number } | null>(null);
+
+  /** Session whose full `session/load` detail is docked on the right (null = closed). */
+  protected readonly detailTarget = signal<CollabSessionTarget | null>(null);
 
   constructor() {
     // Keep the transcript pinned to the bottom while chunks stream in.
@@ -206,7 +210,13 @@ export class CollabPanelComponent {
 
   @HostListener('document:keydown.escape')
   protected onEscapeKey(): void {
-    this.closeSelect();
+    if (this.openSelectKey()) {
+      this.closeSelect();
+      return;
+    }
+    if (this.detailTarget()) {
+      this.closeSessionDetail();
+    }
   }
 
   /** Enter sends; Shift+Enter keeps the default newline. */
@@ -250,6 +260,25 @@ export class CollabPanelComponent {
   /** Joins relinquished participant ids into a display label. */
   protected relinquishedLabel(list: string[] | undefined): string {
     return (list ?? []).map(id => this.collab.participantLabel(id)).join('、');
+  }
+
+  // --- Session detail panel -------------------------------------------------
+
+  /** ACP session behind a transcript message (null = not backed by a session). */
+  protected sessionTarget(message: CollabMessage): CollabSessionTarget | null {
+    return this.collab.sessionTargetOf(message);
+  }
+
+  /** Opens (or switches) the right-hand session detail panel. */
+  protected openSessionDetail(target: CollabSessionTarget | null, event?: Event): void {
+    if (!target) return;
+    event?.stopPropagation();
+    if (this.detailTarget()?.sessionId === target.sessionId) return;
+    this.detailTarget.set(target);
+  }
+
+  protected closeSessionDetail(): void {
+    this.detailTarget.set(null);
   }
 
   private scrollToBottom(): void {

@@ -89,6 +89,20 @@ export interface CollabMessage {
 /** Collaboration strategy selected in the panel. */
 export type CollabMode = 'single' | 'pipeline' | 'parallel' | 'voluntary';
 
+/**
+ * A collaboration transcript message resolved to the ACP session behind it.
+ * Used by the session detail panel to `session/load` that session's full history
+ * (thoughts / tool calls included).
+ */
+export interface CollabSessionTarget {
+  sessionId: string;
+  agentId?: string;
+  /** Workspace directory the session belongs to (needed by `session/load`). */
+  cwd?: string;
+  /** Human label of the owning participant. */
+  label: string;
+}
+
 export interface ParallelSubTaskDraft {
   id: string;
   prompt: string;
@@ -838,6 +852,37 @@ export class CollabService {
     if (!sessionId) return '';
     const participant = this.space()?.agents.find(agent => agent.sessionId === sessionId);
     return participant ? this.participantLabel(participant.id) : sessionId;
+  }
+
+  /**
+   * Resolves the ACP session a transcript message came from, so the detail
+   * panel can load that session's full history.
+   *
+   * Preference: the message's own `sessionId` (collaboration trace), then the
+   * participant bound to it (routing / status messages may lack the trace).
+   * Returns null for messages that are not backed by a session (e.g. the user's
+   * own prompts).
+   */
+  sessionTargetOf(message: CollabMessage): CollabSessionTarget | null {
+    const space = this.space();
+    const participant =
+      space?.agents.find(agent => agent.id === message.participantId) ??
+      space?.agents.find(agent => agent.sessionId === message.sessionId);
+    const sessionId = message.sessionId ?? participant?.sessionId;
+    if (!sessionId) return null;
+
+    const owner = space?.agents.find(agent => agent.sessionId === sessionId) ?? participant;
+    const label =
+      (owner ? this.participantLabel(owner.id) : '') ||
+      this.agentLabelOf(message.agentId) ||
+      sessionId;
+
+    return {
+      sessionId,
+      agentId: owner?.agentId ?? message.agentId,
+      cwd: space?.cwd,
+      label,
+    };
   }
 
   private mapState(state: TaskState | undefined): CollabMessageStatus | undefined {
