@@ -1,11 +1,10 @@
 import { logger } from '../helpers/logger.js';
-import type { Express, Request, Response } from 'express';
+import type { Express, NextFunction, Request, Response } from 'express';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { AcpSessionManager } from '../acp/session-manager.js';
 import type { AgentRegistry } from '../acp/agent-registry.js';
-import { SseManager } from '../acp/sse-manager.js';
-import { RedisClient } from '../redis/client.js';
+import { SseManager, StreamConflictError } from '../acp/sse-manager.js';
 import type { TokenManager } from '../agent/auth.js';
 import type { FileService } from '../agent/file-service.js';
 import type { McpServerRegistry } from '../mcp/registry.js';
@@ -20,6 +19,20 @@ const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
 const TASKS_FILE = join(PROJECTS_DIR, 'tasks.json');
 const SELECTED_FILE = join(PROJECTS_DIR, 'selected.json');
 const AGENT_CONFIG_FILE = join(PROJECTS_DIR, 'agent-config.json');
+
+/**
+ * 临时开关：会话所有权栅栏（`requireSessionOwner`）。
+ *
+ * 目前**默认关闭** —— 任何调用方都能对会话发命令（prompt / cancel /
+ * permission / load / resume / config），不做 epoch 校验。
+ *
+ * 恢复方式（二选一）：
+ * - 启动时设置 `CLOVER_ENFORCE_OWNERSHIP=1`；
+ * - 或把下面的默认值改成 `true`。
+ *
+ * TODO(ownership): 恢复默认开启后删除这个开关。
+ */
+const ENFORCE_SESSION_OWNER = process.env.CLOVER_ENFORCE_OWNERSHIP === '1';
 
 interface ProjectSession {
   sessionId: string;
@@ -116,15 +129,56 @@ export interface AcpRouteOptions {
   tokenManager: TokenManager;
   sessionManager: AcpSessionManager;
   sseManager: SseManager;
-  redis: RedisClient;
   fileService: FileService;
   mcpRegistry?: McpServerRegistry;
   /** Agent 预热注册表（启动预热 + Settings Agents 管理）。 */
   registry?: AgentRegistry;
 }
 
+/**
+ * 解析断点续传游标（标准 `Last-Event-ID` 头）。
+ *
+ * 非法值一律忽略（当作首次连接），避免一个坏游标让客户端卡在补发分支。
+ */
+function parseLastEventId(req: Request): number | undefined {
+  const raw = req.get('Last-Event-ID');
+
+  if (raw === undefined || raw === '') return undefined;
+
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : undefined;
+}
+
+/**
+ * 页面实例标识（前端每次加载生成）；长度做上限保护。
+ *
+ * header 优先（流端点），回退 body（`session/load` 等 REST 端点）。
+ */
+function parseClientId(req: Request): string | undefined {
+  const raw = req.get('X-Client-Id')
+    ?? (typeof req.body?.clientId === 'string' ? req.body.clientId : undefined);
+
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed.slice(0, 128) : undefined;
+}
+
+/** 所有权代次（header 优先，回退 body）。 */
+function parseEpoch(req: Request): number | undefined {
+  const raw = req.get('X-Epoch') ?? req.body?.epoch;
+  if (raw === undefined || raw === '') return undefined;
+
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : undefined;
+}
+
+/** 是否允许接管他人持有的会话（仅显式用户操作会带）。 */
+function parseTakeover(req: Request): boolean {
+  const header = req.get('X-Takeover');
+  return header === '1' || header === 'true';
+}
+
 export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
-  const { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry, registry } = options;
+  const { tokenManager, sessionManager, sseManager, fileService, mcpRegistry, registry } = options;
   const requireAuth = createRequireAuth(tokenManager);
 
   // Parse JSON bodies for ACP routes. Generous enough for base64 media
@@ -133,19 +187,56 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   app.use('/api/acp', express.json({ limit: '20mb' }));
   app.use('/api/acp', requireAuth);
 
+  /**
+   * epoch 栅栏：只有当前持有者（或无人持有的脚本调用）能驱动会话。
+   *
+   * 凭据优先读 header（`X-Client-Id` / `X-Epoch`），回退到 body，兼容旧端点。
+   */
+  const requireSessionOwner = (req: Request, res: Response, next: NextFunction): void => {
+    // 所有权栅栏当前默认关闭（见 ENFORCE_SESSION_OWNER）
+    if (!ENFORCE_SESSION_OWNER) {
+      next();
+      return;
+    }
+
+    const sessionId = (req.params.sessionId as string | undefined) ?? req.body?.sessionId;
+    const clientId = parseClientId(req);
+    const epoch = parseEpoch(req);
+
+    if (!sseManager.isOwner(sessionId ?? '', clientId, epoch)) {
+      logger.warn(
+        `[ACP Routes] Rejected ${req.method} ${req.path}: session ${sessionId} is owned by another client`,
+      );
+      res.status(409).json({ error: 'Session is owned by another client', code: 'SUPERSEDED' });
+      return;
+    }
+    next();
+  };
+
+  /** 命令表：新传输端点的 `method` → 会话管理器直调。 */
+  const streamCommands: Record<string, (sessionId: string, params: any, id?: string) => void> = {
+    prompt: (sessionId, params, id) =>
+      sessionManager.dispatchPrompt(sessionId, params.content ?? [], id ?? uuidv4()),
+    cancel: (sessionId) => sessionManager.dispatchCancel(sessionId),
+    permission: (sessionId, params) =>
+      sessionManager.dispatchPermissionResponse(sessionId, params.requestId, params.outcome),
+  };
+
   // ============================================================================
   // SSE 事件流端点
   // ============================================================================
 
   /**
-   * GET /api/acp/events/:sessionId
-   * 建立 SSE 连接，持续接收服务器事件
+   * 打开会话事件流（新传输端点）。
    *
-   * `sessionId` 即 ACP session id。可选 `?agentId=`：服务端尚无该会话记录时
-   * （后端重启）用它解析 agent 建立记录——前端在 `session/load` 之前先连
-   * SSE，保证 load 的历史回放通知有订阅者，不会丢失。
+   * 参数全部走 header（`X-Client-Id` / `X-Takeover` / `Last-Event-ID`）---- 暂时屏蔽
+   * 冲突返回 409。---- 暂时屏蔽
    */
-  app.get('/api/acp/events/:sessionId', async (req: Request, res: Response) => {
+  const openStream = async (
+    req: Request,
+    res: Response,
+    opts: { clientId?: string; takeover?: boolean; lastEventId?: number },
+  ): Promise<void> => {
     const sessionId = req.params.sessionId as string;
     const agentId = typeof req.query.agentId === 'string' ? req.query.agentId : undefined;
 
@@ -158,14 +249,26 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
     }
 
-    // 验证会话是否存在
+    // 验证会话是否存在（后端重启且未带 agentId 时无法重建记录）
     if (!session) {
       res.status(404).json({ error: 'Session not found' });
       return;
     }
+    const attachedSession = session;
 
-    // 添加 SSE 连接
-    sseManager.addConnection(sessionId, res);
+    try {
+      sseManager.addConnection(sessionId, res, {
+        clientId: opts.clientId,
+        takeover: opts.takeover,
+        lastEventId: opts.lastEventId,
+      });
+    } catch (error) {
+      if (error instanceof StreamConflictError) {
+        res.status(409).json({ error: error.message, code: error.code });
+        return;
+      }
+      throw error;
+    }
 
     // 如果 agent 未连接，自动重连并恢复会话（优先 resume 旧会话延续上下文）
     if (!sessionManager.isAgentConnected(sessionId)) {
@@ -175,8 +278,8 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
             type: 'status',
             payload: {
               connected: true,
-              agentInfo: session!.client.getAgentInfo(),
-              capabilities: session!.client.getAgentCapabilities(),
+              agentInfo: attachedSession.client.getAgentInfo(),
+              capabilities: attachedSession.client.getAgentCapabilities(),
             },
             timestamp: Date.now(),
           });
@@ -195,12 +298,86 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         type: 'status',
         payload: {
           connected: true,
-          agentInfo: session.client.getAgentInfo(),
-          capabilities: session.client.getAgentCapabilities(),
+          agentInfo: attachedSession.client.getAgentInfo(),
+          capabilities: attachedSession.client.getAgentCapabilities(),
         },
         timestamp: Date.now(),
       });
     }
+  };
+
+  /**
+   * GET /api/acp/stream/:sessionId
+   *
+   * 会话事件流（SSE + 显式契约，不是 MCP 传输）：
+   * - `Accept: text/event-stream` 必需；
+   * - `X-Client-Id` / `X-Takeover` / `Last-Event-ID` 走 header；
+   * - 冲突返回 409。
+   */
+  app.get('/api/acp/stream/:sessionId', async (req: Request, res: Response) => {
+    if (!req.accepts('text/event-stream')) {
+      res.status(406).json({ error: 'Accept: text/event-stream is required' });
+      return;
+    }
+
+    await openStream(req, res, {
+      clientId: parseClientId(req),
+      takeover: parseTakeover(req),
+      lastEventId: parseLastEventId(req),
+    });
+  });
+
+  /**
+   * POST /api/acp/stream/:sessionId
+   *
+   * 命令通道：`{ id, method, params }` → 202 Accepted，输出全部走 GET 流。
+   * 支持的方法：`prompt` / `cancel` / `permission`。
+   */
+  app.post('/api/acp/stream/:sessionId', requireSessionOwner, (req: Request, res: Response) => {
+    const sessionId = req.params.sessionId as string;
+    const { id, method, params } = (req.body ?? {}) as {
+      id?: string;
+      method?: string;
+      params?: any;
+    };
+
+    if (!method) {
+      res.status(400).json({ error: 'method is required' });
+      return;
+    }
+    if (!sessionManager.getSession(sessionId)) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    const handler = streamCommands[method];
+    if (!handler) {
+      res.status(400).json({ error: `Unknown method: ${method}` });
+      return;
+    }
+
+    try {
+      handler(sessionId, params ?? {}, id);
+      res.status(202).json({ accepted: true, id: id ?? null });
+    } catch (error) {
+      logger.error(`[ACP Routes] Stream command failed (${method}, session: ${sessionId}):`, error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * DELETE /api/acp/stream/:sessionId
+   * 释放事件流所有权（≠ 删除 ACP 会话）。
+   */
+  app.delete('/api/acp/stream/:sessionId', (req: Request, res: Response) => {
+    const sessionId = req.params.sessionId as string;
+    const released = sseManager.release(sessionId, parseClientId(req), parseEpoch(req));
+
+    if (!released) {
+      res.status(409).json({ error: 'Not the stream owner', code: 'SUPERSEDED' });
+      return;
+    }
+    res.status(204).end();
   });
 
   // ============================================================================
@@ -240,54 +417,6 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       await sessionManager.removeSession(sessionId);
       res.json({ success: true, message: 'Session deleted' });
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  // ============================================================================
-  // Prompt 端点
-  // ============================================================================
-
-  /**
-   * POST /api/acp/prompt
-   * 发送 prompt 请求
-   */
-  app.post('/api/acp/prompt', async (req: Request, res: Response) => {
-    const { sessionId, content } = req.body;
-    const requestId = uuidv4();
-
-    if (!sessionId || !content) {
-      res.status(400).json({ error: 'sessionId and content are required' });
-      return;
-    }
-
-    // 检查会话是否存在
-    const session = sessionManager.getSession(sessionId);
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-
-    try {
-      // 确保 agent 连接并拥有活跃会话（agent 崩溃后在此懒恢复）
-      await sessionManager.ensureAgentSession(sessionId);
-
-      // 发布 prompt 请求到 Redis
-      await redis.publish(`acp:prompt:${sessionId}`, JSON.stringify({
-        type: 'prompt',
-        sessionId,
-        payload: { content },
-        requestId,
-        timestamp: Date.now(),
-      }));
-
-      res.json({
-        success: true,
-        requestId,
-        message: 'Prompt sent',
-      });
-    } catch (error) {
-      logger.error(`[ACP Routes] Send prompt error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
@@ -427,7 +556,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/session/load
    * 加载会话（sessionId 即目标 ACP session id；agentId 解析 agent，同步等待）
    */
-  app.post('/api/acp/session/load', async (req: Request, res: Response) => {
+  app.post('/api/acp/session/load', requireSessionOwner, async (req: Request, res: Response) => {
     const { sessionId, agentId, cwd, mcpServers } = req.body;
 
     if (!sessionId) {
@@ -458,7 +587,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/session/resume
    * 恢复会话（sessionId 即目标 ACP session id；agentId 解析 agent，同步等待）
    */
-  app.post('/api/acp/session/resume', async (req: Request, res: Response) => {
+  app.post('/api/acp/session/resume', requireSessionOwner, async (req: Request, res: Response) => {
     const { sessionId, agentId, cwd, mcpServers } = req.body;
 
     if (!sessionId) {
@@ -510,7 +639,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/config
    * 设置配置选项（同步等待 agent 返回）
    */
-  app.post('/api/acp/config', async (req: Request, res: Response) => {
+  app.post('/api/acp/config', requireSessionOwner, async (req: Request, res: Response) => {
     const { sessionId, configId, type, value } = req.body;
 
     if (!sessionId || !configId || type === undefined || value === undefined) {
@@ -593,62 +722,6 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
   });
 
-  /**
-   * POST /api/acp/cancel
-   * 取消当前操作
-   */
-  app.post('/api/acp/cancel', async (req: Request, res: Response) => {
-    const { sessionId } = req.body;
-
-    if (!sessionId) {
-      res.status(400).json({ error: 'sessionId is required' });
-      return;
-    }
-
-    try {
-      await redis.publish(`acp:prompt:${sessionId}`, JSON.stringify({
-        type: 'cancel',
-        sessionId,
-        timestamp: Date.now(),
-      }));
-
-      res.json({ success: true, message: 'Cancel sent' });
-    } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  // ============================================================================
-  // 权限端点
-  // ============================================================================
-
-  /**
-   * POST /api/acp/permission
-   * 发送权限响应
-   */
-  app.post('/api/acp/permission', async (req: Request, res: Response) => {
-    const { sessionId, requestId, outcome } = req.body;
-
-    if (!sessionId || !requestId || !outcome) {
-      res.status(400).json({ error: 'sessionId, requestId, and outcome are required' });
-      return;
-    }
-
-    try {
-      await redis.publish(`acp:permission:${sessionId}`, JSON.stringify({
-        type: 'permission_response',
-        sessionId,
-        requestId,
-        payload: { outcome },
-        timestamp: Date.now(),
-      }));
-
-      res.json({ success: true, message: 'Permission response sent' });
-    } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
   // ============================================================================
   // 状态端点
   // ============================================================================
@@ -662,38 +735,20 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       sessions: sessionManager.getSessionCount(),
       activeSessions: sessionManager.getActiveSessionCount(),
       connections: sseManager.getConnectionCount(),
-      redisConnected: redis.isPublisherReady(),
-      redisMode: redis.isMemoryMode() ? 'memory' : 'redis',
+      // 事件面传输：进程内（Redis 已移除，单进程部署）
+      eventSink: 'in-process',
     });
   });
 
   /**
    * GET /api/acp/health
-   * 健康检查
+   * 健康检查（进程内事件总线没有外部依赖，服务在跑即健康）
    */
   app.get('/api/acp/health', (req: Request, res: Response) => {
-    const redisReady = redis.isPublisherReady();
-    const status = redisReady ? 'healthy' : 'degraded';
-
-    res.status(redisReady ? 200 : 503).json({
-      status,
-      redis: redisReady ? 'connected' : 'disconnected',
-      timestamp: Date.now(),
-    });
-  });
-
-  // ============================================================================
-  // Redis 模式配置
-  // ============================================================================
-
-  /**
-   * GET /api/acp/redis-mode
-   * 获取 Redis 模式 (memory 或 redis)
-   */
-  app.get('/api/acp/redis-mode', (req: Request, res: Response) => {
     res.json({
-      mode: redis.isMemoryMode() ? 'memory' : 'redis',
-      isMemoryMode: redis.isMemoryMode(),
+      status: 'healthy',
+      eventSink: 'in-process',
+      timestamp: Date.now(),
     });
   });
 

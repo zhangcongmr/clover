@@ -1,12 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 import { LocalAgentService } from '../local-agent/local-agent.service';
+import { openSseRequest, readSseFrames } from './sse-transport';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 /**
  * Origin of an error surfaced through `onError`:
- * - 'connection': EventSource transport failure (line 144) — marks the session
- *   as disconnected.
+ * - 'connection': SSE transport failure — marks the session as disconnected.
  * - 'server': a `type: 'error'` event published by the backend (e.g. prompt
  *   failure) — the session stays connected, the error is only displayed.
  */
@@ -38,18 +38,55 @@ export interface AgentStatusInfo {
   lastChecked: number;
 }
 
+/**
+ * 页面实例标识。
+ *
+ * 每次页面加载生成一个，**不**放 sessionStorage：浏览器「复制标签页」会把
+ * sessionStorage 一起复制，两个 tab 拿到同一个 id 就会互相把对方当成
+ * 「同一页面的重连」，表现为一方静默失联。
+ */
+function createClientId(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c?.randomUUID) return c.randomUUID();
+  return `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** 命令请求 id（服务端用它关联 `prompt_complete` 等事件）。 */
+function newRequestId(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c?.randomUUID) return c.randomUUID();
+  return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AcpSseService {
-  private eventSource: EventSource | null = null;
+  /** 当前事件流的取消句柄。 */
+  private abortController: AbortController | null = null;
   private baseUrl = '';
   private _currentSessionId = '';
   private _currentAgentId: string | undefined;
   private reconnectAttempts = 0;
-  /** Rejects the pending `waitForEventSourceReady`, so a disconnect during a
-   *  cold-start connect fails fast instead of stalling until timeout. */
-  private readyWaiterReject: (() => void) | null = null;
   private maxReconnectAttempts = 5;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * 最近一次收到的事件序号（来自 SSE `id:` 字段）。
+   *
+   * 主动重建连接时不会自动带上游标，所以要自己记住，重连时通过
+   * `Last-Event-ID` header 传给服务端。
+   */
+  private lastEventId = '';
+  /**
+   * 单消费者所有权：页面实例 id + 本次连接的 epoch。
+   *
+   * `epoch` 来自服务端 `connected` 事件；被其它标签页接管后服务端会递增它，
+   * 旧标签页带旧 epoch 的请求会被拒绝（409 / `session_superseded`）。
+   */
+  private readonly clientId = createClientId();
+  private epoch: number | undefined;
+  /** 已被其它标签页占用或被接管：置位后停止一切自动重连。 */
+  readonly superseded = signal(false);
+  private supersededReason: 'conflict' | 'evicted' | null = null;
+  private onSupersededCallback: ((reason: 'conflict' | 'evicted') => void) | null = null;
 
   readonly connectionState = signal<ConnectionState>('disconnected');
   readonly error = signal<string | null>(null);
@@ -65,6 +102,8 @@ export class AcpSseService {
   private onStatusCallback: ((payload: any) => void) | null = null;
   /** Server-published "history replay complete" marker (`session_loaded` / `session_resumed`). */
   private onSessionLoadedCallback: ((payload: any) => void) | null = null;
+  /** 续传窗口不足（服务端 ring 已覆盖 / 序号归零），需要重新 load 历史。 */
+  private onReplayGapCallback: ((payload: any) => void) | null = null;
 
   constructor(private localAgentService: LocalAgentService) {}
 
@@ -110,13 +149,61 @@ export class AcpSseService {
     this.onSessionLoadedCallback = callback;
   }
 
+  /**
+   * Registers the handler for a failed resume: the server could not replay the
+   * requested gap (ring overwritten, or the stream was recreated so the cursor
+   * is ahead of the current sequence). The only recovery is a full history
+   * reload (`session/load`).
+   */
+  onReplayGap(callback: (payload: any) => void): void {
+    this.onReplayGapCallback = callback;
+  }
+
+  /**
+   * Registers the handler fired when this page loses ownership of the session:
+   * `conflict` = another tab already owns it (we were refused), `evicted` =
+   * another tab took it over (our stream was superseded).
+   */
+  onSuperseded(callback: (reason: 'conflict' | 'evicted') => void): void {
+    this.onSupersededCallback = callback;
+  }
+
   // ============================================================================
   // 连接管理
   // ============================================================================
 
-  async connect(sessionId: string, agentId?: string): Promise<void> {
-    if (this.eventSource) {
-      this.disconnect();
+  async connect(
+    sessionId: string,
+    agentId?: string,
+    options: { resume?: boolean; takeover?: boolean } = {},
+  ): Promise<void> {
+    this.beginConnect(sessionId, agentId, options);
+    await this.connectStream(sessionId, agentId, options.takeover ?? false);
+  }
+
+  /** 连接前的状态重置（不触发 disconnect 回调）。 */
+  private beginConnect(
+    sessionId: string,
+    agentId: string | undefined,
+    options: { resume?: boolean; takeover?: boolean },
+  ): void {
+    this.teardownStream();
+
+    const resume = options.resume ?? true;
+    const takeover = options.takeover ?? false;
+    const sessionChanged = !!this._currentSessionId && this._currentSessionId !== sessionId;
+
+    // 游标只在「同一会话的重连」中复用：切换会话，或显式 load/resume
+    // （会从头回放历史）时必须清掉，否则补发的增量会和历史回放重复。
+    if (!resume || sessionChanged) {
+      this.lastEventId = '';
+    }
+
+    // 显式打开/接管 = 重新成为持有者：清掉上一轮被占用的状态。
+    if (takeover || sessionChanged) {
+      this.superseded.set(false);
+      this.supersededReason = null;
+      this.epoch = undefined;
     }
 
     this.baseUrl = this.localAgentService.getBaseUrl();
@@ -125,109 +212,110 @@ export class AcpSseService {
     this.sessionId.set(sessionId);
     this.connectionState.set('connecting');
     this.error.set(null);
+  }
+
+  /**
+   * 事件流传输：`fetch` + SSE 解析。
+   *
+   * 状态码可读（409/404 不再需要从流里猜），header 携带身份与游标。
+   * `fetch` resolve = 响应头到达 = 服务端已完成订阅，因此 `connect()` 在
+   * 此时即可 resolve。
+   */
+  private async connectStream(
+    sessionId: string,
+    agentId: string | undefined,
+    takeover: boolean,
+  ): Promise<void> {
+    const controller = new AbortController();
+    this.abortController = controller;
 
     try {
-      // 获取认证 token
       const token = await this.localAgentService.getToken();
-      // `?agentId=` 供服务端在会话记录缺失时（后端重启）解析 agent：
-      // load/resume 流程要求 SSE 先于 session/load 建立，否则历史回放丢失。
-      const url = `${this.baseUrl}/api/acp/events/${encodeURIComponent(sessionId)}${agentId ? `?agentId=${encodeURIComponent(agentId)}` : ''}`;
+      const headers: Record<string, string> = {
+        Accept: 'text/event-stream',
+        Authorization: `Bearer ${token}`,
+        // 'X-Client-Id': this.clientId,
+      };
+      if (this.lastEventId) headers['Last-Event-ID'] = this.lastEventId;
+      if (takeover) headers['X-Takeover'] = '1';
 
-      // 创建 EventSource
-      this.eventSource = new EventSource(`${url}${agentId ? '&' : '?'}token=${token}`);
+      const query = agentId ? `?agentId=${encodeURIComponent(agentId)}` : '';
+      const url = `${this.baseUrl}/api/acp/stream/${encodeURIComponent(sessionId)}${query}`;
 
-      this.setupEventSourceHandlers();
+      const response = await openSseRequest(url, { headers, signal: controller.signal });
 
-      // 等待连接真正建立后才 resolve：保证「后端订阅已就绪」先于后续的
-      // session/load 请求，load 期间 agent 回放的历史通知才不会丢失。
-      // （onopen = 服务端已写入并 flush SSE 头 = addConnection 已完成订阅）
-      await this.waitForEventSourceReady();
+      if (response.status === 409) {
+        // 另一个标签页持有该会话：不再重连
+        this.markSuperseded('conflict');
+        const conflict = new Error('Session is open in another tab');
+        (conflict as { code?: string }).code = 'SUPERSEDED';
+        throw conflict;
+      }
+      if (response.status === 404) {
+        const message = 'Session not found on the server';
+        this.connectionState.set('error');
+        this.error.set(message);
+        throw new Error(message);
+      }
+      if (!response.ok || !response.body) {
+        throw new Error(`Stream failed: HTTP ${response.status}`);
+      }
+
+      this.reconnectAttempts = 0;
+      // 后台消费：connect() 不能等整个流结束
+      void this.pumpStream(response.body, controller.signal);
     } catch (error) {
-      console.error('[ACP SSE] Failed to connect:', error);
-      this.connectionState.set('error');
-      this.error.set((error as Error).message);
+      // 冲突：markSuperseded 会 abort 掉 controller，必须在这里显式重新抛出，
+      // 否则调用方（load/resume）会误以为流已建立。
+      if ((error as { code?: string })?.code === 'SUPERSEDED') {
+        throw error;
+      }
+      if (controller.signal.aborted) {
+        // 主动 disconnect：不算连接失败
+        return;
+      }
+      console.error('[ACP SSE] Failed to connect (stream):', error);
+      if (!this.superseded()) {
+        this.connectionState.set('error');
+        this.error.set((error as Error).message);
+      }
       throw error;
     }
   }
 
-  /**
-   * Resolves once the SSE stream is open (server headers flushed, Redis
-   * subscription in place), rejects on failure or timeout so callers do not
-   * race a doomed connection.
-   *
-   * 冷启动场景（后端记录缺失 → ensureRecord → getOrCreate 可能要 spawn +
-   * initialize agent）耗时可达数秒，与 initialize 超时对齐取 30s。
-   */
-  private waitForEventSourceReady(timeoutMs = 30_000): Promise<void> {
-    const es = this.eventSource;
-    if (!es) {
-      return Promise.resolve();
-    }
-    if (es.readyState === 1) {
-      // EventSource.OPEN
-      return Promise.resolve();
-    }
+  /** 消费事件流；正常 EOF 或网络错误时按游标重连。 */
+  private async pumpStream(body: ReadableStream<Uint8Array>, signal: AbortSignal): Promise<void> {
+    try {
+      for await (const frame of readSseFrames(body, signal)) {
+        if (signal.aborted) return;
 
-    return new Promise<void>((resolve, reject) => {
-      const cleanup = () => {
-        clearTimeout(timer);
-        this.readyWaiterReject = null;
-        es.removeEventListener('open', onOpen);
-        es.removeEventListener('error', onError);
-      };
-      const onOpen = () => {
-        cleanup();
-        resolve();
-      };
-      const onError = () => {
-        cleanup();
-        reject(new Error('SSE connection failed'));
-      };
-      const timer = setTimeout(() => {
-        cleanup();
-        reject(new Error('SSE connection timed out'));
-      }, timeoutMs);
+        if (frame.id) this.lastEventId = frame.id;
+        if (!frame.data) continue;
 
-      // disconnect() 时快速失败，避免等待句柄悬挂到超时
-      this.readyWaiterReject = () => {
-        cleanup();
-        reject(new Error('SSE connection cancelled'));
-      };
-
-      // 与 setupEventSourceHandlers 的 onopen/onerror 互不干扰（独立 listener）
-      es.addEventListener('open', onOpen);
-      es.addEventListener('error', onError);
-    });
-  }
-
-  private setupEventSourceHandlers(): void {
-    if (!this.eventSource) return;
-
-    this.eventSource.onopen = () => {
-      console.log('[ACP SSE] EventSource opened');
-      this.reconnectAttempts = 0;
-    };
-
-    this.eventSource.onmessage = (event) => {
-      try {
-        const data: ServerEvent = JSON.parse(event.data);
-        this.handleEvent(data);
-      } catch (error) {
-        console.error('[ACP SSE] Failed to parse event:', error);
+        try {
+          this.handleEvent(JSON.parse(frame.data) as ServerEvent);
+        } catch (error) {
+          console.error('[ACP SSE] Failed to parse event:', error);
+        }
       }
-    };
+    } catch (error) {
+      if (signal.aborted) return;
+      console.error('[ACP SSE] Stream error:', error);
+    }
 
-    this.eventSource.onerror = (event) => {
-      console.error('[ACP SSE] EventSource error:', event);
-      this.handleError('SSE connection error');
-      this.attemptReconnect();
-    };
+    if (signal.aborted || this.superseded()) return;
+
+    this.handleError('SSE connection error');
+    this.attemptReconnect();
   }
 
   private handleEvent(event: ServerEvent): void {
     switch (event.type) {
       case 'connected':
         console.log('[ACP SSE] Connected to session:', event.payload.sessionId);
+        if (typeof event.payload?.epoch === 'number') {
+          this.epoch = event.payload.epoch;
+        }
         this.connectionState.set('connected');
         this.onConnectedCallback?.();
         break;
@@ -245,6 +333,18 @@ export class AcpSseService {
         // Ordered "history replay complete" marker: every `session_update`
         // published before it has already been dispatched above.
         this.onSessionLoadedCallback?.(event.payload);
+        break;
+
+      case 'replay_gap':
+        // 服务端无法补齐游标之后的增量（ring 覆盖 / 序号归零）：需要一次
+        // 完整的 session/load 才能恢复。
+        console.warn('[ACP SSE] Replay gap:', event.payload);
+        this.onReplayGapCallback?.(event.payload);
+        break;
+
+      case 'session_superseded':
+        // 单消费者：本连接被另一个标签页接管，必须停止自动重连。
+        this.markSuperseded('evicted', event.payload);
         break;
 
       case 'permission_request':
@@ -284,6 +384,12 @@ export class AcpSseService {
   }
 
   private attemptReconnect(): void {
+    if (this.superseded()) {
+      // 会话已归别的标签页所有：重连只会把对方踢掉，形成抢锁循环。
+      console.warn('[ACP SSE] Not reconnecting: session is owned by another client');
+      return;
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('[ACP SSE] Max reconnection attempts reached');
       this.connectionState.set('error');
@@ -305,19 +411,47 @@ export class AcpSseService {
     }, delay);
   }
 
-  disconnect(): void {
+  /**
+   * Stops this stream for good: the session belongs to another page (or a newer
+   * one). Auto-reconnect is suppressed so two tabs cannot fight over it.
+   */
+  private markSuperseded(reason: 'conflict' | 'evicted', detail?: any): void {
+    if (this.supersededReason === reason) return;
+    this.supersededReason = reason;
+    this.superseded.set(true);
+
+    // 关流（AbortController）
+    this.teardownStream();
+
+    this.connectionState.set('disconnected');
+    console.warn(`[ACP SSE] Stream superseded (${reason})`, detail ?? '');
+    this.onSupersededCallback?.(reason);
+  }
+
+  /**
+   * Drops the resume cursor so the next `connect()` starts a fresh stream with
+   * no replay request. Used when the gap cannot be covered (the server would
+   * otherwise report the same gap forever).
+   */
+  clearCursor(): void {
+    this.lastEventId = '';
+  }
+
+  /** 释放底层传输（不改变对外状态、不触发回调）。 */
+  private teardownStream(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    this.readyWaiterReject?.();
-    this.readyWaiterReject = null;
 
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
     }
+  }
 
+  disconnect(): void {
+    this.teardownStream();
     this.connectionState.set('disconnected');
     this.sessionId.set(null);
     this.onDisconnectedCallback?.();
@@ -336,9 +470,17 @@ export class AcpSseService {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        // 所有权凭据：新端点从 header 读取；旧端点会忽略这些头
+        // 'X-Client-Id': this.clientId,
+        // ...(this.epoch !== undefined ? { 'X-Epoch': String(this.epoch) } : {}),
       },
       body: JSON.stringify(body),
     });
+
+    if (response.status === 409) {
+      // epoch 栅栏：本页已不是会话持有者（被接管后仍在发请求）。
+      this.markSuperseded('evicted');
+    }
 
     if (!response.ok) {
       throw new Error(await this.describeResponseError(response));
@@ -405,18 +547,20 @@ export class AcpSseService {
    * 发送 prompt
    */
   async sendPrompt(sessionId: string, content: any[]): Promise<string> {
-    const result = await this.post('/api/acp/prompt', {
-      sessionId,
-      content,
+    const id = newRequestId();
+    const result = await this.post(this.streamCommandPath(sessionId), {
+      id,
+      method: 'prompt',
+      params: { content },
     });
-    return result.requestId;
+    return result?.id ?? id;
   }
 
   /**
    * 取消操作
    */
   async cancel(sessionId: string): Promise<void> {
-    await this.post('/api/acp/cancel', { sessionId });
+    await this.post(this.streamCommandPath(sessionId), { method: 'cancel', params: {} });
   }
 
   /**
@@ -427,11 +571,15 @@ export class AcpSseService {
     requestId: string,
     outcome: any
   ): Promise<void> {
-    await this.post('/api/acp/permission', {
-      sessionId,
-      requestId,
-      outcome,
+    await this.post(this.streamCommandPath(sessionId), {
+      method: 'permission',
+      params: { requestId, outcome },
     });
+  }
+
+  /** 事件流命令通道（输出仍走 GET 事件流）。 */
+  private streamCommandPath(sessionId: string): string {
+    return `/api/acp/stream/${encodeURIComponent(sessionId)}`;
   }
 
   /**

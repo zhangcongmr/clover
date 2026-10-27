@@ -16,9 +16,10 @@ import type { CollabSessionTarget } from './collab.service';
  *
  * - `AcpService` is provided locally → the injected instance inside
  *   `<app-acp-chat>` (and its child plan / rag components) is this shadow one.
- * - `AcpSseService` is provided locally → the shadow opens its own EventSource,
- *   leaving the main session's stream untouched. The backend supports several
- *   subscribers per session (the collab service already opens one per session).
+ * - `AcpSseService` is provided locally → the shadow opens its own event stream
+ *   for the inspected (sub) session. The backend enforces ONE consumer per
+ *   session: viewing the same sessionId here and in the main chat would make
+ *   the two views take over from each other.
  * - `ACP_READ_ONLY` makes the shadow instance skip persistence (localStorage
  *   agent selection, agent-config.json, project/task records).
  *

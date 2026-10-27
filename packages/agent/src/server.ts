@@ -18,7 +18,7 @@ import { setupAcpRoutes } from './api/acp-routes.js';
 import { setupA2aCollabRoutes } from './api/a2a-collab/routes.js';
 import { createMcpRoutes } from './api/mcp-routes.js';
 import { createSkillRoutes } from './api/skill-routes.js';
-import { RedisClient } from './redis/client.js';
+import { getSharedEventSink } from './events/in-process-event-sink.js';
 import { SseManager } from './acp/sse-manager.js';
 import { AcpSessionManager } from './acp/session-manager.js';
 import { AgentRegistry } from './acp/agent-registry.js';
@@ -100,12 +100,13 @@ export function setupAgentMiddleware(
   const mcpRegistry = new McpServerRegistry();
 
   // Setup ACP SSE routes
-  const redis = RedisClient.getInstance();
-  const sseManager = new SseManager(redis);
+  // 事件面出口：进程级共享的进程内实现（单进程部署，无外部依赖）。
+  const eventSink = getSharedEventSink();
+  const sseManager = new SseManager(eventSink);
   // Agent 预热注册表：持有每个 Agent 的共享连接（预热 + 复用 + 状态跟踪）
-  const agentRegistry = new AgentRegistry(AVAILABLE_AGENTS);
-  const sessionManager = new AcpSessionManager(agentRegistry, redis);
-  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, redis, fileService, mcpRegistry, registry: agentRegistry });
+  const agentRegistry = new AgentRegistry(AVAILABLE_AGENTS, eventSink);
+  const sessionManager = new AcpSessionManager(agentRegistry, eventSink);
+  setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, fileService, mcpRegistry, registry: agentRegistry });
 
   // A2A collaboration routes (orchestrator + per-agent bridges + spaces)
   setupA2aCollabRoutes(app, { tokenManager, sessionManager });
