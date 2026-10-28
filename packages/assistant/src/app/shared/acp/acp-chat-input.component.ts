@@ -8,6 +8,7 @@ import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
+import { DropdownPlacementDirective } from './dropdown-placement.directive';
 import { SkillService } from '../skills/skill.service';
 import { LayoutService } from '../../main/layout.service';
 import {
@@ -58,7 +59,7 @@ interface McpServerOption {
 @Component({
   selector: 'app-acp-chat-input',
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent, DropdownPlacementDirective],
   templateUrl: './acp-chat-input.component.html',
   styles: [`
     :host {
@@ -534,12 +535,16 @@ interface McpServerOption {
       left: 0;
       margin-bottom: 4px;
       min-width: 200px;
+      /* Placement directive shrinks this to the room actually left above the
+         composer; the value here is only the upper bound / pre-measure default. */
+      max-height: min(420px, 60vh);
       background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
-      overflow: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .agent-option {
       display: flex;
@@ -579,12 +584,15 @@ interface McpServerOption {
       left: 0;
       margin-bottom: 4px;
       min-width: 200px;
+      /* Upped/lowered by the placement directive; see .agent-dropdown. */
+      max-height: min(360px, 60vh);
       background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
-      overflow: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .mode-option {
       display: flex;
@@ -627,6 +635,7 @@ interface McpServerOption {
       bottom: 100%;
       left: 0;
       margin-bottom: 4px;
+      /* Upped/lowered by the placement directive; see .agent-dropdown. */
       max-height: 400px;
       min-width: 200px;
       background-color: var(--vscode-dropdown-background);
@@ -634,6 +643,7 @@ interface McpServerOption {
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       z-index: 1000;
+      overscroll-behavior: contain;
     }
     .model-option {
       display: flex;
@@ -679,6 +689,7 @@ interface McpServerOption {
       min-width: 250px;
       max-height: 300px;
       overflow-y: auto;
+      overscroll-behavior: contain;
       background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
@@ -776,6 +787,7 @@ interface McpServerOption {
       min-width: 250px;
       max-height: 300px;
       overflow-y: auto;
+      overscroll-behavior: contain;
       background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
@@ -857,8 +869,10 @@ interface McpServerOption {
       left: 0;
       right: 0;
       margin-bottom: 4px;
+      /* Upped/lowered by the placement directive; see .agent-dropdown. */
       max-height: 350px;
       overflow-y: auto;
+      overscroll-behavior: contain;
       background-color: var(--vscode-dropdown-background);
       border: 1px solid var(--vscode-dropdown-border, #e0e0e0);
       border-radius: 8px;
@@ -930,6 +944,23 @@ interface McpServerOption {
       font-size: 12px;
       opacity: 0.5;
       color: var(--vscode-descriptionForeground);
+    }
+    /*
+     * Popup menus open upwards by default (the composer sits at the bottom of
+     * the panel). The placement directive flips them below the trigger when the
+     * panel is too short to fit them above, so they are never cut off at the
+     * panel's top edge.
+     */
+    .slash-command-menu[data-placement='bottom'],
+    .agent-dropdown[data-placement='bottom'],
+    .mode-dropdown[data-placement='bottom'],
+    .model-dropdown[data-placement='bottom'],
+    .mcp-dropdown[data-placement='bottom'],
+    .project-dropdown[data-placement='bottom'] {
+      top: 100%;
+      bottom: auto;
+      margin-top: 4px;
+      margin-bottom: 0;
     }
   `]
 })
