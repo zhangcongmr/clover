@@ -29,9 +29,9 @@ export class RagInsightsComponent {
   readonly rateBars = computed(() => {
     const s = this.summary();
     return [
-      { label: 'Hit rate', value: s.hitRate, hint: '有命中的检索占比' },
-      { label: 'Cited rate', value: s.citedRate, hint: '答案引用了命中的占比' },
-      { label: 'Relevant rate', value: s.relevantRate, hint: '人工标注为相关的占比' },
+      { label: 'Hit rate', value: s.hitRate, hint: 'Share of retrievals that had hits' },
+      { label: 'Cited rate', value: s.citedRate, hint: 'Share of answers citing hits' },
+      { label: 'Relevant rate', value: s.relevantRate, hint: 'Share rated relevant by humans' },
     ];
   });
 

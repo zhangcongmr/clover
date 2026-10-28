@@ -27,8 +27,8 @@ export class ServerTreeComponent implements OnInit, AfterViewInit {
   serverList: Array<any> = [];
   currentServer: any = {};
 
-  authorizeBtnLabel: string = "授权";
-  exitAuthorizeLabel: string = "退出";
+  authorizeBtnLabel: string = "Authorize";
+  exitAuthorizeLabel: string = "Sign out";
   shouldAuthorize = false;
 
   blurSwitch = true;

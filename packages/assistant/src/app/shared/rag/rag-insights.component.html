@@ -3,7 +3,7 @@
     <div class="card">
       <span class="card-value">{{ summary().searchCount }}</span>
       <span class="card-label">Searches</span>
-      <span class="card-sub">{{ summary().errorCount }} 无结果</span>
+      <span class="card-sub">{{ summary().errorCount }} with no results</span>
     </div>
     <div class="card">
       <span class="card-value">{{ summary().indexCount }}</span>
@@ -18,7 +18,7 @@
     <div class="card">
       <span class="card-value">{{ percent(summary().avgTopScore, 0) }}</span>
       <span class="card-label">Avg top score</span>
-      <span class="card-sub">最高相关度均值</span>
+      <span class="card-sub">Mean of top relevance scores</span>
     </div>
   </div>
 

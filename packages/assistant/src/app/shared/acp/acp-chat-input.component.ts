@@ -1798,7 +1798,7 @@ export class AcpChatInputComponent {
    */
   applyLibraryChip(chip: ThemeChip): void {
     const categoryId = findChipCategoryIdByLabel(chip.label);
-    const categoryLabel = this.chipCategories.find(c => c.id === categoryId)?.label ?? '其他';
+    const categoryLabel = this.chipCategories.find(c => c.id === categoryId)?.label ?? 'Other';
     const value = `/${THEME_SKILL_NAME} ${buildThemePrompt(chip)}\nChip category: ${categoryLabel} (id: ${categoryId})`;
     this.acpService.pendingSlashCommand.set(null);
     this.inputValue.set(value);

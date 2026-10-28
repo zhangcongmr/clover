@@ -25,7 +25,7 @@
 		  <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
 		  <polyline points="21 3 21 9 15 9"/>
 		</svg>
-		<span>Agent 已断开，发送后将自动重连并恢复对话</span>
+		<span>Agent disconnected. Sending will reconnect automatically and resume the chat.</span>
 	  </div>
 	}
 	@if (showSlashMenu()) {
@@ -105,7 +105,7 @@
 			  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
 			  <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
 			</svg>
-			<span>Chips 库</span>
+			<span>Chips library</span>
 		  </button>
 		</div>
 		<div class="theme-seed-chips">
@@ -327,10 +327,10 @@
 	</div>
   }
 </div>
-<ast-modal [visible]="showChipsLibrary()" title="Chips 库" modalSize="large" (close)="showChipsLibrary.set(false)">
+<ast-modal [visible]="showChipsLibrary()" title="Chips library" modalSize="large" (close)="showChipsLibrary.set(false)">
   <div class="ast-modal-body theme-chips-dialog-body">
 	<div class="theme-chips-cats custom-scroll">
-	  <button type="button" class="theme-chips-cat" [class.active]="activeChipCategoryId() === 'all'" (click)="selectChipCategory('all')">全部</button>
+	  <button type="button" class="theme-chips-cat" [class.active]="activeChipCategoryId() === 'all'" (click)="selectChipCategory('all')">All</button>
 	  @for (cat of chipCategories; track cat.id) {
 		<button type="button" class="theme-chips-cat" [class.active]="activeChipCategoryId() === cat.id" (click)="selectChipCategory(cat.id)">{{ cat.label }}</button>
 	  }

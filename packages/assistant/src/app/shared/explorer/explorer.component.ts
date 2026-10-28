@@ -33,13 +33,13 @@ export class ExplorerComponent implements OnInit, AfterViewChecked, AfterViewIni
   dragSideWidth: string = "25%";
   dragSideRigthWidth: string = "75%"
 
-  labels = ['用户管理'];
+  labels = ['User Management'];
   label = "";
 
   previousEle: any;
 
   // spec: any;
-  queryApibtnText = "刷新";
+  queryApibtnText = "Refresh";
 
   showWidget = false;
   targetPageNumber = '';

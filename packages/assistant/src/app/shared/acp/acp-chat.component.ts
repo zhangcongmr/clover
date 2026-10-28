@@ -257,10 +257,10 @@ export class AcpChatComponent implements OnDestroy {
     });
   }
 
-  /** Trailing summary of a grep/glob tool call row, e.g. `（4 个匹配项）`. */
+  /** Trailing summary of a grep/glob tool call row, e.g. `(4 matches)`. */
   searchSummary(info: GrepInfo | GlobInfo): string {
-    if (info.matchCount === undefined) return '搜索完成';
-    return `（${info.matchCount}${info.truncated ? '+' : ''} 个匹配项）`;
+    if (info.matchCount === undefined) return 'Search completed';
+    return `(${info.matchCount}${info.truncated ? '+' : ''} matches)`;
   }
 
   private groupMessages(messages: AcpMessage[]): MessageGroup[] {
@@ -406,11 +406,11 @@ export class AcpChatComponent implements OnDestroy {
 
   getToolStatusLabel(status?: string): string {
     switch (status) {
-      case 'pending': return '等待中';
-      case 'in_progress': return '进行中';
-      case 'completed': return '已完成';
-      case 'failed': return '失败';
-      default: return '未知';
+      case 'pending': return 'Waiting';
+      case 'in_progress': return 'In progress';
+      case 'completed': return 'Completed';
+      case 'failed': return 'Failed';
+      default: return 'Unknown';
     }
   }
 

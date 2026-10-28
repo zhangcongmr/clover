@@ -4,12 +4,12 @@
     <button
       type="button"
       class="detail-session"
-      [title]="'复制 Session ID：' + target().sessionId"
+      [title]="'Copy Session ID: ' + target().sessionId"
       (click)="copySessionId()">
       {{ target().sessionId }}
     </button>
   </div>
-  <button type="button" class="detail-close" title="关闭" (click)="closed.emit()">
+  <button type="button" class="detail-close" title="Close" (click)="closed.emit()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
@@ -25,21 +25,21 @@
     <span class="detail-chip" [title]="target().cwd!">{{ target().cwd }}</span>
   }
   @if (loading()) {
-    <span class="detail-chip loading">加载中…</span>
+    <span class="detail-chip loading">Loading…</span>
   }
 </div>
 
 @if (loadError(); as errorMessage) {
   <div class="detail-error">
     <span>{{ errorMessage }}</span>
-    <button type="button" class="detail-retry" (click)="retry()">重试</button>
+    <button type="button" class="detail-retry" (click)="retry()">Retry</button>
   </div>
 }
 
 @if (deferred) {
   <div class="detail-deferred">
-    <p>协作轮次进行中，暂不自动加载该会话历史，避免与正在运行的 prompt 冲突。</p>
-    <button type="button" class="detail-retry" (click)="retry()">立即加载</button>
+    <p>A collaboration turn is in progress. Auto-loading of this session's history is deferred to avoid conflicting with the running prompt.</p>
+    <button type="button" class="detail-retry" (click)="retry()">Load now</button>
   </div>
 } @else {
   <div class="detail-body">

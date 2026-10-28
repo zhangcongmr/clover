@@ -70,9 +70,9 @@ export class RagResultComponent {
     return (hit.text?.length ?? 0) > HIT_EXCERPT_LENGTH;
   }
 
-  /** Copies a `【documentId#chunkIndex】` citation back into the chat input. */
+  /** Copies a `[documentId#chunkIndex]` citation back into the chat input. */
   insertCitation(hit: RagSearchHit): void {
-    this.acpService.pendingSlashCommand.set(`【${this.citation(hit)}】`);
+    this.acpService.pendingSlashCommand.set(`[${this.citation(hit)}]`);
   }
 
   toggle(event: Event): void {
