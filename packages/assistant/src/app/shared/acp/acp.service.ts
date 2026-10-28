@@ -22,6 +22,7 @@ import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 import { ACP_READ_ONLY } from './acp-readonly.token';
+import { recordRecentOpenedSession } from './recent-sessions.util';
 
 const AGENT_STORAGE_KEY = 'clover_selected_agent';
 
@@ -513,6 +514,10 @@ export class AcpService {
       this.availableCommands.set(acpResult.availableCommands);
     }
     this.persistConfigOptions(acpResult?.configOptions);
+
+    // Remember the freshly created session so the welcome screen's "Recent"
+    // list can surface it as soon as the user returns to New Task.
+    if (!this.readOnly) recordRecentOpenedSession(acpSessionId);
 
     // Create task/session records while the isNewSession flag is still intact
     await this.persistNewSessionRecords(acpSessionId);

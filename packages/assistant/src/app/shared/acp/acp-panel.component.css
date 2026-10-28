@@ -251,6 +251,107 @@
   opacity: 0.7;
 }
 
+/* ===== Welcome Screen: recent tasks/sessions ===== */
+/*
+ * Rendered below the (always-present) composer, welcome screen only. Width and
+ * centering mirror .welcome-chat-input; `margin-bottom: auto` makes it the
+ * bottom half of the centered "welcome + composer + recent" group (the input
+ * drops its own bottom auto while this list exists, see below).
+ */
+.welcome-recent {
+  width: calc(100% - 32px);
+  max-width: 840px;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  margin-bottom: auto;
+  min-height: 0;
+}
+
+/* The recent list owns the bottom auto margin when it is present. */
+.acp-chat-container.welcome-mode.has-recents > .welcome-chat-input {
+  margin-bottom: 0;
+}
+
+.welcome-recent-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+
+.welcome-recent-count {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.welcome-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* ~6 single-line rows; keeps the welcome block stable on short viewports */
+  max-height: 216px;
+  overflow-y: auto;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.recent-item:hover {
+  background-color: var(--vscode-hover-background);
+}
+
+.recent-item:focus-visible {
+  outline: 1px solid var(--vscode-accent-color);
+  outline-offset: -1px;
+}
+
+.recent-item-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+
+.recent-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-item-meta {
+  flex-shrink: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
 /*
  * 输入框只有一个实例，位于欢迎页/对话页之外，因此欢迎页需要：
  * 1) 去掉上下内边距，让「欢迎内容 + 输入框」作为一组整体垂直居中，

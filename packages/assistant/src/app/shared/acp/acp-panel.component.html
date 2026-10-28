@@ -39,7 +39,8 @@
 		}
 	</div>
 </div>
-<div class="acp-chat-container" [class.welcome-mode]="showWelcomeScreen()">
+<div class="acp-chat-container" [class.welcome-mode]="showWelcomeScreen()"
+	[class.has-recents]="showWelcomeScreen() && recentSessions().length > 0">
 	@if (showWelcomeScreen()) {
 		<div class="acp-welcome-screen">
 			<div class="welcome-content">
@@ -167,6 +168,33 @@
 	<!-- 输入框只保留一份实例：欢迎页与对话页共用，切换会话时不会被销毁重建。
 	     欢迎页下通过 welcome-chat-input 还原原来 840px 居中列宽。 -->
 	<app-acp-chat-input [class.welcome-chat-input]="showWelcomeScreen()" />
+
+	<!-- Recent tasks/sessions: welcome screen only, below the composer. -->
+	@if (showWelcomeScreen() && recentSessions().length) {
+		<div class="welcome-recent">
+			<div class="welcome-recent-header">
+				<span class="welcome-recent-title">Recent</span>
+				<span class="welcome-recent-count">{{ recentSessions().length }}</span>
+			</div>
+			<div class="welcome-recent-list custom-scroll">
+				@for (item of recentSessions(); track item.sessionId) {
+					<button type="button" class="recent-item" [title]="item.title"
+						(click)="recentSessionOpen.emit(item)">
+						<svg class="recent-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							@if (item.kind === 'task') {
+								<polyline points="9 11 12 14 22 4"/>
+								<path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+							} @else {
+								<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+							}
+						</svg>
+						<span class="recent-item-title">{{ item.title }}</span>
+						<span class="recent-item-meta">{{ recentMeta(item) }}</span>
+					</button>
+				}
+			</div>
+		</div>
+	}
 </div>
 
 <app-acp-permission-dialog />
