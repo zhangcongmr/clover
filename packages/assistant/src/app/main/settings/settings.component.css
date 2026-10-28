@@ -460,6 +460,34 @@
   text-overflow: ellipsis;
 }
 
+.agent-install-log {
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-path {
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  color: var(--vscode-descriptionForeground, #7a7a7a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-path-missing {
+  font-family: inherit;
+  font-style: italic;
+  opacity: 0.75;
+}
+
+.agent-install-btn {
+  flex: 0 0 auto;
+}
+
 .agent-status-badge {
   display: inline-flex;
   align-items: center;
@@ -537,7 +565,7 @@
 }
 
 /* ==========================================================================
-   Theme library (Settings �� Appearance)
+   Theme library (Settings → Appearance)
    ========================================================================== */
 
 .setting-item-stack {

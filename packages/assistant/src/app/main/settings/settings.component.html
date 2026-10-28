@@ -101,8 +101,16 @@
                   <div class="agent-meta">
                     <span class="agent-name">{{ agent.name }}</span>
                     <span class="agent-desc">{{ agent.description }}</span>
+                    @if (agent.paths?.cli; as cliPath) {
+                      <span class="agent-path" [title]="cliPath">CLI: {{ shortenPath(cliPath) }}</span>
+                    } @else {
+                      <span class="agent-path agent-path-missing">CLI: not installed</span>
+                    }
                     @if (agent.error) {
                       <span class="agent-error" [title]="agent.error">{{ agent.error }}</span>
+                    }
+                    @if (installingAgentId() === agent.id && installStatusLine()) {
+                      <span class="agent-install-log" [title]="installStatusLine()">{{ installStatusLine() }}</span>
                     }
                   </div>
                   <span
@@ -116,10 +124,24 @@
                     <span class="agent-status-dot"></span>
                     {{ agentStatusLabel(agent.status) }}
                   </span>
+                  @if (agent.install && agent.status !== 'connected') {
+                    <button
+                      class="btn btn-primary agent-install-btn"
+                      (click)="installAgent(agent.id)"
+                      [disabled]="installingAgentId() !== null || checkingAgentId() !== null"
+                      [title]="'Runs: ' + agent.install.command"
+                    >
+                      @if (installingAgentId() === agent.id) {
+                        Installing...
+                      } @else {
+                        Install
+                      }
+                    </button>
+                  }
                   <button
                     class="btn btn-secondary agent-check-btn"
                     (click)="checkNow(agent.id)"
-                    [disabled]="checkingAgentId() === agent.id || agentsLoading()"
+                    [disabled]="checkingAgentId() === agent.id || agentsLoading() || installingAgentId() !== null"
                   >
                     @if (checkingAgentId() === agent.id) {
                       Checking...

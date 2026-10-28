@@ -81,6 +81,10 @@ export class SettingsComponent {
   agentsError = signal<string | null>(null);
   /** Agent id currently running a Check Now, guards double-click. */
   checkingAgentId = signal<string | null>(null);
+  /** Agent id currently installing, guards double-click. */
+  installingAgentId = signal<string | null>(null);
+  /** Latest installer output line, shown while an install is running. */
+  installStatusLine = signal<string | null>(null);
 
   showSavedToast = signal(false);
 
@@ -353,6 +357,54 @@ export class SettingsComponent {
     } finally {
       this.checkingAgentId.set(null);
     }
+  }
+
+  /**
+   * Install the missing piece for an agent (global CLI or project adapter).
+   * Runs on the backend, polls the job until it finishes, then re-probes.
+   */
+  async installAgent(agentId: string): Promise<void> {
+    if (this.installingAgentId()) return;
+
+    this.installingAgentId.set(agentId);
+    this.agentsError.set(null);
+    this.installStatusLine.set(null);
+
+    try {
+      let job = await this.sseService.startAgentInstall(agentId);
+      this.installStatusLine.set(job.command);
+
+      while (job.status === 'running') {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        job = await this.sseService.getAgentInstallJob(job.id);
+        const runningStep = job.steps.find(step => step.status === 'running') ?? job.steps[job.steps.length - 1];
+        const lastLine = runningStep?.output[runningStep.output.length - 1];
+        this.installStatusLine.set(lastLine ?? job.command);
+      }
+
+      if (job.status !== 'succeeded') {
+        this.agentsError.set(job.error ?? `Install failed for ${agentId}`);
+      }
+
+      // Re-probe either way: a partial install may still leave the agent usable.
+      await this.checkNow(agentId);
+    } catch (error) {
+      this.agentsError.set((error as Error).message);
+    } finally {
+      this.installingAgentId.set(null);
+      this.installStatusLine.set(null);
+    }
+  }
+
+  /**
+   * Compact a filesystem path for the agent rows: keep both ends readable so
+   * long pnpm store paths still show the package and the entry file.
+   */
+  shortenPath(path: string, maxLength = 72): string {
+    if (path.length <= maxLength) return path;
+    const headLength = Math.ceil((maxLength - 1) * 0.45);
+    const tailLength = maxLength - 1 - headLength;
+    return `${path.slice(0, headLength)}…${path.slice(-tailLength)}`;
   }
 
   agentStatusLabel(status: AgentRuntimeStatus): string {
