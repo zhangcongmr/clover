@@ -1,9 +1,11 @@
 import { logger } from '../helpers/logger.js';
-import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig } from './acp-agent.types.js';
+import { inspectAgentCommand, invalidateAgentCommandCache, localAgentPackage, probePathCommand, resolveAgentCommand } from './agent-executable.js';
+import { installCommandFor, startAgentInstall } from './agent-install.js';
+import type { AgentInstallJob } from './agent-install.js';
 import type { EventSink } from '../events/event-sink.js';
 
 /**
@@ -29,6 +31,10 @@ export interface AgentStatusInfo {
   agentInfo?: unknown;
   capabilities?: unknown;
   error?: string;
+  /** Installer the settings UI can run, when the missing artifact is known. */
+  install?: { command: string };
+  /** Path of the agent CLI on disk (for the settings UI). */
+  paths?: { cli?: string };
   lastChecked: number;
 }
 
@@ -39,6 +45,10 @@ interface AgentState {
   /** Shared ACP connection (spawn + initialize) owned by this registry. */
   connection: SseAcpClient | null;
   error?: string;
+  /** Which artifact is missing when the last probe failed. */
+  missing?: 'adapter' | 'cli';
+  /** Resolved agent CLI path (global install), when found. */
+  cliPath?: string;
   lastChecked: number;
   /** In-flight spawn+initialize attempt (dedupes concurrent callers). */
   inflight: Promise<void> | null;
@@ -46,24 +56,67 @@ interface AgentState {
   checking: Promise<AgentStatusInfo> | null;
 }
 
-const PROBE_TIMEOUT_MS = 5000;
+/** Remember the resolved install paths of the last probe. */
+function applyProbePaths(
+  state: { cliPath?: string },
+  probe: { cliPath?: string },
+): void {
+  state.cliPath = probe.cliPath;
+}
 
 /**
- * Probe whether a command is available on PATH without spawning it.
- * Commands containing a path separator are checked directly on disk.
+ * Probe whether an agent can be launched, without spawning the ACP process.
+ *
+ * Adapter-based agents (claude) resolve to the project-local adapter entry and
+ * additionally need the user's global agent CLI, so both halves are checked and
+ * the missing one is named in the error. Plain CLI agents are looked up on PATH;
+ * commands containing a path separator are checked directly on disk.
  */
-function probeCommand(command: string): Promise<boolean> {
-  if (command.includes('/') || command.includes('\\')) {
-    return Promise.resolve(existsSync(command));
+async function probeCommand(
+  command: string,
+): Promise<{
+  installed: boolean;
+  error?: string;
+  missing?: 'adapter' | 'cli';
+  cliPath?: string;
+}> {
+  const inspection = inspectAgentCommand(command);
+  if (!inspection.installed) {
+    return {
+      installed: false,
+      missing: inspection.missing,
+      cliPath: inspection.cliPath,
+      error: inspection.error ?? missingAgentHint(command),
+    };
   }
-  const cmdline = process.platform === 'win32'
-    ? `where "${command}"`
-    : `command -v "${command}"`;
-  return new Promise((resolve) => {
-    exec(cmdline, { timeout: PROBE_TIMEOUT_MS, windowsHide: true }, (error) => {
-      resolve(!error);
-    });
-  });
+
+  const resolved = resolveAgentCommand(command);
+  const target = resolved.command;
+  if (target.includes('/') || target.includes('\\')) {
+    // Adapter-based agent: both halves were already validated above.
+    if (resolved.local) {
+      return {
+        installed: existsSync(target),
+        cliPath: inspection.cliPath,
+      };
+    }
+    return existsSync(target)
+      ? { installed: true, cliPath: target }
+      : { installed: false, missing: 'cli', error: missingAgentHint(command) };
+  }
+
+  const probe = probePathCommand(target);
+  return probe.found
+    ? { installed: true, cliPath: probe.path }
+    : { installed: false, missing: 'cli', error: missingAgentHint(command) };
+}
+
+/** Human-readable hint naming the missing artifact (adapter package or CLI). */
+function missingAgentHint(command: string): string {
+  const packageName = localAgentPackage(command);
+  return packageName
+    ? `Agent not installed: "${packageName}" (ACP adapter) or "${command}" on PATH`
+    : `Command not found in PATH: ${command}`;
 }
 
 /**
@@ -132,12 +185,15 @@ export class AgentRegistry {
     if (!state) return;
 
     try {
-      state.installed = await probeCommand(config.command);
+      const probe = await probeCommand(config.command);
+      state.installed = probe.installed;
+      state.missing = probe.installed ? undefined : probe.missing;
+      applyProbePaths(state, probe);
       state.lastChecked = Date.now();
 
-      if (!state.installed) {
+      if (!probe.installed) {
         state.status = 'unavailable';
-        state.error = `Command not found in PATH: ${config.command}`;
+        state.error = probe.error ?? missingAgentHint(config.command);
         logger.log(`[AgentRegistry] ${config.name}: unavailable (${state.error})`);
         return;
       }
@@ -292,16 +348,22 @@ export class AgentRegistry {
   }
 
   private async doCheck(state: AgentState): Promise<AgentStatusInfo> {
+    // Explicit re-check: drop cached adapter/CLI lookups so a freshly installed
+    // CLI or adapter is picked up without restarting the server.
+    invalidateAgentCommandCache();
     try {
-      state.installed = await probeCommand(state.config.command);
+      const probe = await probeCommand(state.config.command);
+      state.installed = probe.installed;
+      state.missing = probe.installed ? undefined : probe.missing;
+      applyProbePaths(state, probe);
       state.lastChecked = Date.now();
 
-      if (!state.installed) {
+      if (!probe.installed) {
         // Precedence: an actually running connection still counts as connected.
         state.status = state.connection?.isConnected() ? 'connected' : 'unavailable';
         state.error = state.status === 'connected'
           ? undefined
-          : `Command not found in PATH: ${state.config.command}`;
+          : probe.error ?? missingAgentHint(state.config.command);
         return this.toInfo(state);
       }
 
@@ -325,6 +387,10 @@ export class AgentRegistry {
   }
 
   private toInfo(state: AgentState): AgentStatusInfo {
+    const installCommand = state.missing
+      ? installCommandFor(state.config.command, state.missing)
+      : null;
+
     return {
       id: state.config.id,
       name: state.config.name,
@@ -336,8 +402,24 @@ export class AgentRegistry {
       agentInfo: state.connection?.getAgentInfo() ?? undefined,
       capabilities: state.connection?.getAgentCapabilities() ?? undefined,
       error: state.error,
+      install: installCommand ? { command: installCommand } : undefined,
+      paths: state.cliPath ? { cli: state.cliPath } : undefined,
       lastChecked: state.lastChecked,
     };
+  }
+
+  /**
+   * Start the installer for an agent's missing artifact (Settings → Install).
+   * Returns null when the agent is unknown or has no known installer.
+   */
+  startInstall(agentId: string): AgentInstallJob | null {
+    const state = this.statesById.get(agentId);
+    if (!state?.missing) return null;
+
+    return startAgentInstall(agentId, state.config.command, state.missing, () => {
+      // Re-probe and try to connect as soon as the installer finishes.
+      void this.checkNow(agentId).catch(() => undefined);
+    });
   }
 
   // ==========================================================================

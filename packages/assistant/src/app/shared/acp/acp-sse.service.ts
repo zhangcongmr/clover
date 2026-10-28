@@ -35,7 +35,28 @@ export interface AgentStatusInfo {
   agentInfo?: unknown;
   capabilities?: unknown;
   error?: string;
+  /** Installer command for the missing artifact, when the backend knows one. */
+  install?: { command: string };
+  /** Where the agent CLI lives on disk. */
+  paths?: { cli?: string };
   lastChecked: number;
+}
+
+/** Progress of an on-demand agent install started from the settings page. */
+export interface AgentInstallJob {
+  id: string;
+  agentId: string;
+  command: string;
+  status: 'running' | 'succeeded' | 'failed';
+  steps: Array<{
+    label: string;
+    command: string;
+    status: 'pending' | 'running' | 'succeeded' | 'failed';
+    output: string[];
+  }>;
+  startedAt: number;
+  finishedAt?: number;
+  error?: string;
 }
 
 /**
@@ -676,6 +697,22 @@ export class AcpSseService {
   async checkAgent(agentId: string): Promise<AgentStatusInfo> {
     const result = await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/check`, {});
     return result.agent as AgentStatusInfo;
+  }
+
+  /**
+   * 安装缺失的组件（Agent CLI 或 ACP 适配器），返回后台任务
+   */
+  async startAgentInstall(agentId: string): Promise<AgentInstallJob> {
+    const result = await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/install`, {});
+    return result.job as AgentInstallJob;
+  }
+
+  /**
+   * 查询安装任务进度（设置页轮询）
+   */
+  async getAgentInstallJob(jobId: string): Promise<AgentInstallJob> {
+    const result = await this.get(`/api/acp/agents/install/${encodeURIComponent(jobId)}`);
+    return result.job as AgentInstallJob;
   }
 
   // ============================================================================

@@ -3,6 +3,7 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { AcpSessionManager } from '../acp/session-manager.js';
+import { getInstallJob } from '../acp/agent-install.js';
 import type { AgentRegistry } from '../acp/agent-registry.js';
 import { SseManager, StreamConflictError } from '../acp/sse-manager.js';
 import type { TokenManager } from '../agent/auth.js';
@@ -790,6 +791,42 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const message = (error as Error).message;
       res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
     }
+  });
+
+  /**
+   * POST /api/acp/agents/:id/install
+   * 安装缺失的组件（Agent CLI 或 ACP 适配器），安装完成后自动重新探测并尝试连接
+   */
+  app.post('/api/acp/agents/:id/install', (req: Request, res: Response) => {
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+    const agentId = String(req.params.id);
+    try {
+      const job = registry.startInstall(agentId);
+      if (!job) {
+        res.status(409).json({ error: `Nothing to install for agent: ${agentId}` });
+        return;
+      }
+      res.json({ job });
+    } catch (error) {
+      logger.error(`[ACP Routes] Install agent error (agent: ${agentId}):`, error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * GET /api/acp/agents/install/:jobId
+   * 安装任务进度（设置页轮询）
+   */
+  app.get('/api/acp/agents/install/:jobId', (req: Request, res: Response) => {
+    const job = getInstallJob(String(req.params.jobId));
+    if (!job) {
+      res.status(404).json({ error: 'Install job not found' });
+      return;
+    }
+    res.json({ job });
   });
 
   // ============================================================================
