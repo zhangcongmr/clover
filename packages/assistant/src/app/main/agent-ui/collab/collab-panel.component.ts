@@ -1,4 +1,4 @@
-import { Component, ElementRef, effect, HostListener, inject, output, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, effect, HostListener, inject, input, output, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CollabService, type CollabMessage, type CollabMode, type CollabSessionTarget } from './collab.service';
@@ -28,6 +28,8 @@ interface RolePreset {
 export class CollabPanelComponent {
   protected readonly collab = inject(CollabService);
   protected readonly close = output<void>();
+  /** Whether the left sidebar is collapsed; keeps header space free for the floating toggle. */
+  sidebarCollapsed = input<boolean>(false);
 
   /** Collaboration mode tabs (01 single / 02 pipeline / 03 parallel / 04 voluntary claim). */
   protected readonly modes: ModeTab[] = [

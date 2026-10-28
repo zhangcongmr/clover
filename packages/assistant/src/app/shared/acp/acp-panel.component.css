@@ -35,6 +35,12 @@
   padding-left: 5px;
 }
 
+/* While the sidebar is collapsed, its expand toggle floats over this header (rendered by
+   the agent shell), so leave room for it instead of letting it cover the title. */
+.acp-header.sidebar-collapsed {
+  padding-left: 30px;
+}
+
 .acp-title {
   display: flex;
   align-items: center;
@@ -115,30 +121,6 @@
   width: 16px;
   height: 16px;
 }
-
-.sidebar-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--vscode-foreground);
-  opacity: 0.6;
-  transition: opacity 0.15s, background-color 0.15s;
-  flex-shrink: 0;
-  transform: rotate(180deg);
-}
-
-.sidebar-toggle-btn:hover {
-  opacity: 1;
-  background: var(--vscode-hover-background);
-}
-
 
 .status-dot {
   width: 8px;

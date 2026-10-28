@@ -44,9 +44,7 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   editorToggle = output<void>();
   /** Emitted when the overview toggle button is clicked. Only in content-first mode. */
   overviewToggle = output<void>();
-  /** Emitted when the sidebar expand button is clicked. */
-  sidebarExpand = output<void>();
-  /** Whether the left sidebar is collapsed; controls visibility of the expand button. */
+  /** Whether the left sidebar is collapsed; keeps header space free for the floating toggle. */
   sidebarCollapsed = input<boolean>(false);
   protected acpService = inject(AcpService);
   showSettings = signal<boolean>(false);

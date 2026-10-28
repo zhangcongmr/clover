@@ -1,10 +1,5 @@
-<div class="acp-header">
+<div class="acp-header" [class.sidebar-collapsed]="sidebarCollapsed()">
 	<div class="acp-title">
-		@if (sidebarCollapsed()) {
-			<button class="sidebar-toggle-btn" (click)="sidebarExpand.emit()" title="Expand Sidebar">
-				<svg class="icon" width="20" height="20"><use href="#icon-shrink-close"></use></svg>
-			</button>
-		}
 		@if(hasSession() || acpService.sessionState().title) {
 			<svg class="acp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<circle cx="12" cy="12" r="10" />

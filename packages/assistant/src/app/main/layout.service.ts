@@ -37,16 +37,8 @@ export class LayoutService {
   /** 左侧会话侧边栏是否收起 */
   readonly sidebarCollapsed = signal(false);
 
-  collapseSidebar(): void {
-    this.sidebarCollapsed.set(true);
-  }
-
-  expandSidebar(): void {
-    this.sidebarCollapsed.set(false);
-  }
-
-  setSidebarCollapsed(collapsed: boolean): void {
-    this.sidebarCollapsed.set(collapsed);
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update(collapsed => !collapsed);
   }
 
   /** Tasks 区域是否折叠 */
