@@ -42,6 +42,15 @@
   overflow: hidden;
 }
 
+.sidebar-toggle-btn {
+  transition: opacity 0.15s, background-color 0.15s, transform 0.15s;
+}
+
+/* Expanded the arrow points left (collapse); collapsed it must point right (expand). */
+.agent-sidebar.collapsed .sidebar-toggle-btn {
+  transform: rotate(180deg);
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;

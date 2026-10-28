@@ -1,13 +1,17 @@
 @if (layoutService.dockMode() === 'agent-first') {
   <div class="agent-sidebar" [class.collapsed]="layoutService.sidebarCollapsed()">
+    <!-- Single collapse/expand entry point. The button stays rendered while collapsed and
+         is pinned to the host's top-left with inline styles; this only works because
+         `.agent-sidebar` itself is not positioned, so the absolute box resolves against
+         :host and is not clipped by `.agent-sidebar.collapsed { width: 0; overflow: hidden }`. -->
     <div class="sidebar-brand">
-      @if (!layoutService.sidebarCollapsed()) {
-        <button class="icon-btn" (click)="layoutService.collapseSidebar()" title="Collapse Sidebar">
-          <svg class="icon" width="20" height="20">
-            <use href="#icon-shrink-close"></use>
-          </svg>
-        </button>
-      }
+      <button class="icon-btn sidebar-toggle-btn" (click)="layoutService.toggleSidebar()"
+        [title]="layoutService.sidebarCollapsed() ? 'Expand Sidebar' : 'Collapse Sidebar'"
+        [style]="layoutService.sidebarCollapsed() ? 'position: absolute; top: 10px; left: 10px; z-index: 100' : ''">
+        <svg class="icon" width="20" height="20">
+          <use href="#icon-shrink-close"></use>
+        </svg>
+      </button>
     </div>
 
     <!-- Session search -->
@@ -166,12 +170,12 @@
   <div class="agent-main">
     @if (isBrowser()) {
       @if (collabService.panelOpen()) {
-        <app-collab-panel class="custom-scroll" (close)="closeCollab()" />
+        <app-collab-panel class="custom-scroll" (close)="closeCollab()"
+          [sidebarCollapsed]="layoutService.sidebarCollapsed()" />
       } @else {
         <app-acp-panel class="custom-scroll"
           (editorToggle)="editorToggle.emit()"
           (overviewToggle)="overviewToggle.emit()"
-          (sidebarExpand)="layoutService.expandSidebar()"
           (themeApply)="themeApply.emit($event)"
           (recentSessionOpen)="openRecentSession($event)"
           [sidebarCollapsed]="layoutService.sidebarCollapsed()"

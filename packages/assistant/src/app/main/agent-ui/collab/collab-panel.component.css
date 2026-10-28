@@ -82,6 +82,12 @@
   padding: 4px 6px;
 }
 
+/* While the sidebar is collapsed, its expand toggle floats over this header (rendered by
+   the agent shell), so leave room for it instead of letting it cover the title. */
+.collab-header.sidebar-collapsed {
+  padding-left: 31px;
+}
+
 .collab-title {
   display: flex;
   align-items: center;
