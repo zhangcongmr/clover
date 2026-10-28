@@ -3,6 +3,9 @@ import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { AcpService } from "../../shared/acp/acp.service";
 import type { ProjectInfo } from "../../shared/acp/acp.service";
+import type { RecentSessionEntry } from "../../shared/acp/recent-sessions.util";
+import { recordRecentOpenedSession } from "../../shared/acp/recent-sessions.util";
+import { formatRelativeTime } from "../../shared/acp/relative-time.util";
 import { AcpPanelComponent } from "../../shared/acp/acp-panel.component";
 import { AcpChatComponent } from "../../shared/acp/acp-chat.component";
 import { AcpChatInputComponent } from "../../shared/acp/acp-chat-input.component";
@@ -449,6 +452,7 @@ export class AgentComponent {
       await this.acpService.loadSession(sessionId, cwd, agentId);
       this.acpService.selectedProjectPath.set(cwd || null);
       await this.acpService.saveSelectedSession(sessionId);
+      recordRecentOpenedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to load session:', error);
       this.panelError.set(error?.message || 'Failed to load session');
@@ -471,6 +475,7 @@ export class AgentComponent {
       await this.acpService.resumeSession(sessionId, cwd, agentId, undefined);
       this.acpService.selectedProjectPath.set(cwd || null);
       await this.acpService.saveSelectedSession(sessionId);
+      recordRecentOpenedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to resume session:', error);
       this.panelError.set(error?.message || 'Failed to resume session');
@@ -732,12 +737,28 @@ export class AgentComponent {
     const agentId = task.sessions?.find(s => s.sessionId === sessionId)?.agentId;
     try {
       await this.acpService.loadSession(sessionId, task.path, agentId);
+      recordRecentOpenedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to load task session:', error);
       this.panelError.set(error?.message || 'Failed to load session');
     } finally {
       this.panelLoading.set(false);
       this.sessionLoadingId.set(null);
+    }
+  }
+
+  /**
+   * Opens an entry picked from the welcome screen's "Recent" list.
+   *
+   * Task entries go through `loadTaskSession` (it selects the task and
+   * backfills the session title), project sessions through `loadSession`.
+   */
+  async openRecentSession(entry: RecentSessionEntry): Promise<void> {
+    if (this.sessionLoadingId()) return;
+    if (entry.kind === 'task' && entry.taskId) {
+      await this.loadTaskSession(entry.taskId, entry.sessionId);
+    } else {
+      await this.loadSession(entry.sessionId);
     }
   }
 
@@ -759,17 +780,7 @@ export class AgentComponent {
   }
 
   getRelativeTime(dateStr?: string): string {
-    if (!dateStr) return '';
-    const now = new Date();
-    const date = new Date(dateStr);
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h`;
-    const diffDay = Math.floor(diffHr / 24);
-    return `${diffDay}d`;
+    return formatRelativeTime(dateStr);
   }
 
   onSearchInput(event: Event): void {

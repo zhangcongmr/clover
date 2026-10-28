@@ -173,6 +173,7 @@
           (overviewToggle)="overviewToggle.emit()"
           (sidebarExpand)="layoutService.expandSidebar()"
           (themeApply)="themeApply.emit($event)"
+          (recentSessionOpen)="openRecentSession($event)"
           [sidebarCollapsed]="layoutService.sidebarCollapsed()"
         />
       }
