@@ -4,6 +4,14 @@
 
 A universal development solution combining a browser web app with a local proxy Agent, built on the ACP protocol.
 
+## 界面截图 / Screenshots
+
+| | |
+|:---:|:---:|
+| <img src="docs/screenshots/welcome.png" alt="Clover welcome screen with one-click starters" width="100%"><br><sub>欢迎页与一键起点</sub> | <img src="docs/screenshots/external-agents.png" alt="Agent and model picker for external agents" width="100%"><br><sub>多 Agent 与模型选择：OpenCode, Claude Code、Codex CLI、Gemini CLI、Qwen Code、Augment Code</sub> |
+| <img src="docs/screenshots/AI-driven-theme-generate.png" alt="AI-driven theme generation with live preview" width="100%"><br><sub>AI 驱动主题生成与实时预览</sub> | <img src="docs/screenshots/agent-first-main.png" alt="ACP chat with visible tool calls" width="100%"><br><sub>ACP 对话与可见的工具调用</sub> |
+| <img src="docs/screenshots/content-first-sessions.png" alt="Editor, file tree and project sessions side by side" width="100%"><br><sub>编辑器、文件树与项目会话并排</sub> | <!-- 第六张截图占位 --> |
+
 ## 仓库结构 / Repo Structure
 
 ```

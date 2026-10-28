@@ -2,6 +2,14 @@
 
 A universal development solution combining a browser web app with a local proxy Agent, built on the ACP protocol.
 
+## Screenshots
+
+| | |
+|:---:|:---:|
+| <img src="docs/screenshots/welcome.png" alt="Clover welcome screen with one-click starters" width="100%"><br><sub>Welcome screen with one-click starters</sub> | <img src="docs/screenshots/external-agents.png" alt="Agent and model picker for external agents" width="100%"><br><sub>Bring your own agent — OpenCode, Claude Code, Codex CLI, Gemini CLI, Qwen Code, Augment Code</sub> |
+| <img src="docs/screenshots/AI-driven-theme-generate.png" alt="AI-driven theme generation with live preview" width="100%"><br><sub>AI-driven theme generation with live preview</sub> | <img src="docs/screenshots/agent-first-main.png" alt="ACP chat with visible tool calls" width="100%"><br><sub>ACP chat with visible tool calls</sub> |
+| <img src="docs/screenshots/content-first-sessions.png" alt="Editor, file tree and project sessions side by side" width="100%"><br><sub>Editor, file tree and project sessions side by side</sub> | <!-- Sixth screenshot placeholder --> |
+
 ## Repo Structure
 
 ```
