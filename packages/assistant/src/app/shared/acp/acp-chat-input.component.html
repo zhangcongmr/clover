@@ -29,7 +29,7 @@
 	  </div>
 	}
 	@if (showSlashMenu()) {
-	  <div class="slash-command-menu custom-scroll">
+	  <div class="slash-command-menu custom-scroll" appDropdownPlacement [placementMaxHeight]="350">
 		@for (cmd of filteredCommands(); track cmd.name; let i = $index) {
 		  <button class="slash-command-item" [class.active]="i === selectedIndex()"
 			(mousedown)="$event.preventDefault(); selectCommand(cmd)" (mouseenter)="selectedIndex.set(i)">
@@ -141,7 +141,7 @@
 			  <span>{{ acpService.selectedAgent()?.name || 'Agent' }}</span>
 			</button>
 			@if (showAgentDropdown()) {
-			  <div class="agent-dropdown">
+			  <div class="agent-dropdown custom-scroll" appDropdownPlacement [placementMaxHeight]="420">
 				@for (agent of agents; track agent.id; let i = $index) {
 				  <button class="agent-option" (mousedown)="selectAgent(agent)"
 					(mouseenter)="agentSelectedIndex.set(i)"
@@ -176,7 +176,7 @@
 			</svg>
 		  </button>
 		  @if (showModeDropdown()) {
-			<div class="mode-dropdown">
+			<div class="mode-dropdown custom-scroll" appDropdownPlacement [placementMaxHeight]="360">
 			  @for (option of modeConfig()!.options ?? []; track option.value; let i = $index) {
 				<button class="mode-option" (click)="selectMode($event, option.value)"
 				  (mouseenter)="modeSelectedIndex.set(i)"
@@ -202,7 +202,7 @@
 			</svg>
 		  </button>
 		  @if (showModelDropdown()) {
-			<div class="model-dropdown custom-scroll">
+			<div class="model-dropdown custom-scroll" appDropdownPlacement [placementMaxHeight]="400">
 			  @for (option of modelConfig()!.options ?? []; track option.value; let i = $index) {
 				<button class="model-option" (click)="selectModel($event, option.value)"
 				  (mouseenter)="modelSelectedIndex.set(i)"
@@ -231,7 +231,7 @@
 			</svg>
 		  </button>
 		  @if (showMcpDropdown()) {
-			<div class="mcp-dropdown custom-scroll">
+			<div class="mcp-dropdown custom-scroll" appDropdownPlacement [placementMaxHeight]="300">
 			  @if (mcpServers().length === 0) {
 				<div class="mcp-empty">No MCP servers configured</div>
 			  } @else {
@@ -293,7 +293,7 @@
 		<span>{{ currentProjectName() || 'Select Project' }}</span>
 		</button>
 		@if (showProjectDropdown()) {
-		<div class="project-dropdown custom-scroll">
+		<div class="project-dropdown custom-scroll" appDropdownPlacement [placementMaxHeight]="300">
 			@for (project of acpService.projects(); track project.path; let i = $index) {
 			<button class="project-option" (mousedown)="selectProject(project)"
 				(mouseenter)="projectSelectedIndex.set(i)"
