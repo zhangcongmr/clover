@@ -48,7 +48,7 @@ export class AstTabComponent implements OnInit, OnChanges, AfterViewInit {
   previousEle: any;
 
   // spec: any;
-  queryApibtnText = "刷新";
+  queryApibtnText = "Refresh";
 
   showWidget = false;
   targetPageNumber = '';

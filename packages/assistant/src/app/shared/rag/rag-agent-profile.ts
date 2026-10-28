@@ -3,7 +3,7 @@ import type { RagToolKind } from '../acp/tool-call-info.pipe';
 /**
  * RAG Agent profile model.
  *
- * A profile is the "RAG 专用 Agent 配置": it bundles the knowledge-base data
+ * A profile is the "specialized RAG agent configuration": it bundles the knowledge-base data
  * sources ({@link serverNames}) with the retrieval strategy and the prompt-level
  * knobs the agent should follow. Profiles are pure data — persisted in
  * localStorage and consumed by {@link RagService}. No backend store is involved.
@@ -19,17 +19,17 @@ export interface RagStrategyOption {
 }
 
 export const RAG_STRATEGIES: ReadonlyArray<RagStrategyOption> = [
-  { id: 'vector', label: 'Vector', hint: '单一数据源的语义检索（默认）。' },
-  { id: 'fanout-rrf', label: 'Fan-out (RRF)', hint: '对每个数据源分别检索，再按 Reciprocal Rank Fusion 合并去重。' },
-  { id: 'hybrid', label: 'Hybrid', hint: '向量 + 关键词混合检索；需要 RAG server 支持，否则由 agent 退化为向量检索。' },
+  { id: 'vector', label: 'Vector', hint: 'Semantic retrieval from a single data source (default).' },
+  { id: 'fanout-rrf', label: 'Fan-out (RRF)', hint: 'Retrieve from each data source separately, then merge and de-duplicate with Reciprocal Rank Fusion.' },
+  { id: 'hybrid', label: 'Hybrid', hint: 'Hybrid vector + keyword retrieval; requires RAG server support, otherwise the agent falls back to vector retrieval.' },
 ];
 
 export const ALL_RAG_TOOLS: ReadonlyArray<RagToolKind> = ['search', 'index', 'list', 'delete'];
 
-export const DEFAULT_CITATION_STYLE = '【{documentId}#{chunkIndex}】';
+export const DEFAULT_CITATION_STYLE = '[{documentId}#{chunkIndex}]';
 
 export const DEFAULT_ANSWER_INSTRUCTION =
-  '仅依据检索命中的分块作答；引用处标注来源。若命中内容不足以回答，请明确说明，不要编造。';
+  'Answer strictly based on the retrieved chunks; mark sources with citations at citation points. If the retrieved content is not enough to answer, say so explicitly instead of making things up.';
 
 /** A named, switchable RAG configuration. */
 export interface RagAgentProfile {

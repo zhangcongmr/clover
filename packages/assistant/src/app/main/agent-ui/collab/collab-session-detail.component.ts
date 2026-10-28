@@ -100,7 +100,7 @@ export class CollabSessionDetailComponent implements OnDestroy {
       if (seq !== this.loadSeq) return;
     } catch (error) {
       if (seq !== this.loadSeq) return;
-      this.loadError.set((error as Error)?.message || '加载会话失败');
+      this.loadError.set((error as Error)?.message || 'Failed to load session');
     } finally {
       if (seq === this.loadSeq) this.loading.set(false);
     }

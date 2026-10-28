@@ -845,7 +845,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       if(this.terminalOpenedList.length === 0) {
         this.terminalOpenedList.push({
           id: 'terminal-' + Date.now(),
-          title: '终端',
+          title: 'Terminal',
           isClosable: true,
           isActive: true,
           symbol: '>',
@@ -1106,7 +1106,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     // 新建tab
     const newTab = {
       id: 'terminal-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
-      title: '终端',
+      title: 'Terminal',
       isClosable: true,
       isActive: true,
       symbol: '>',

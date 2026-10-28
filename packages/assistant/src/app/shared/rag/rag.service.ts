@@ -296,45 +296,45 @@ export class RagService {
   /* ---------------------------------------------------------------------- */
 
   buildUploadPrompt(files: RagUploadCandidate[]): string {
-    const names = files.map(f => `"${f.name}"`).join('、');
+    const names = files.map(f => `"${f.name}"`).join(', ');
     return [
-      `请使用 index_document 工具将以下 ${files.length} 个文档写入知识库：${names}。`,
+      `Use the index_document tool to write the following ${files.length} documents into the knowledge base: ${names}.`,
       '',
-      '要求：',
-      '- 逐个调用 index_document，不要合并',
-      '- documentId 使用文件名（不含扩展名）',
-      '- metadata 传入 { "source": "<原始文件名>" }',
-      '- 文档正文见本次消息附带的资源块，不要凭记忆复述',
+      'Requirements:',
+      '- Call index_document one document at a time; do not merge them',
+      '- Use the file name (without extension) as documentId',
+      '- Pass metadata as { "source": "<original file name>" }',
+      '- The document content is in the resource blocks attached to this message; do not recite from memory',
     ].join('\n');
   }
 
   buildListPrompt(): string {
-    return '请调用 list_documents 工具列出知识库中的全部文档，并原样返回结果。';
+    return 'Use the list_documents tool to list all documents in the knowledge base and return the result as-is.';
   }
 
   buildDeletePrompt(documentId: string): string {
-    return `请调用 delete_document 工具从知识库中删除文档 "${documentId}"。`;
+    return `Use the delete_document tool to delete the document "${documentId}" from the knowledge base.`;
   }
 
   buildSearchPrompt(query: string, limit: number, documentId?: string): string {
     const profile = this.activeProfile();
-    const lines = [`请调用 search 工具检索知识库，query 为「${query}」，limit 为 ${limit}。`];
+    const lines = [`Use the search tool to query the knowledge base with query "${query}" and limit ${limit}.`];
 
     if (profile.strategy === 'fanout-rrf' && profile.serverNames.length > 1) {
       lines.push(
-        `请对以下每个数据源分别执行 search：${profile.serverNames.join('、')}，` +
-          '再用 Reciprocal Rank Fusion 合并结果并去重（相同 documentId#chunkIndex 只保留一次）。',
+        `Run search against each of the following data sources separately: ${profile.serverNames.join(', ')}; ` +
+          'then merge and de-duplicate the results with Reciprocal Rank Fusion (keep only one copy per documentId#chunkIndex).',
       );
     } else if (profile.strategy === 'hybrid') {
-      lines.push('优先使用混合（向量 + 关键词）检索；若该数据源不支持混合模式，则退回向量检索。');
+      lines.push('Prefer hybrid (vector + keyword) retrieval; if a data source does not support hybrid mode, fall back to vector retrieval.');
     }
 
-    if (documentId) lines.push(`限定 documentId 为 "${documentId}"。`);
-    if (profile.minScore > 0) lines.push(`忽略相关度（score）低于 ${profile.minScore} 的分块。`);
+    if (documentId) lines.push(`Restrict documentId to "${documentId}".`);
+    if (profile.minScore > 0) lines.push(`Ignore chunks with a relevance (score) below ${profile.minScore}.`);
 
     lines.push(
-      `检索完成后，请基于命中的分块回答，并在引用处使用此格式标注来源：` +
-        `${profile.citationStyle}（即 {documentId}#{chunkIndex}）。`,
+      `After retrieval, answer based on the hit chunks and cite sources at citation points in this format: ` +
+        `${profile.citationStyle} (i.e. {documentId}#{chunkIndex}).`,
     );
     if (profile.answerInstruction.trim()) lines.push(profile.answerInstruction.trim());
     return lines.join('\n');

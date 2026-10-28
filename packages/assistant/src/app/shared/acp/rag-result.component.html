@@ -3,8 +3,8 @@
   @switch (result().kind) {
     @case ('search') {
       <div class="rag-header">
-        <span class="rag-title">检索结果</span>
-        <span class="rag-count">{{ hitCount() }} 条</span>
+        <span class="rag-title">Search results</span>
+        <span class="rag-count">{{ hitCount() }} hits</span>
       </div>
       <ul class="rag-hits">
         @for (hit of result().hits; track hit.documentId + '-' + hit.chunkIndex) {
@@ -21,24 +21,24 @@
               <button
                 type="button"
                 class="rag-cite-btn"
-                title="插入引用到对话"
+                title="Insert citation into the chat"
                 (click)="insertCitation(hit)"
               >
-                引用
+                Cite
               </button>
-              <span class="rag-feedback" role="group" aria-label="检索相关度反馈">
+              <span class="rag-feedback" role="group" aria-label="Relevance feedback">
                 <button
                   type="button"
                   class="rag-feedback-btn"
                   [class.active]="feedbackFor(hit) === 'up'"
-                  title="该结果相关"
+                  title="This result is relevant"
                   (click)="rate(hit, 'up')"
                 >👍</button>
                 <button
                   type="button"
                   class="rag-feedback-btn"
                   [class.active]="feedbackFor(hit) === 'down'"
-                  title="该结果不相关"
+                  title="This result is irrelevant"
                   (click)="rate(hit, 'down')"
                 >👎</button>
               </span>
@@ -46,7 +46,7 @@
             <div class="rag-hit-text" [class.collapsed]="collapsed()">{{ excerpt(hit) }}</div>
             @if (isTruncated(hit)) {
               <button type="button" class="rag-expand" (click)="toggle($event)">
-                {{ collapsed() ? '展开全文' : '收起' }}
+                {{ collapsed() ? 'Show full text' : 'Collapse' }}
               </button>
             }
           </li>
@@ -56,25 +56,25 @@
 
     @case ('index') {
       <div class="rag-header">
-        <span class="rag-title">已写入知识库</span>
+        <span class="rag-title">Indexed into knowledge base</span>
       </div>
       <div class="rag-summary">
         <span class="rag-doc-id">{{ result().documentId }}</span>
-        <span class="rag-chunks">{{ result().chunksCount }} 个分块</span>
+        <span class="rag-chunks">{{ result().chunksCount }} chunks</span>
       </div>
     }
 
     @case ('list') {
       <div class="rag-header">
-        <span class="rag-title">知识库文档</span>
-        <span class="rag-count">{{ documentCount() }} 个</span>
+        <span class="rag-title">Knowledge base documents</span>
+        <span class="rag-count">{{ documentCount() }} docs</span>
       </div>
       <ul class="rag-docs">
         @for (doc of result().documents; track doc.documentId) {
           <li class="rag-doc">
             <span class="rag-doc-id">{{ doc.documentId }}</span>
             <span class="rag-doc-source">{{ docSource(doc) }}</span>
-            <span class="rag-chunks">{{ doc.chunkCount }} 块</span>
+            <span class="rag-chunks">{{ doc.chunkCount }} chunks</span>
           </li>
         }
       </ul>
@@ -82,7 +82,7 @@
 
     @case ('delete') {
       <div class="rag-header">
-        <span class="rag-title">{{ result().success ? '已从知识库删除' : '知识库中未找到该文档' }}</span>
+        <span class="rag-title">{{ result().success ? 'Deleted from knowledge base' : 'Document not found in knowledge base' }}</span>
       </div>
       <div class="rag-summary">
         <span class="rag-doc-id">{{ result().documentId }}</span>

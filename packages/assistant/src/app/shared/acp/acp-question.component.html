@@ -1,7 +1,7 @@
 <div class="question-card" [class.submitted]="submitted()" [class.collapsed]="collapsed()">
   <!-- Header -->
   <div class="question-header" (click)="toggleCollapse()">
-    <span class="question-counter">{{ currentIndex() + 1 }}/{{ total() }} 个问题</span>
+    <span class="question-counter">{{ currentIndex() + 1 }}/{{ total() }} questions</span>
     <div class="question-nav-dots">
       @for (q of questions(); track $index) {
         <span class="nav-dot" [class.active]="$index === currentIndex()" [class.answered]="answers().has($index)"
@@ -17,7 +17,7 @@
   <!-- Question text -->
   <div class="question-body">
     <div class="question-title">{{ currentQuestion().question }}</div>
-    <div class="question-hint">选择一个答案</div>
+    <div class="question-hint">Select an answer</div>
 
     <!-- Options -->
     <div class="question-options">
@@ -43,9 +43,9 @@
           <span class="radio-inner"></span>
         </span>
         <div class="option-content">
-          <div class="option-label">输入自己的答案</div>
+          <div class="option-label">Type your own answer</div>
           @if (isCustomSelected(currentIndex())) {
-            <input type="text" class="custom-input" placeholder="输入你的答案..."
+            <input type="text" class="custom-input" placeholder="Type your answer..."
               [ngModel]="customInputs().get(currentIndex()) || ''"
               (ngModelChange)="customInputs().set(currentIndex(), $event); selectAnswer(currentIndex(), '__custom__')"
               (click)="$event.stopPropagation()" />
@@ -56,11 +56,11 @@
 
     <!-- Footer -->
     <div class="question-footer">
-      <button class="btn-ignore" (click)="ignore()">忽略</button>
+      <button class="btn-ignore" (click)="ignore()">Ignore</button>
       @if (!isLast()) {
-        <button class="btn-next" (click)="nextQuestion()" [disabled]="!answers().has(currentIndex())">下一步</button>
+        <button class="btn-next" (click)="nextQuestion()" [disabled]="!answers().has(currentIndex())">Next</button>
       } @else {
-        <button class="btn-submit" (click)="submitAll()" [disabled]="!allAnswered()">提交</button>
+        <button class="btn-submit" (click)="submitAll()" [disabled]="!allAnswered()">Submit</button>
       }
     </div>
   </div>

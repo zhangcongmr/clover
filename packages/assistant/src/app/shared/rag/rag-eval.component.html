@@ -3,22 +3,22 @@
     <div class="stat">
       <span class="stat-label">Hit rate</span>
       <span class="stat-value">{{ percent(summary().hitRate) }}</span>
-      <span class="stat-sub">{{ summary().completedCount }} 次检索</span>
+      <span class="stat-sub">{{ summary().completedCount }} retrievals</span>
     </div>
     <div class="stat">
       <span class="stat-label">Cited rate</span>
       <span class="stat-value">{{ percent(summary().citedRate) }}</span>
-      <span class="stat-sub">被引用比例</span>
+      <span class="stat-sub">Proportion cited</span>
     </div>
     <div class="stat">
       <span class="stat-label">Avg top score</span>
       <span class="stat-value">{{ percent(summary().avgTopScore, 1) }}</span>
-      <span class="stat-sub">最高相关度均值</span>
+      <span class="stat-sub">Mean of top relevance scores</span>
     </div>
     <div class="stat">
       <span class="stat-label">Relevant rate</span>
       <span class="stat-value">{{ percent(summary().relevantRate) }}</span>
-      <span class="stat-sub">{{ summary().evaluatedCount }} 条已标注</span>
+      <span class="stat-sub">{{ summary().evaluatedCount }} rated</span>
     </div>
   </div>
 
@@ -91,9 +91,9 @@
                   <span class="eval-hit-text">{{ hit.text }}</span>
                   <span class="eval-hit-feedback">
                     <button type="button" class="icon-btn" [class.active]="hitFeedback(citation(hit)) === 'up'"
-                            title="相关" (click)="rateHit(citation(hit), 'up')">👍</button>
+                            title="Relevant" (click)="rateHit(citation(hit), 'up')">👍</button>
                     <button type="button" class="icon-btn" [class.active]="hitFeedback(citation(hit)) === 'down'"
-                            title="不相关" (click)="rateHit(citation(hit), 'down')">👎</button>
+                            title="Irrelevant" (click)="rateHit(citation(hit), 'down')">👎</button>
                   </span>
                 </li>
               }

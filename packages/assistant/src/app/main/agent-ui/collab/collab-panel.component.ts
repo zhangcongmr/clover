@@ -29,30 +29,30 @@ export class CollabPanelComponent {
   protected readonly collab = inject(CollabService);
   protected readonly close = output<void>();
 
-  /** Collaboration mode tabs (01 单点 / 02 流水线 / 03 并行 / 04 自愿认领). */
+  /** Collaboration mode tabs (01 single / 02 pipeline / 03 parallel / 04 voluntary claim). */
   protected readonly modes: ModeTab[] = [
-    { id: 'single', label: '单点', hint: '一条提示词只路由到 1 个 Session，完成即结束' },
-    { id: 'pipeline', label: '流水线', hint: '多个 Session 顺序接棒，输出逐级传递' },
-    { id: 'parallel', label: '并行', hint: '多个 Session 同时处理互不依赖的子任务' },
-    { id: 'voluntary', label: '自愿认领', hint: '完成后广播，其余 Session 自行判断是否接手' },
+    { id: 'single', label: 'Single', hint: 'One prompt is routed to exactly one Session; done when it finishes' },
+    { id: 'pipeline', label: 'Pipeline', hint: 'Sessions hand off in sequence; output flows stage by stage' },
+    { id: 'parallel', label: 'Parallel', hint: 'Sessions handle mutually independent sub-tasks concurrently' },
+    { id: 'voluntary', label: 'Voluntary claim', hint: 'On completion it broadcasts; remaining Sessions decide whether to take over' },
   ];
 
   /** Preset session roles offered by the picker dropdown, each with a default responsibility. */
   protected readonly rolePresets: RolePreset[] = [
     {
-      role: '代码审查专家',
+      role: 'Code review expert',
       responsibility:
-        '审查代码改动的正确性、安全性与性能：检查边界条件与错误处理，发现潜在缺陷与安全隐患，指出性能瓶颈，并给出可执行的修改建议与优先级。',
+        'Review code changes for correctness, security and performance: check edge cases and error handling, find potential defects and security risks, point out performance bottlenecks, and give actionable fix suggestions with priorities.',
     },
     {
-      role: '文档撰写专家',
+      role: 'Documentation writer',
       responsibility:
-        '撰写与维护清晰准确的文档：梳理结构与信息层次，补齐使用示例与配置说明，统一术语与写作风格，确保文档内容与实现保持一致。',
+        'Write and maintain clear, accurate documentation: organize structure and information hierarchy, add usage examples and configuration notes, keep terminology and writing style consistent, and ensure the docs stay in sync with the implementation.',
     },
     {
-      role: '文档评审专家',
+      role: 'Documentation reviewer',
       responsibility:
-        '评审文档的准确性与可读性：核对内容与代码实现是否一致，验证步骤可复现、示例正确、术语统一，指出遗漏信息并给出具体修改建议。',
+        'Review documentation for accuracy and readability: verify the content matches the implementation, validate that reproduction steps and examples are correct and terminology is consistent, and point out missing information with concrete suggestions.',
     },
   ];
 
@@ -247,7 +247,7 @@ export class CollabPanelComponent {
     return '';
   }
 
-  /** Human label of a participant id (for "接棒自" / "放弃" annotations). */
+  /** Human label of a participant id (for "Handed off from" / "Relinquished" annotations). */
   protected participantLabel(participantId: string | undefined): string {
     return this.collab.participantLabel(participantId);
   }
@@ -259,7 +259,7 @@ export class CollabPanelComponent {
 
   /** Joins relinquished participant ids into a display label. */
   protected relinquishedLabel(list: string[] | undefined): string {
-    return (list ?? []).map(id => this.collab.participantLabel(id)).join('、');
+    return (list ?? []).map(id => this.collab.participantLabel(id)).join(', ');
   }
 
   // --- Session detail panel -------------------------------------------------

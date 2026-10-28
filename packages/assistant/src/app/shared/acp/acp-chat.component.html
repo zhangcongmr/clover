@@ -25,8 +25,8 @@
           <div class="intermediate-section" [class.collapsed]="isIntermediateSectionCollapsed(group)">
             @if (!group.isNew) {
               <div class="intermediate-header" (click)="toggleIntermediateSection(group)">
-                <span class="intermediate-toggle">{{ isIntermediateSectionCollapsed(group) ? '▶' : '▼' }}</span>
-                <span class="intermediate-label">{{ isIntermediateSectionCollapsed(group) ? '已收起所有步骤' : '已展开所有步骤' }}</span>
+                <span class="intermediate-toggle" [style.transform]="isIntermediateSectionCollapsed(group) ? null : 'rotate(90deg)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg></span>
+                <span class="intermediate-label">{{ isIntermediateSectionCollapsed(group) ? 'All steps collapsed' : 'All steps expanded' }}</span>
               </div>
             }
             @if (!isIntermediateSectionCollapsed(group)) {
@@ -36,8 +36,8 @@
             }
           </div>
         } @else if (group.type === 'interrupted') {
-          <div class="interrupted-divider" role="separator" aria-label="已中断">
-            <span class="interrupted-label">已中断</span>
+          <div class="interrupted-divider" role="separator" aria-label="Interrupted">
+            <span class="interrupted-label">Interrupted</span>
           </div>
         } @else {
           @for (message of group.messages; track trackByMessageId($index, message)) {
@@ -58,7 +58,7 @@
                     @if (changedFilesFor(message); as files) {
                       <div class="files-changed">
                         <div class="files-changed-header">
-                          <span class="files-changed-title">{{ files.length }} 个文件已更改</span>
+                          <span class="files-changed-title">{{ files.length }} files changed</span>
                           <span class="files-changed-stats">
                             <span class="diff-additions">+{{ totalAdditions(files) }}</span>
                             <span class="diff-deletions">-{{ totalDeletions(files) }}</span>
@@ -73,7 +73,7 @@
                                   <span class="diff-additions">+{{ file.additions }}</span>
                                   <span class="diff-deletions">-{{ file.deletions }}</span>
                                 </span>
-                                <span class="diff-toggle-icon" [class.collapsed]="isFileExpanded(message.id, file.key)">▶</span>
+                                <span class="diff-toggle-icon" [class.collapsed]="isFileExpanded(message.id, file.key)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg></span>
                               </div>
                               @if (isFileExpanded(message.id, file.key)) {
                                 @if (file | fileDiffView; as view) {
@@ -187,7 +187,7 @@
     <div class="acp-todos-pinned">
       <div class="todos-card">
         <div class="todos-header" (click)="toggleTodosCollapse()">
-          <span class="todos-progress">已完成 {{ activeTodosMessages()[0] | completedCount }} 个任务 (共 {{ totalCount(activeTodosMessages()[0]) }} 个)</span>
+          <span class="todos-progress">Completed {{ activeTodosMessages()[0] | completedCount }} of {{ totalCount(activeTodosMessages()[0]) }} tasks</span>
           <span class="todos-toggle-icon" [class.collapsed]="todosCollapsed">
             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>
           </span>
@@ -279,7 +279,7 @@
               <span class="search-count">{{ searchSummary(grep) }}</span>
             } @else if (message.toolStatus === 'failed') {
               <span class="search-separator">·</span>
-              <span class="search-count">搜索失败</span>
+              <span class="search-count">Search failed</span>
             }
           </div>
         </div>
@@ -296,7 +296,7 @@
               <span class="search-count">{{ searchSummary(glob) }}</span>
             } @else if (message.toolStatus === 'failed') {
               <span class="search-separator">·</span>
-              <span class="search-count">搜索失败</span>
+              <span class="search-count">Search failed</span>
             }
           </div>
         </div>
@@ -319,17 +319,17 @@
                 <span class="tool-call-kind-badge">{{ message.toolKind }}</span>
               }
               @if (message.toolKind === 'execute') {
-                <span class="diff-toggle-icon" [class.collapsed]="isShellExpanded(message)">▶</span>
+                <span class="diff-toggle-icon" [class.collapsed]="isShellExpanded(message)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg></span>
               }
               @if (message.toolKind === 'edit' && message.toolStatus === 'completed' && (message | editDiff); as editDiff) {
                 <span class="diff-stats">
                   <span class="diff-additions">+{{ editDiff.additions }}</span>
                   <span class="diff-deletions">-{{ editDiff.deletions }}</span>
                 </span>
-                <span class="diff-toggle-icon" [class.collapsed]="isExpanded(message)">▶</span>
+                <span class="diff-toggle-icon" [class.collapsed]="isExpanded(message)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg></span>
               }
               @if (message.toolKind === 'read' && message.toolStatus === 'completed') {
-                <span class="diff-toggle-icon" [class.collapsed]="isExpanded(message)">▶</span>
+                <span class="diff-toggle-icon" [class.collapsed]="isExpanded(message)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg></span>
               }
             </div>
             @if (message.toolKind === 'execute') {
@@ -366,9 +366,9 @@
             @if (message.toolKind === 'read' && message.toolStatus === 'completed' && (message | readInfo); as readInfo) {
               @if (isExpanded(message)) {
                 <div class="tool-call-read-info">
-                  <span class="read-explored">已探索 1 次读取</span>
+                  <span class="read-explored">Explored with 1 read</span>
                   <span class="read-params">
-                    读取 {{ message.toolLocations?.[0]?.path || 'file' }}
+                    Read {{ message.toolLocations?.[0]?.path || 'file' }}
                     @if (readInfo.offset !== undefined) {
                       offset={{ readInfo.offset }}
                     }

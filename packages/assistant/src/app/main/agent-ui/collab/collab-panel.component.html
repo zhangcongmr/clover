@@ -36,8 +36,8 @@
       @if (!collab.space()) {
         <div class="collab-picker">
           <div class="collab-picker-intro">
-            <h3>配置协作 Session</h3>
-            <p>以 <strong>Session</strong> 为主键：每个 Session 是一个独立的参与方，可自由绑定一个 Agent 实现，同一个 Agent 可被多个 Session 使用。每个 Session 拥有自己的角色与职责。可指定一个 Session 作为 <strong>orchestrator</strong>，它先接收每条消息并决定由哪个 Session 应答。</p>
+            <h3>Configure Collaboration Sessions</h3>
+            <p><strong>Session</strong> is the primary key: each Session is an independent participant that can bind to any Agent implementation, and the same Agent can be shared by multiple Sessions. Each Session has its own role and responsibilities. A Session can be designated as the <strong>orchestrator</strong>, which receives each message first and decides which Session responds.</p>
           </div>
 
           <div class="session-list">
@@ -48,7 +48,7 @@
                   class="session-agent"
                   [ngModel]="participant.agentId"
                   (ngModelChange)="onParticipantAgent(participant.id, $event)">
-                  <option value="" disabled>选择 Agent</option>
+                  <option value="" disabled>Select Agent</option>
                   @for (agent of collab.availableAgents(); track agent.id) {
                     <option [value]="agent.id">{{ agent.name }} ({{ agent.id }})</option>
                   }
@@ -57,7 +57,7 @@
                   class="session-role"
                   [ngModel]="participant.role"
                   (ngModelChange)="onParticipantRolePreset(participant.id, $event)">
-                  <option value="">角色（可选）</option>
+                  <option value="">Role (optional)</option>
                   @for (preset of rolePresets; track preset.role) {
                     <option [value]="preset.role">{{ preset.role }}</option>
                   }
@@ -65,13 +65,13 @@
                 <input
                   class="session-input"
                   type="text"
-                  placeholder="职责，如：发现安全隐患与性能问题"
+                  placeholder="Responsibilities, e.g. find security risks and performance issues"
                   [ngModel]="participant.responsibility"
                   (ngModelChange)="onParticipantRole(participant.id, 'responsibility', $event)" />
                 <span
                   class="orchestrator-option"
                   [class.active]="collab.orchestratorId() === participant.id"
-                  title="该 Session 先接收每条消息，并决定由哪个 Session 应答"
+                  title="This session receives each message first and decides which session responds"
                   (click)="collab.setOrchestrator(participant.id)">
                   <input
                     type="radio"
@@ -80,15 +80,15 @@
                     tabindex="-1" />
                   Orchestrator
                 </span>
-                <button class="session-remove" title="移除该 Session" (click)="removeParticipant(participant.id)">✕</button>
+                <button class="session-remove" title="Remove this session" (click)="removeParticipant(participant.id)">✕</button>
               </div>
             } @empty {
-              <div class="collab-empty">还没有 Session，点击下方「+ 新增 Session」。</div>
+              <div class="collab-empty">No sessions yet. Click "+ Add Session" below.</div>
             }
           </div>
 
           <div class="collab-picker-footer">
-            <button class="collab-btn ghost" (click)="addParticipant()">+ 新增 Session</button>
+            <button class="collab-btn ghost" (click)="addParticipant()">+ Add Session</button>
             <span class="participants-spacer"></span>
             <button class="collab-btn ghost" (click)="collab.refreshAgents()" [disabled]="collab.creating()">
               Refresh
@@ -150,26 +150,26 @@
               @case ('pipeline') {
                 <div class="mode-config">
                   <label class="mode-field">
-                    编排
+                    Orchestration
                     <select [ngModel]="collab.pipelineMode()" (ngModelChange)="collab.pipelineMode.set($event)">
-                      <option value="static">固定顺序</option>
-                      <option value="orchestrated">编排 Agent 决策</option>
+                      <option value="static">Fixed order</option>
+                      <option value="orchestrated">Orchestrator decides</option>
                     </select>
                   </label>
                   <label class="mode-field">
-                    最大轮次
+                    Max turns
                     <input type="number" min="1" max="30" [ngModel]="collab.pipelineMaxTurns()"
                       (ngModelChange)="setNumber(collab.pipelineMaxTurns, $event)" />
                   </label>
                   @if (collab.pipelineMode() === 'static') {
                     <div class="pipeline-order">
-                      <span class="mode-field-label">执行顺序</span>
+                      <span class="mode-field-label">Execution order</span>
                       @for (participantId of collab.pipelineOrder(); track participantId; let i = $index) {
                         <span class="stage-chip">
                           {{ i + 1 }}. {{ participantLabel(participantId) }}
-                          <button class="stage-move" [disabled]="i === 0" (click)="moveStage(participantId, -1)" title="上移">↑</button>
+                          <button class="stage-move" [disabled]="i === 0" (click)="moveStage(participantId, -1)" title="Move up">↑</button>
                           <button class="stage-move" [disabled]="i === collab.pipelineOrder().length - 1"
-                            (click)="moveStage(participantId, 1)" title="下移">↓</button>
+                            (click)="moveStage(participantId, 1)" title="Move down">↓</button>
                         </span>
                       }
                     </div>
@@ -180,24 +180,24 @@
                 <div class="mode-config parallel-config">
                   @for (subTask of collab.parallelSubTasks(); track subTask.id) {
                     <div class="subtask-row">
-                      <input class="subtask-prompt" type="text" placeholder="子任务内容"
+                      <input class="subtask-prompt" type="text" placeholder="Sub-task prompt"
                         [ngModel]="subTask.prompt" (ngModelChange)="onSubTaskPrompt(subTask.id, $event)" />
                       <select class="subtask-target" [ngModel]="subTask.targetRole"
                         (ngModelChange)="onSubTaskRole(subTask.id, $event)">
-                        <option value="">按关键词</option>
+                        <option value="">By keyword</option>
                         @for (role of collab.availableRoles(); track role) {
                           <option [value]="role">{{ role }}</option>
                         }
                       </select>
-                      <button class="stage-move" title="删除子任务" (click)="removeSubTask(subTask.id)">✕</button>
+                      <button class="stage-move" title="Delete sub-task" (click)="removeSubTask(subTask.id)">✕</button>
                     </div>
                   }
                   <div class="subtask-actions">
-                    <button class="collab-btn ghost small" (click)="addSubTask()">+ 子任务</button>
+                    <button class="collab-btn ghost small" (click)="addSubTask()">+ Sub-task</button>
                     <label class="mode-field">
-                      汇总
+                      Aggregation
                       <select [ngModel]="collab.parallelAggregator()" (ngModelChange)="collab.parallelAggregator.set($event)">
-                        <option value="">无</option>
+                        <option value="">None</option>
                         @for (participant of collab.space()!.agents; track participant.id) {
                           <option [value]="participant.id">
                             {{ participant.agentId }}{{ participant.role ? ' · ' + participant.role : '' }}
@@ -206,7 +206,7 @@
                       </select>
                     </label>
                     <label class="mode-field">
-                      并发
+                      Concurrency
                       <input type="number" min="1" max="8" [ngModel]="collab.parallelMaxConcurrency()"
                         (ngModelChange)="collab.parallelMaxConcurrency.set(+$event)" />
                     </label>
@@ -216,15 +216,15 @@
               @case ('voluntary') {
                 <div class="mode-config">
                   <label class="mode-field">
-                    冲突解决
+                    Conflict resolution
                     <select [ngModel]="collab.voluntaryConflict()" (ngModelChange)="collab.voluntaryConflict.set($event)">
-                      <option value="first-come">先到先得</option>
-                      <option value="priority">成员优先级</option>
-                      <option value="random">随机</option>
+                      <option value="first-come">First come, first served</option>
+                      <option value="priority">Member priority</option>
+                      <option value="random">Random</option>
                     </select>
                   </label>
                   <label class="mode-field">
-                    最大轮次
+                    Max turns
                     <input type="number" min="1" max="30" [ngModel]="collab.voluntaryMaxTurns()"
                       (ngModelChange)="setNumber(collab.voluntaryMaxTurns, $event)" />
                   </label>
@@ -233,17 +233,17 @@
               @default {
                 <div class="mode-config">
                   <label class="mode-field">
-                    路由
+                    Routing
                     <select [ngModel]="collab.targetRoute()" (ngModelChange)="collab.setTargetRoute($event)">
-                      <option value="">自动</option>
+                      <option value="">Auto</option>
                       @if (collab.availableRoles().length) {
-                        <optgroup label="按角色">
+                        <optgroup label="By role">
                           @for (role of collab.availableRoles(); track role) {
                             <option [value]="'role:' + role">{{ role }}</option>
                           }
                         </optgroup>
                       }
-                      <optgroup label="指定 Session">
+                      <optgroup label="Specific session">
                         @for (participant of collab.space()!.agents; track participant.id) {
                           <option [value]="'participant:' + participant.id">
                             {{ participant.agentId }}{{ participant.role ? ' · ' + participant.role : '' }}
@@ -252,7 +252,7 @@
                       </optgroup>
                     </select>
                   </label>
-                  <span class="mode-hint">自动 = Orchestrator 决策 → 关键词匹配；指定后优先按所选目标路由</span>
+                  <span class="mode-hint">Auto = orchestrator decides → keyword matching; when specified, routes to the selected target first</span>
                 </div>
               }
             }
@@ -327,29 +327,29 @@
                 <div class="message-meta">
                   <span class="message-role">{{ message.role === 'user' ? 'You' : (statusLabel(message) || 'Session') }}</span>
                   @if (message.turn) {
-                    <span class="message-badge">第 {{ message.turn }} 轮</span>
+                    <span class="message-badge">Turn {{ message.turn }}</span>
                   }
                   @if (message.subTaskId) {
-                    <span class="message-badge">子任务 {{ message.subTaskId }}</span>
+                    <span class="message-badge">Sub-task {{ message.subTaskId }}</span>
                   }
                   @if (message.prevParticipantId) {
-                    <span class="message-badge">接棒自 {{ participantLabel(message.prevParticipantId) }}</span>
+                    <span class="message-badge">Handed off from {{ participantLabel(message.prevParticipantId) }}</span>
                   } @else if (message.prevSessionId) {
-                    <span class="message-badge">接棒自 {{ sessionLabel(message.prevSessionId) }}</span>
+                    <span class="message-badge">Handed off from {{ sessionLabel(message.prevSessionId) }}</span>
                   }
                   <span class="message-time">{{ message.time | date: 'HH:mm:ss' }}</span>
                   @if (target) {
                     <button
                       type="button"
                       class="message-detail-btn"
-                      title="查看该 Session 的完整会话（含思考与工具调用）"
+                      title="View this session's full conversation (incl. thinking and tool calls)"
                       (click)="openSessionDetail(target, $event)">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M15 3h6v6" />
                         <path d="M10 14 21 3" />
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                       </svg>
-                      <span>会话详情</span>
+                      <span>Session details</span>
                     </button>
                   }
                 </div>
@@ -359,14 +359,14 @@
                   [class.selected]="!!target && detailTarget()?.sessionId === target?.sessionId"
                   [attr.role]="target ? 'button' : null"
                   [attr.tabindex]="target ? 0 : null"
-                  [attr.title]="target ? '打开该 Session 的完整会话' : null"
+                  [attr.title]="target ? 'Open the full conversation of this session' : null"
                   (click)="openSessionDetail(target, $event)"
                   (keydown.enter)="openSessionDetail(target, $event)">
                   @if (message.claimReason) {
-                    <div class="message-claim">认领：{{ message.claimReason }}</div>
+                    <div class="message-claim">Claimed: {{ message.claimReason }}</div>
                   }
                   @if (message.relinquishedBy?.length) {
-                    <div class="message-relinquish">放弃：{{ relinquishedLabel(message.relinquishedBy) }}</div>
+                    <div class="message-relinquish">Relinquished: {{ relinquishedLabel(message.relinquishedBy) }}</div>
                   }
                   @if (message.text) {
                     <div class="message-text">{{ message.text }}</div>
