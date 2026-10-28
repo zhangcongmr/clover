@@ -190,7 +190,7 @@ function clampConcurrency(value: unknown): number {
 
 function truncate(text: string, max = CONTEXT_OUTPUT_MAX_LEN): string {
   if (text.length <= max) return text;
-  return `${text.slice(0, max)}\n…（输出已截断，共 ${text.length} 字）`;
+  return `${text.slice(0, max)}\n…(output truncated, total ${text.length} chars)`;
 }
 
 function readCollabMetadata(input: RunTaskInput): CollabMetadata | undefined {
@@ -267,9 +267,9 @@ function buildMemberCatalog(space: CollabSpace, excludeMemberId?: string): strin
     .map(memberId => {
       const info = space.members.get(memberId);
       const name = info ? agentLabel(info.agentId) : memberId;
-      const agent = info?.agentId ? `，agent: ${info.agentId}` : '';
-      const role = info?.role ? `，角色：${info.role}` : '';
-      const responsibility = info?.responsibility ? `，职责：${info.responsibility}` : '';
+      const agent = info?.agentId ? `, agent: ${info.agentId}` : '';
+      const role = info?.role ? `, role: ${info.role}` : '';
+      const responsibility = info?.responsibility ? `, responsibility: ${info.responsibility}` : '';
       return `- ${memberId}: ${name}${agent}${role}${responsibility}`;
     })
     .join('\n');
@@ -309,7 +309,7 @@ function buildPipelineDecisionPrompt(
     'The current session just finished a step. Decide who should handle the next step.',
     '',
     'Current session:',
-    `- ${currentMemberId}${info?.role ? ` （角色：${info.role}）` : ''}`,
+    `- ${currentMemberId}${info?.role ? ` (role: ${info.role})` : ''}`,
     '',
     'Remaining sessions:',
     buildMemberCatalog(space, currentMemberId) || '- (none)',
@@ -382,8 +382,8 @@ function parsePipelineDecision(reply: string, candidateIds: string[]): string | 
 /** Parses a voluntary-claim verdict; a non-empty string means "claim". */
 function parseClaimVerdict(reply: string | undefined): string | undefined {
   if (!reply) return undefined;
-  if (!reply.includes('认领')) return undefined;
-  const reason = reply.replace(/^[\s\S]*?认领[：:]\s*/, '').trim();
+  if (!/\bclaim\b/i.test(reply)) return undefined;
+  const reason = reply.replace(/^[\s\S]*?\bclaim\b\s*[:：]\s*/i, '').trim();
   return (reason || reply.trim()).slice(0, 200);
 }
 
@@ -432,11 +432,11 @@ function withTimeout<T>(
 
 /** Human handoff prompt carrying the previous session's output. */
 function buildHandoffPrompt(role: string | undefined, priorOutput: string, claimReason?: string): string {
-  const roleLabel = role ? `（角色：${role}）` : '';
-  const claim = claimReason ? `你已认领继续处理，认领理由：${claimReason}\n\n` : '';
+  const roleLabel = role ? ` (role: ${role})` : '';
+  const claim = claimReason ? `You have claimed to continue. Claim reason: ${claimReason}\n\n` : '';
   return (
-    `${claim}前一位 Session${roleLabel}的输出如下：\n${truncate(priorOutput)}\n\n` +
-    '请基于此继续工作，按你的角色职责处理。'
+    `${claim}Output from the previous session${roleLabel}:\n${truncate(priorOutput)}\n\n` +
+    'Continue working from it, following your role and responsibilities.'
   );
 }
 
@@ -526,9 +526,9 @@ export class BridgeRunner {
 
       const promptText = extractText(userMessage);
 
-      setStatus(TaskState.TASK_STATE_WORKING, '正在选择目标 Session…');
+      setStatus(TaskState.TASK_STATE_WORKING, 'Selecting the target session…');
       if (runState.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+        setStatus(TaskState.TASK_STATE_CANCELED, 'Task canceled');
         return;
       }
 
@@ -536,21 +536,21 @@ export class BridgeRunner {
       if (!collab) {
         setStatus(
           TaskState.TASK_STATE_FAILED,
-          '缺少协作空间信息（message.metadata.collab），请先创建协作空间。',
+          'Missing collaboration space info (message.metadata.collab); create a collaboration space first.',
         );
         return;
       }
 
       const space = this.spaces.get(collab.spaceId);
       if (!space) {
-        setStatus(TaskState.TASK_STATE_FAILED, '协作空间不存在或已关闭，请重新创建协作空间。');
+        setStatus(TaskState.TASK_STATE_FAILED, 'Collaboration space does not exist or is closed; recreate the collaboration space.');
         return;
       }
 
       // Parallel mode may carry its work entirely in `parallel.subTasks`, so an
       // empty top-level prompt is allowed there.
       if (!promptText && !collab.parallel?.enabled) {
-        setStatus(TaskState.TASK_STATE_FAILED, '请发送文本内容作为协作任务。');
+        setStatus(TaskState.TASK_STATE_FAILED, 'Send text content as the collaboration task.');
         return;
       }
 
@@ -588,7 +588,7 @@ export class BridgeRunner {
       if (targetMemberId) {
         setStatus(
           TaskState.TASK_STATE_WORKING,
-          `已按角色「${collab.targetRole}」路由到 ${memberLabel(space, targetMemberId)}…`,
+          `Routed to ${memberLabel(space, targetMemberId)} by role "${collab.targetRole}"…`,
         );
       }
     }
@@ -597,14 +597,14 @@ export class BridgeRunner {
     if (!targetMemberId && space.orchestratorId) {
       const routed = await this.routeViaOrchestrator(ctx, space, promptText);
       if (runState.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+        setStatus(TaskState.TASK_STATE_CANCELED, 'Task canceled');
         return;
       }
       if (routed) {
         targetMemberId = routed;
         routedByOrchestrator = true;
       } else {
-        setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator 路由未命中，改用规则路由…');
+        setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator routing found no match; falling back to rule-based routing…');
       }
     }
     if (!targetMemberId) {
@@ -613,21 +613,21 @@ export class BridgeRunner {
     if (!targetMemberId) {
       setStatus(
         TaskState.TASK_STATE_FAILED,
-        '无法确定目标 Session：请指定 metadata.collab.targetParticipantId / targetRole，或在协作空间中选择 Session。',
+        'Cannot determine the target session: specify metadata.collab.targetParticipantId / targetRole, or select a session in the collaboration space.',
       );
       return;
     }
 
     const sessionId = space.sessions.get(targetMemberId);
     if (!sessionId) {
-      setStatus(TaskState.TASK_STATE_FAILED, `协作空间未包含 Session「${targetMemberId}」。`);
+      setStatus(TaskState.TASK_STATE_FAILED, `The collaboration space does not contain session "${targetMemberId}".`);
       return;
     }
 
     const label = memberLabel(space, targetMemberId);
     setStatus(
       TaskState.TASK_STATE_WORKING,
-      `${routedByOrchestrator ? 'Orchestrator 已选择' : '已路由到'} ${label}，正在调用…`,
+      `${routedByOrchestrator ? 'Orchestrator selected' : 'Routed to'} ${label}; calling…`,
       this.turnMeta(space, targetMemberId, 1),
     );
 
@@ -641,17 +641,17 @@ export class BridgeRunner {
         metadata: { turn: 1 },
       });
       if (cancelled || runState.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, `${label} 已取消`);
+        setStatus(TaskState.TASK_STATE_CANCELED, `${label} canceled`);
         return;
       }
-      setStatus(TaskState.TASK_STATE_COMPLETED, `${label} 回复完成`, this.turnMeta(space, targetMemberId, 1));
+      setStatus(TaskState.TASK_STATE_COMPLETED, `${label} reply completed`, this.turnMeta(space, targetMemberId, 1));
     } catch (error) {
       const message =
         error instanceof BridgeTimeoutError
-          ? `调用 ${label} 超时（${this.timeoutMs}ms）`
+          ? `Calling ${label} timed out after ${this.timeoutMs}ms`
           : (error as Error).message;
       logger.error(`[A2A Collab] Single task ${ctx.taskId} failed:`, error);
-      setStatus(TaskState.TASK_STATE_FAILED, `${label} 调用失败：${message}`);
+      setStatus(TaskState.TASK_STATE_FAILED, `Calling ${label} failed: ${message}`);
     }
   }
 
@@ -670,7 +670,7 @@ export class BridgeRunner {
     const sessionId = space.sessions.get(orchestratorId);
     if (!sessionId) return undefined;
 
-    ctx.setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator 正在选择目标 Session…');
+    ctx.setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator is selecting the target session…');
 
     const reply = await this.askRaw(ctx.runState, sessionId, buildRoutingPrompt(space, promptText), this.routeTimeoutMs);
     if (reply === undefined || ctx.runState.cancelled) return undefined;
@@ -712,7 +712,7 @@ export class BridgeRunner {
     let currentMemberId: string | undefined =
       explicitTarget(space, collab, forcedAgentId) ?? roleTarget(space, collab.targetRole) ?? order[0];
     if (!currentMemberId) {
-      setStatus(TaskState.TASK_STATE_FAILED, '流水线没有可执行的 Session，请检查协作空间配置。');
+      setStatus(TaskState.TASK_STATE_FAILED, 'The pipeline has no executable session; check the collaboration space configuration.');
       return;
     }
     // Normalize a static order so the handoff walk is positional.
@@ -729,7 +729,7 @@ export class BridgeRunner {
       turn++;
       const label = memberLabel(space, currentMemberId);
       const role = space.members.get(currentMemberId)?.role;
-      setStatus(TaskState.TASK_STATE_WORKING, `第 ${turn} 轮：调用 ${label}…`, {
+      setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn}: calling ${label}…`, {
         ...this.turnMeta(space, currentMemberId, turn),
         prevParticipantId: prevMemberId,
         prevSessionId: prevMemberId ? space.sessions.get(prevMemberId) : undefined,
@@ -753,14 +753,14 @@ export class BridgeRunner {
       } catch (error) {
         const message =
           error instanceof BridgeTimeoutError
-            ? `调用 ${label} 超时（${this.timeoutMs}ms）`
+            ? `Calling ${label} timed out after ${this.timeoutMs}ms`
             : (error as Error).message;
         logger.error(`[A2A Collab] Pipeline task ${ctx.taskId} failed at turn ${turn}:`, error);
-        setStatus(TaskState.TASK_STATE_FAILED, `第 ${turn} 轮 ${label} 调用失败：${message}`);
+        setStatus(TaskState.TASK_STATE_FAILED, `Turn ${turn} calling ${label} failed: ${message}`);
         return;
       }
       if (result.cancelled || runState.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, `第 ${turn} 轮已取消`);
+        setStatus(TaskState.TASK_STATE_CANCELED, `Turn ${turn} canceled`);
         return;
       }
 
@@ -776,14 +776,14 @@ export class BridgeRunner {
       } else {
         nextMemberId = await this.decideNextViaOrchestrator(ctx, space, pipeline, finishedMemberId, result.output);
         if (runState.cancelled) {
-          setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+          setStatus(TaskState.TASK_STATE_CANCELED, 'Task canceled');
           return;
         }
       }
 
       if (!nextMemberId) break;
 
-      setStatus(TaskState.TASK_STATE_WORKING, `第 ${turn} 轮完成，交由 ${memberLabel(space, nextMemberId)} 接棒…`, {
+      setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn} done; ${memberLabel(space, nextMemberId)} takes over…`, {
         turn,
         prevParticipantId: finishedMemberId,
         prevSessionId: space.sessions.get(finishedMemberId),
@@ -792,7 +792,7 @@ export class BridgeRunner {
       currentPrompt = buildHandoffPrompt(role, result.output);
     }
 
-    setStatus(TaskState.TASK_STATE_COMPLETED, '流水线协作任务已结束');
+    setStatus(TaskState.TASK_STATE_COMPLETED, 'Pipeline collaboration task finished');
   }
 
   /** Asks the pipeline orchestrator which session should run next. */
@@ -815,7 +815,7 @@ export class BridgeRunner {
     const sessionId = space.sessions.get(orchestratorId);
     if (!sessionId) return candidates[0];
 
-    ctx.setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator 正在决定下一个 Session…');
+    ctx.setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator is deciding the next session…');
     const reply = await this.askRaw(
       ctx.runState,
       sessionId,
@@ -844,12 +844,12 @@ export class BridgeRunner {
     const { setStatus, runState } = ctx;
     const subTasks = (parallel.subTasks ?? []).filter(subTask => String(subTask?.prompt ?? '').trim());
     if (subTasks.length === 0) {
-      setStatus(TaskState.TASK_STATE_FAILED, '并行分工缺少有效的子任务（parallel.subTasks）。');
+      setStatus(TaskState.TASK_STATE_FAILED, 'Parallel mode has no valid sub-tasks (parallel.subTasks).');
       return;
     }
     const maxConcurrency = clampConcurrency(parallel.maxConcurrency);
 
-    setStatus(TaskState.TASK_STATE_WORKING, `并行分发 ${subTasks.length} 个子任务（并发上限 ${maxConcurrency}）…`);
+    setStatus(TaskState.TASK_STATE_WORKING, `Dispatching ${subTasks.length} sub-tasks (max concurrency ${maxConcurrency})…`);
 
     const results: SubTaskResult[] = [];
     const record = (result: SubTaskResult): void => {
@@ -862,7 +862,7 @@ export class BridgeRunner {
         roleTarget(space, subTask.targetRole) ??
         keywordTarget(space, subTask.prompt);
       if (!memberId) {
-        record({ subTaskId: subTask.id, memberId: '', output: '', ok: false, error: '无法确定目标 Session' });
+        record({ subTaskId: subTask.id, memberId: '', output: '', ok: false, error: 'Cannot determine the target session' });
         return;
       }
       const label = memberLabel(space, memberId);
@@ -883,7 +883,7 @@ export class BridgeRunner {
       } catch (error) {
         const message =
           error instanceof BridgeTimeoutError
-            ? `${label} 超时（${this.timeoutMs}ms）`
+            ? `${label} timed out after ${this.timeoutMs}ms`
             : (error as Error).message;
         logger.error(`[A2A Collab] Parallel sub-task ${subTask.id} failed:`, error);
         record({ subTaskId: subTask.id, memberId, output: '', ok: false, error: message });
@@ -891,7 +891,7 @@ export class BridgeRunner {
     });
 
     if (runState.cancelled) {
-      setStatus(TaskState.TASK_STATE_CANCELED, '并行任务已取消');
+      setStatus(TaskState.TASK_STATE_CANCELED, 'Parallel task canceled');
       return;
     }
 
@@ -902,7 +902,7 @@ export class BridgeRunner {
     const aggregatorMemberId = resolveMemberId(space, parallel.aggregatorAgentId);
     if (aggregatorMemberId) {
       const aggLabel = memberLabel(space, aggregatorMemberId);
-      setStatus(TaskState.TASK_STATE_WORKING, `${aggLabel} 正在汇总子任务结果…`, {
+      setStatus(TaskState.TASK_STATE_WORKING, `${aggLabel} is aggregating sub-task results…`, {
         turn: 2,
         ...this.turnMeta(space, aggregatorMemberId, 2),
       });
@@ -916,16 +916,16 @@ export class BridgeRunner {
           metadata: { turn: 2, subTaskId: 'summary' },
         });
         if (cancelled || runState.cancelled) {
-          setStatus(TaskState.TASK_STATE_CANCELED, '汇总已取消');
+          setStatus(TaskState.TASK_STATE_CANCELED, 'Aggregation canceled');
           return;
         }
       } catch (error) {
         const message =
           error instanceof BridgeTimeoutError
-            ? `${aggLabel} 汇总超时（${this.timeoutMs}ms）`
+            ? `${aggLabel} aggregation timed out after ${this.timeoutMs}ms`
             : (error as Error).message;
         logger.error(`[A2A Collab] Parallel aggregator failed:`, error);
-        setStatus(TaskState.TASK_STATE_FAILED, `汇总失败：${message}`);
+        setStatus(TaskState.TASK_STATE_FAILED, `Aggregation failed: ${message}`);
         return;
       }
     }
@@ -933,7 +933,7 @@ export class BridgeRunner {
     const failed = results.filter(result => !result.ok).length;
     setStatus(
       TaskState.TASK_STATE_COMPLETED,
-      failed > 0 ? `并行分工任务已结束（${failed} 个子任务失败）` : '并行分工任务已结束',
+      failed > 0 ? `Parallel task finished (${failed} sub-task(s) failed)` : 'Parallel task finished',
     );
   }
 
@@ -963,19 +963,19 @@ export class BridgeRunner {
     if (!currentMemberId && space.orchestratorId) {
       const routed = await this.routeViaOrchestrator(ctx, space, promptText);
       if (runState.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+        setStatus(TaskState.TASK_STATE_CANCELED, 'Task canceled');
         return;
       }
       currentMemberId = routed;
     }
 
     if (!currentMemberId) {
-      setStatus(TaskState.TASK_STATE_WORKING, '初始阶段：向所有 Session 广播用户任务，判断是否认领…');
+      setStatus(TaskState.TASK_STATE_WORKING, 'Initial phase: broadcasting the user task to all sessions and collecting claims…');
       const initial = await this.collectClaims(ctx, memberIds(space), candidateId =>
-        this.askClaim(ctx, space, candidateId, `用户任务：\n${truncate(promptText)}`),
+        this.askClaim(ctx, space, candidateId, `User task:\n${truncate(promptText)}`),
       );
       if (initial.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+        setStatus(TaskState.TASK_STATE_CANCELED, 'Task canceled');
         return;
       }
       if (initial.claims.length > 0) {
@@ -984,18 +984,18 @@ export class BridgeRunner {
         pendingMeta = { claimReason: winner.reason, relinquishedBy: initial.relinquished };
         setStatus(
           TaskState.TASK_STATE_WORKING,
-          `初始任务：${memberLabel(space, winner.memberId)} 认领${initial.claims.length > 1 ? `（${initial.claims.length} 人竞争）` : ''}…`,
+          `Initial task: ${memberLabel(space, winner.memberId)} claimed${initial.claims.length > 1 ? ` (${initial.claims.length} competing)` : ''}…`,
         );
       } else {
         // Nobody claimed the initial task: fall back to the first session so the
         // user prompt is still handled.
         currentMemberId = memberIds(space)[0];
-        setStatus(TaskState.TASK_STATE_WORKING, '初始阶段无人认领，回退到首个 Session 处理。');
+        setStatus(TaskState.TASK_STATE_WORKING, 'Nobody claimed in the initial phase; falling back to the first session.');
       }
     }
 
     if (!currentMemberId) {
-      setStatus(TaskState.TASK_STATE_FAILED, '协作空间没有可执行的 Session。');
+      setStatus(TaskState.TASK_STATE_FAILED, 'The collaboration space has no executable session.');
       return;
     }
 
@@ -1007,7 +1007,7 @@ export class BridgeRunner {
       turn++;
       const label = memberLabel(space, currentMemberId);
       const role = space.members.get(currentMemberId)?.role;
-      setStatus(TaskState.TASK_STATE_WORKING, `第 ${turn} 轮：${label} 处理中…`, {
+      setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn}: ${label} is working…`, {
         ...this.turnMeta(space, currentMemberId, turn),
         prevParticipantId: prevMemberId,
         prevSessionId: prevMemberId ? space.sessions.get(prevMemberId) : undefined,
@@ -1031,14 +1031,14 @@ export class BridgeRunner {
       } catch (error) {
         const message =
           error instanceof BridgeTimeoutError
-            ? `调用 ${label} 超时（${this.timeoutMs}ms）`
+            ? `Calling ${label} timed out after ${this.timeoutMs}ms`
             : (error as Error).message;
         logger.error(`[A2A Collab] Voluntary task ${ctx.taskId} failed at turn ${turn}:`, error);
-        setStatus(TaskState.TASK_STATE_FAILED, `第 ${turn} 轮 ${label} 调用失败：${message}`);
+        setStatus(TaskState.TASK_STATE_FAILED, `Turn ${turn} calling ${label} failed: ${message}`);
         return;
       }
       if (result.cancelled || runState.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, `第 ${turn} 轮已取消`);
+        setStatus(TaskState.TASK_STATE_CANCELED, `Turn ${turn} canceled`);
         return;
       }
 
@@ -1049,7 +1049,7 @@ export class BridgeRunner {
       const candidates = memberIds(space).filter(id => id !== finishedMemberId);
       if (candidates.length === 0) break;
 
-      setStatus(TaskState.TASK_STATE_WORKING, `第 ${turn} 轮完成，其余成员判断是否认领…`, {
+      setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn} done; remaining members are judging whether to claim…`, {
         turn,
         prevParticipantId: finishedMemberId,
         prevSessionId: space.sessions.get(finishedMemberId),
@@ -1061,19 +1061,19 @@ export class BridgeRunner {
       const claims = collect.claims;
       const relinquished = collect.relinquished;
       if (collect.cancelled) {
-        setStatus(TaskState.TASK_STATE_CANCELED, '任务已取消');
+        setStatus(TaskState.TASK_STATE_CANCELED, 'Task canceled');
         return;
       }
 
       if (claims.length === 0) {
-        setStatus(TaskState.TASK_STATE_WORKING, '无人认领，协作结束。');
+        setStatus(TaskState.TASK_STATE_WORKING, 'Nobody claimed; collaboration ends.');
         break;
       }
 
       const next = this.pickClaim(space, claims, resolution, voluntary.priorityOrder);
       setStatus(
         TaskState.TASK_STATE_WORKING,
-        `第 ${turn} 轮：${memberLabel(space, next.memberId)} 认领${claims.length > 1 ? `（${claims.length} 人竞争）` : ''}…`,
+        `Turn ${turn}: ${memberLabel(space, next.memberId)} claimed${claims.length > 1 ? ` (${claims.length} competing)` : ''}…`,
         { turn, ...this.turnMeta(space, next.memberId, turn) },
       );
 
@@ -1082,7 +1082,7 @@ export class BridgeRunner {
       pendingMeta = { claimReason: next.reason, relinquishedBy: relinquished };
     }
 
-    setStatus(TaskState.TASK_STATE_COMPLETED, '自愿认领协作任务已结束');
+    setStatus(TaskState.TASK_STATE_COMPLETED, 'Voluntary-claim collaboration task finished');
   }
 
   /**
@@ -1099,16 +1099,16 @@ export class BridgeRunner {
     const sessionId = space.sessions.get(candidateId);
     if (!sessionId) return undefined;
     const info = space.members.get(candidateId);
-    const role = info?.role ?? '协作者';
-    const responsibility = info?.responsibility ?? '按你的职责判断';
+    const role = info?.role ?? 'Collaborator';
+    const responsibility = info?.responsibility ?? 'Judge according to your responsibilities';
     const prompt = [
-      `你是“${role}”，职责是：${responsibility}。`,
+      `You are "${role}". Your responsibility: ${responsibility}.`,
       '',
       taskSection,
       '',
-      '请判断：是否需要你继续处理？',
-      '- 如果是，只回复：认领：<理由>',
-      '- 如果不是，只回复：放弃',
+      'Judge: do you need to take over and continue processing?',
+      '- If yes, reply with ONLY: Claim: <reason>',
+      '- If no, reply with ONLY: relinquish',
     ].join('\n');
 
     const reply = await this.askRaw(ctx.runState, sessionId, prompt, this.routeTimeoutMs);
@@ -1128,7 +1128,7 @@ export class BridgeRunner {
     priorRole?: string,
   ): Promise<string | undefined> {
     const priorDescription = priorRole ? `${priorLabel} ${priorRole}` : priorLabel;
-    return this.askClaim(ctx, space, candidateId, `以下是${priorDescription} 的输出：\n${truncate(priorOutput)}`);
+    return this.askClaim(ctx, space, candidateId, `Output of ${priorDescription}:\n${truncate(priorOutput)}`);
   }
 
   /**
@@ -1230,7 +1230,7 @@ export class BridgeRunner {
           artifact: {
             artifactId,
             name: 'AgentReply',
-            description: `${label} 的回复`,
+            description: `${label}'s reply`,
             parts: [],
             metadata: artifactMeta,
             extensions: [],
@@ -1258,7 +1258,7 @@ export class BridgeRunner {
             artifact: {
               artifactId,
               name: 'AgentReply',
-              description: `${label} 的回复`,
+              description: `${label}'s reply`,
               parts: [textPart(delta)],
               metadata: artifactMeta,
               extensions: [],
@@ -1368,14 +1368,14 @@ export class BridgeRunner {
 /** Builds the aggregator prompt for parallel mode. */
 function buildSummaryPrompt(space: CollabSpace, results: SubTaskResult[]): string {
   const sections = results.map(result => {
-    const label = result.memberId ? memberLabel(space, result.memberId) : '未知 Session';
+    const label = result.memberId ? memberLabel(space, result.memberId) : 'Unknown session';
     return result.ok
-      ? `## 子任务 ${result.subTaskId}（Session：${result.memberId} / ${label}）\n${truncate(result.output)}`
-      : `## 子任务 ${result.subTaskId}（Session：${result.memberId} / ${label}）\n[失败] ${result.error ?? '未知错误'}`;
+      ? `## Sub-task ${result.subTaskId} (session: ${result.memberId} / ${label})\n${truncate(result.output)}`
+      : `## Sub-task ${result.subTaskId} (session: ${result.memberId} / ${label})\n[FAILED] ${result.error ?? 'unknown error'}`;
   });
   return [
-    '以下是由多个 Session 并行完成的子任务结果，请汇总为一份完整、条理清晰的结论。',
-    '保留各结果的关键信息，指出冲突之处，并给出最终建议。',
+    'The following are sub-task results completed in parallel by multiple sessions. Aggregate them into one complete, well-organized conclusion.',
+    'Keep the key information of each result, point out conflicts, and give a final recommendation.',
     '',
     ...sections,
   ].join('\n\n');

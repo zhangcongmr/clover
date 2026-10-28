@@ -135,7 +135,7 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
             'Dispatch a prompt to one of the agents of the current collaboration ' +
             'space (explicit target or keyword routing) and stream its reply.',
           tags: ['collab', 'orchestrator', 'multi-agent'],
-          examples: ['让 opencode 分析这个项目', '帮我审查这段代码'],
+          examples: ['Ask opencode to analyze this project', 'Review this code for me'],
           inputModes: ['text'],
           outputModes: ['text', 'task-status'],
           securityRequirements: [],
