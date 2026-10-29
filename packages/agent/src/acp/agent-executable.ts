@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
@@ -131,6 +131,9 @@ const cliCheckCache = new Map<string, { ok: boolean; error?: string }>();
 /**
  * Resolve a configured command into the process that should be spawned.
  * Commands without an adapter spec are returned untouched (PATH lookup).
+ *
+ * Throws when an adapter-based agent is missing the CLI it drives and no
+ * `envKey` override is already present in the environment.
  */
 export function resolveAgentCommand(command: string, args: string[] = []): ResolvedAgentCommand {
   const spec = AGENT_RUNTIMES[command];
@@ -145,14 +148,33 @@ export function resolveAgentCommand(command: string, args: string[] = []): Resol
   }
 
   const env: Record<string, string> = {};
-  const cliPath = locateCli(spec.cli.command);
-  if (cliPath && !process.env[spec.cli.envKey]) {
+  const cliPath = resolveCliPath(spec);
+  if (!cliPath) {
+    // Without the override the adapter falls back to the copy bundled with it,
+    // whose platform binary `ignoredOptionalDependencies` deliberately skips —
+    // it would exit with an unrelated "missing optional dependency" error.
+    throw new Error(missingCliMessage(spec));
+  }
+  if (!process.env[spec.cli.envKey]) {
     // Prefer the user's own CLI over the copy bundled with the adapter (which
     // `ignoredOptionalDependencies` keeps out of the install).
     env[spec.cli.envKey] = cliPath;
   }
 
   return { command: process.execPath, args: [entry, ...args], shell: false, env, local: true };
+}
+
+/** Error text for an adapter whose agent CLI cannot be located. */
+function missingCliMessage(spec: AgentRuntimeSpec): string {
+  return `Agent CLI not found: install ${spec.cli.package}, add "${spec.cli.command}" to PATH, or set ${spec.cli.envKey}`;
+}
+
+/**
+ * Path of the agent CLI an adapter drives: the located global install, or the
+ * user's own `envKey` override when they set one explicitly.
+ */
+function resolveCliPath(spec: AgentRuntimeSpec): string | null {
+  return locateCli(spec.cli.command) ?? process.env[spec.cli.envKey] ?? null;
 }
 
 /**
@@ -172,18 +194,18 @@ export function inspectAgentCommand(command: string): AgentCommandInspection {
     return {
       installed: false,
       missing: 'adapter',
-      cliPath: locateCli(spec.cli.command) ?? undefined,
+      cliPath: resolveCliPath(spec) ?? undefined,
       error: `ACP adapter not installed: ${spec.adapterPackage} (run the installer or pnpm install)`,
     };
   }
 
-  const cliPath = locateCli(spec.cli.command);
+  const cliPath = resolveCliPath(spec);
   if (!cliPath) {
     return {
       installed: false,
       missing: 'cli',
       launchPath: entry,
-      error: `Agent CLI not found: install ${spec.cli.package}, add "${spec.cli.command}" to PATH, or set ${spec.cli.envKey}`,
+      error: missingCliMessage(spec),
     };
   }
 
@@ -379,7 +401,9 @@ function readBinEntry(packageJsonPath: string | null, command: string): string |
  * Find the user's global agent CLI executable.
  *
  * Shell shims (`.cmd`/`.ps1` produced by npm/pnpm on Windows) cannot be spawned
- * without a shell, so the real binary behind the shim is preferred.
+ * without a shell, so the real binary behind the shim is preferred. When the
+ * shim only wraps a script (no native binary), the shim itself is returned and
+ * launched through `cmd.exe` by the caller.
  */
 function locateCli(command: string): string | null {
   if (cliPathCache.has(command)) {
@@ -418,6 +442,19 @@ function locateCliWindows(command: string): string | null {
 
   for (const candidate of nativeCandidates) {
     if (candidate && existsSync(candidate)) return candidate;
+  }
+
+  // Some CLIs (e.g. @openai/codex) put a JS entry behind the shim instead of a
+  // native binary, so nothing executable can be extracted from it. The shim is
+  // still spawnable through cmd.exe — which is exactly how ACP adapters launch
+  // the CLI on Windows — so fall back to it rather than reporting "not found".
+  const shims = [
+    ...candidates.filter(path => /\.(cmd|bat)$/i.test(path)),
+    ...fallbackDirs.map(dir => join(dir, `${command}.cmd`)),
+  ];
+
+  for (const shim of shims) {
+    if (existsSync(shim)) return shim;
   }
   return null;
 }
@@ -460,20 +497,30 @@ function wherePaths(command: string): string[] {
 /**
  * Resolve the real executable referenced by an npm/pnpm `.cmd` shim, e.g.
  * `"%_prog%"  "%dp0%\node_modules\@anthropic-ai\claude-code\bin\claude.exe" %*`.
+ *
+ * Only the line that forwards `%*` is inspected: npm shims also probe helpers
+ * on earlier lines (`IF EXIST "%dp0%\node.exe"`), and picking those up would
+ * resolve the CLI to the Node binary.
  */
 function shimTargets(shimPath: string): string[] {
-  if (!/\.(cmd|bat|ps1)$/i.test(shimPath)) return [];
+  if (!/\.(cmd|bat)$/i.test(shimPath)) return [];
 
   try {
-    const text = readFileSync(shimPath, 'utf8');
     const shimDir = dirname(shimPath);
     const targets: string[] = [];
-    for (const match of text.matchAll(/"%dp0%\\([^"]+?\.(?:exe|cmd))"/gi)) {
-      targets.push(join(shimDir, match[1]));
+
+    for (const line of readFileSync(shimPath, 'utf8').split(/\r?\n/)) {
+      if (!line.includes('%*')) continue;
+
+      // `%dp0%` (npm) and `%~dp0%` (pnpm) both expand to the shim directory.
+      for (const match of line.matchAll(/"%~?dp0%\\([^"]+?\.(?:exe|cmd))"/gi)) {
+        targets.push(join(shimDir, match[1]));
+      }
+      for (const match of line.matchAll(/"([A-Za-z]:\\[^"]+?\.exe)"/gi)) {
+        targets.push(match[1]);
+      }
     }
-    for (const match of text.matchAll(/"([A-Za-z]:\\[^"]+?\.exe)"/gi)) {
-      targets.push(match[1]);
-    }
+
     return targets;
   } catch {
     return [];
@@ -490,12 +537,7 @@ function checkCli(cliPath: string): { ok: boolean; error?: string; version?: str
 
   const result = ((): { ok: boolean; error?: string; version?: string } => {
     try {
-      const output = execFileSync(cliPath, ['--version'], {
-        encoding: 'utf8',
-        timeout: 10000,
-        windowsHide: true,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      const output = runVersionCheck(cliPath);
       return { ok: true, version: parseVersion(output) ?? undefined };
     } catch (error) {
       const failure = error as { stderr?: string; status?: number | null; code?: string; message?: string };
@@ -514,6 +556,31 @@ function checkCli(cliPath: string): { ok: boolean; error?: string; version?: str
 
   cliCheckCache.set(cliPath, result);
   return result;
+}
+
+/**
+ * Run `<cli> --version` and return its stdout.
+ *
+ * Windows shell shims (`.cmd`/`.bat`) cannot be executed directly, so they go
+ * through `cmd.exe` as a single command line — passing args together with
+ * `shell: true` is deprecated and would not quote the path.
+ */
+function runVersionCheck(cliPath: string): string {
+  if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(cliPath)) {
+    return execSync(`"${cliPath}" --version`, {
+      encoding: 'utf8',
+      timeout: 10000,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  }
+
+  return execFileSync(cliPath, ['--version'], {
+    encoding: 'utf8',
+    timeout: 10000,
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
 }
 
 /**
