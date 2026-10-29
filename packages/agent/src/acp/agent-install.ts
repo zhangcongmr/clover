@@ -55,7 +55,7 @@ const runningByAgent = new Map<string, string>();
 
 /**
  * Install command for a missing artifact, or null when there is no known
- * installer (e.g. codex/augment, which have not been researched yet).
+ * installer (command not listed in `CLI_PACKAGES`).
  */
 export function installCommandFor(agentCommand: string, target: AgentInstallTarget): string | null {
   if (target === 'adapter') {

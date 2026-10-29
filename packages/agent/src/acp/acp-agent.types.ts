@@ -24,5 +24,5 @@ export const AVAILABLE_AGENTS: AgentConfig[] = [
   { id: 'codex', name: 'Codex CLI', command: 'acp-proxy', args: ['--no-auth', 'codex-acp'], description: "OpenAI's coding agent" },
   { id: 'gemini', name: 'Gemini CLI', command: 'gemini', args: ['--', '--experimental-acp'], description: "Google's AI agent" },
   { id: 'qwen', name: 'Qwen Code', command: 'qwen', args: ['--', '--acp'], description: 'Free coding agent' },
-  { id: 'augment', name: 'Augment Code', command: 'auggie', args: ['--', '--acp'], description: "Augment's AI coding agent" },
+  { id: 'auggie', name: 'Augment Code', command: 'auggie', args: ['--', '--acp'], description: "Augment's AI coding agent" },
 ];

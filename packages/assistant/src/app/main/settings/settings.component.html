@@ -131,7 +131,7 @@
                   </span>
                   @if (agent.install && agent.status !== 'connected') {
                     <button
-                      class="btn btn-primary agent-install-btn"
+                      class="btn agent-install-btn"
                       (click)="installAgent(agent.id)"
                       [disabled]="installingAgentId() !== null || checkingAgentId() !== null"
                       [title]="'Runs: ' + agent.install.command"
