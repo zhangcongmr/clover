@@ -142,6 +142,10 @@
                         Install
                       }
                     </button>
+                  } @else {
+                    <!-- Reserves the Install button's width so the status badge
+                         column starts at the same x in every row. -->
+                    <span class="agent-install-slot" aria-hidden="true"></span>
                   }
                   <button
                     class="btn btn-secondary agent-check-btn"

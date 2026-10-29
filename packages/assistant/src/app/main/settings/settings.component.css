@@ -503,7 +503,13 @@
 }
 
 .agent-install-btn {
-  flex: 0 0 auto;
+  flex: 0 0 96px;
+}
+
+/* Invisible placeholder matching .agent-install-btn so rows without an Install
+   button keep the status badge column aligned with the rows that have one. */
+.agent-install-slot {
+  flex: 0 0 96px;
 }
 
 .agent-status-badge {
@@ -516,7 +522,10 @@
   border: 1px solid var(--vscode-border-color);
   color: var(--vscode-foreground);
   white-space: nowrap;
-  flex-shrink: 0;
+  /* Fixed width + box-sizing keeps the status column left-aligned across rows
+     regardless of the label length ("Connected" vs "Unavailable" etc.). */
+  box-sizing: border-box;
+  flex: 0 0 110px;
 }
 
 .agent-status-dot {
