@@ -9,13 +9,14 @@ import { fileURLToPath } from 'node:url';
  *
  * - Agents with a native ACP mode (opencode, gemini, qwen, auggie) are started
  *   from the CLI the user already has on PATH. Nothing is installed.
- * - Agents that need an ACP adapter (claude -> `@agentclientprotocol/claude-agent-acp`)
- *   get the adapter installed inside this project's `node_modules`, while the
- *   agent CLI it drives stays the user's global install.
+ * - Agents that need an ACP adapter (claude -> `@agentclientprotocol/claude-agent-acp`,
+ *   codex -> `@agentclientprotocol/codex-acp`) get the adapter installed inside this
+ *   project's `node_modules`, while the agent CLI it drives stays the user's global
+ *   install.
  * - Adapters that would otherwise ship their own copy of the agent CLI have
- *   that copy skipped at install time (`ignoredOptionalDependencies` in the
- *   root package.json). When a global CLI is found we point the adapter at it
- *   through the adapter's documented env override.
+ *   that copy skipped at install time (`ignoredOptionalDependencies` in
+ *   `pnpm-workspace.yaml`). When a global CLI is found we point the adapter at
+ *   it through the adapter's documented env override.
  *
  * Node-only module: do NOT import it from `acp-agent.types.ts`, which is
  * bundled into the browser build.
@@ -41,6 +42,14 @@ const AGENT_RUNTIMES: Readonly<Record<string, AgentRuntimeSpec>> = {
       command: 'claude',
       package: '@anthropic-ai/claude-code',
       envKey: 'CLAUDE_CODE_EXECUTABLE',
+    },
+  },
+  'codex-acp': {
+    adapterPackage: '@agentclientprotocol/codex-acp',
+    cli: {
+      command: 'codex',
+      package: '@openai/codex',
+      envKey: 'CODEX_PATH',
     },
   },
 };
@@ -96,7 +105,7 @@ export function probePathCommand(command: string): PathCommandProbe {
 const CLI_PACKAGES: Readonly<Record<string, string>> = {
   'claude-agent-acp': '@anthropic-ai/claude-code',
   opencode: '@opencode/cli',
-  'acp-proxy': '@openai/codex',
+  'codex-acp': '@openai/codex',
   gemini: '@google/gemini-cli',
   qwen: '@qwen-code/qwen-code',
   auggie: '@augmentcode/auggie',
