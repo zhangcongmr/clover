@@ -17,12 +17,12 @@ export const AVAILABLE_AGENTS: AgentConfig[] = [
     env: {
       'ANTHROPIC_API_KEY': 'sk-xxx',
       'ANTHROPIC_BASE_URL': 'https://api.deepseek.com/anthropic',
-      'MODEL_ID': 'deepseek-chat',
+      'MODEL_ID': 'deepseek-v4-flash',
     },
     description: "Anthropic's coding agent",
   },
-  { id: 'codex', name: 'Codex CLI', command: 'acp-proxy', args: ['--no-auth', 'codex-acp'], description: "OpenAI's coding agent" },
-  { id: 'gemini', name: 'Gemini CLI', command: 'gemini', args: ['--', '--experimental-acp'], description: "Google's AI agent" },
-  { id: 'qwen', name: 'Qwen Code', command: 'qwen', args: ['--', '--acp'], description: 'Free coding agent' },
-  { id: 'auggie', name: 'Augment Code', command: 'auggie', args: ['--', '--acp'], description: "Augment's AI coding agent" },
+  { id: 'codex', name: 'Codex CLI', command: 'codex-acp', args: [], description: "OpenAI's coding agent" },
+  { id: 'gemini', name: 'Gemini CLI', command: 'gemini', args: ['--experimental-acp'], description: "Google's AI agent" },
+  { id: 'qwen', name: 'Qwen Code', command: 'qwen', args: ['--acp'], description: 'Free coding agent' },
+  { id: 'auggie', name: 'Augment Code', command: 'auggie', args: ['--acp'], description: "Augment's AI coding agent" },
 ];

@@ -11,5 +11,19 @@ ignoredOptionalDependencies:
   - '@anthropic-ai/claude-agent-sdk-linux-x64-musl'
   - '@anthropic-ai/claude-agent-sdk-win32-arm64'
   - '@anthropic-ai/claude-agent-sdk-win32-x64'
+  - '@openai/codex-darwin-arm64'
+  - '@openai/codex-darwin-x64'
+  - '@openai/codex-linux-arm64'
+  - '@openai/codex-linux-x64'
+  - '@openai/codex-win32-arm64'
+  - '@openai/codex-win32-x64'
 minimumReleaseAgeExclude:
   - '@agentclientprotocol/claude-agent-acp@0.98.0'
+allowBuilds:
+  '@parcel/watcher': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  node-pty: true
+  onnxruntime-node: true
