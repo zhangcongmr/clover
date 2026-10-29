@@ -44,15 +44,21 @@
             @for (participant of collab.participants(); track participant.id; let i = $index) {
               <div class="session-row">
                 <span class="session-index" title="Session {{ participant.id }}">{{ i + 1 }}</span>
-                <select
+                <button
+                  type="button"
                   class="session-agent"
-                  [ngModel]="participant.agentId"
-                  (ngModelChange)="onParticipantAgent(participant.id, $event)">
-                  <option value="" disabled>Select Agent</option>
-                  @for (agent of collab.availableAgents(); track agent.id) {
-                    <option [value]="agent.id">{{ agent.name }} ({{ agent.id }})</option>
+                  [class.picker-open]="isAgentPickerOpen(participant.id)"
+                  (click)="toggleAgentPicker(participant.id, participant.agentId, $event)">
+                  @if (agentById(participant.agentId); as sel) {
+                    <span class="ap-dot" [ngClass]="agentStatusClass(sel.status)"></span>
+                    <span class="ap-name">{{ sel.name }}</span>
+                  } @else {
+                    <span class="ap-placeholder">Select Agent</span>
                   }
-                </select>
+                  <svg class="ap-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
                 <select
                   class="session-role"
                   [ngModel]="participant.role"
@@ -86,6 +92,69 @@
               <div class="collab-empty">No sessions yet. Click "+ Add Session" below.</div>
             }
           </div>
+
+          <!-- Agent picker dropdown: one ng-template, instantiated via ngTemplateOutlet
+               while a session's agent picker is open (fixed-position, escapes scroll clip). -->
+          <ng-template #agentPickerPanel>
+            @if (agentPickerPos(); as p) {
+              <div class="ap-panel" [style.left.px]="p.left" [style.top.px]="p.top" [style.width.px]="p.width">
+                <div class="ap-search">
+                  <svg class="ap-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    #agentFilterInput
+                    type="text"
+                    class="ap-search-input"
+                    placeholder="Filter by name or id…"
+                    [ngModel]="agentFilter()"
+                    (ngModelChange)="onAgentFilter($event)"
+                    (keydown)="onAgentPickerKeydown($event)"
+                    autocomplete="off"
+                    spellcheck="false" />
+                </div>
+
+                <div class="ap-options custom-scroll">
+                  @for (v of filteredAgentViews(); track v.agent.id; let i = $index, first = $first) {
+                    @if (first && v.selectable) {
+                      <div class="ap-group">Available</div>
+                    }
+                    @if (i === availableCount() && unavailableCount() > 0) {
+                      <div class="ap-group muted">Unavailable</div>
+                    }
+                    <button
+                      type="button"
+                      class="ap-option"
+                      [class.disabled]="!v.selectable"
+                      [disabled]="!v.selectable"
+                      [class.active]="agentHighlightId() === v.agent.id"
+                      [attr.data-id]="v.agent.id"
+                      [attr.title]="v.selectable ? null : v.statusLabel + ' — cannot be selected'"
+                      (mouseenter)="agentHighlightId.set(v.agent.id)"
+                      (click)="selectAgent(v)">
+                      <span class="ap-dot" [ngClass]="v.statusClass"></span>
+                      <span class="ap-meta">
+                        <span class="ap-name" [title]="v.agent.name">{{ v.agent.name }}</span>
+                        <span class="ap-id" [title]="v.agent.id">{{ v.agent.id }}</span>
+                      </span>
+                      <span class="ap-badge" [ngClass]="v.statusClass">{{ v.statusLabel }}</span>
+                    </button>
+                  } @empty {
+                    <div class="ap-empty">No agents match “{{ agentFilter() }}”</div>
+                  }
+                </div>
+
+                <div class="ap-footer">
+                  <span class="ap-count"><b>{{ availableCount() }}</b> available</span>
+                  <span class="ap-count muted"><b>{{ unavailableCount() }}</b> unavailable</span>
+                </div>
+              </div>
+            }
+          </ng-template>
+          @if (agentPickerKey()) {
+            <ng-container [ngTemplateOutlet]="agentPickerPanel" />
+          }
 
           <div class="collab-picker-footer">
             <button class="collab-btn ghost" (click)="addParticipant()">+ Add Session</button>

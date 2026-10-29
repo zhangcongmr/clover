@@ -221,9 +221,9 @@ export class CollabService {
 
   // --- Session slots (participants) -----------------------------------------
 
-  /** Adds a new session slot, optionally pre-bound to an agent. */
+  /** Adds a new session slot, optionally pre-bound to an agent (default: unbound). */
   addParticipant(agentId?: string): void {
-    const fallback = agentId ?? this.availableAgents()[0]?.id ?? '';
+    const fallback = agentId ?? '';
     this.participants.update(list => [
       ...list,
       { id: `s${++this.participantSeq}`, agentId: fallback, role: '', responsibility: '' },
