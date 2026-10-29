@@ -502,8 +502,25 @@
   opacity: 0.75;
 }
 
+/* Outlined accent style: same neutral base as .btn-secondary (the flat
+   VSCode-like look used across the settings page), with the theme accent
+   reserved to border + text so it still reads as the row's primary action
+   without a loud solid fill. */
 .agent-install-btn {
   flex: 0 0 96px;
+  background: var(--vscode-background);
+  color: var(--vscode-primary-background);
+  border: 1px solid var(--vscode-primary-background);
+}
+
+.agent-install-btn:hover:not(:disabled) {
+  background: var(--vscode-hover-background);
+  opacity: 1;
+}
+
+.agent-install-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Invisible placeholder matching .agent-install-btn so rows without an Install

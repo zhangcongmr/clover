@@ -95,8 +95,11 @@ export function probePathCommand(command: string): PathCommandProbe {
 /** npm package that provides an agent CLI (installed globally by the user). */
 const CLI_PACKAGES: Readonly<Record<string, string>> = {
   'claude-agent-acp': '@anthropic-ai/claude-code',
+  opencode: '@opencode/cli',
+  'acp-proxy': '@openai/codex',
   gemini: '@google/gemini-cli',
   qwen: '@qwen-code/qwen-code',
+  auggie: '@augmentcode/auggie',
 };
 
 /** npm package backing an agent CLI, when one is known. */
