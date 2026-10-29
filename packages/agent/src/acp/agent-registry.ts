@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig } from './acp-agent.types.js';
-import { inspectAgentCommand, invalidateAgentCommandCache, localAgentPackage, probePathCommand, resolveAgentCommand } from './agent-executable.js';
+import { inspectAgentCommand, invalidateAgentCommandCache, localAgentPackage, probeAgentVersion, probePathCommand, resolveAgentCommand } from './agent-executable.js';
 import { installCommandFor, startAgentInstall } from './agent-install.js';
 import type { AgentInstallJob } from './agent-install.js';
 import type { EventSink } from '../events/event-sink.js';
@@ -35,6 +35,8 @@ export interface AgentStatusInfo {
   install?: { command: string };
   /** Path of the agent CLI on disk (for the settings UI). */
   paths?: { cli?: string };
+  /** Installed agent version, when the backend can resolve one. */
+  version?: string;
   lastChecked: number;
 }
 
@@ -49,6 +51,8 @@ interface AgentState {
   missing?: 'adapter' | 'cli';
   /** Resolved agent CLI path (global install), when found. */
   cliPath?: string;
+  /** Resolved installed version, when the CLI reports one. */
+  version?: string;
   lastChecked: number;
   /** In-flight spawn+initialize attempt (dedupes concurrent callers). */
   inflight: Promise<void> | null;
@@ -189,6 +193,7 @@ export class AgentRegistry {
       state.installed = probe.installed;
       state.missing = probe.installed ? undefined : probe.missing;
       applyProbePaths(state, probe);
+      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
       state.lastChecked = Date.now();
 
       if (!probe.installed) {
@@ -356,6 +361,7 @@ export class AgentRegistry {
       state.installed = probe.installed;
       state.missing = probe.installed ? undefined : probe.missing;
       applyProbePaths(state, probe);
+      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
       state.lastChecked = Date.now();
 
       if (!probe.installed) {
@@ -404,6 +410,7 @@ export class AgentRegistry {
       error: state.error,
       install: installCommand ? { command: installCommand } : undefined,
       paths: state.cliPath ? { cli: state.cliPath } : undefined,
+      version: state.version,
       lastChecked: state.lastChecked,
     };
   }

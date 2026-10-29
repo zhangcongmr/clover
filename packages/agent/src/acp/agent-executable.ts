@@ -468,20 +468,23 @@ function shimTargets(shimPath: string): string[] {
   }
 }
 
-/** Verify the CLI actually runs (`--version`) so a broken install is reported as such. */
-function checkCli(cliPath: string): { ok: boolean; error?: string } {
+/**
+ * Verify the CLI actually runs (`--version`) so a broken install is reported as
+ * such, and surface its parsed version string when one is found.
+ */
+function checkCli(cliPath: string): { ok: boolean; error?: string; version?: string } {
   const cached = cliCheckCache.get(cliPath);
   if (cached) return cached;
 
-  const result = ((): { ok: boolean; error?: string } => {
+  const result = ((): { ok: boolean; error?: string; version?: string } => {
     try {
-      execFileSync(cliPath, ['--version'], {
+      const output = execFileSync(cliPath, ['--version'], {
         encoding: 'utf8',
         timeout: 10000,
         windowsHide: true,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
-      return { ok: true };
+      return { ok: true, version: parseVersion(output) ?? undefined };
     } catch (error) {
       const failure = error as { stderr?: string; status?: number | null; code?: string; message?: string };
       const stderrLine = (failure.stderr ?? '')
@@ -493,12 +496,30 @@ function checkCli(cliPath: string): { ok: boolean; error?: string } {
         ?? describeSpawnError(failure.code)
         ?? failure.message
         ?? 'unknown error';
-      return { ok: false, error: detail };
+      return { ok: false, error: detail, version: parseVersion(failure.stderr ?? '') ?? undefined };
     }
   })();
 
   cliCheckCache.set(cliPath, result);
   return result;
+}
+
+/**
+ * Extract the first semver-like token — optionally `v`-prefixed, e.g. `1.2.3`
+ * or `v0.18.0-beta.1` — from command output. Returns null when none is found.
+ */
+function parseVersion(text: string): string | null {
+  const match = text.match(/v?(\d+\.\d+(?:\.\d+)?(?:[-+][0-9A-Za-z.-]+)?)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Installed agent CLI version, parsed from a `--version` run. Returns null when
+ * the version cannot be resolved. Shares `checkCli`'s cache, so the runnability
+ * probe and this lookup cost a single subprocess execution.
+ */
+export function probeAgentVersion(cliPath: string): string | null {
+  return checkCli(cliPath).version ?? null;
 }
 
 /** Turn low-level spawn codes into something a user can act on. */

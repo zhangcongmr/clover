@@ -39,6 +39,8 @@ export interface AgentStatusInfo {
   install?: { command: string };
   /** Where the agent CLI lives on disk. */
   paths?: { cli?: string };
+  /** Installed agent version, when the backend can resolve one. */
+  version?: string;
   lastChecked: number;
 }
 
