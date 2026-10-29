@@ -123,7 +123,129 @@ export function extractEditDiff(message: AcpMessage): EditDiffInfo | null {
       };
     }
   }
+  // ACP agents such as Claude Code report writes/edits as `toolContent` diff
+  // blocks (`{ type: 'diff', path, oldText, newText }`) instead of a pre-built
+  // patch inside `rawOutput.metadata`. Without this branch the diff section in
+  // acp-chat.component.html (`| editDiff`) stays hidden for those calls.
+  const contentDiff = buildContentDiff(message.toolContent);
+  if (contentDiff) return contentDiff;
   return null;
+}
+
+/**
+ * Builds an `EditDiffInfo` from ACP `type: 'diff'` content blocks, or `null` when
+ * the message carries none. Each block's `oldText`/`newText` are turned into a
+ * single-hunk unified patch so the `parseDiff` pipe can render it line-by-line.
+ */
+function buildContentDiff(toolContent: ToolCallContent[] | undefined): EditDiffInfo | null {
+  const blocks = (toolContent ?? []).filter(
+    (b): b is ToolCallContent =>
+      !!b && b.type === 'diff' && (typeof b.newText === 'string' || typeof b.oldText === 'string')
+  );
+  if (blocks.length === 0) return null;
+
+  const patches: string[] = [];
+  let additions = 0;
+  let deletions = 0;
+
+  for (const block of blocks) {
+    const oldLines = splitLines(block.oldText);
+    const newLines = splitLines(block.newText);
+    const { patch, add, del } = buildUnifiedDiff(oldLines, newLines, block.path);
+    if (patch) patches.push(patch);
+    additions += add;
+    deletions += del;
+  }
+
+  const diff = patches.join('\n');
+  if (!diff) return null;
+  return { additions, deletions, diff };
+}
+
+/** Splits text into lines, tolerating CRLF/CR and a single trailing newline. */
+function splitLines(text: string | null | undefined): string[] {
+  if (!text) return [];
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const trimmed = normalized.endsWith('\n') ? normalized.slice(0, -1) : normalized;
+  return trimmed.length === 0 ? [] : trimmed.split('\n');
+}
+
+/** Line-level edit script via longest-common-subsequence backtracking. */
+function lineDiff(oldLines: string[], newLines: string[]): Array<'eq' | 'add' | 'del'> {
+  const n = oldLines.length;
+  const m = newLines.length;
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = oldLines[i] === newLines[j]
+        ? dp[i + 1][j + 1] + 1
+        : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const ops: Array<'eq' | 'add' | 'del'> = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (oldLines[i] === newLines[j]) {
+      ops.push('eq');
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      ops.push('del');
+      i++;
+    } else {
+      ops.push('add');
+      j++;
+    }
+  }
+  while (i < n) {
+    ops.push('del');
+    i++;
+  }
+  while (j < m) {
+    ops.push('add');
+    j++;
+  }
+  return ops;
+}
+
+/**
+ * Produces a single-hunk unified diff (with an `@@` header) for display. Used when
+ * an agent ships the edit as `oldText`/`newText` rather than a ready-made patch.
+ */
+function buildUnifiedDiff(
+  oldLines: string[],
+  newLines: string[],
+  path?: string
+): { patch: string; add: number; del: number } {
+  const ops = lineDiff(oldLines, newLines);
+  const add = ops.filter(o => o === 'add').length;
+  const del = ops.filter(o => o === 'del').length;
+  if (ops.length === 0) return { patch: '', add: 0, del: 0 };
+
+  let oldIdx = 0;
+  let newIdx = 0;
+  const rows: Array<{ sign: ' ' | '+' | '-'; text: string }> = [];
+  for (const op of ops) {
+    if (op === 'eq') {
+      rows.push({ sign: ' ', text: oldLines[oldIdx] });
+      oldIdx++;
+      newIdx++;
+    } else if (op === 'del') {
+      rows.push({ sign: '-', text: oldLines[oldIdx] });
+      oldIdx++;
+    } else {
+      rows.push({ sign: '+', text: newLines[newIdx] });
+      newIdx++;
+    }
+  }
+
+  const oldStart = oldLines.length === 0 ? 0 : 1;
+  const newStart = newLines.length === 0 ? 0 : 1;
+  const header = `@@ -${oldStart},${oldLines.length} +${newStart},${newLines.length} @@`;
+  const fileHeader = `--- a/${path ?? ''}\n+++ b/${path ?? ''}`;
+  const body = rows.map(r => `${r.sign}${r.text}`).join('\n');
+  return { patch: `${fileHeader}\n${header}\n${body}`, add, del };
 }
 
 /**
