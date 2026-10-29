@@ -51,7 +51,7 @@
       </div>
 
       <!-- Left: Task List -->
-      @if (!layoutService.tasksSectionCollapsed()) {
+      @if (!layoutService.tasksSectionCollapsed() && filteredTasks().length > 0) {
         <div class="task-list custom-scroll">
           @for (task of filteredTasks(); track task.id) {
             <div class="task-item"
@@ -66,11 +66,6 @@
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
               </button>
-            </div>
-          }
-          @if (filteredTasks().length === 0) {
-            <div class="empty-tasks">
-              <span>No tasks yet</span>
             </div>
           }
         </div>
@@ -113,7 +108,7 @@
             </button>
           </div>
 
-          @if (!isProjectCollapsed(project.name)) {
+          @if (!isProjectCollapsed(project.name) && sessionsOf(project).length > 0) {
           <div class="project-sessions">
             @for (session of sessionsOf(project); track session.sessionId) {
               <div class="session-item" [class.active]="isSessionActive(project, session)"
@@ -147,15 +142,6 @@
                     </button>
                   </div>
                 </div>
-              </div>
-            }
-
-            @if (sessionsOf(project).length === 0) {
-              <div class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <span>No sessions</span>
               </div>
             }
           </div>
