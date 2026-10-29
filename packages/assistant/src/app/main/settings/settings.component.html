@@ -99,7 +99,12 @@
               @for (agent of agents(); track agent.id) {
                 <div class="agent-row">
                   <div class="agent-meta">
-                    <span class="agent-name">{{ agent.name }}</span>
+                    <div class="agent-name-row">
+                      <span class="agent-name">{{ agent.name }}</span>
+                      @if (agent.version) {
+                        <span class="agent-version" [title]="'Version ' + agent.version">v{{ agent.version }}</span>
+                      }
+                    </div>
                     <span class="agent-desc">{{ agent.description }}</span>
                     @if (agent.paths?.cli; as cliPath) {
                       <span class="agent-path" [title]="cliPath">CLI: {{ shortenPath(cliPath) }}</span>

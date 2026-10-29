@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import type * as acp from '@agentclientprotocol/sdk';
-import type { McpServerConfig, McpServersStore } from './types.js';
+import type { McpServerConfig, McpServerConfigInput, McpServersStore } from './types.js';
 
 const STORE_DIR = join(homedir(), '.clover');
 const STORE_FILE = join(STORE_DIR, 'mcp-servers.json');
@@ -70,7 +70,7 @@ export class McpServerRegistry {
       .filter((s): s is acp.McpServer => s !== null);
   }
 
-  upsert(name: string, config: Omit<McpServerConfig, 'name'>): void {
+  upsert(name: string, config: McpServerConfigInput): void {
     // 清理名称中的不可见字符
     const cleanName = name.trim();
     this.store.servers[cleanName] = { ...config, name: cleanName } as McpServerConfig;
