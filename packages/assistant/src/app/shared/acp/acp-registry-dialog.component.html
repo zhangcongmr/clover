@@ -1,0 +1,109 @@
+<ast-modal
+  [visible]="visible()"
+  [title]="'Install From ACP Registry'"
+  modalSize="xlarge"
+  [draggable]="false"
+  [backdrop]="true"
+  (close)="closeDialog()"
+>
+  <div class="ast-modal-body acp-registry-dialog">
+    <!-- Search bar -->
+    <div class="registry-search-bar">
+      <svg
+        class="registry-search-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="text"
+        class="registry-search-input"
+        placeholder="Search agents..."
+        [(ngModel)]="searchQuery"
+      />
+    </div>
+
+    <!-- Loading state -->
+    @if (loading()) {
+      <div class="registry-loading">Loading agents from ACP registry…</div>
+    }
+    <!-- Error state -->
+    @else if (error()) {
+      <div class="registry-error">{{ error() }}</div>
+    }
+    <!-- Agent list -->
+    @else {
+      <div class="registry-list custom-scroll">
+        @for (agent of filteredAgents(); track agent.id) {
+          <div class="registry-agent-item">
+            <div class="registry-agent-avatar">
+              <img
+                [src]="agent.icon"
+                [alt]="agent.name"
+                width="32"
+                height="32"
+                (error)="onAvatarError($event)"
+              />
+              @if (!agent.icon) {
+                <span class="registry-agent-avatar-fallback">
+                  {{ agent.name.charAt(0) | uppercase }}
+                </span>
+              }
+            </div>
+            <div class="registry-agent-details">
+              <div class="registry-agent-header">
+                <span class="registry-agent-name">{{ agent.name }}</span>
+                <span class="registry-agent-version">v{{ agent.version }}</span>
+              </div>
+              <div class="registry-agent-desc">{{ agent.description }}</div>
+              <div class="registry-agent-meta">
+                {{
+                  (agent.authors || []).length > 0
+                    ? (agent.authors || []).join(" / ")
+                    : "-"
+                }}
+              </div>
+            </div>
+            <button
+              class="registry-install-btn"
+              (click)="install.emit(agent)"
+              [disabled]="loading()"
+            >
+              Install
+            </button>
+          </div>
+        }
+        @if (filteredAgents().length === 0) {
+          <div class="registry-empty">No agents found</div>
+        }
+      </div>
+    }
+
+    <!-- Bottom options -->
+    <div class="registry-options">
+      <label class="registry-checkbox-option">
+        <input type="checkbox" [(ngModel)]="passMcpServers" />
+        <span>Pass custom MCP servers</span>
+      </label>
+    </div>
+
+    <!-- Footer buttons -->
+    <div class="registry-footer">
+      <button class="btn btn-primary" (click)="ok.emit()" [disabled]="loading()">
+        OK
+      </button>
+      <button class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
+      <button class="btn btn-secondary" (click)="apply.emit()" [disabled]="loading()">
+        Apply
+      </button>
+    </div>
+  </div>
+</ast-modal>

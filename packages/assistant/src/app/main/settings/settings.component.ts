@@ -9,6 +9,8 @@ import { BUILTIN_THEME_PRESETS } from "../../builtin-theme-presets";
 import { THEME_CHIP_CATEGORIES } from "../../shared/skill-manager/built-in/theme-chips-library";
 import { ThemePreviewSvgComponent, ThemePreviewVariant } from "../../shared/acp/theme-preview-svg.component";
 import { NotificationService } from "../../shared/notification/notification.service";
+import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
+import { AcpRegistryDialogComponent, AcpRegistryAgent } from "../../shared/acp/acp-registry-dialog.component";
 import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
 
 /** Theme card entry: a saved library theme, or a built-in Light/Dark preset. */
@@ -37,7 +39,7 @@ function readNumber(raw: string): number {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
   standalone: true,
-  imports: [FormsModule, ThemePreviewSvgComponent],
+  imports: [FormsModule, ThemePreviewSvgComponent, AstMenuComponent, AcpRegistryDialogComponent],
 })
 export class SettingsComponent {
   private settingsService = inject(SettingsService);
@@ -85,6 +87,14 @@ export class SettingsComponent {
   installingAgentId = signal<string | null>(null);
   /** Latest installer output line, shown while an install is running. */
   installStatusLine = signal<string | null>(null);
+
+  /** Whether the ACP Registry install dialog is open. */
+  registryDialogVisible = false;
+
+  /** Whether the "Add Agent" dropdown menu is open. */
+  agentMenuOpen = false;
+  /** Bounding rect of the menu trigger button, used to position the dropdown. */
+  agentMenuInitiator: DOMRect | undefined;
 
   showSavedToast = signal(false);
 
@@ -415,6 +425,48 @@ export class SettingsComponent {
       case 'available': return 'Available';
       default: return 'Checking...';
     }
+  }
+
+  /** Open / close the "Add Agent" dropdown menu next to the trigger button. */
+  toggleAgentMenu(evt: MouseEvent): void {
+    this.agentMenuOpen = !this.agentMenuOpen;
+    if (this.agentMenuOpen) {
+      this.agentMenuInitiator = (evt.currentTarget as HTMLElement).getBoundingClientRect();
+    }
+  }
+
+  /** Open the "Install From ACP Registry" dialog. */
+  openRegistryDialog(): void {
+    this.agentMenuOpen = false;
+    this.agentMenuInitiator = undefined;
+    this.registryDialogVisible = true;
+  }
+
+  /** Close the ACP Registry dialog. */
+  onRegistryDialogClose(): void {
+    this.registryDialogVisible = false;
+  }
+
+  /** OK button on the ACP Registry dialog. */
+  onRegistryDialogOk(): void {
+    this.registryDialogVisible = false;
+  }
+
+  /** Apply button on the ACP Registry dialog. */
+  onRegistryDialogApply(): void {
+    this.registryDialogVisible = false;
+  }
+
+  /** Install the selected agent from the ACP registry. */
+  onAgentInstall(agent: AcpRegistryAgent): void {
+    this.notification.showNotification(`Installing ${agent.name} v${agent.version}…`, "info");
+  }
+
+  /** Add a local agent from the filesystem. */
+  onAddAgentFromDisk(): void {
+    this.agentMenuOpen = false;
+    this.agentMenuInitiator = undefined;
+    this.notification.showNotification("Add Agent From Disk: not yet implemented", "info");
   }
 
   private showToast() {
