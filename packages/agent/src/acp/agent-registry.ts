@@ -429,6 +429,45 @@ export class AgentRegistry {
     });
   }
 
+  /**
+   * Dynamically add a new agent config to the registry (e.g. after installing
+   * from ACP Registry or Add Agent From Disk). Probes the command immediately
+   * so `startInstall` can work without a prior `checkNow`.
+   * Returns false if the agent id already exists.
+   */
+  async addConfig(config: AgentConfig): Promise<boolean> {
+    if (this.statesById.has(config.id)) return false;
+
+    const state: AgentState = {
+      config,
+      installed: null,
+      status: 'unknown',
+      connection: null,
+      lastChecked: 0,
+      inflight: null,
+      checking: null,
+    };
+    this.statesById.set(config.id, state);
+    this.stateByKey.set(AgentRegistry.key(config.command, config.args, config.env), state);
+
+    // Probe the command immediately so missing/install state is known.
+    try {
+      const probe = await probeCommand(config.command);
+      state.installed = probe.installed;
+      state.missing = probe.installed ? undefined : probe.missing;
+      applyProbePaths(state, probe);
+      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
+      state.lastChecked = Date.now();
+      state.status = probe.installed ? 'available' : 'unavailable';
+      state.error = probe.error ?? missingAgentHint(config.command);
+    } catch (error) {
+      state.status = 'unavailable';
+      state.error = (error as Error).message;
+    }
+
+    return true;
+  }
+
   // ==========================================================================
   // Teardown
   // ==========================================================================

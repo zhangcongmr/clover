@@ -23,8 +23,10 @@ import { SseManager } from './acp/sse-manager.js';
 import { AcpSessionManager } from './acp/session-manager.js';
 import { AgentRegistry } from './acp/agent-registry.js';
 import { AVAILABLE_AGENTS } from './acp/acp-agent.types.js';
+import { readAcpConfigFile } from './api/acp-routes.js';
 import { McpServerRegistry } from './mcp/index.js';
 import { SkillRegistry } from './skills/index.js';
+import type { AgentConfig } from './acp/acp-agent.types.js';
 
 export interface StaticOptions {
   maxAge?: string | number;
@@ -103,8 +105,12 @@ export function setupAgentMiddleware(
   // 事件面出口：进程级共享的进程内实现（单进程部署，无外部依赖）。
   const eventSink = getSharedEventSink();
   const sseManager = new SseManager(eventSink);
+  // 合并内置 agent 模板（builtin）与 ~/.clover/acp.json 中用户已安装的 agent（registry/disk）
+  const persistedAgents = readAcpConfigFile().agents;
+  const builtinAgents = AVAILABLE_AGENTS.map(a => ({ ...a, source: 'builtin' as const }));
+  const allAgentConfigs: AgentConfig[] = [...builtinAgents, ...persistedAgents];
   // Agent 预热注册表：持有每个 Agent 的共享连接（预热 + 复用 + 状态跟踪）
-  const agentRegistry = new AgentRegistry(AVAILABLE_AGENTS, eventSink);
+  const agentRegistry = new AgentRegistry(allAgentConfigs, eventSink);
   const sessionManager = new AcpSessionManager(agentRegistry, eventSink);
   setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, fileService, mcpRegistry, registry: agentRegistry });
 

@@ -1,3 +1,5 @@
+export type AgentSource = 'builtin' | 'registry' | 'disk';
+
 export interface AgentConfig {
   id: string;
   name: string;
@@ -5,6 +7,14 @@ export interface AgentConfig {
   args?: string[];
   description?: string;
   env?: Record<string, string>;
+  /** 来源：builtin 内置、registry 来自 ACP Registry、disk 来自本地磁盘。 */
+  source?: AgentSource;
+  /** 版本号（registry 中的 version 或用户填写）。 */
+  version?: string;
+  /** 安装完成的 ISO 时间戳。 */
+  installedAt?: string;
+  /** 是否已安装。 */
+  installed?: boolean;
 }
 
 export const AVAILABLE_AGENTS: AgentConfig[] = [
