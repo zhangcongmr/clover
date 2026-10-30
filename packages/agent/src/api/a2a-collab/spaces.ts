@@ -2,7 +2,7 @@ import { logger } from '../../helpers/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import type * as acp from '@agentclientprotocol/sdk';
 import type { AcpSessionManager } from '../../acp/session-manager.js';
-import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
+import type { AgentRegistry } from '../../acp/agent-registry.js';
 
 /**
  * One participating session inside a collaboration space.
@@ -86,7 +86,10 @@ export function memberIds(space: CollabSpace): string[] {
 export class CollabSpaceStore {
   private spaces: Map<string, CollabSpace> = new Map();
 
-  constructor(private readonly sessionManager: AcpSessionManager) {}
+  constructor(
+    private readonly sessionManager: AcpSessionManager,
+    private readonly agentRegistry: AgentRegistry,
+  ) {}
 
   async create(options: CreateSpaceOptions): Promise<CollabSpace> {
     const cwd = String(options.cwd ?? '').trim();
@@ -106,7 +109,7 @@ export class CollabSpaceStore {
       if (!agentId) {
         throw new Error('each participant requires an agentId');
       }
-      if (!AVAILABLE_AGENTS.some(agent => agent.id === agentId)) {
+      if (!this.agentRegistry.getAgentConfig(agentId)) {
         throw new Error(`Unknown agent: ${agentId}`);
       }
       const participantId = String(input?.id ?? '').trim() || uuidv4();

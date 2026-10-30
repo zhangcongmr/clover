@@ -5,7 +5,7 @@ import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig } from './acp-agent.types.js';
 import { inspectAgentCommand, invalidateAgentCommandCache, localAgentPackage, probeAgentVersion, probePathCommand, resolveAgentCommand } from './agent-executable.js';
 import { installCommandFor, startAgentInstall } from './agent-install.js';
-import type { AgentInstallJob } from './agent-install.js';
+import type { AgentInstallJob, AgentInstallTarget } from './agent-install.js';
 import type { EventSink } from '../events/event-sink.js';
 
 /**
@@ -20,12 +20,8 @@ import type { EventSink } from '../events/event-sink.js';
  */
 export type AgentRuntimeStatus = 'unknown' | 'available' | 'unavailable' | 'offline' | 'connected';
 
-export interface AgentStatusInfo {
-  id: string;
-  name: string;
-  command: string;
-  args?: string[];
-  description?: string;
+export interface AgentStatusInfo
+  extends Pick<AgentConfig, 'id' | 'name' | 'command' | 'args' | 'description'> {
   installed: boolean | null;
   status: AgentRuntimeStatus;
   agentInfo?: unknown;
@@ -421,12 +417,68 @@ export class AgentRegistry {
    */
   startInstall(agentId: string): AgentInstallJob | null {
     const state = this.statesById.get(agentId);
-    if (!state?.missing) return null;
+    if (!state) return null;
 
-    return startAgentInstall(agentId, state.config.command, state.missing, () => {
+    // For user-installed agents (registry / disk), always attempt installation
+    // even when the probe command itself is on PATH — the missing piece is the
+    // agent package, not the wrapper. Built-in agents rely on `missing`.
+    const isUserInstalled = state.config.source === 'registry' || state.config.source === 'disk';
+    const target: AgentInstallTarget = isUserInstalled ? 'adapter' : (state.missing ?? 'cli');
+    if (!isUserInstalled && !state.missing) return null;
+
+    return startAgentInstall(agentId, state.config.command, target, () => {
       // Re-probe and try to connect as soon as the installer finishes.
       void this.checkNow(agentId).catch(() => undefined);
     });
+  }
+
+  /**
+   * Look up a registered agent's full config by id.
+   * Returns null when the agent id is unknown (not present in the installed
+   * agent list loaded from ~/.clover/acp.json).
+   */
+  getAgentConfig(agentId: string): AgentConfig | null {
+    const state = this.statesById.get(agentId);
+    return state ? state.config : null;
+  }
+
+  /**
+   * Dynamically add a new agent config to the registry (e.g. after installing
+   * from ACP Registry or Add Agent From Disk). Probes the command immediately
+   * so `startInstall` can work without a prior `checkNow`.
+   * Returns false if the agent id already exists.
+   */
+  async addConfig(config: AgentConfig): Promise<boolean> {
+    if (this.statesById.has(config.id)) return false;
+
+    const state: AgentState = {
+      config,
+      installed: null,
+      status: 'unknown',
+      connection: null,
+      lastChecked: 0,
+      inflight: null,
+      checking: null,
+    };
+    this.statesById.set(config.id, state);
+    this.stateByKey.set(AgentRegistry.key(config.command, config.args, config.env), state);
+
+    // Probe the command immediately so missing/install state is known.
+    try {
+      const probe = await probeCommand(config.command);
+      state.installed = probe.installed;
+      state.missing = probe.installed ? undefined : probe.missing;
+      applyProbePaths(state, probe);
+      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
+      state.lastChecked = Date.now();
+      state.status = probe.installed ? 'available' : 'unavailable';
+      state.error = probe.error ?? missingAgentHint(config.command);
+    } catch (error) {
+      state.status = 'unavailable';
+      state.error = (error as Error).message;
+    }
+
+    return true;
   }
 
   // ==========================================================================

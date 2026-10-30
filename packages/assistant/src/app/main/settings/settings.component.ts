@@ -12,6 +12,7 @@ import { NotificationService } from "../../shared/notification/notification.serv
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
 import { AcpRegistryDialogComponent, AcpRegistryAgent } from "../../shared/acp/acp-registry-dialog.component";
 import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
+import type { AgentConfig } from "../../shared/acp/acp-agent.types";
 
 /** Theme card entry: a saved library theme, or a built-in Light/Dark preset. */
 export interface ThemeLibraryEntry extends SavedTheme {
@@ -458,15 +459,109 @@ export class SettingsComponent {
   }
 
   /** Install the selected agent from the ACP registry. */
-  onAgentInstall(agent: AcpRegistryAgent): void {
-    this.notification.showNotification(`Installing ${agent.name} v${agent.version}…`, "info");
+  async onAgentInstall(agent: AcpRegistryAgent): Promise<void> {
+    this.registryDialogVisible = false;
+
+    // Map registry agent to AgentConfig for persistence.
+    // Do NOT map npx distribution to command: 'npx' — npx itself is already
+    // installed and the backend would wrongly skip installation. Keep the
+    // agent id as the command so the backend can probe and install it.
+    const dist = (agent as any).distribution;
+    let args: string[] = [];
+    let env: Record<string, string> | undefined;
+    if (dist?.npx) {
+      args = [dist.npx.package, ...(dist.npx.args ?? [])];
+      env = dist.npx.env;
+    } else if (dist?.uvx) {
+      args = [dist.uvx.package, ...(dist.uvx.args ?? [])];
+      env = dist.uvx.env;
+    }
+
+    const agentConfig: AgentConfig = {
+      id: agent.id,
+      name: agent.name,
+      command: agent.id,
+      args,
+      env,
+      description: agent.description,
+      source: 'registry',
+      version: agent.version,
+      installed: false,
+      installedAt: new Date().toISOString(),
+    };
+
+    await this.onAgentInstalled(agentConfig);
+  }
+
+  /** Unified handler: persist installed agent config to ~/.clover/acp.json,
+   *  register it in the backend AgentRegistry, then kick off installation. */
+  async onAgentInstalled(agentConfig: AgentConfig): Promise<void> {
+    try {
+      // 1. Persist to ~/.clover/acp.json (backend also registers it in AgentRegistry)
+      await this.sseService.saveInstalledAgent(agentConfig);
+
+      // 2. Start installation (polls job until done)
+      this.installingAgentId.set(agentConfig.id);
+      this.agentsError.set(null);
+      this.installStatusLine.set(null);
+
+      let job = await this.sseService.startAgentInstall(agentConfig.id);
+      this.installStatusLine.set(job.command);
+
+      while (job.status === 'running') {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        job = await this.sseService.getAgentInstallJob(job.id);
+        const runningStep = job.steps.find(step => step.status === 'running') ?? job.steps[job.steps.length - 1];
+        const lastLine = runningStep?.output[runningStep.output.length - 1];
+        this.installStatusLine.set(lastLine ?? job.command);
+      }
+
+      if (job.status !== 'succeeded') {
+        this.agentsError.set(job.error ?? `Install failed for ${agentConfig.name}`);
+      }
+
+      // 3. Re-probe and refresh list
+      await this.checkNow(agentConfig.id);
+      await this.loadAgents();
+
+      if (job.status === 'succeeded') {
+        this.notification.showNotification(`"${agentConfig.name}" installed`, 'success');
+      }
+    } catch (error) {
+      this.agentsError.set((error as Error).message);
+      this.notification.showNotification(`Install failed: ${(error as Error).message}`, 'error');
+    } finally {
+      this.installingAgentId.set(null);
+      this.installStatusLine.set(null);
+    }
   }
 
   /** Add a local agent from the filesystem. */
-  onAddAgentFromDisk(): void {
+  async onAddAgentFromDisk(): Promise<void> {
     this.agentMenuOpen = false;
     this.agentMenuInitiator = undefined;
-    this.notification.showNotification("Add Agent From Disk: not yet implemented", "info");
+
+    // Use the existing file picker dialog to select an agent executable.
+    // For now, prompt for a path via a simple input; a dedicated disk-picker
+    // dialog can be added later.
+    const command = prompt('Enter the agent command or path to executable:');
+    if (!command) return;
+
+    const name = prompt('Enter a display name for this agent:', command);
+    if (!name) return;
+
+    const agentConfig: AgentConfig = {
+      id: command.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
+      name,
+      command,
+      args: [],
+      description: 'Agent added from disk',
+      source: 'disk',
+      installed: false,
+      installedAt: new Date().toISOString(),
+    };
+
+    await this.onAgentInstalled(agentConfig);
   }
 
   private showToast() {

@@ -1,8 +1,7 @@
 import { Component, inject, signal, computed, effect, viewChild, output, PLATFORM_ID } from "@angular/core";
 import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { AcpService } from "../../shared/acp/acp.service";
-import type { ProjectInfo } from "../../shared/acp/acp.service";
+import { AcpService } from "../../shared/acp/acp.service";import type { ProjectInfo } from "../../shared/acp/acp.service";
 import type { RecentSessionEntry } from "../../shared/acp/recent-sessions.util";
 import { recordRecentOpenedSession } from "../../shared/acp/recent-sessions.util";
 import { formatRelativeTime } from "../../shared/acp/relative-time.util";
@@ -11,7 +10,6 @@ import { AcpChatComponent } from "../../shared/acp/acp-chat.component";
 import { AcpChatInputComponent } from "../../shared/acp/acp-chat-input.component";
 import { AcpPermissionDialogComponent } from "../../shared/acp/acp-permission-dialog.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
-import { AVAILABLE_AGENTS } from "../../shared/acp/acp-agent.types";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
 import { RagService } from "../../shared/rag/rag.service";
@@ -763,7 +761,7 @@ export class AgentComponent {
   }
 
   getAgentName(agentId?: string): string {
-    const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
+    const agent = this.acpService.findInstalledAgent(agentId);
     return agent?.name || 'Unknown';
   }
 

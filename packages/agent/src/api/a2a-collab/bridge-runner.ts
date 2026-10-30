@@ -12,7 +12,8 @@ import {
 } from '@a2a-js/sdk';
 import type * as acp from '@agentclientprotocol/sdk';
 import type { AcpSessionManager, AcpSessionEvent } from '../../acp/session-manager.js';
-import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
+import type { AgentConfig } from '../../acp/acp-agent.types.js';
+import type { AgentRegistry } from '../../acp/agent-registry.js';
 import { memberIds, type CollabSpaceStore, type CollabSpace } from './spaces.js';
 
 // ---------------------------------------------------------------------------
@@ -166,14 +167,16 @@ function extractAgentChunk(event: AcpSessionEvent): string | undefined {
   return undefined;
 }
 
-function agentLabel(agentId: string): string {
-  return AVAILABLE_AGENTS.find(agent => agent.id === agentId)?.name ?? agentId;
+/** Human-readable label of an agent (its configured name, fallback to id). */
+function agentLabel(registry: AgentRegistry, agentId: string): string {
+  const config = registry.getAgentConfig(agentId);
+  return config?.name ?? agentId;
 }
 
 /** Human label of a participating session (its bound agent's name). */
-function memberLabel(space: CollabSpace, memberId: string): string {
+function memberLabel(registry: AgentRegistry, space: CollabSpace, memberId: string): string {
   const info = space.members.get(memberId);
-  return info ? agentLabel(info.agentId) : memberId;
+  return info ? agentLabel(registry, info.agentId) : memberId;
 }
 
 function clampTurns(value: unknown, fallback = DEFAULT_MAX_TURNS): number {
@@ -243,7 +246,7 @@ function roleTarget(space: CollabSpace, targetRole: string | undefined): string 
  * Fallback tier: keyword match against participantId / agentId / agent name /
  * role / capabilities → first member of the space.
  */
-function keywordTarget(space: CollabSpace, promptText: string): string | undefined {
+function keywordTarget(registry: AgentRegistry, space: CollabSpace, promptText: string): string | undefined {
   const ids = memberIds(space);
   if (ids.length === 0) return undefined;
 
@@ -251,7 +254,7 @@ function keywordTarget(space: CollabSpace, promptText: string): string | undefin
   for (const memberId of ids) {
     const info = space.members.get(memberId);
     if (!info) continue;
-    const config = AVAILABLE_AGENTS.find(agent => agent.id === info.agentId);
+    const config = registry.getAgentConfig(info.agentId);
     const keys = [memberId, info.agentId, config?.name, info.role, ...(info.capabilities ?? [])]
       .filter((key): key is string => Boolean(key))
       .map(key => key.toLowerCase());
@@ -261,12 +264,12 @@ function keywordTarget(space: CollabSpace, promptText: string): string | undefin
 }
 
 /** Member catalog (optionally excluding one) used inside routing prompts. */
-function buildMemberCatalog(space: CollabSpace, excludeMemberId?: string): string {
+function buildMemberCatalog(registry: AgentRegistry, space: CollabSpace, excludeMemberId?: string): string {
   return memberIds(space)
     .filter(memberId => memberId !== excludeMemberId)
     .map(memberId => {
       const info = space.members.get(memberId);
-      const name = info ? agentLabel(info.agentId) : memberId;
+      const name = info ? agentLabel(registry, info.agentId) : memberId;
       const agent = info?.agentId ? `, agent: ${info.agentId}` : '';
       const role = info?.role ? `, role: ${info.role}` : '';
       const responsibility = info?.responsibility ? `, responsibility: ${info.responsibility}` : '';
@@ -276,14 +279,14 @@ function buildMemberCatalog(space: CollabSpace, excludeMemberId?: string): strin
 }
 
 /** Routing instruction sent to a single-mode orchestrator agent's ACP session. */
-function buildRoutingPrompt(space: CollabSpace, question: string): string {
+function buildRoutingPrompt(registry: AgentRegistry, space: CollabSpace, question: string): string {
   const ids = memberIds(space);
   return [
     'You are the orchestrator of a multi-agent collaboration.',
     'Decide which single session should answer the user question below.',
     '',
     'Available sessions:',
-    buildMemberCatalog(space),
+    buildMemberCatalog(registry, space),
     '',
     'Rules:',
     '- Reply with ONLY a JSON object, no markdown fences and no explanation:',
@@ -299,6 +302,7 @@ function buildRoutingPrompt(space: CollabSpace, question: string): string {
 
 /** Instruction for a pipeline orchestrator picking the next session. */
 function buildPipelineDecisionPrompt(
+  registry: AgentRegistry,
   space: CollabSpace,
   currentMemberId: string,
   priorOutput: string,
@@ -312,7 +316,7 @@ function buildPipelineDecisionPrompt(
     `- ${currentMemberId}${info?.role ? ` (role: ${info.role})` : ''}`,
     '',
     'Remaining sessions:',
-    buildMemberCatalog(space, currentMemberId) || '- (none)',
+    buildMemberCatalog(registry, space, currentMemberId) || '- (none)',
     '',
     'Rules:',
     '- Reply with ONLY a JSON object, no markdown fences and no explanation.',
@@ -325,14 +329,14 @@ function buildPipelineDecisionPrompt(
 }
 
 /** Builds the known-reference → memberId map used to parse routing replies. */
-function memberAliases(space: CollabSpace, ids: string[]): Map<string, string> {
+function memberAliases(registry: AgentRegistry, space: CollabSpace, ids: string[]): Map<string, string> {
   const known = new Map<string, string>();
   for (const memberId of ids) {
     known.set(memberId.toLowerCase(), memberId);
     const info = space.members.get(memberId);
     if (!info) continue;
     known.set(info.agentId.toLowerCase(), memberId);
-    const config = AVAILABLE_AGENTS.find(agent => agent.id === info.agentId);
+    const config = registry.getAgentConfig(info.agentId);
     if (config?.name) known.set(config.name.toLowerCase(), memberId);
     if (info.role) known.set(info.role.toLowerCase(), memberId);
   }
@@ -344,10 +348,10 @@ function memberAliases(space: CollabSpace, ids: string[]): Map<string, string> {
  *  1. strict `{"memberId":"..."}` (or legacy `agentId`) field, 2. exactly one
  * known id/name mentioned anywhere in the reply. Ambiguous/empty → undefined.
  */
-function parseRoutingReply(reply: string, space: CollabSpace, ids: string[]): string | undefined {
+function parseRoutingReply(registry: AgentRegistry, reply: string, space: CollabSpace, ids: string[]): string | undefined {
   const text = reply.trim();
   if (!text) return undefined;
-  const known = memberAliases(space, ids);
+  const known = memberAliases(registry, space, ids);
 
   const match = text.match(/"(?:memberId|agentId)"\s*:\s*"([^"]+)"/i);
   if (match) {
@@ -462,6 +466,7 @@ export class BridgeRunner {
   constructor(
     private readonly sessionManager: AcpSessionManager,
     private readonly spaces: CollabSpaceStore,
+    private readonly agentRegistry: AgentRegistry,
     private readonly timeoutMs: number,
     private readonly routeTimeoutMs: number,
   ) {}
@@ -588,7 +593,7 @@ export class BridgeRunner {
       if (targetMemberId) {
         setStatus(
           TaskState.TASK_STATE_WORKING,
-          `Routed to ${memberLabel(space, targetMemberId)} by role "${collab.targetRole}"…`,
+          `Routed to ${memberLabel(this.agentRegistry, space, targetMemberId)} by role "${collab.targetRole}"…`,
         );
       }
     }
@@ -608,7 +613,7 @@ export class BridgeRunner {
       }
     }
     if (!targetMemberId) {
-      targetMemberId = keywordTarget(space, promptText);
+      targetMemberId = keywordTarget(this.agentRegistry, space, promptText);
     }
     if (!targetMemberId) {
       setStatus(
@@ -624,7 +629,7 @@ export class BridgeRunner {
       return;
     }
 
-    const label = memberLabel(space, targetMemberId);
+    const label = memberLabel(this.agentRegistry, space, targetMemberId);
     setStatus(
       TaskState.TASK_STATE_WORKING,
       `${routedByOrchestrator ? 'Orchestrator selected' : 'Routed to'} ${label}; calling…`,
@@ -672,10 +677,10 @@ export class BridgeRunner {
 
     ctx.setStatus(TaskState.TASK_STATE_WORKING, 'Orchestrator is selecting the target session…');
 
-    const reply = await this.askRaw(ctx.runState, sessionId, buildRoutingPrompt(space, promptText), this.routeTimeoutMs);
+    const reply = await this.askRaw(ctx.runState, sessionId, buildRoutingPrompt(this.agentRegistry, space, promptText), this.routeTimeoutMs);
     if (reply === undefined || ctx.runState.cancelled) return undefined;
 
-    const target = parseRoutingReply(reply, space, memberIds(space));
+    const target = parseRoutingReply(this.agentRegistry, reply, space, memberIds(space));
     if (target) {
       logger.log(
         `[A2A Collab] Orchestrator selected ${target} (space: ${space.id}) for: ${promptText.slice(0, 120)}`,
@@ -727,7 +732,7 @@ export class BridgeRunner {
 
     while (currentMemberId && turn < maxTurns) {
       turn++;
-      const label = memberLabel(space, currentMemberId);
+      const label = memberLabel(this.agentRegistry, space, currentMemberId);
       const role = space.members.get(currentMemberId)?.role;
       setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn}: calling ${label}…`, {
         ...this.turnMeta(space, currentMemberId, turn),
@@ -783,7 +788,7 @@ export class BridgeRunner {
 
       if (!nextMemberId) break;
 
-      setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn} done; ${memberLabel(space, nextMemberId)} takes over…`, {
+      setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn} done; ${memberLabel(this.agentRegistry, space, nextMemberId)} takes over…`, {
         turn,
         prevParticipantId: finishedMemberId,
         prevSessionId: space.sessions.get(finishedMemberId),
@@ -819,7 +824,7 @@ export class BridgeRunner {
     const reply = await this.askRaw(
       ctx.runState,
       sessionId,
-      buildPipelineDecisionPrompt(space, currentMemberId, truncate(priorOutput)),
+      buildPipelineDecisionPrompt(this.agentRegistry, space, currentMemberId, truncate(priorOutput)),
       this.routeTimeoutMs,
     );
     if (reply === undefined) return candidates[0];
@@ -860,12 +865,12 @@ export class BridgeRunner {
       const memberId =
         resolveMemberId(space, subTask.targetAgentId) ??
         roleTarget(space, subTask.targetRole) ??
-        keywordTarget(space, subTask.prompt);
+        keywordTarget(this.agentRegistry, space, subTask.prompt);
       if (!memberId) {
         record({ subTaskId: subTask.id, memberId: '', output: '', ok: false, error: 'Cannot determine the target session' });
         return;
       }
-      const label = memberLabel(space, memberId);
+      const label = memberLabel(this.agentRegistry, space, memberId);
       try {
         const { output, cancelled } = await this.promptMember({
           ctx,
@@ -901,7 +906,7 @@ export class BridgeRunner {
 
     const aggregatorMemberId = resolveMemberId(space, parallel.aggregatorAgentId);
     if (aggregatorMemberId) {
-      const aggLabel = memberLabel(space, aggregatorMemberId);
+      const aggLabel = memberLabel(this.agentRegistry, space, aggregatorMemberId);
       setStatus(TaskState.TASK_STATE_WORKING, `${aggLabel} is aggregating sub-task results…`, {
         turn: 2,
         ...this.turnMeta(space, aggregatorMemberId, 2),
@@ -911,7 +916,7 @@ export class BridgeRunner {
           ctx,
           space,
           memberId: aggregatorMemberId,
-          promptText: buildSummaryPrompt(space, results),
+          promptText: buildSummaryPrompt(results, id => memberLabel(this.agentRegistry, space, id)),
           artifactId: `${ctx.taskId}-summary`,
           metadata: { turn: 2, subTaskId: 'summary' },
         });
@@ -984,7 +989,7 @@ export class BridgeRunner {
         pendingMeta = { claimReason: winner.reason, relinquishedBy: initial.relinquished };
         setStatus(
           TaskState.TASK_STATE_WORKING,
-          `Initial task: ${memberLabel(space, winner.memberId)} claimed${initial.claims.length > 1 ? ` (${initial.claims.length} competing)` : ''}…`,
+          `Initial task: ${memberLabel(this.agentRegistry, space, winner.memberId)} claimed${initial.claims.length > 1 ? ` (${initial.claims.length} competing)` : ''}…`,
         );
       } else {
         // Nobody claimed the initial task: fall back to the first session so the
@@ -1005,7 +1010,7 @@ export class BridgeRunner {
 
     while (currentMemberId && turn < maxTurns) {
       turn++;
-      const label = memberLabel(space, currentMemberId);
+      const label = memberLabel(this.agentRegistry, space, currentMemberId);
       const role = space.members.get(currentMemberId)?.role;
       setStatus(TaskState.TASK_STATE_WORKING, `Turn ${turn}: ${label} is working…`, {
         ...this.turnMeta(space, currentMemberId, turn),
@@ -1073,7 +1078,7 @@ export class BridgeRunner {
       const next = this.pickClaim(space, claims, resolution, voluntary.priorityOrder);
       setStatus(
         TaskState.TASK_STATE_WORKING,
-        `Turn ${turn}: ${memberLabel(space, next.memberId)} claimed${claims.length > 1 ? ` (${claims.length} competing)` : ''}…`,
+        `Turn ${turn}: ${memberLabel(this.agentRegistry, space, next.memberId)} claimed${claims.length > 1 ? ` (${claims.length} competing)` : ''}…`,
         { turn, ...this.turnMeta(space, next.memberId, turn) },
       );
 
@@ -1211,7 +1216,7 @@ export class BridgeRunner {
     if (!sessionId) return { output: '', cancelled: false };
 
     const info = space.members.get(memberId);
-    const label = info ? agentLabel(info.agentId) : memberId;
+    const label = info ? agentLabel(this.agentRegistry, info.agentId) : memberId;
     const artifactMeta = {
       ...metadata,
       participantId: memberId,
@@ -1366,9 +1371,12 @@ export class BridgeRunner {
 }
 
 /** Builds the aggregator prompt for parallel mode. */
-function buildSummaryPrompt(space: CollabSpace, results: SubTaskResult[]): string {
+function buildSummaryPrompt(
+  results: SubTaskResult[],
+  labelOf: (memberId: string) => string,
+): string {
   const sections = results.map(result => {
-    const label = result.memberId ? memberLabel(space, result.memberId) : 'Unknown session';
+    const label = result.memberId ? labelOf(result.memberId) : 'Unknown session';
     return result.ok
       ? `## Sub-task ${result.subTaskId} (session: ${result.memberId} / ${label})\n${truncate(result.output)}`
       : `## Sub-task ${result.subTaskId} (session: ${result.memberId} / ${label})\n[FAILED] ${result.error ?? 'unknown error'}`;

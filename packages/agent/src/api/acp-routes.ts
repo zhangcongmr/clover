@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AcpSessionManager } from '../acp/session-manager.js';
 import { getInstallJob } from '../acp/agent-install.js';
 import type { AgentRegistry } from '../acp/agent-registry.js';
+import type { AgentConfig } from '../acp/acp-agent.types.js';
 import { SseManager, StreamConflictError } from '../acp/sse-manager.js';
 import type { TokenManager } from '../agent/auth.js';
 import type { FileService } from '../agent/file-service.js';
@@ -20,6 +21,7 @@ const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
 const TASKS_FILE = join(PROJECTS_DIR, 'tasks.json');
 const SELECTED_FILE = join(PROJECTS_DIR, 'selected.json');
 const AGENT_CONFIG_FILE = join(PROJECTS_DIR, 'agent-config.json');
+const ACP_CONFIG_FILE = join(PROJECTS_DIR, 'acp.json');
 
 /**
  * 临时开关：会话所有权栅栏（`requireSessionOwner`）。
@@ -124,6 +126,32 @@ function readAgentConfigFile(): AgentConfigFile {
 function writeAgentConfigFile(data: AgentConfigFile): void {
   mkdirSync(PROJECTS_DIR, { recursive: true });
   writeFileSync(AGENT_CONFIG_FILE, JSON.stringify(data, null, 2));
+}
+
+/** ACP agent 持久化配置文件（~/.clover/acp.json）：记录用户通过 ACP Registry 或 Disk 安装的 agent。 */
+interface AcpConfigFile {
+  version: string;
+  agents: AgentConfig[];
+}
+
+const ACP_CONFIG_VERSION = '1.0.0';
+
+function readAcpConfigFile(): AcpConfigFile {
+  if (!existsSync(ACP_CONFIG_FILE)) return { version: ACP_CONFIG_VERSION, agents: [] };
+  try {
+    const raw = JSON.parse(readFileSync(ACP_CONFIG_FILE, 'utf-8'));
+    const agents = Array.isArray(raw?.agents) ? raw.agents as AgentConfig[] : [];
+    return { version: raw?.version ?? ACP_CONFIG_VERSION, agents };
+  } catch {
+    return { version: ACP_CONFIG_VERSION, agents: [] };
+  }
+}
+
+export { readAcpConfigFile };
+
+function writeAcpConfigFile(data: AcpConfigFile): void {
+  mkdirSync(PROJECTS_DIR, { recursive: true });
+  writeFileSync(ACP_CONFIG_FILE, JSON.stringify(data, null, 2));
 }
 
 export interface AcpRouteOptions {
@@ -700,6 +728,85 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({ success: true });
     } catch (error) {
       logger.error(`[ACP Routes] Save agent config error (agent: ${agentId}):`, error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * GET /api/acp/agents/config
+   * 读取 ~/.clover/acp.json 中已安装的 agent 配置列表（registry + disk 安装的 agent）。
+   */
+  app.get('/api/acp/agents/config', (_req: Request, res: Response) => {
+    try {
+      const config = readAcpConfigFile();
+      res.json({ success: true, agents: config.agents });
+    } catch (error) {
+      logger.error('[ACP Routes] Read acp config error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/acp/agents/config
+   * 写入/更新 ~/.clover/acp.json 中的 agent 配置（按 id 去重：存在则更新，不存在则追加）。
+   * Body: { agent: AgentConfig }
+   */
+  app.post('/api/acp/agents/config', (req: Request, res: Response) => {
+    const { agent } = req.body;
+    if (!agent || typeof agent.id !== 'string' || typeof agent.command !== 'string') {
+      res.status(400).json({ error: 'agent.id and agent.command are required' });
+      return;
+    }
+
+    try {
+      const config = readAcpConfigFile();
+      const existing = config.agents.findIndex(a => a.id === agent.id);
+      const entry: AgentConfig = {
+        ...agent,
+        installed: true,
+        installedAt: agent.installedAt ?? new Date().toISOString(),
+        source: agent.source ?? 'registry',
+      };
+      if (existing >= 0) {
+        config.agents[existing] = { ...config.agents[existing], ...entry };
+      } else {
+        config.agents.push(entry);
+      }
+      writeAcpConfigFile(config);
+
+      // Dynamically register into the in-memory AgentRegistry so the new agent
+      // is immediately usable without restarting the server.
+      if (registry) {
+        void registry.addConfig(entry).catch((error) => {
+          logger.warn(`[ACP Routes] Failed to add agent config to registry (agent: ${agent.id}):`, error);
+        });
+      }
+
+      res.json({ success: true, agent: entry });
+    } catch (error) {
+      logger.error(`[ACP Routes] Save acp agent config error (agent: ${agent.id}):`, error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * DELETE /api/acp/agents/config/:agentId
+   * 从 ~/.clover/acp.json 中移除已安装的 agent 配置。
+   */
+  app.delete('/api/acp/agents/config/:agentId', (req: Request, res: Response) => {
+    const agentId = String(req.params.agentId);
+    try {
+      const config = readAcpConfigFile();
+      const filtered = config.agents.filter(a => a.id !== agentId);
+      if (filtered.length === config.agents.length) {
+        res.status(404).json({ error: `Agent not found: ${agentId}` });
+        return;
+      }
+      config.agents = filtered;
+      writeAcpConfigFile(config);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error(`[ACP Routes] Delete acp agent config error (agent: ${agentId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });

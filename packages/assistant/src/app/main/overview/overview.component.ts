@@ -1,6 +1,5 @@
 import { Component, computed, inject, output } from '@angular/core';
 import { AcpService } from '../../shared/acp/acp.service';
-import { AVAILABLE_AGENTS } from '../../shared/acp/acp-agent.types';
 
 /**
  * Overview 面板：只展示当前激活 session/task 的派生信息，完全依赖 AcpService，
@@ -56,7 +55,7 @@ export class OverviewComponent {
       );
       if (sessionInfo.agentId) agentId = sessionInfo.agentId;
     }
-    const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
+    const agent = this.acpService.findInstalledAgent(agentId);
     if (!agent) return null;
     const badges: Record<string, string> = {
       opencode: 'OC', claude: 'CL', codex: 'CX', gemini: 'GM', qwen: 'QW', augment: 'AU'

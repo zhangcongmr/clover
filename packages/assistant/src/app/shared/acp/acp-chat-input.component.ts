@@ -2,7 +2,6 @@ import { Component, inject, signal, computed, ViewChild, ElementRef, HostListene
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
-import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
@@ -994,7 +993,10 @@ export class AcpChatInputComponent {
   projectSelectedIndex = signal<number>(0);
   mcpServers = signal<McpServerOption[]>([]);
   selectedMcpServers = signal<Set<string>>(new Set());
-  protected agents = AVAILABLE_AGENTS;
+  /** Installed agents (from ~/.clover/acp.json), used by the agent dropdown. */
+  protected get agents(): AgentConfig[] {
+    return this.acpService.installedAgents();
+  }
 
   readonly modeConfig = computed(() => {
     const options = this.acpService.sessionState().configOptions;

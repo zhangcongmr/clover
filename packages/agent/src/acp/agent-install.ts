@@ -274,10 +274,12 @@ function readPostinstallScript(packageDir: string): string | null {
 function buildSteps(agentCommand: string, target: AgentInstallTarget): InstallStepSpec[] {
   if (target === 'adapter') {
     const workspaceRoot = findWorkspaceRoot();
+    if (!workspaceRoot) return [];
     const adapterPackage = localAgentPackage(agentCommand);
-    if (!workspaceRoot || !adapterPackage) return [];
     return [{
-      label: `Install ACP adapter (${adapterPackage})`,
+      label: adapterPackage
+        ? `Install ACP adapter (${adapterPackage})`
+        : `Install ACP adapter (pnpm install)`,
       command: packageManagerBin('pnpm'),
       args: ['install'],
       cwd: workspaceRoot,
