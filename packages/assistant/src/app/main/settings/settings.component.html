@@ -94,6 +94,30 @@
             <span class="setting-label">Agents</span>
             <p class="setting-desc">ACP agents pre-warmed by the local server</p>
           </div>
+          <div class="agents-actions">
+            <button
+              class="btn btn-secondary"
+              (click)="toggleAgentMenu($event)"
+            >
+              + Add Agent
+            </button>
+            <div
+              ast-menu
+              [isOpen]="agentMenuOpen"
+              (isOpenChange)="agentMenuOpen = $event"
+              [menuInitiator]="agentMenuInitiator"
+              class="agent-add-dropdown ast-right-menu"
+            >
+              <div class="ast-menu-every-item agent-menu-item" (click)="openRegistryDialog()">
+                <div class="agent-menu-title">+ Install From ACP Registry...</div>
+                <div class="agent-menu-desc">Install an agent from the ACP registry</div>
+              </div>
+              <div class="ast-menu-every-item agent-menu-item" (click)="onAddAgentFromDisk()">
+                <div class="agent-menu-title">+ Add Agent From Disk...</div>
+                <div class="agent-menu-desc">Add a local agent from the filesystem</div>
+              </div>
+            </div>
+          </div>
           <div class="setting-control agents-control">
             <div class="agents-list">
               @for (agent of agents(); track agent.id) {
@@ -172,6 +196,14 @@
             </div>
           </div>
         </div>
+
+        <app-acp-registry-dialog
+          [visible]="registryDialogVisible"
+          (close)="onRegistryDialogClose()"
+          (install)="onAgentInstall($event)"
+          (ok)="onRegistryDialogOk()"
+          (apply)="onRegistryDialogApply()"
+        ></app-acp-registry-dialog>
 
         <!-- Folder Read/Write Mode -->
         <div class="setting-item">
