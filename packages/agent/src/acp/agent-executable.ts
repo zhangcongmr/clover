@@ -95,10 +95,43 @@ export function probePathCommand(command: string): PathCommandProbe {
   }
 
   const candidates = wherePaths(command);
-  const exe = candidates.find(path => path.toLowerCase().endsWith('.exe'));
-  const shim = candidates.find(path => /\.(cmd|bat)$/i.test(path));
+  return { found: candidates.length > 0, path: resolveCliWindows(command, candidates, []) };
+}
 
-  return { found: candidates.length > 0, path: exe ?? shim ?? candidates[0] };
+/**
+ * Resolve Windows PATH hits for an agent CLI into the most native path.
+ *
+ * Preference order: a bare `.exe` on PATH, an executable referenced by a
+ * `.cmd`/`.bat` shim, and finally the shim itself — spawnable through cmd.exe,
+ * which is exactly how ACP adapters launch the CLI on Windows. Shims whose
+ * target is only a JS entry (e.g. @openai/codex) keep the shim: the wrapper
+ * resolves its own platform binary, with no need to guess package layouts.
+ *
+ * `probePathCommand` (display/probe for plain CLI agents) and `locateCliWindows`
+ * (adapter agents) share this, so both resolve to the same artifact.
+ */
+function resolveCliWindows(
+  command: string,
+  candidates: string[],
+  fallbackDirs: string[],
+): string | null {
+  const shims = candidates
+    .filter(path => /\.(cmd|bat)$/i.test(path))
+    .concat(fallbackDirs.map(dir => join(dir, `${command}.cmd`)))
+    .filter(shim => existsSync(shim));
+
+  // Spawnable without a shell: bare exes, then whatever a shim executes.
+  const nativeCandidates = [
+    ...candidates.filter(path => path.toLowerCase().endsWith('.exe')),
+    ...fallbackDirs.map(dir => join(dir, `${command}.exe`)),
+    ...shims.flatMap(shim => shimTargets(shim)),
+  ];
+
+  for (const candidate of nativeCandidates) {
+    if (candidate && existsSync(candidate)) return candidate;
+  }
+
+  return shims[0] ?? null;
 }
 
 /** npm package that provides an agent CLI (installed globally by the user). */
@@ -420,7 +453,6 @@ function locateCli(command: string): string | null {
 
 function locateCliWindows(command: string): string | null {
   const candidates = wherePaths(command);
-  const exeName = `${command}.exe`;
 
   // PATH is not the only place npm/pnpm put global bins: a server started by a
   // service, PM2 or an IDE can inherit a PATH that lacks the user's install
@@ -434,29 +466,7 @@ function locateCliWindows(command: string): string | null {
     join(process.env['USERPROFILE'] ?? '', '.local', 'bin'),
   ].filter(dir => !!dir);
 
-  const nativeCandidates = [
-    ...candidates.filter(path => path.toLowerCase().endsWith('.exe')),
-    ...candidates.flatMap(shimTargets),
-    ...fallbackDirs.flatMap(dir => [join(dir, exeName), ...shimTargets(join(dir, `${command}.cmd`))]),
-  ];
-
-  for (const candidate of nativeCandidates) {
-    if (candidate && existsSync(candidate)) return candidate;
-  }
-
-  // Some CLIs (e.g. @openai/codex) put a JS entry behind the shim instead of a
-  // native binary, so nothing executable can be extracted from it. The shim is
-  // still spawnable through cmd.exe — which is exactly how ACP adapters launch
-  // the CLI on Windows — so fall back to it rather than reporting "not found".
-  const shims = [
-    ...candidates.filter(path => /\.(cmd|bat)$/i.test(path)),
-    ...fallbackDirs.map(dir => join(dir, `${command}.cmd`)),
-  ];
-
-  for (const shim of shims) {
-    if (existsSync(shim)) return shim;
-  }
-  return null;
+  return resolveCliWindows(command, candidates, fallbackDirs);
 }
 
 function locateCliPosix(command: string): string | null {
@@ -495,12 +505,13 @@ function wherePaths(command: string): string[] {
 }
 
 /**
- * Resolve the real executable referenced by an npm/pnpm `.cmd` shim, e.g.
+ * Resolve executables referenced by an npm/pnpm `.cmd` shim, e.g.
  * `"%_prog%"  "%dp0%\node_modules\@anthropic-ai\claude-code\bin\claude.exe" %*`.
  *
  * Only the line that forwards `%*` is inspected: npm shims also probe helpers
  * on earlier lines (`IF EXIST "%dp0%\node.exe"`), and picking those up would
- * resolve the CLI to the Node binary.
+ * resolve the CLI to the Node binary. Shims whose target is a script (`.js`)
+ * yield nothing here — the shim itself is then used as the launch path.
  */
 function shimTargets(shimPath: string): string[] {
   if (!/\.(cmd|bat)$/i.test(shimPath)) return [];
@@ -513,15 +524,15 @@ function shimTargets(shimPath: string): string[] {
       if (!line.includes('%*')) continue;
 
       // `%dp0%` (npm) and `%~dp0%` (pnpm) both expand to the shim directory.
-      for (const match of line.matchAll(/"%~?dp0%\\([^"]+?\.(?:exe|cmd))"/gi)) {
+      for (const match of line.matchAll(/"%~?dp0%\\([^"]+?\.(?:exe|com))"/gi)) {
         targets.push(join(shimDir, match[1]));
       }
-      for (const match of line.matchAll(/"([A-Za-z]:\\[^"]+?\.exe)"/gi)) {
+      for (const match of line.matchAll(/"([A-Za-z]:\\[^"]+?\.(?:exe|com))"/gi)) {
         targets.push(match[1]);
       }
     }
 
-    return targets;
+    return [...new Set(targets)];
   } catch {
     return [];
   }
