@@ -463,16 +463,16 @@ export class SettingsComponent {
     this.registryDialogVisible = false;
 
     // Map registry agent to AgentConfig for persistence.
+    // Do NOT map npx distribution to command: 'npx' — npx itself is already
+    // installed and the backend would wrongly skip installation. Keep the
+    // agent id as the command so the backend can probe and install it.
     const dist = (agent as any).distribution;
-    let command = agent.id;
     let args: string[] = [];
     let env: Record<string, string> | undefined;
     if (dist?.npx) {
-      command = 'npx';
       args = [dist.npx.package, ...(dist.npx.args ?? [])];
       env = dist.npx.env;
     } else if (dist?.uvx) {
-      command = 'uvx';
       args = [dist.uvx.package, ...(dist.uvx.args ?? [])];
       env = dist.uvx.env;
     }
@@ -480,7 +480,7 @@ export class SettingsComponent {
     const agentConfig: AgentConfig = {
       id: agent.id,
       name: agent.name,
-      command,
+      command: agent.id,
       args,
       env,
       description: agent.description,

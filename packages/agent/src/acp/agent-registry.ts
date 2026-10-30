@@ -5,7 +5,7 @@ import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig } from './acp-agent.types.js';
 import { inspectAgentCommand, invalidateAgentCommandCache, localAgentPackage, probeAgentVersion, probePathCommand, resolveAgentCommand } from './agent-executable.js';
 import { installCommandFor, startAgentInstall } from './agent-install.js';
-import type { AgentInstallJob } from './agent-install.js';
+import type { AgentInstallJob, AgentInstallTarget } from './agent-install.js';
 import type { EventSink } from '../events/event-sink.js';
 
 /**
@@ -421,9 +421,16 @@ export class AgentRegistry {
    */
   startInstall(agentId: string): AgentInstallJob | null {
     const state = this.statesById.get(agentId);
-    if (!state?.missing) return null;
+    if (!state) return null;
 
-    return startAgentInstall(agentId, state.config.command, state.missing, () => {
+    // For user-installed agents (registry / disk), always attempt installation
+    // even when the probe command itself is on PATH — the missing piece is the
+    // agent package, not the wrapper. Built-in agents rely on `missing`.
+    const isUserInstalled = state.config.source === 'registry' || state.config.source === 'disk';
+    const target: AgentInstallTarget = isUserInstalled ? 'adapter' : (state.missing ?? 'cli');
+    if (!isUserInstalled && !state.missing) return null;
+
+    return startAgentInstall(agentId, state.config.command, target, () => {
       // Re-probe and try to connect as soon as the installer finishes.
       void this.checkNow(agentId).catch(() => undefined);
     });
