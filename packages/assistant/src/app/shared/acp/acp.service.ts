@@ -18,7 +18,6 @@ import {
   ToolKind,
   ConfigOption,
 } from './acp.model';
-import { AVAILABLE_AGENTS } from './acp-agent.types';
 import type { AgentConfig } from './acp-agent.types';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 import { ACP_READ_ONLY } from './acp-readonly.token';
@@ -35,13 +34,17 @@ const AGENT_STORAGE_KEY = 'clover_selected_agent';
  */
 const REPLAY_COMPLETE_TIMEOUT_MS = 10_000;
 
-function getInitialAgent(): AgentConfig {
+/**
+ * Picks the initial agent from the installed-agent list: the one stored in
+ * localStorage when it still exists, otherwise the first installed agent.
+ */
+function pickInitialAgent(list: AgentConfig[]): AgentConfig | null {
   if (typeof localStorage !== 'undefined') {
     const id = localStorage.getItem(AGENT_STORAGE_KEY);
-    const saved = AVAILABLE_AGENTS.find(a => a.id === id);
+    const saved = list.find(a => a.id === id);
     if (saved) return saved;
   }
-  return AVAILABLE_AGENTS[0];
+  return list[0] ?? null;
 }
 
 export interface AcpMessage {
@@ -187,7 +190,9 @@ export class AcpService {
   readonly pendingSlashCommand = signal<string | null>(null);
 
   // Agent selection
-  readonly selectedAgent = signal<AgentConfig | null>(getInitialAgent());
+  /** Installed agents loaded from ~/.clover/acp.json via the backend. */
+  readonly installedAgents = signal<AgentConfig[]>([]);
+  readonly selectedAgent = signal<AgentConfig | null>(null);
 
   // Question answers tracking: toolCallId -> Set of submitted toolCallIds
   readonly submittedQuestions = signal<Set<string>>(new Set());
@@ -240,6 +245,7 @@ export class AcpService {
   readonly hasActiveQuestions = computed(() => this.activeQuestionsMessages().length > 0);
 
   constructor() {
+    void this.loadInstalledAgents();
     effect(() => {
       const agent = this.selectedAgent();
       if (typeof localStorage !== 'undefined' && !this.readOnly) {
@@ -257,6 +263,29 @@ export class AcpService {
       });
     });
     this.setupSseCallbacks();
+  }
+
+  /**
+   * Loads the installed-agent list from the backend (~/.clover/acp.json).
+   * This replaces the static AVAILABLE_AGENTS template: only agents the user
+   * actually installed (via ACP Registry or Add Agent From Disk) are listed.
+   */
+  async loadInstalledAgents(): Promise<void> {
+    try {
+      const agents = await this.sseService.listInstalledAgents();
+      this.installedAgents.set(agents);
+      if (!this.selectedAgent()) {
+        this.selectedAgent.set(pickInitialAgent(agents));
+      }
+    } catch {
+      // Backend unreachable: keep whatever we already have (possibly empty).
+    }
+  }
+
+  /** Looks up an installed agent's config by id. */
+  findInstalledAgent(agentId: string | undefined): AgentConfig | undefined {
+    if (!agentId) return undefined;
+    return this.installedAgents().find(a => a.id === agentId);
   }
 
   public getSelectedProjectInfo(selectedProjectPath: string | null): ProjectInfo | null {
@@ -869,7 +898,13 @@ export class AcpService {
       }
 
       // 聚合一次调用：服务端逐个 agent create/connect/list/清理
-      const result = await this.sseService.listAllSessions(targetCwd, AVAILABLE_AGENTS);
+      let agents = this.installedAgents();
+      if (agents.length === 0) {
+        await this.loadInstalledAgents();
+        agents = this.installedAgents();
+      }
+      if (agents.length === 0) return;
+      const result = await this.sseService.listAllSessions(targetCwd, agents);
       const allSessions: SessionInfo[] = result?.sessions ?? [];
 
       if (cwd) {
@@ -1053,7 +1088,7 @@ export class AcpService {
   }
 
   async switchAgent(agentId: string, cwd?: string): Promise<void> {
-    const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
+    const agent = this.findInstalledAgent(agentId);
     if (!agent) {
       throw new Error(`Agent ${agentId} not found`);
     }

@@ -4,7 +4,6 @@ import { AcpService } from '../../../shared/acp/acp.service';
 import { AcpSseService } from '../../../shared/acp/acp-sse.service';
 import { ACP_READ_ONLY } from '../../../shared/acp/acp-readonly.token';
 import { AcpChatComponent } from '../../../shared/acp/acp-chat.component';
-import { AVAILABLE_AGENTS } from '../../../shared/acp/acp-agent.types';
 import type { CollabSessionTarget } from './collab.service';
 
 /**
@@ -128,12 +127,13 @@ export class CollabSessionDetailComponent implements OnDestroy {
 
   /**
    * `AcpService.loadSession` refuses unknown agent ids (it resolves the config
-   * from `AVAILABLE_AGENTS`). Collab participants come from the backend agent
-   * registry, so only pass ids the frontend can actually resolve — otherwise the
-   * session records own agent is used (backend resolves it from `agentId` too).
+   * from the installed-agent list loaded from ~/.clover/acp.json). Collab
+   * participants come from the backend agent registry, so only pass ids the
+   * frontend can actually resolve — otherwise the session records own agent is
+   * used (backend resolves it from `agentId` too).
    */
   private resolvableAgentId(agentId: string | undefined): string | undefined {
     if (!agentId) return undefined;
-    return AVAILABLE_AGENTS.some(agent => agent.id === agentId) ? agentId : undefined;
+    return this.acp.findInstalledAgent(agentId) ? agentId : undefined;
   }
 }

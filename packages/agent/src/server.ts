@@ -112,7 +112,7 @@ export function setupAgentMiddleware(
   setupAcpRoutes(app, { tokenManager, sessionManager, sseManager, fileService, mcpRegistry, registry: agentRegistry });
 
   // A2A collaboration routes (orchestrator + per-agent bridges + spaces)
-  setupA2aCollabRoutes(app, { tokenManager, sessionManager });
+  setupA2aCollabRoutes(app, { tokenManager, sessionManager, registry: agentRegistry });
 
   // MCP routes
   app.use('/api/mcp', createMcpRoutes(mcpRegistry));

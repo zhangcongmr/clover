@@ -4,7 +4,7 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import { createRequireAuth } from '../middleware.js';
 import type { TokenManager } from '../../agent/auth.js';
 import type { AcpSessionManager } from '../../acp/session-manager.js';
-import { AVAILABLE_AGENTS } from '../../acp/acp-agent.types.js';
+import type { AgentRegistry } from '../../acp/agent-registry.js';
 import { buildCollabAgentCard } from './agent-card.js';
 import { CollabSpaceStore } from './spaces.js';
 import { BridgeRunner } from './bridge-runner.js';
@@ -14,6 +14,8 @@ import { createA2aBundle, type A2aBundle } from './bundles.js';
 export interface A2aCollabRouteOptions {
   tokenManager: TokenManager;
   sessionManager: AcpSessionManager;
+  /** Agent registry (loaded from ~/.clover/acp.json at startup). */
+  registry: AgentRegistry;
 }
 
 function fallbackBaseUrl(): string {
@@ -54,13 +56,13 @@ function agentSkill(agentId: string, name: string, description: string) {
  * All routes require a bearer (or `?token=`) auth token.
  */
 export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOptions): void {
-  const { tokenManager, sessionManager } = options;
+  const { tokenManager, sessionManager, registry: agentRegistry } = options;
   const requireAuth = createRequireAuth(tokenManager);
 
-  const spaces = new CollabSpaceStore(sessionManager);
+  const spaces = new CollabSpaceStore(sessionManager, agentRegistry);
   const timeoutMs = Number(process.env.A2A_BRIDGE_TIMEOUT_MS) || 10 * 60 * 1000;
   const routeTimeoutMs = Number(process.env.A2A_ROUTE_TIMEOUT_MS) || 30 * 1000;
-  const runner = new BridgeRunner(sessionManager, spaces, timeoutMs, routeTimeoutMs);
+  const runner = new BridgeRunner(sessionManager, spaces, agentRegistry, timeoutMs, routeTimeoutMs);
 
   app.use('/api/a2a', requireAuth);
 
@@ -151,7 +153,7 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
   const agentBundles = new Map<string, A2aBundle>();
 
   function getAgentBundle(agentId: string, baseUrl: string): A2aBundle {
-    const config = AVAILABLE_AGENTS.find(agent => agent.id === agentId);
+    const config = agentRegistry.getAgentConfig(agentId);
     if (!config) {
       throw new Error(`Unknown agent: ${agentId}`);
     }

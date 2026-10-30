@@ -20,12 +20,8 @@ import type { EventSink } from '../events/event-sink.js';
  */
 export type AgentRuntimeStatus = 'unknown' | 'available' | 'unavailable' | 'offline' | 'connected';
 
-export interface AgentStatusInfo {
-  id: string;
-  name: string;
-  command: string;
-  args?: string[];
-  description?: string;
+export interface AgentStatusInfo
+  extends Pick<AgentConfig, 'id' | 'name' | 'command' | 'args' | 'description'> {
   installed: boolean | null;
   status: AgentRuntimeStatus;
   agentInfo?: unknown;
@@ -434,6 +430,16 @@ export class AgentRegistry {
       // Re-probe and try to connect as soon as the installer finishes.
       void this.checkNow(agentId).catch(() => undefined);
     });
+  }
+
+  /**
+   * Look up a registered agent's full config by id.
+   * Returns null when the agent id is unknown (not present in the installed
+   * agent list loaded from ~/.clover/acp.json).
+   */
+  getAgentConfig(agentId: string): AgentConfig | null {
+    const state = this.statesById.get(agentId);
+    return state ? state.config : null;
   }
 
   /**
