@@ -497,9 +497,6 @@ export class SettingsComponent {
    *  register it in the backend AgentRegistry, then kick off installation. */
   async onAgentInstalled(agentConfig: AgentConfig): Promise<void> {
     try {
-      // 1. Persist to ~/.clover/acp.json (backend also registers it in AgentRegistry)
-      await this.sseService.saveInstalledAgent(agentConfig);
-
       // 2. Start installation (polls job until done)
       this.installingAgentId.set(agentConfig.id);
       this.agentsError.set(null);

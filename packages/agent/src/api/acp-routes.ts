@@ -3,7 +3,6 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { AcpSessionManager } from '../acp/session-manager.js';
-import { getInstallJob } from '../acp/agent-install.js';
 import type { AgentRegistry } from '../acp/agent-registry.js';
 import type { AgentConfig } from '../acp/acp-agent.types.js';
 import { SseManager, StreamConflictError } from '../acp/sse-manager.js';
@@ -732,84 +731,6 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
   });
 
-  /**
-   * GET /api/acp/agents/config
-   * 读取 ~/.clover/acp.json 中已安装的 agent 配置列表（registry + disk 安装的 agent）。
-   */
-  app.get('/api/acp/agents/config', (_req: Request, res: Response) => {
-    try {
-      const config = readAcpConfigFile();
-      res.json({ success: true, agents: config.agents });
-    } catch (error) {
-      logger.error('[ACP Routes] Read acp config error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  /**
-   * POST /api/acp/agents/config
-   * 写入/更新 ~/.clover/acp.json 中的 agent 配置（按 id 去重：存在则更新，不存在则追加）。
-   * Body: { agent: AgentConfig }
-   */
-  app.post('/api/acp/agents/config', (req: Request, res: Response) => {
-    const { agent } = req.body;
-    if (!agent || typeof agent.id !== 'string' || typeof agent.command !== 'string') {
-      res.status(400).json({ error: 'agent.id and agent.command are required' });
-      return;
-    }
-
-    try {
-      const config = readAcpConfigFile();
-      const existing = config.agents.findIndex(a => a.id === agent.id);
-      const entry: AgentConfig = {
-        ...agent,
-        installed: true,
-        installedAt: agent.installedAt ?? new Date().toISOString(),
-        source: agent.source ?? 'registry',
-      };
-      if (existing >= 0) {
-        config.agents[existing] = { ...config.agents[existing], ...entry };
-      } else {
-        config.agents.push(entry);
-      }
-      writeAcpConfigFile(config);
-
-      // Dynamically register into the in-memory AgentRegistry so the new agent
-      // is immediately usable without restarting the server.
-      if (registry) {
-        void registry.addConfig(entry).catch((error) => {
-          logger.warn(`[ACP Routes] Failed to add agent config to registry (agent: ${agent.id}):`, error);
-        });
-      }
-
-      res.json({ success: true, agent: entry });
-    } catch (error) {
-      logger.error(`[ACP Routes] Save acp agent config error (agent: ${agent.id}):`, error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
-
-  /**
-   * DELETE /api/acp/agents/config/:agentId
-   * 从 ~/.clover/acp.json 中移除已安装的 agent 配置。
-   */
-  app.delete('/api/acp/agents/config/:agentId', (req: Request, res: Response) => {
-    const agentId = String(req.params.agentId);
-    try {
-      const config = readAcpConfigFile();
-      const filtered = config.agents.filter(a => a.id !== agentId);
-      if (filtered.length === config.agents.length) {
-        res.status(404).json({ error: `Agent not found: ${agentId}` });
-        return;
-      }
-      config.agents = filtered;
-      writeAcpConfigFile(config);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(`[ACP Routes] Delete acp agent config error (agent: ${agentId}):`, error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
 
   /**
    * POST /api/acp/ping
@@ -869,16 +790,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接）
    */
   app.get('/api/acp/agents', (_req: Request, res: Response) => {
-    if (!registry) {
-      res.status(503).json({ error: 'Agent registry not initialized' });
-      return;
-    }
-    try {
-      res.json({ agents: registry.getStatus() });
-    } catch (error) {
-      logger.error('[ACP Routes] List agents error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
+    //TODO: List all agents and their status
   });
 
   /**
@@ -886,41 +798,11 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * Check Now：重新检测安装状态并尝试将 Agent 拉起到“连接”状态
    */
   app.post('/api/acp/agents/:id/check', async (req: Request, res: Response) => {
-    if (!registry) {
-      res.status(503).json({ error: 'Agent registry not initialized' });
-      return;
-    }
-    try {
-      const agent = await registry.checkNow(String(req.params.id));
-      res.json({ agent });
-    } catch (error) {
-      logger.error(`[ACP Routes] Check agent error (agent: ${req.params.id}):`, error);
-      const message = (error as Error).message;
-      res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
-    }
+    //TODO: Check agent status and try to connect
   });
 
-  /**
-   * POST /api/acp/agents/:id/install
-   * 安装缺失的组件（Agent CLI 或 ACP 适配器），安装完成后自动重新探测并尝试连接
-   */
   app.post('/api/acp/agents/:id/install', (req: Request, res: Response) => {
-    if (!registry) {
-      res.status(503).json({ error: 'Agent registry not initialized' });
-      return;
-    }
-    const agentId = String(req.params.id);
-    try {
-      const job = registry.startInstall(agentId);
-      if (!job) {
-        res.status(409).json({ error: `Nothing to install for agent: ${agentId}` });
-        return;
-      }
-      res.json({ job });
-    } catch (error) {
-      logger.error(`[ACP Routes] Install agent error (agent: ${agentId}):`, error);
-      res.status(500).json({ error: (error as Error).message });
-    }
+    //TODO: Install agent
   });
 
   /**
@@ -928,12 +810,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 安装任务进度（设置页轮询）
    */
   app.get('/api/acp/agents/install/:jobId', (req: Request, res: Response) => {
-    const job = getInstallJob(String(req.params.jobId));
-    if (!job) {
-      res.status(404).json({ error: 'Install job not found' });
-      return;
-    }
-    res.json({ job });
+    //TODO: Get agent install job progress
   });
 
   // ============================================================================

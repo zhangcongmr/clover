@@ -3,7 +3,6 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { Writable, Readable } from 'node:stream';
 import type { Stream } from '@agentclientprotocol/sdk';
 import { ndJsonStream } from '@agentclientprotocol/sdk';
-import { resolveAgentCommand } from './agent-executable.js';
 
 export interface AgentProcessConfig {
   command: string;
@@ -41,8 +40,6 @@ export class AgentProcess {
     }
 
     const { command, args = [], env } = config;
-    // Agents that need an ACP adapter run the project-local adapter entry;
-    // agents with a native ACP mode run the user's CLI from PATH.
     const resolved = resolveAgentCommand(command, args);
 
     logger.log(`${this.tag('ACP AgentProcess')} Spawning: ${resolved.command} ${resolved.args.join(' ')}`);

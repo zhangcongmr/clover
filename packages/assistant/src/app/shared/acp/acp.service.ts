@@ -245,7 +245,6 @@ export class AcpService {
   readonly hasActiveQuestions = computed(() => this.activeQuestionsMessages().length > 0);
 
   constructor() {
-    void this.loadInstalledAgents();
     effect(() => {
       const agent = this.selectedAgent();
       if (typeof localStorage !== 'undefined' && !this.readOnly) {
@@ -271,15 +270,7 @@ export class AcpService {
    * actually installed (via ACP Registry or Add Agent From Disk) are listed.
    */
   async loadInstalledAgents(): Promise<void> {
-    try {
-      const agents = await this.sseService.listInstalledAgents();
-      this.installedAgents.set(agents);
-      if (!this.selectedAgent()) {
-        this.selectedAgent.set(pickInitialAgent(agents));
-      }
-    } catch {
-      // Backend unreachable: keep whatever we already have (possibly empty).
-    }
+    // TODO: Load installed agents from backend (currently unimplemented)
   }
 
   /** Looks up an installed agent's config by id. */
@@ -900,7 +891,6 @@ export class AcpService {
       // 聚合一次调用：服务端逐个 agent create/connect/list/清理
       let agents = this.installedAgents();
       if (agents.length === 0) {
-        await this.loadInstalledAgents();
         agents = this.installedAgents();
       }
       if (agents.length === 0) return;
