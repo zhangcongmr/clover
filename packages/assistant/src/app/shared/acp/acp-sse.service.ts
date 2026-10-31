@@ -33,6 +33,8 @@ export interface AgentStatusInfo {
   description?: string;
   installed: boolean | null;
   status: AgentRuntimeStatus;
+  /** 来源：builtin 内置、registry 来自 ACP Registry、disk 来自本地磁盘。 */
+  source?: 'builtin' | 'registry' | 'disk';
   agentInfo?: unknown;
   capabilities?: unknown;
   error?: string;
@@ -531,6 +533,24 @@ export class AcpSseService {
     return response.json();
   }
 
+  private async delete(endpoint: string): Promise<any> {
+    const token = await this.localAgentService.getToken();
+    const base = this.localAgentService.getBaseUrl();
+
+    const response = await fetch(`${base}${endpoint}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(await this.describeResponseError(response));
+    }
+
+    return response.json();
+  }
+
   /**
    * Builds a friendly error message from a non-OK response. Servers may return
    * JSON, plain text, or an HTML error page (e.g. Express body-parser 413), so
@@ -703,9 +723,29 @@ export class AcpSseService {
   }
 
 
-  async startAgentInstall(agentId: string): Promise<AgentInstallJob> {
-    const result = await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/install`, {});
+  /**
+   * 安装一个 agent（后台 job）。Body 为完整的 AgentInstallRequest：
+   * AgentConfig + registry 的 distribution 块（source=registry 时必填）。
+   */
+  async startAgentInstall(agentConfig: AgentConfig & { distribution?: any }): Promise<AgentInstallJob> {
+    const result = await this.post('/api/acp/agents/install', agentConfig);
     return result.job as AgentInstallJob;
+  }
+
+  /**
+   * 读取 ~/.clover/acp.json 中已安装的 agent 配置列表（registry / disk 安装的 agent）。
+   * 复用 GET /api/acp/agents 的 installedConfigs 字段。
+   */
+  async listInstalledAgents(): Promise<AgentConfig[]> {
+    const result = await this.get('/api/acp/agents');
+    return Array.isArray(result?.installedConfigs) ? result.installedConfigs : [];
+  }
+
+  /**
+   * 卸载已安装的 agent：清理安装产物并从 ~/.clover/acp.json 移除配置。
+   */
+  async uninstallAgent(agentId: string): Promise<void> {
+    await this.delete(`/api/acp/agents/${encodeURIComponent(agentId)}/uninstall`);
   }
 
   /**

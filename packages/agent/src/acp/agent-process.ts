@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { Writable, Readable } from 'node:stream';
 import type { Stream } from '@agentclientprotocol/sdk';
 import { ndJsonStream } from '@agentclientprotocol/sdk';
+import { resolveForSpawn } from './agent-probe.js';
 
 export interface AgentProcessConfig {
   command: string;
@@ -40,7 +41,7 @@ export class AgentProcess {
     }
 
     const { command, args = [], env } = config;
-    const resolved = resolveAgentCommand(command, args);
+    const resolved = resolveForSpawn(command, args);
 
     logger.log(`${this.tag('ACP AgentProcess')} Spawning: ${resolved.command} ${resolved.args.join(' ')}`);
 
@@ -49,7 +50,6 @@ export class AgentProcess {
       shell: resolved.shell,
       env: {
         ...process.env,
-        ...resolved.env,
         ...env,
         // NOTE: Do NOT add OPENCODE_ENABLE_QUESTION_TOOL here. Enabling the question
         // tool in ACP mode causes the agent to block indefinitely after the user
