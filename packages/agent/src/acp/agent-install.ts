@@ -185,9 +185,13 @@ export function startInstall(
  * (binary installs). npx/uvx agents have no managed artifacts; their config
  * entry is dropped and the npm/uv caches are left alone.
  *
+ * The caller must have stopped the agent's process first (registry
+ * removeConfig disconnects and waits); removal still retries briefly since
+ * Windows can release the executable's file lock a moment late.
+ *
  * Returns true when on-disk artifacts were removed.
  */
-export function uninstallAgentArtifacts(config: AgentConfig): boolean {
+export async function uninstallAgentArtifacts(config: AgentConfig): Promise<boolean> {
   // Path-traversal guard: never resolve an agent id outside the managed root.
   if (!config.id || /[/\\]|\.\./.test(config.id)) return false;
 
@@ -196,14 +200,40 @@ export function uninstallAgentArtifacts(config: AgentConfig): boolean {
   const command = config.command ?? '';
 
   if (!command.startsWith(root) || !command.startsWith(installDir)) return false;
+  if (!existsSync(installDir)) return false;
 
-  rmSync(installDir, { recursive: true, force: true });
-  return true;
+  // Belt & suspenders: kill any orphaned processes whose executable still
+  // lives under the install dir. Agents like agy_acp_server.exe re-exec
+  // themselves, so the tree-kill on disconnect can still leave orphans that
+  // keep the directory locked (Windows EPERM on rm).
+  killProcessesUnderDir(installDir);
+
+  const attempts = 5;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      rmSync(installDir, { recursive: true, force: true });
+      logger.log(`[AgentInstall] Removed install dir: ${installDir}`);
+      return true;
+    } catch (error) {
+      if (attempt >= attempts) {
+        logger.error(`[AgentInstall] Failed to remove ${installDir} after ${attempts} attempts:`, error);
+        throw error;
+      }
+      // EBUSY/EPERM: the exe's file lock is not released yet — wait and retry.
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
+  }
 }
 
 /** Uninstall helper: remove on-disk artifacts AND drop the acp.json entry. */
-export function uninstallAgent(config: AgentConfig): boolean {
-  const artifactsRemoved = uninstallAgentArtifacts(config);
+export async function uninstallAgent(config: AgentConfig): Promise<boolean> {
+  let artifactsRemoved = false;
+  try {
+    artifactsRemoved = await uninstallAgentArtifacts(config);
+  } catch (error) {
+    logger.error(`[AgentInstall] Uninstall artifact cleanup failed for "${config.id}":`, error);
+    throw error;
+  }
   removeAcpAgent(config.id);
   logger.log(`[AgentInstall] Agent "${config.id}" uninstalled (artifacts removed: ${artifactsRemoved})`);
   return artifactsRemoved;
@@ -430,6 +460,35 @@ function extractArchive(archivePath: string, archive: Buffer, destDir: string): 
 
   // Raw binary: write the downloaded bytes as-is, keeping the declared name.
   writeFileSync(join(destDir, basename(archivePath)), archive);
+}
+
+/**
+ * Kill every process whose executable lives under `dir`.
+ *
+ * Uninstall safety net for agents that spawn their own children (or re-exec
+ * themselves): after the registry tears down the warm connection, orphaned
+ * subprocesses can still hold the install directory locked. On Windows the
+ * scan runs through PowerShell's Win32_Process (path filter) and kills each
+ * hit with `taskkill /T /F`; on POSIX `pkill -f` matches the cmdline path.
+ */
+function killProcessesUnderDir(dir: string): void {
+  try {
+    if (process.platform === 'win32') {
+      const likePath = `${dir.replace(/'/g, "''")}\\*`;
+      const script =
+        `Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and ` +
+        `$_.ExecutablePath -like '${likePath}' } | ` +
+        `ForEach-Object { taskkill /PID $_.ProcessId /T /F 2>$null }`;
+      spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], {
+        windowsHide: true,
+        timeout: 15000,
+      });
+    } else {
+      spawnSync('pkill', ['-f', dir], { windowsHide: true, timeout: 5000 });
+    }
+  } catch (error) {
+    logger.warn(`[AgentInstall] Orphan process scan failed for ${dir}:`, error);
+  }
 }
 
 /** Run an extraction tool synchronously; returns an Error on failure, null on success. */

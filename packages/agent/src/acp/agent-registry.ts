@@ -373,17 +373,28 @@ export class AgentRegistry {
 
   /**
    * Remove an agent from the registry (Settings → Uninstall).
-   * Disconnects its warm connection (if any) and drops all state entries.
+   *
+   * Precheck first: when the agent has been spawned, tear down its warm
+   * connection and wait until the child process has actually exited — the
+   * caller deletes the agent's install directory right after, and on Windows
+   * the executable stays locked while the process is still running.
    * Returns false when the agent id is unknown.
    */
-  removeConfig(agentId: string): boolean {
+  async removeConfig(agentId: string): Promise<boolean> {
     const state = this.statesById.get(agentId);
     if (!state) return false;
 
-    try {
-      state.connection?.disconnect();
-    } catch {
-      // ignore teardown errors
+    if (state.connection) {
+      const wasRunning = state.connection.isConnected();
+      try {
+        await state.connection.disconnectAndWait();
+        if (wasRunning) {
+          logger.log(`[AgentRegistry] ${state.config.name}: spawned agent process stopped (uninstall)`);
+        }
+      } catch (error) {
+        logger.warn(`[AgentRegistry] ${state.config.name}: failed to stop connection cleanly:`, error);
+      }
+      state.connection = null;
     }
 
     this.statesById.delete(agentId);

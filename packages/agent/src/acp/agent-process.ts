@@ -12,6 +12,34 @@ export interface AgentProcessConfig {
 }
 
 /**
+ * Kill a child process AND its whole tree.
+ *
+ * On Windows `proc.kill()` maps to TerminateProcess, which only terminates
+ * the direct child — agents like `agy_acp_server.exe` spawn their own
+ * subprocesses, and those orphans keep running (locking the install dir, so
+ * uninstall fails with EPERM). `taskkill /T /F` kills the tree instead.
+ */
+function killProcessTree(proc: ChildProcess): void {
+  const pid = proc.pid;
+  if (process.platform === 'win32' && pid) {
+    try {
+      spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
+        windowsHide: true,
+        stdio: 'ignore',
+      });
+      return;
+    } catch {
+      // fall through to the plain kill
+    }
+  }
+  try {
+    proc.kill('SIGKILL');
+  } catch {
+    // already gone
+  }
+}
+
+/**
  * Manages an ACP agent subprocess.
  *
  * Spawns the agent, provides stdio-based ACP Stream, and handles lifecycle.
@@ -107,14 +135,38 @@ export class AgentProcess {
   }
 
   /**
-   * Kill the agent process.
+   * Kill the agent process (whole tree on Windows).
    */
   kill(): void {
     if (this.process) {
       logger.log(`${this.tag('ACP AgentProcess')} Killing process`);
-      this.process.kill();
+      killProcessTree(this.process);
       this.process = null;
     }
+  }
+
+  /**
+   * Wait until the spawned child process has actually exited (e.g. before
+   * deleting an installed agent's files — on Windows the executable stays
+   * locked until the process is gone). Resolves immediately when nothing is
+   * running; force-kills on timeout and resolves anyway.
+   */
+  waitForExit(timeoutMs = 8000): Promise<void> {
+    const proc = this.process;
+    if (!proc || proc.killed || proc.exitCode !== null) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        logger.warn(`${this.tag('ACP AgentProcess')} Process did not exit within ${timeoutMs}ms — force killing (tree)`);
+        killProcessTree(proc);
+        resolve();
+      }, timeoutMs);
+      proc.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   }
 
   /**
