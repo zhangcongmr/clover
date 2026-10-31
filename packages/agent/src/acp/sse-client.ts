@@ -681,6 +681,19 @@ export class SseAcpClient {
 
     this.handleConnectionLost();
   }
+
+  /**
+   * Disconnect and wait until the spawned agent process has actually exited.
+   * Uninstall needs this: on Windows the executable file stays locked until
+   * the child process is gone, so deleting the install dir too early fails.
+   */
+  async disconnectAndWait(timeoutMs = 8000): Promise<void> {
+    const proc = this.agentProcess;
+    this.disconnect();
+    if (proc) {
+      await proc.waitForExit(timeoutMs);
+    }
+  }
 }
 
 export default SseAcpClient;

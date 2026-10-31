@@ -867,10 +867,12 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * DELETE /api/acp/agents/:id/uninstall
-   * 卸载 agent：清理磁盘产物（binary 安装）→ 从 ~/.clover/acp.json 移除配置
-   * → 从内存 AgentRegistry 移除并断开连接。
+   * 卸载 agent：先检测 agent 是否已被 spawn——已 spawn 的先断开 warm
+   * connection 并等待子进程退出（Windows 下可执行文件在进程存活期间被锁定，
+   * 不等待会导致删除安装目录失败）→ 清理磁盘产物（binary 安装）→
+   * 从 ~/.clover/acp.json 移除配置 → 从内存 AgentRegistry 移除。
    */
-  app.delete('/api/acp/agents/:id/uninstall', (req: Request, res: Response) => {
+  app.delete('/api/acp/agents/:id/uninstall', async (req: Request, res: Response) => {
     const agentId = String(req.params.id);
     if (!registry) {
       res.status(503).json({ error: 'Agent registry not initialized' });
@@ -884,8 +886,10 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         return;
       }
 
-      uninstallAgent(entry);
-      registry.removeConfig(agentId);
+      // 1. Precheck: stop the spawned process (if any) and wait for its exit.
+      await registry.removeConfig(agentId);
+      // 2. Remove on-disk artifacts + drop the acp.json entry.
+      await uninstallAgent(entry);
       res.json({ success: true });
     } catch (error) {
       logger.error(`[ACP Routes] Uninstall agent error (agent: ${agentId}):`, error);
