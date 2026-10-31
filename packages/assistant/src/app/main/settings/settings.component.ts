@@ -88,6 +88,15 @@ export class SettingsComponent {
   installingAgentId = signal<string | null>(null);
   /** Latest installer output line, shown while an install is running. */
   installStatusLine = signal<string | null>(null);
+  /** Agent id currently uninstalling, guards double-click. */
+  uninstallingAgentId = signal<string | null>(null);
+  /** Ids of agents with a running install (registry dialog button state). */
+  installingAgentIds = computed(() => {
+    const id = this.installingAgentId();
+    return id ? [id] : [];
+  });
+  /** Ids of agents already installed (registry dialog hides their button). */
+  installedAgentIds = computed(() => this.agents().map(a => a.id));
 
   /** Whether the ACP Registry install dialog is open. */
   registryDialogVisible = false;
@@ -371,39 +380,24 @@ export class SettingsComponent {
   }
 
   /**
-   * Install the missing piece for an agent (global CLI or project adapter).
-   * Runs on the backend, polls the job until it finishes, then re-probes.
+   * Uninstall an agent (Settings → Uninstall): removes on-disk artifacts and
+   * the ~/.clover/acp.json entry on the backend, then refreshes the list.
    */
-  async installAgent(agentId: string): Promise<void> {
-    if (this.installingAgentId()) return;
+  async uninstallAgent(agent: AgentStatusInfo): Promise<void> {
+    if (this.uninstallingAgentId()) return;
+    if (!confirm(`Uninstall "${agent.name}"? Its configuration will be removed from ~/.clover/acp.json.`)) return;
 
-    this.installingAgentId.set(agentId);
+    this.uninstallingAgentId.set(agent.id);
     this.agentsError.set(null);
-    this.installStatusLine.set(null);
-
     try {
-      let job = await this.sseService.startAgentInstall(agentId);
-      this.installStatusLine.set(job.command);
-
-      while (job.status === 'running') {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        job = await this.sseService.getAgentInstallJob(job.id);
-        const runningStep = job.steps.find(step => step.status === 'running') ?? job.steps[job.steps.length - 1];
-        const lastLine = runningStep?.output[runningStep.output.length - 1];
-        this.installStatusLine.set(lastLine ?? job.command);
-      }
-
-      if (job.status !== 'succeeded') {
-        this.agentsError.set(job.error ?? `Install failed for ${agentId}`);
-      }
-
-      // Re-probe either way: a partial install may still leave the agent usable.
-      await this.checkNow(agentId);
+      await this.sseService.uninstallAgent(agent.id);
+      this.agents.update(list => list.filter(a => a.id !== agent.id));
+      this.notification.showNotification(`"${agent.name}" uninstalled`, 'success');
     } catch (error) {
       this.agentsError.set((error as Error).message);
+      this.notification.showNotification(`Uninstall failed: ${(error as Error).message}`, 'error');
     } finally {
-      this.installingAgentId.set(null);
-      this.installStatusLine.set(null);
+      this.uninstallingAgentId.set(null);
     }
   }
 
@@ -458,51 +452,39 @@ export class SettingsComponent {
     this.registryDialogVisible = false;
   }
 
-  /** Install the selected agent from the ACP registry. */
+  /** Install the selected agent from the ACP registry.
+   *  The dialog stays open: the agent's button switches to "Installing..."
+   *  while the backend job runs, and disappears once the agent shows up in
+   *  the installed list. */
   async onAgentInstall(agent: AcpRegistryAgent): Promise<void> {
-    this.registryDialogVisible = false;
-
-    // Map registry agent to AgentConfig for persistence.
-    // Do NOT map npx distribution to command: 'npx' — npx itself is already
-    // installed and the backend would wrongly skip installation. Keep the
-    // agent id as the command so the backend can probe and install it.
-    const dist = (agent as any).distribution;
-    let args: string[] = [];
-    let env: Record<string, string> | undefined;
-    if (dist?.npx) {
-      args = [dist.npx.package, ...(dist.npx.args ?? [])];
-      env = dist.npx.env;
-    } else if (dist?.uvx) {
-      args = [dist.uvx.package, ...(dist.uvx.args ?? [])];
-      env = dist.uvx.env;
-    }
-
-    const agentConfig: AgentConfig = {
+    // Send the full agent config plus the registry distribution block; the
+    // backend derives the launch command (npx / uvx / binary path) from the
+    // distribution and persists it to ~/.clover/acp.json after a successful
+    // install.
+    const agentConfig: AgentConfig & { distribution?: any } = {
       id: agent.id,
       name: agent.name,
       command: agent.id,
-      args,
-      env,
       description: agent.description,
       source: 'registry',
       version: agent.version,
       installed: false,
-      installedAt: new Date().toISOString(),
+      distribution: (agent as any).distribution,
     };
 
     await this.onAgentInstalled(agentConfig);
   }
 
-  /** Unified handler: persist installed agent config to ~/.clover/acp.json,
-   *  register it in the backend AgentRegistry, then kick off installation. */
-  async onAgentInstalled(agentConfig: AgentConfig): Promise<void> {
+  /** Unified handler: start the backend install job for a full agent config,
+   *  poll it until done, then refresh the list. On success the backend has
+   *  already persisted the config to ~/.clover/acp.json and registered it. */
+  async onAgentInstalled(agentConfig: AgentConfig & { distribution?: any }): Promise<void> {
     try {
-      // 2. Start installation (polls job until done)
       this.installingAgentId.set(agentConfig.id);
       this.agentsError.set(null);
       this.installStatusLine.set(null);
 
-      let job = await this.sseService.startAgentInstall(agentConfig.id);
+      let job = await this.sseService.startAgentInstall(agentConfig);
       this.installStatusLine.set(job.command);
 
       while (job.status === 'running') {
@@ -515,15 +497,13 @@ export class SettingsComponent {
 
       if (job.status !== 'succeeded') {
         this.agentsError.set(job.error ?? `Install failed for ${agentConfig.name}`);
-      }
-
-      // 3. Re-probe and refresh list
-      await this.checkNow(agentConfig.id);
-      await this.loadAgents();
-
-      if (job.status === 'succeeded') {
+      } else {
         this.notification.showNotification(`"${agentConfig.name}" installed`, 'success');
       }
+
+      // Refresh the list either way; on success the agent is registered
+      // server-side, on failure nothing was persisted.
+      await this.loadAgents();
     } catch (error) {
       this.agentsError.set((error as Error).message);
       this.notification.showNotification(`Install failed: ${(error as Error).message}`, 'error');

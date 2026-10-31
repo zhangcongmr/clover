@@ -20,7 +20,6 @@ const PROJECTS_FILE = join(PROJECTS_DIR, 'projects.json');
 const TASKS_FILE = join(PROJECTS_DIR, 'tasks.json');
 const SELECTED_FILE = join(PROJECTS_DIR, 'selected.json');
 const AGENT_CONFIG_FILE = join(PROJECTS_DIR, 'agent-config.json');
-const ACP_CONFIG_FILE = join(PROJECTS_DIR, 'acp.json');
 
 /**
  * 临时开关：会话所有权栅栏（`requireSessionOwner`）。
@@ -128,30 +127,14 @@ function writeAgentConfigFile(data: AgentConfigFile): void {
 }
 
 /** ACP agent 持久化配置文件（~/.clover/acp.json）：记录用户通过 ACP Registry 或 Disk 安装的 agent。 */
-interface AcpConfigFile {
-  version: string;
-  agents: AgentConfig[];
-}
-
-const ACP_CONFIG_VERSION = '1.0.0';
-
-function readAcpConfigFile(): AcpConfigFile {
-  if (!existsSync(ACP_CONFIG_FILE)) return { version: ACP_CONFIG_VERSION, agents: [] };
-  try {
-    const raw = JSON.parse(readFileSync(ACP_CONFIG_FILE, 'utf-8'));
-    const agents = Array.isArray(raw?.agents) ? raw.agents as AgentConfig[] : [];
-    return { version: raw?.version ?? ACP_CONFIG_VERSION, agents };
-  } catch {
-    return { version: ACP_CONFIG_VERSION, agents: [] };
-  }
-}
-
-export { readAcpConfigFile };
-
-function writeAcpConfigFile(data: AcpConfigFile): void {
-  mkdirSync(PROJECTS_DIR, { recursive: true });
-  writeFileSync(ACP_CONFIG_FILE, JSON.stringify(data, null, 2));
-}
+export { readAcpConfigFile } from '../acp/acp-config-store.js';
+import { readAcpConfigFile } from '../acp/acp-config-store.js';
+import {
+  getInstallJob,
+  startInstall,
+  uninstallAgent,
+  type AgentInstallRequest,
+} from '../acp/agent-install.js';
 
 export interface AcpRouteOptions {
   tokenManager: TokenManager;
@@ -787,10 +770,23 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * GET /api/acp/agents
-   * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接）
+   * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接），
+   * 并附带 ~/.clover/acp.json 中已安装 agent 的完整配置（installedConfigs）。
    */
   app.get('/api/acp/agents', (_req: Request, res: Response) => {
-    //TODO: List all agents and their status
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+    try {
+      res.json({
+        agents: registry.getStatus(),
+        installedConfigs: readAcpConfigFile().agents,
+      });
+    } catch (error) {
+      logger.error('[ACP Routes] List agents error:', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
   });
 
   /**
@@ -798,11 +794,62 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * Check Now：重新检测安装状态并尝试将 Agent 拉起到“连接”状态
    */
   app.post('/api/acp/agents/:id/check', async (req: Request, res: Response) => {
-    //TODO: Check agent status and try to connect
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+    try {
+      const agent = await registry.checkNow(String(req.params.id));
+      res.json({ agent });
+    } catch (error) {
+      logger.error(`[ACP Routes] Check agent error (agent: ${req.params.id}):`, error);
+      const message = (error as Error).message;
+      res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
+    }
   });
 
-  app.post('/api/acp/agents/:id/install', (req: Request, res: Response) => {
-    //TODO: Install agent
+  /**
+   * POST /api/acp/agents/install
+   * 安装一个 agent。Body 为完整的 AgentInstallRequest（AgentConfig + distribution）。
+   * 仅支持 source=registry；安装由后台 job 执行，成功后才写入 ~/.clover/acp.json
+   * 并注册进 AgentRegistry（失败不落盘）。
+   */
+  app.post('/api/acp/agents/install', (req: Request, res: Response) => {
+    const config = (req.body ?? {}) as AgentInstallRequest;
+
+    if (!config || typeof config.id !== 'string' || !config.id.trim()
+      || typeof config.name !== 'string' || !config.name.trim()) {
+      res.status(400).json({ error: 'body must be a full AgentConfig with at least id and name' });
+      return;
+    }
+    if (config.source !== 'registry') {
+      res.status(501).json({ error: `Installing source="${config.source ?? 'builtin'}" agents is not implemented yet` });
+      return;
+    }
+    if (!config.distribution || typeof config.distribution !== 'object') {
+      res.status(400).json({ error: 'body.distribution is required for source=registry installs' });
+      return;
+    }
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+
+    const job = startInstall(config, (finished) => {
+      if (finished.status !== 'succeeded') return;
+      // 注册进内存 registry 并拉起，让新 agent 立即可用（无需重启服务）。
+      const entry = readAcpConfigFile().agents.find(a => a.id === config.id);
+      if (entry) {
+        void registry.addConfig(entry).then(() => registry.checkNow(config.id)).catch((error) => {
+          logger.warn(`[ACP Routes] Failed to register installed agent (agent: ${config.id}):`, error);
+        });
+      }
+    });
+    if (!job) {
+      res.status(400).json({ error: `No installable distribution for agent: ${config.id}` });
+      return;
+    }
+    res.json({ job });
   });
 
   /**
@@ -810,7 +857,40 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 安装任务进度（设置页轮询）
    */
   app.get('/api/acp/agents/install/:jobId', (req: Request, res: Response) => {
-    //TODO: Get agent install job progress
+    const job = getInstallJob(String(req.params.jobId));
+    if (!job) {
+      res.status(404).json({ error: 'Install job not found' });
+      return;
+    }
+    res.json({ job });
+  });
+
+  /**
+   * DELETE /api/acp/agents/:id/uninstall
+   * 卸载 agent：清理磁盘产物（binary 安装）→ 从 ~/.clover/acp.json 移除配置
+   * → 从内存 AgentRegistry 移除并断开连接。
+   */
+  app.delete('/api/acp/agents/:id/uninstall', (req: Request, res: Response) => {
+    const agentId = String(req.params.id);
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+
+    try {
+      const entry = readAcpConfigFile().agents.find(a => a.id === agentId);
+      if (!entry) {
+        res.status(404).json({ error: `Agent not found: ${agentId}` });
+        return;
+      }
+
+      uninstallAgent(entry);
+      registry.removeConfig(agentId);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error(`[ACP Routes] Uninstall agent error (agent: ${agentId}):`, error);
+      res.status(500).json({ error: (error as Error).message });
+    }
   });
 
   // ============================================================================

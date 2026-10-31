@@ -153,21 +153,21 @@
                     <span class="agent-status-dot"></span>
                     {{ agentStatusLabel(agent.status) }}
                   </span>
-                  @if (agent.install && agent.status !== 'connected') {
+                  @if (agent.source === 'registry') {
                     <button
-                      class="btn agent-install-btn"
-                      (click)="installAgent(agent.id)"
-                      [disabled]="installingAgentId() !== null || checkingAgentId() !== null"
-                      [title]="'Runs: ' + agent.install.command"
+                      class="btn btn-secondary agent-uninstall-btn"
+                      (click)="uninstallAgent(agent)"
+                      [disabled]="uninstallingAgentId() !== null || installingAgentId() !== null || checkingAgentId() === agent.id"
+                      title="Remove this agent's configuration from ~/.clover/acp.json"
                     >
-                      @if (installingAgentId() === agent.id) {
-                        Installing...
+                      @if (uninstallingAgentId() === agent.id) {
+                        Uninstalling...
                       } @else {
-                        Install
+                        Uninstall
                       }
                     </button>
                   } @else {
-                    <!-- Reserves the Install button's width so the status badge
+                    <!-- Reserves the Uninstall button's width so the status badge
                          column starts at the same x in every row. -->
                     <span class="agent-install-slot" aria-hidden="true"></span>
                   }
@@ -199,6 +199,8 @@
 
         <app-acp-registry-dialog
           [visible]="registryDialogVisible"
+          [installingIds]="installingAgentIds()"
+          [installedIds]="installedAgentIds()"
           (close)="onRegistryDialogClose()"
           (install)="onAgentInstall($event)"
           (ok)="onRegistryDialogOk()"

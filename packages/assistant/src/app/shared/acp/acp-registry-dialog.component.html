@@ -72,13 +72,21 @@
                 }}
               </div>
             </div>
-            <button
-              class="registry-install-btn"
-              (click)="install.emit(agent)"
-              [disabled]="loading()"
-            >
-              Install
-            </button>
+            @if (installedIds().includes(agent.id)) {
+              <!-- Already installed: no button -->
+            } @else if (installingIds().includes(agent.id)) {
+              <button class="registry-install-btn" [disabled]="true">
+                Installing...
+              </button>
+            } @else {
+              <button
+                class="registry-install-btn"
+                (click)="install.emit(agent)"
+                [disabled]="loading()"
+              >
+                Install
+              </button>
+            }
           </div>
         }
         @if (filteredAgents().length === 0) {

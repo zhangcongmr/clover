@@ -1,8 +1,8 @@
 import { logger } from '../helpers/logger.js';
-import { existsSync } from 'node:fs';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
-import type { AgentConfig } from './acp-agent.types.js';
+import type { AgentConfig, AgentSource } from './acp-agent.types.js';
+import { invalidateAgentCommandCache, probeAgentVersion, probePathCommand } from './agent-probe.js';
 import type { EventSink } from '../events/event-sink.js';
 
 /**
@@ -21,6 +21,8 @@ export interface AgentStatusInfo
   extends Pick<AgentConfig, 'id' | 'name' | 'command' | 'args' | 'description'> {
   installed: boolean | null;
   status: AgentRuntimeStatus;
+  /** 来源：builtin 内置、registry 来自 ACP Registry、disk 来自本地磁盘。 */
+  source?: AgentSource;
   agentInfo?: unknown;
   capabilities?: unknown;
   error?: string;
@@ -62,10 +64,8 @@ function applyProbePaths(
 /**
  * Probe whether an agent can be launched, without spawning the ACP process.
  *
- * Adapter-based agents (claude) resolve to the project-local adapter entry and
- * additionally need the user's global agent CLI, so both halves are checked and
- * the missing one is named in the error. Plain CLI agents are looked up on PATH;
- * commands containing a path separator are checked directly on disk.
+ * The command is looked up on PATH; commands containing a path separator are
+ * checked directly on disk (binary installs under ~/.clover/agents/<id>/).
  */
 async function probeCommand(
   command: string,
@@ -74,42 +74,15 @@ async function probeCommand(
   error?: string;
   cliPath?: string;
 }> {
-  const inspection = inspectAgentCommand(command);
-  if (!inspection.installed) {
-    return {
-      installed: false,
-      cliPath: inspection.cliPath,
-      error: inspection.error ?? missingAgentHint(command),
-    };
-  }
-
-  const resolved = resolveAgentCommand(command);
-  const target = resolved.command;
-  if (target.includes('/') || target.includes('\\')) {
-    // Adapter-based agent: both halves were already validated above.
-    if (resolved.local) {
-      return {
-        installed: existsSync(target),
-        cliPath: inspection.cliPath,
-      };
-    }
-    return existsSync(target)
-      ? { installed: true, cliPath: target }
-      : { installed: false, error: missingAgentHint(command) };
-  }
-
-  const probe = probePathCommand(target);
+  const probe = probePathCommand(command);
   return probe.found
     ? { installed: true, cliPath: probe.path }
     : { installed: false, error: missingAgentHint(command) };
 }
 
-/** Human-readable hint naming the missing artifact (adapter package or CLI). */
+/** Human-readable hint for a command that cannot be found. */
 function missingAgentHint(command: string): string {
-  const packageName = localAgentPackage(command);
-  return packageName
-    ? `Agent not installed: "${packageName}" (ACP adapter) or "${command}" on PATH`
-    : `Command not found in PATH: ${command}`;
+  return `Command not found in PATH: ${command}`;
 }
 
 /**
@@ -341,6 +314,9 @@ export class AgentRegistry {
   }
 
   private async doCheck(state: AgentState): Promise<AgentStatusInfo> {
+    // Explicit re-check: drop cached CLI lookups so a freshly installed agent
+    // is picked up without restarting the server.
+    invalidateAgentCommandCache();
     try {
       const probe = await probeCommand(state.config.command);
       state.installed = probe.installed;
@@ -385,6 +361,7 @@ export class AgentRegistry {
       description: state.config.description,
       installed: state.installed,
       status: state.status,
+      source: state.config.source,
       agentInfo: state.connection?.getAgentInfo() ?? undefined,
       capabilities: state.connection?.getAgentCapabilities() ?? undefined,
       error: state.error,
@@ -395,10 +372,25 @@ export class AgentRegistry {
   }
 
   /**
-   * Start the installer for an agent's missing artifact (Settings → Install).
-   * Returns null when the agent is unknown or has no known installer.
+   * Remove an agent from the registry (Settings → Uninstall).
+   * Disconnects its warm connection (if any) and drops all state entries.
+   * Returns false when the agent id is unknown.
    */
-  startInstall(agentId: string) {
+  removeConfig(agentId: string): boolean {
+    const state = this.statesById.get(agentId);
+    if (!state) return false;
+
+    try {
+      state.connection?.disconnect();
+    } catch {
+      // ignore teardown errors
+    }
+
+    this.statesById.delete(agentId);
+    for (const [key, entry] of this.stateByKey) {
+      if (entry === state) this.stateByKey.delete(key);
+    }
+    return true;
   }
 
   /**

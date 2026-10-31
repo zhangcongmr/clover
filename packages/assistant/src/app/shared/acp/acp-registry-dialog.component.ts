@@ -34,6 +34,10 @@ export class AcpRegistryDialogComponent {
 
   /** Parent-controlled visibility. */
   visible = input(false);
+  /** Agent ids with a running install — their button shows "Installing...". */
+  installingIds = input<string[]>([]);
+  /** Agent ids already installed — no button is shown for them. */
+  installedIds = input<string[]>([]);
   /** Emitted when the dialog should close (Cancel / close button / backdrop). */
   readonly close = output<void>();
   /** Emitted when the user clicks Install on an agent. */
