@@ -146,34 +146,55 @@ export class AgentRegistry {
     logger.log(`[AgentRegistry] Warmup finished: ${this.getStatus().map(a => `${a.id}=${a.status}`).join(', ')}`);
   }
 
+  /**
+   * Probe one agent and try to bring it to `connected` (spawn + initialize).
+   *
+   * Single shared flow for both startup warmup and Check Now (`doCheck`
+   * delegates here). Display precedence is preserved: an actually running
+   * connection counts as `connected` even when the probe reports the command
+   * missing. Errors are recorded on the state, never rethrown.
+   */
   private async warmupOne(config: AgentConfig): Promise<void> {
     const state = this.statesById.get(config.id);
     if (!state) return;
 
     try {
-      const probe = await probeCommand(config.command);
+      const probe = await probeCommand(state.config.command);
       state.installed = probe.installed;
       applyProbePaths(state, probe);
       state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
       state.lastChecked = Date.now();
 
       if (!probe.installed) {
-        state.status = 'unavailable';
-        state.error = probe.error ?? missingAgentHint(config.command);
+        if (state.connection?.isConnected()) {
+          // Precedence: an actually running connection still counts as connected.
+          state.status = 'connected';
+          state.error = undefined;
+        } else {
+          state.status = 'unavailable';
+          state.error = probe.error ?? missingAgentHint(state.config.command);
+        }
         logger.log(`[AgentRegistry] ${config.name}: unavailable (${state.error})`);
         return;
       }
 
-      if (state.status === 'unknown') {
-        state.status = 'available';
+      if (state.connection?.isConnected()) {
+        state.status = 'connected';
+        state.error = undefined;
+        logger.log(`[AgentRegistry] ${config.name}: connected`);
+        return;
       }
 
+      // Installed but not running: try to bring it up (spawn + initialize).
+      state.status = 'available';
       await this.ensureConnected(state);
-      logger.log(`[AgentRegistry] ${config.name}: connected (warm)`);
+      state.status = 'connected';
+      state.error = undefined;
+      logger.log(`[AgentRegistry] ${config.name}: connected`);
     } catch (error) {
       state.status = state.installed ? 'offline' : 'unavailable';
       state.error = (error as Error).message;
-      logger.error(`[AgentRegistry] ${config.name}: warmup failed — ${state.error}`);
+      logger.error(`[AgentRegistry] ${config.name}: connect failed — ${state.error}`);
     }
   }
 
@@ -315,41 +336,11 @@ export class AgentRegistry {
 
   private async doCheck(state: AgentState): Promise<AgentStatusInfo> {
     // Explicit re-check: drop cached CLI lookups so a freshly installed agent
-    // is picked up without restarting the server.
+    // is picked up without restarting the server. warmupOne records probe and
+    // connect results (including failures) on the state and never rethrows.
     invalidateAgentCommandCache();
-    try {
-      const probe = await probeCommand(state.config.command);
-      state.installed = probe.installed;
-      applyProbePaths(state, probe);
-      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
-      state.lastChecked = Date.now();
-
-      if (!probe.installed) {
-        // Precedence: an actually running connection still counts as connected.
-        state.status = state.connection?.isConnected() ? 'connected' : 'unavailable';
-        state.error = state.status === 'connected'
-          ? undefined
-          : probe.error ?? missingAgentHint(state.config.command);
-        return this.toInfo(state);
-      }
-
-      if (state.connection?.isConnected()) {
-        state.status = 'connected';
-        state.error = undefined;
-        return this.toInfo(state);
-      }
-
-      // Installed but not running: try to bring it up (spawn + initialize).
-      state.status = 'available';
-      await this.ensureConnected(state);
-      state.status = 'connected';
-      state.error = undefined;
-      return this.toInfo(state);
-    } catch (error) {
-      state.status = state.installed ? 'offline' : 'unavailable';
-      state.error = (error as Error).message;
-      return this.toInfo(state);
-    }
+    await this.warmupOne(state.config);
+    return this.toInfo(state);
   }
 
   private toInfo(state: AgentState): AgentStatusInfo {
