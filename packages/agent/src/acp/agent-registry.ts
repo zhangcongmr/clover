@@ -3,9 +3,6 @@ import { existsSync } from 'node:fs';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig } from './acp-agent.types.js';
-import { inspectAgentCommand, invalidateAgentCommandCache, localAgentPackage, probeAgentVersion, probePathCommand, resolveAgentCommand } from './agent-executable.js';
-import { installCommandFor, startAgentInstall } from './agent-install.js';
-import type { AgentInstallJob, AgentInstallTarget } from './agent-install.js';
 import type { EventSink } from '../events/event-sink.js';
 
 /**
@@ -43,8 +40,6 @@ interface AgentState {
   /** Shared ACP connection (spawn + initialize) owned by this registry. */
   connection: SseAcpClient | null;
   error?: string;
-  /** Which artifact is missing when the last probe failed. */
-  missing?: 'adapter' | 'cli';
   /** Resolved agent CLI path (global install), when found. */
   cliPath?: string;
   /** Resolved installed version, when the CLI reports one. */
@@ -77,14 +72,12 @@ async function probeCommand(
 ): Promise<{
   installed: boolean;
   error?: string;
-  missing?: 'adapter' | 'cli';
   cliPath?: string;
 }> {
   const inspection = inspectAgentCommand(command);
   if (!inspection.installed) {
     return {
       installed: false,
-      missing: inspection.missing,
       cliPath: inspection.cliPath,
       error: inspection.error ?? missingAgentHint(command),
     };
@@ -102,13 +95,13 @@ async function probeCommand(
     }
     return existsSync(target)
       ? { installed: true, cliPath: target }
-      : { installed: false, missing: 'cli', error: missingAgentHint(command) };
+      : { installed: false, error: missingAgentHint(command) };
   }
 
   const probe = probePathCommand(target);
   return probe.found
     ? { installed: true, cliPath: probe.path }
-    : { installed: false, missing: 'cli', error: missingAgentHint(command) };
+    : { installed: false, error: missingAgentHint(command) };
 }
 
 /** Human-readable hint naming the missing artifact (adapter package or CLI). */
@@ -187,7 +180,6 @@ export class AgentRegistry {
     try {
       const probe = await probeCommand(config.command);
       state.installed = probe.installed;
-      state.missing = probe.installed ? undefined : probe.missing;
       applyProbePaths(state, probe);
       state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
       state.lastChecked = Date.now();
@@ -349,13 +341,9 @@ export class AgentRegistry {
   }
 
   private async doCheck(state: AgentState): Promise<AgentStatusInfo> {
-    // Explicit re-check: drop cached adapter/CLI lookups so a freshly installed
-    // CLI or adapter is picked up without restarting the server.
-    invalidateAgentCommandCache();
     try {
       const probe = await probeCommand(state.config.command);
       state.installed = probe.installed;
-      state.missing = probe.installed ? undefined : probe.missing;
       applyProbePaths(state, probe);
       state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
       state.lastChecked = Date.now();
@@ -389,10 +377,6 @@ export class AgentRegistry {
   }
 
   private toInfo(state: AgentState): AgentStatusInfo {
-    const installCommand = state.missing
-      ? installCommandFor(state.config.command, state.missing)
-      : null;
-
     return {
       id: state.config.id,
       name: state.config.name,
@@ -404,7 +388,6 @@ export class AgentRegistry {
       agentInfo: state.connection?.getAgentInfo() ?? undefined,
       capabilities: state.connection?.getAgentCapabilities() ?? undefined,
       error: state.error,
-      install: installCommand ? { command: installCommand } : undefined,
       paths: state.cliPath ? { cli: state.cliPath } : undefined,
       version: state.version,
       lastChecked: state.lastChecked,
@@ -415,21 +398,7 @@ export class AgentRegistry {
    * Start the installer for an agent's missing artifact (Settings → Install).
    * Returns null when the agent is unknown or has no known installer.
    */
-  startInstall(agentId: string): AgentInstallJob | null {
-    const state = this.statesById.get(agentId);
-    if (!state) return null;
-
-    // For user-installed agents (registry / disk), always attempt installation
-    // even when the probe command itself is on PATH — the missing piece is the
-    // agent package, not the wrapper. Built-in agents rely on `missing`.
-    const isUserInstalled = state.config.source === 'registry' || state.config.source === 'disk';
-    const target: AgentInstallTarget = isUserInstalled ? 'adapter' : (state.missing ?? 'cli');
-    if (!isUserInstalled && !state.missing) return null;
-
-    return startAgentInstall(agentId, state.config.command, target, () => {
-      // Re-probe and try to connect as soon as the installer finishes.
-      void this.checkNow(agentId).catch(() => undefined);
-    });
+  startInstall(agentId: string) {
   }
 
   /**
@@ -467,7 +436,6 @@ export class AgentRegistry {
     try {
       const probe = await probeCommand(config.command);
       state.installed = probe.installed;
-      state.missing = probe.installed ? undefined : probe.missing;
       applyProbePaths(state, probe);
       state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
       state.lastChecked = Date.now();

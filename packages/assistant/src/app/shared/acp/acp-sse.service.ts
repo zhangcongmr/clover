@@ -702,28 +702,10 @@ export class AcpSseService {
     return result.agent as AgentStatusInfo;
   }
 
-  /**
-   * 安装缺失的组件（Agent CLI 或 ACP 适配器），返回后台任务
-   */
+
   async startAgentInstall(agentId: string): Promise<AgentInstallJob> {
     const result = await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/install`, {});
     return result.job as AgentInstallJob;
-  }
-
-  /**
-   * 读取 ~/.clover/acp.json 中已安装的 agent 配置列表（registry + disk 安装的 agent）。
-   */
-  async listInstalledAgents(): Promise<AgentConfig[]> {
-    const result = await this.get('/api/acp/agents/config');
-    return Array.isArray(result?.agents) ? result.agents : [];
-  }
-
-  /**
-   * 写入/更新 ~/.clover/acp.json 中的 agent 配置（按 id 去重）。
-   * 安装完成后调用，持久化已安装的 agent。
-   */
-  async saveInstalledAgent(agent: AgentConfig): Promise<void> {
-    await this.post('/api/acp/agents/config', { agent });
   }
 
   /**
