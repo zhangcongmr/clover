@@ -1,57 +1,9 @@
 import { logger } from '../helpers/logger.js';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
-import type { AgentConfig, AgentSource } from './acp-agent.types.js';
+import type { AgentConfig, AgentStatusInfo } from './acp-agent.types.js';
 import { invalidateAgentCommandCache, probeAgentVersion, probePathCommand } from './agent-probe.js';
 import type { EventSink } from '../events/event-sink.js';
-
-/**
- * Runtime status of an agent.
- *
- * Display precedence (fixed): connected > unavailable > offline > available.
- * - `connected`   连接：子进程已启动并且 initialize 执行成功
- * - `unavailable` 不可用：Agent 未安装（PATH 探测失败）
- * - `offline`     离线：Agent 已安装但子进程未启动（预热失败/进程退出）
- * - `available`   可用：Agent 已安装（运行态尚未判定/预热进行中）
- * - `unknown`     尚未探测（前端显示“检查中”）
- */
-export type AgentRuntimeStatus = 'unknown' | 'available' | 'unavailable' | 'offline' | 'connected';
-
-export interface AgentStatusInfo
-  extends Pick<AgentConfig, 'id' | 'name' | 'command' | 'args' | 'description'> {
-  installed: boolean | null;
-  status: AgentRuntimeStatus;
-  /** 来源：builtin 内置、registry 来自 ACP Registry、disk 来自本地磁盘。 */
-  source?: AgentSource;
-  agentInfo?: unknown;
-  capabilities?: unknown;
-  error?: string;
-  /** Installer the settings UI can run, when the missing artifact is known. */
-  install?: { command: string };
-  /** Path of the agent CLI on disk (for the settings UI). */
-  paths?: { cli?: string };
-  /** Installed agent version, when the backend can resolve one. */
-  version?: string;
-  lastChecked: number;
-}
-
-interface AgentState {
-  config: AgentConfig;
-  installed: boolean | null;
-  status: AgentRuntimeStatus;
-  /** Shared ACP connection (spawn + initialize) owned by this registry. */
-  connection: SseAcpClient | null;
-  error?: string;
-  /** Resolved agent CLI path (global install), when found. */
-  cliPath?: string;
-  /** Resolved installed version, when the CLI reports one. */
-  version?: string;
-  lastChecked: number;
-  /** In-flight spawn+initialize attempt (dedupes concurrent callers). */
-  inflight: Promise<void> | null;
-  /** In-flight checkNow (dedupe). */
-  checking: Promise<AgentStatusInfo> | null;
-}
 
 /** Remember the resolved install paths of the last probe. */
 function applyProbePaths(
@@ -94,12 +46,16 @@ function missingAgentHint(command: string): string {
  * - Session code calls `getOrCreate()`: reuses the warm connection when it
  *   is ready, otherwise falls back to spawn+initialize on the spot.
  * - Settings calls `getStatus()` / `checkNow()` for the Agents management UI.
+ *
+ * Registry states are plain `AgentStatusInfo` objects: the persisted fields
+ * double as the persistence source of truth, while `connection` / `inflight`
+ * / `checking` hold the non-serializable runtime internals.
  */
 export class AgentRegistry {
   /** Known agents by their public id. */
-  private statesById: Map<string, AgentState> = new Map();
+  private statesById: Map<string, AgentStatusInfo> = new Map();
   /** All states by `command|args|env` key (includes ad-hoc session states). */
-  private stateByKey: Map<string, AgentState> = new Map();
+  private stateByKey: Map<string, AgentStatusInfo> = new Map();
 
   constructor(
     private agentConfigs: AgentConfig[] = [],
@@ -107,9 +63,8 @@ export class AgentRegistry {
     private sink?: EventSink,
   ) {
     for (const config of this.agentConfigs) {
-      const state: AgentState = {
-        config,
-        installed: null,
+      const state: AgentStatusInfo = {
+        ...config,
         status: 'unknown',
         connection: null,
         lastChecked: 0,
@@ -154,15 +109,16 @@ export class AgentRegistry {
    * connection counts as `connected` even when the probe reports the command
    * missing. Errors are recorded on the state, never rethrown.
    */
-  private async warmupOne(config: AgentConfig): Promise<void> {
-    const state = this.statesById.get(config.id);
+  private async warmupOne(agent: Pick<AgentStatusInfo, 'id' | 'name' | 'command'>): Promise<void> {
+    const state = this.statesById.get(agent.id);
     if (!state) return;
 
     try {
-      const probe = await probeCommand(state.config.command);
+      const probe = await probeCommand(state.command);
       state.installed = probe.installed;
       applyProbePaths(state, probe);
-      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
+      const probedVersion = state.cliPath ? probeAgentVersion(state.cliPath) : null;
+      // if (probedVersion) state.version = probedVersion;
       state.lastChecked = Date.now();
 
       if (!probe.installed) {
@@ -172,16 +128,16 @@ export class AgentRegistry {
           state.error = undefined;
         } else {
           state.status = 'unavailable';
-          state.error = probe.error ?? missingAgentHint(state.config.command);
+          state.error = probe.error ?? missingAgentHint(state.command);
         }
-        logger.log(`[AgentRegistry] ${config.name}: unavailable (${state.error})`);
+        logger.log(`[AgentRegistry] ${agent.name}: unavailable (${state.error})`);
         return;
       }
 
       if (state.connection?.isConnected()) {
         state.status = 'connected';
         state.error = undefined;
-        logger.log(`[AgentRegistry] ${config.name}: connected`);
+        logger.log(`[AgentRegistry] ${agent.name}: connected`);
         return;
       }
 
@@ -190,11 +146,11 @@ export class AgentRegistry {
       await this.ensureConnected(state);
       state.status = 'connected';
       state.error = undefined;
-      logger.log(`[AgentRegistry] ${config.name}: connected`);
+      logger.log(`[AgentRegistry] ${agent.name}: connected`);
     } catch (error) {
       state.status = state.installed ? 'offline' : 'unavailable';
       state.error = (error as Error).message;
-      logger.error(`[AgentRegistry] ${config.name}: connect failed — ${state.error}`);
+      logger.error(`[AgentRegistry] ${agent.name}: connect failed — ${state.error}`);
     }
   }
 
@@ -219,15 +175,15 @@ export class AgentRegistry {
     const state = this.statesById.get(agentId);
     if (!state) return null;
     return {
-      agentCommand: state.config.command,
-      agentArgs: state.config.args,
-      agentEnv: state.config.env,
+      agentCommand: state.command,
+      agentArgs: state.args,
+      agentEnv: state.env,
     };
   }
 
   /** Existing connection for a session config without creating one. */
   getExisting(config: SseAcpClientConfig): SseAcpClient | null {
-    return this.stateForSession(config).connection;
+    return this.stateForSession(config).connection ?? null;
   }
 
   /** Whether a connection object is owned by this registry. */
@@ -239,7 +195,7 @@ export class AgentRegistry {
     return false;
   }
 
-  private ensureConnected(state: AgentState): Promise<SseAcpClient> {
+  private ensureConnected(state: AgentStatusInfo): Promise<SseAcpClient> {
     if (state.connection?.isConnected()) {
       return Promise.resolve(state.connection);
     }
@@ -255,21 +211,22 @@ export class AgentRegistry {
 
     const inflight = state.inflight;
     return inflight.then(() => {
-      if (!state.connection?.isConnected()) {
-        throw new Error(`Agent ${state.config.name} failed to connect`);
+      const connection = state.connection;
+      if (!connection?.isConnected()) {
+        throw new Error(`Agent ${state.name} failed to connect`);
       }
-      return state.connection;
+      return connection;
     });
   }
 
-  private async spawnAndInitialize(state: AgentState): Promise<void> {
-    const command = state.config.command;
-    const args = state.config.args ?? [];
-    const env = state.config.env;
+  private async spawnAndInitialize(state: AgentStatusInfo): Promise<void> {
+    const command = state.command;
+    const args = state.args ?? [];
+    const env = state.env;
 
     let connection = state.connection;
     if (!connection) {
-      connection = new SseAcpClient(`agent:${state.config.id}`, {
+      connection = new SseAcpClient(`agent:${state.id}`, {
         agentCommand: command,
         agentArgs: args,
         agentEnv: env,
@@ -334,30 +291,41 @@ export class AgentRegistry {
     return state.checking;
   }
 
-  private async doCheck(state: AgentState): Promise<AgentStatusInfo> {
+  private async doCheck(state: AgentStatusInfo): Promise<AgentStatusInfo> {
     // Explicit re-check: drop cached CLI lookups so a freshly installed agent
     // is picked up without restarting the server. warmupOne records probe and
     // connect results (including failures) on the state and never rethrows.
     invalidateAgentCommandCache();
-    await this.warmupOne(state.config);
+    await this.warmupOne(state);
     return this.toInfo(state);
   }
 
-  private toInfo(state: AgentState): AgentStatusInfo {
+  /** Extract the persisted AgentConfig subset from a registry state. */
+  private configOf(state: AgentStatusInfo): AgentConfig {
     return {
-      id: state.config.id,
-      name: state.config.name,
-      command: state.config.command,
-      args: state.config.args,
-      description: state.config.description,
+      id: state.id,
+      name: state.name,
+      command: state.command,
+      args: state.args,
+      env: state.env,
+      description: state.description,
+      source: state.source,
+      version: state.version,
       installed: state.installed,
+      installedAt: state.installedAt,
+    };
+  }
+
+  /** Snapshot for the settings UI: config fields + runtime status, without
+   *  the non-serializable runtime internals (connection/inflight/checking). */
+  private toInfo(state: AgentStatusInfo): AgentStatusInfo {
+    return {
+      ...this.configOf(state),
       status: state.status,
-      source: state.config.source,
       agentInfo: state.connection?.getAgentInfo() ?? undefined,
       capabilities: state.connection?.getAgentCapabilities() ?? undefined,
       error: state.error,
-      paths: state.cliPath ? { cli: state.cliPath } : undefined,
-      version: state.version,
+      cliPath: state.cliPath,
       lastChecked: state.lastChecked,
     };
   }
@@ -380,10 +348,10 @@ export class AgentRegistry {
       try {
         await state.connection.disconnectAndWait();
         if (wasRunning) {
-          logger.log(`[AgentRegistry] ${state.config.name}: spawned agent process stopped (uninstall)`);
+          logger.log(`[AgentRegistry] ${state.name}: spawned agent process stopped (uninstall)`);
         }
       } catch (error) {
-        logger.warn(`[AgentRegistry] ${state.config.name}: failed to stop connection cleanly:`, error);
+        logger.warn(`[AgentRegistry] ${state.name}: failed to stop connection cleanly:`, error);
       }
       state.connection = null;
     }
@@ -402,21 +370,20 @@ export class AgentRegistry {
    */
   getAgentConfig(agentId: string): AgentConfig | null {
     const state = this.statesById.get(agentId);
-    return state ? state.config : null;
+    return state ? this.configOf(state) : null;
   }
 
   /**
    * Dynamically add a new agent config to the registry (e.g. after installing
    * from ACP Registry or Add Agent From Disk). Probes the command immediately
-   * so `startInstall` can work without a prior `checkNow`.
+   * so missing/install state is known without a prior `checkNow`.
    * Returns false if the agent id already exists.
    */
   async addConfig(config: AgentConfig): Promise<boolean> {
     if (this.statesById.has(config.id)) return false;
 
-    const state: AgentState = {
-      config,
-      installed: null,
+    const state: AgentStatusInfo = {
+      ...config,
       status: 'unknown',
       connection: null,
       lastChecked: 0,
@@ -431,7 +398,8 @@ export class AgentRegistry {
       const probe = await probeCommand(config.command);
       state.installed = probe.installed;
       applyProbePaths(state, probe);
-      state.version = state.cliPath ? probeAgentVersion(state.cliPath) ?? undefined : undefined;
+      const probedVersion = state.cliPath ? probeAgentVersion(state.cliPath) : null;
+      // if (probedVersion) state.version = probedVersion;
       state.lastChecked = Date.now();
       state.status = probe.installed ? 'available' : 'unavailable';
       state.error = probe.error ?? missingAgentHint(config.command);
@@ -469,12 +437,12 @@ export class AgentRegistry {
   // Internals
   // ==========================================================================
 
-  private allStates(): Set<AgentState> {
+  private allStates(): Set<AgentStatusInfo> {
     return new Set([...this.statesById.values(), ...this.stateByKey.values()]);
   }
 
   /** Resolve (creating ad-hoc entries as needed) the state for a session config. */
-  private stateForSession(config: SseAcpClientConfig): AgentState {
+  private stateForSession(config: SseAcpClientConfig): AgentStatusInfo {
     const command = config.agentCommand || 'opencode';
     const args = config.agentArgs;
     const env = config.agentEnv;
@@ -488,7 +456,7 @@ export class AgentRegistry {
     // Caller omitted args/env entirely → inherit the known agent definition.
     if (args === undefined && env === undefined) {
       for (const state of this.statesById.values()) {
-        if (state.config.command === command) {
+        if (state.command === command) {
           return state;
         }
       }
@@ -504,9 +472,8 @@ export class AgentRegistry {
       args: normalizedArgs,
       env,
     };
-    const state: AgentState = {
-      config: adhoc,
-      installed: null,
+    const state: AgentStatusInfo = {
+      ...adhoc,
       status: 'unknown',
       connection: null,
       lastChecked: 0,
