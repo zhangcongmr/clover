@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 import { openSseRequest, readSseFrames } from './sse-transport';
 import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
@@ -728,6 +729,91 @@ export class AcpSseService {
   async getAgentInstallJob(jobId: string): Promise<AgentInstallJob> {
     const result = await this.get(`/api/acp/agents/install/${encodeURIComponent(jobId)}`);
     return result.job as AgentInstallJob;
+  }
+
+  // ============================================================================
+  // Agent 状态变更推送（全局 SSE 流，独立于会话流）
+  // ============================================================================
+
+  private agentStatusController: AbortController | null = null;
+  private agentStatusWatchStarted = false;
+  private agentStatusReconnectAttempts = 0;
+  private agentStatusReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private onAgentStatusEventCallback: ((event: { type: string; payload: any }) => void) | null = null;
+  private readonly platformId = inject(PLATFORM_ID);
+
+  /**
+   * 订阅全局 Agent 状态推送（`GET /api/acp/agents/events`）。
+   *
+   * 连接建立即收到全量快照（`agents_status_snapshot`），之后每次状态迁移收到
+   * 增量事件（`agent_status_changed`）。断线后按指数退避自动重连（封顶 30s）；
+   * `unwatchAgentStatus()` 停止订阅。
+   *
+   * SSR（服务端渲染）阶段不启动：`LocalAgentService.getBaseUrl` 依赖
+   * `window`，且服务器渲染进程也不应持有到本地 agent 的长连接。
+   */
+  watchAgentStatus(callback: (event: { type: string; payload: any }) => void): void {
+    this.onAgentStatusEventCallback = callback;
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.agentStatusWatchStarted) return;
+    this.agentStatusWatchStarted = true;
+    void this.connectAgentStatusStream();
+  }
+
+  /** 停止状态订阅并关闭底层连接。 */
+  unwatchAgentStatus(): void {
+    this.onAgentStatusEventCallback = null;
+    this.agentStatusWatchStarted = false;
+    this.agentStatusReconnectAttempts = 0;
+    if (this.agentStatusReconnectTimer) {
+      clearTimeout(this.agentStatusReconnectTimer);
+      this.agentStatusReconnectTimer = null;
+    }
+    this.agentStatusController?.abort();
+    this.agentStatusController = null;
+  }
+
+  private async connectAgentStatusStream(): Promise<void> {
+    if (!this.agentStatusWatchStarted || !isPlatformBrowser(this.platformId)) return;
+    const controller = new AbortController();
+    this.agentStatusController = controller;
+
+    try {
+      const token = await this.localAgentService.getToken();
+      const headers: Record<string, string> = {
+        Accept: 'text/event-stream',
+        Authorization: `Bearer ${token}`,
+      };
+      const url = `${this.localAgentService.getBaseUrl()}/api/acp/agents/events`;
+      const response = await openSseRequest(url, { headers, signal: controller.signal });
+      if (!response.ok || !response.body) {
+        throw new Error(`Agent status stream failed: HTTP ${response.status}`);
+      }
+
+      this.agentStatusReconnectAttempts = 0;
+      for await (const frame of readSseFrames(response.body, controller.signal)) {
+        if (controller.signal.aborted) return;
+        if (!frame.data) continue;
+        try {
+          const event = JSON.parse(frame.data) as { type: string; payload: any };
+          this.onAgentStatusEventCallback?.(event);
+        } catch (error) {
+          console.error('[ACP SSE] Failed to parse agent status event:', error);
+        }
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.error('[ACP SSE] Agent status stream error:', error);
+    }
+
+    // 流结束/网络错误：指数退避重连（封顶 30s），直到显式 unwatch。
+    if (!this.agentStatusWatchStarted || controller.signal.aborted) return;
+    const delay = Math.min(30_000, 1_000 * 2 ** this.agentStatusReconnectAttempts);
+    this.agentStatusReconnectAttempts++;
+    this.agentStatusReconnectTimer = setTimeout(() => {
+      this.agentStatusReconnectTimer = null;
+      void this.connectAgentStatusStream();
+    }, delay);
   }
 
   // ============================================================================

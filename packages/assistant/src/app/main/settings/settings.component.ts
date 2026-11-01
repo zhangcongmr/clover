@@ -4,6 +4,7 @@ import { SettingsService } from "./settings.service";
 import { LocalAgentService } from "../../shared/local-agent/local-agent.service";
 import { CoreService } from "../../core.service";
 import { AcpSseService } from "../../shared/acp/acp-sse.service";
+import { AcpService } from "../../shared/acp/acp.service";
 import { ThemeLibraryService, SavedTheme } from "../../theme-library.service";
 import { BUILTIN_THEME_PRESETS } from "../../builtin-theme-presets";
 import { THEME_CHIP_CATEGORIES } from "../../shared/skill-manager/built-in/theme-chips-library";
@@ -47,6 +48,8 @@ export class SettingsComponent {
   protected localAgentService = inject(LocalAgentService);
   private coreService = inject(CoreService);
   private sseService = inject(AcpSseService);
+  /** Agent 列表单一数据源（与 agent 选择器共用同一个 installedAgents signal）。 */
+  protected acp = inject(AcpService);
   protected themeLibrary = inject(ThemeLibraryService);
   private notification = inject(NotificationService);
 
@@ -78,8 +81,8 @@ export class SettingsComponent {
   agentStatus = signal<'unknown' | 'connected' | 'disconnected'>('unknown');
   agentTesting = signal(false);
 
-  /** ACP agents reported by the backend AgentRegistry (Settings → Agents). */
-  agents = signal<AgentStatusInfo[]>([]);
+  /** ACP agents reported by the backend AgentRegistry (Settings → Agents).
+   *  Shared single source of truth: AcpService.installedAgents. */
   agentsLoading = signal(false);
   agentsError = signal<string | null>(null);
   /** Agent id currently running a Check Now, guards double-click. */
@@ -96,7 +99,7 @@ export class SettingsComponent {
     return id ? [id] : [];
   });
   /** Ids of agents already installed (registry dialog hides their button). */
-  installedAgentIds = computed(() => this.agents().map(a => a.id));
+  installedAgentIds = computed(() => this.acp.installedAgents().map(a => a.id));
 
   /** Whether the ACP Registry install dialog is open. */
   registryDialogVisible = false;
@@ -151,7 +154,7 @@ export class SettingsComponent {
 
   setActiveCategory(id: string) {
     this.settingsService.setActiveCategory(id);
-    if (id === 'general' && this.agents().length === 0 && !this.agentsLoading()) {
+    if (id === 'general' && this.acp.installedAgents().length === 0 && !this.agentsLoading()) {
       this.loadAgents();
     }
   }
@@ -354,7 +357,7 @@ export class SettingsComponent {
     this.agentsLoading.set(true);
     this.agentsError.set(null);
     try {
-      this.agents.set(await this.sseService.listAgents());
+      this.acp.installedAgents.set(await this.sseService.listAgents());
     } catch (error) {
       this.agentsError.set((error as Error).message);
     } finally {
@@ -371,7 +374,7 @@ export class SettingsComponent {
     this.agentsError.set(null);
     try {
       const updated = await this.sseService.checkAgent(agentId);
-      this.agents.update(list => list.map(a => a.id === updated.id ? updated : a));
+      this.acp.installedAgents.update(list => list.map(a => a.id === updated.id ? updated : a));
     } catch (error) {
       this.agentsError.set((error as Error).message);
     } finally {
@@ -391,7 +394,7 @@ export class SettingsComponent {
     this.agentsError.set(null);
     try {
       await this.sseService.uninstallAgent(agent.id);
-      this.agents.update(list => list.filter(a => a.id !== agent.id));
+      this.acp.installedAgents.update(list => list.filter(a => a.id !== agent.id));
       this.notification.showNotification(`"${agent.name}" uninstalled`, 'success');
     } catch (error) {
       this.agentsError.set((error as Error).message);
