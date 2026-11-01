@@ -787,6 +787,64 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   });
 
   /**
+   * GET /api/acp/agents/events
+   * Agent 状态变更推送（全局 SSE 流，独立于会话流——状态变化不依赖任何活跃会话）。
+   * - 连接建立即推送全量快照 `agents_status_snapshot`，前端启动时序不再依赖
+   *   `GET /api/acp/agents` 与 warmup 的赛跑结果；
+   * - 之后每次状态迁移推送增量事件 `agent_status_changed`（含完整快照）；
+   * - 每 25s 发送注释行心跳，防止代理/负载均衡器掐断空闲连接。
+   */
+  app.get('/api/acp/agents/events', (req: Request, res: Response) => {
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('Content-Encoding', 'none');
+    res.flushHeaders?.();
+
+    let closed = false;
+    const send = (event: { type: string; payload: unknown; timestamp: number }) => {
+      if (closed || res.writableEnded || res.destroyed) return;
+      try {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      } catch (error) {
+        logger.error('[ACP Routes] Agent status SSE write failed:', error);
+      }
+    };
+
+    // 连接即全量快照：无需前端额外发起一次列表请求。
+    send({ type: 'agents_status_snapshot', payload: { agents: registry.getStatus() }, timestamp: Date.now() });
+
+    const unsubscribe = registry.onStatusChange((info) => {
+      send({ type: 'agent_status_changed', payload: { agent: info }, timestamp: Date.now() });
+    });
+
+    const heartbeat = setInterval(() => {
+      if (closed) return;
+      try {
+        res.write(': heartbeat\n\n');
+      } catch {
+        // 写失败会触发 'close'，由 cleanup 统一收尾
+      }
+    }, 25000);
+
+    const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      clearInterval(heartbeat);
+      unsubscribe();
+      logger.log('[ACP Routes] Agent status SSE client disconnected');
+    };
+    req.on('close', cleanup);
+    res.on('close', cleanup);
+  });
+
+  /**
    * POST /api/acp/agents/:id/check
    * Check Now：重新检测安装状态并尝试将 Agent 拉起到“连接”状态
    */

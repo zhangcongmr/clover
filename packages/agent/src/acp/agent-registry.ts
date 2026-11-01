@@ -74,6 +74,12 @@ export class AgentRegistry {
   private statesById: Map<string, AgentStatusInfo> = new Map();
   /** All states by `command|args|env` key (includes ad-hoc session states). */
   private stateByKey: Map<string, AgentStatusInfo> = new Map();
+  /**
+   * Status-change subscribers (SSE hub for the settings UI / agent pickers).
+   * Every status transition point calls `emitStatus`, so listeners receive a
+   * serializable `AgentStatusInfo` snapshot without polling `getStatus()`.
+   */
+  private statusListeners: Set<(info: AgentStatusInfo) => void> = new Set();
 
   constructor(
     private agentConfigs: AgentConfig[] = [],
@@ -149,6 +155,7 @@ export class AgentRegistry {
           state.error = probe.error ?? missingAgentHint(state.command);
         }
         logger.log(`[AgentRegistry] ${agent.name}: unavailable (${state.error})`);
+        this.emitStatus(state);
         return;
       }
 
@@ -156,19 +163,23 @@ export class AgentRegistry {
         state.status = 'connected';
         state.error = undefined;
         logger.log(`[AgentRegistry] ${agent.name}: connected`);
+        this.emitStatus(state);
         return;
       }
 
       // Installed but not running: try to bring it up (spawn + initialize).
       state.status = 'available';
+      this.emitStatus(state);
       await this.ensureConnected(state);
       state.status = 'connected';
       state.error = undefined;
       logger.log(`[AgentRegistry] ${agent.name}: connected`);
+      this.emitStatus(state);
     } catch (error) {
       state.status = state.installed ? 'offline' : 'unavailable';
       state.error = (error as Error).message;
       logger.error(`[AgentRegistry] ${agent.name}: connect failed — ${state.error}`);
+      this.emitStatus(state);
     }
   }
 
@@ -261,11 +272,13 @@ export class AgentRegistry {
           state.error = state.error ?? 'Agent process exited';
         }
         state.lastChecked = Date.now();
+        this.emitStatus(state);
       });
     }
 
     if (state.status === 'unknown' && state.installed !== false) {
       state.status = 'available';
+      this.emitStatus(state);
     }
 
     try {
@@ -274,12 +287,14 @@ export class AgentRegistry {
       state.status = state.installed === false ? 'unavailable' : 'offline';
       state.error = (error as Error).message;
       state.lastChecked = Date.now();
+      this.emitStatus(state);
       throw error;
     }
 
     state.status = 'connected';
     state.error = undefined;
     state.lastChecked = Date.now();
+    this.emitStatus(state);
   }
 
   // ==========================================================================
@@ -288,6 +303,38 @@ export class AgentRegistry {
 
   getStatus(): AgentStatusInfo[] {
     return [...this.statesById.values()].map(state => this.toInfo(state));
+  }
+
+  /**
+   * Subscribe to status changes of known agents (those listed by `getStatus`).
+   * The listener receives a serializable snapshot after every transition;
+   * ad-hoc session states (no public id) are not reported.
+   *
+   * @returns unsubscribe function.
+   */
+  onStatusChange(listener: (info: AgentStatusInfo) => void): () => void {
+    this.statusListeners.add(listener);
+    return () => {
+      this.statusListeners.delete(listener);
+    };
+  }
+
+  /** Fan out a snapshot to all listeners; listener errors never break warmup. */
+  private emitStatus(state: AgentStatusInfo): void {
+    if (!this.statesById.has(state.id)) return;
+    let info: AgentStatusInfo;
+    try {
+      info = this.toInfo(state);
+    } catch {
+      return;
+    }
+    for (const listener of this.statusListeners) {
+      try {
+        listener(info);
+      } catch (error) {
+        logger.warn(`[AgentRegistry] Status listener failed (agent: ${state.id}):`, error);
+      }
+    }
   }
 
   /**
@@ -425,6 +472,7 @@ export class AgentRegistry {
       state.status = 'unavailable';
       state.error = (error as Error).message;
     }
+    this.emitStatus(state);
 
     return true;
   }
@@ -448,7 +496,9 @@ export class AgentRegistry {
           : 'unknown';
       state.inflight = null;
       state.checking = null;
+      this.emitStatus(state);
     }
+    this.statusListeners.clear();
   }
 
   // ==========================================================================

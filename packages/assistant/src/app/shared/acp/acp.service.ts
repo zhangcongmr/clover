@@ -18,7 +18,7 @@ import {
   ToolKind,
   ConfigOption,
 } from './acp.model';
-import type { AgentConfig } from './acp-agent.types';
+import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 import { ACP_READ_ONLY } from './acp-readonly.token';
 import { recordRecentOpenedSession } from './recent-sessions.util';
@@ -190,8 +190,13 @@ export class AcpService {
   readonly pendingSlashCommand = signal<string | null>(null);
 
   // Agent selection
-  /** Installed agents loaded from ~/.clover/acp.json via the backend. */
-  readonly installedAgents = signal<AgentConfig[]>([]);
+  /**
+   * Installed agents loaded from ~/.clover/acp.json via the backend, with
+   * runtime status snapshots (AgentStatusInfo). Single source of truth shared
+   * by the agent picker and the Settings → Agents page; kept fresh by the
+   * global status push (`watchAgentStatus`) and `loadInstalledAgents`.
+   */
+  readonly installedAgents = signal<AgentStatusInfo[]>([]);
   readonly selectedAgent = signal<AgentConfig | null>(null);
 
   // Question answers tracking: toolCallId -> Set of submitted toolCallIds
@@ -246,6 +251,17 @@ export class AcpService {
 
   constructor() {
     void this.loadInstalledAgents();
+    // Agent 状态推送：页面打开即收到后端全量快照与后续每次状态迁移，
+    // 状态不再依赖 loadInstalledAgents 与后端 warmupAll 的赛跑结果
+    // （后端 warmup 未完成时快照是 unknown，迁移完成后这里会自动更新）。
+    this.sseService.watchAgentStatus((event) => {
+      if (event.type === 'agents_status_snapshot') {
+        this.mergeAgentStatuses((event.payload?.agents ?? []) as AgentStatusInfo[]);
+      } else if (event.type === 'agent_status_changed') {
+        const agent = event.payload?.agent as AgentStatusInfo | undefined;
+        if (agent) this.mergeAgentStatuses([agent]);
+      }
+    });
     effect(() => {
       const agent = this.selectedAgent();
       if (typeof localStorage !== 'undefined' && !this.readOnly) {
@@ -273,12 +289,39 @@ export class AcpService {
   async loadInstalledAgents(): Promise<void> {
     try {
       const agents = await this.sseService.listInstalledAgents();
-      this.installedAgents.set(agents);
+      // 增量合并而非整体覆盖：HTTP 响应可能晚于状态推送到达（状态流先给了
+      // 更新的快照），整体 set 会把新状态冲回旧值。
+      this.mergeAgentStatuses(agents as AgentStatusInfo[]);
       if (!this.selectedAgent()) {
-        this.selectedAgent.set(pickInitialAgent(agents));
+        this.selectedAgent.set(pickInitialAgent(this.installedAgents()));
       }
     } catch {
       // Backend unreachable: keep whatever we already have (possibly empty).
+    }
+  }
+
+  /**
+   * 将后端推送的 AgentStatusInfo 增量合并进 installedAgents（按 id 匹配）。
+   * 内容未变化的 agent 不替换，避免无谓的 signal 写入与下游重算。
+   */
+  private mergeAgentStatuses(incoming: AgentStatusInfo[]): void {
+    if (!incoming.length) return;
+    const byId = new Map(this.installedAgents().map(a => [a.id, a]));
+    let changed = false;
+    for (const info of incoming) {
+      const existing = byId.get(info.id);
+      if (!existing) {
+        byId.set(info.id, info);
+        changed = true;
+        continue;
+      }
+      if (JSON.stringify(existing) !== JSON.stringify(info)) {
+        byId.set(info.id, info);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.installedAgents.set([...byId.values()]);
     }
   }
 

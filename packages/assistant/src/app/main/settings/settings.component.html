@@ -120,7 +120,7 @@
           </div>
           <div class="setting-control agents-control">
             <div class="agents-list">
-              @for (agent of agents(); track agent.id) {
+              @for (agent of acp.installedAgents(); track agent.id) {
                 <div class="agent-row">
                   <div class="agent-meta">
                     <div class="agent-name-row">
@@ -184,10 +184,10 @@
                   </button>
                 </div>
               }
-              @if (agentsLoading() && agents().length === 0) {
+              @if (agentsLoading() && acp.installedAgents().length === 0) {
                 <p class="agents-hint">Loading agents...</p>
               }
-              @if (!agentsLoading() && agents().length === 0 && !agentsError()) {
+              @if (!agentsLoading() && acp.installedAgents().length === 0 && !agentsError()) {
                 <p class="agents-hint">No agents available</p>
               }
               @if (agentsError()) {
