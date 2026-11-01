@@ -2,7 +2,7 @@ import { logger } from '../helpers/logger.js';
 import { SseAcpClient } from './sse-client.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type { AgentConfig, AgentStatusInfo } from './acp-agent.types.js';
-import { invalidateAgentCommandCache, probeAgentVersion, probePathCommand } from './agent-probe.js';
+import { invalidateAgentCommandCache, probeAgentVersion, probePackageVersion, probePathCommand } from './agent-probe.js';
 import type { EventSink } from '../events/event-sink.js';
 
 /** Remember the resolved install paths of the last probe. */
@@ -14,22 +14,40 @@ function applyProbePaths(
 }
 
 /**
- * Probe whether an agent can be launched, without spawning the ACP process.
+ * Probe whether an agent can be launched, without spawning a session.
  *
- * The command is looked up on PATH; commands containing a path separator are
- * checked directly on disk (binary installs under ~/.clover/agents/<id>/).
+ * - binary / plain CLI agents: the command is looked up on PATH; commands
+ *   containing a path separator are checked directly on disk (binary installs
+ *   under ~/.clover/agents/<id>/).
+ * - npx / uvx agents: the runner shim on PATH says nothing about the package,
+ *   so the package itself is run (`npx -y <pkg> --version` /
+ *   `uvx <pkg> --version`, mirroring the installer's verification) and the
+ *   parsed version is returned alongside.
  */
 async function probeCommand(
-  command: string,
+  state: Pick<AgentStatusInfo, 'command' | 'args'>,
 ): Promise<{
   installed: boolean;
   error?: string;
   cliPath?: string;
+  version?: string;
 }> {
-  const probe = probePathCommand(command);
+  if (state.command === 'npx' || state.command === 'uvx') {
+    const pkg = state.args?.[0];
+    if (!pkg) {
+      return { installed: false, error: `No package specified for ${state.command} agent` };
+    }
+    const runnerPath = probePathCommand(state.command).path;
+    const result = await probePackageVersion(state.command, pkg);
+    return result.ok
+      ? { installed: true, cliPath: runnerPath, version: result.version }
+      : { installed: false, error: result.error ?? `${state.command} package not runnable: ${pkg}` };
+  }
+
+  const probe = probePathCommand(state.command);
   return probe.found
     ? { installed: true, cliPath: probe.path }
-    : { installed: false, error: missingAgentHint(command) };
+    : { installed: false, error: missingAgentHint(state.command) };
 }
 
 /** Human-readable hint for a command that cannot be found. */
@@ -114,11 +132,11 @@ export class AgentRegistry {
     if (!state) return;
 
     try {
-      const probe = await probeCommand(state.command);
+      const probe = await probeCommand(state);
       state.installed = probe.installed;
       applyProbePaths(state, probe);
-      const probedVersion = state.cliPath ? probeAgentVersion(state.cliPath) : null;
-      // if (probedVersion) state.version = probedVersion;
+      const probedVersion = probe.version ?? (state.cliPath ? probeAgentVersion(state.cliPath) : null);
+      if (probedVersion) state.version = probedVersion;
       state.lastChecked = Date.now();
 
       if (!probe.installed) {
@@ -395,11 +413,11 @@ export class AgentRegistry {
 
     // Probe the command immediately so missing/install state is known.
     try {
-      const probe = await probeCommand(config.command);
+      const probe = await probeCommand(config);
       state.installed = probe.installed;
       applyProbePaths(state, probe);
-      const probedVersion = state.cliPath ? probeAgentVersion(state.cliPath) : null;
-      // if (probedVersion) state.version = probedVersion;
+      const probedVersion = probe.version ?? (state.cliPath ? probeAgentVersion(state.cliPath) : null);
+      if (probedVersion) state.version = probedVersion;
       state.lastChecked = Date.now();
       state.status = probe.installed ? 'available' : 'unavailable';
       state.error = probe.error ?? missingAgentHint(config.command);

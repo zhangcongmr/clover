@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync, execSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -305,4 +305,83 @@ export function fileHint(filePath: string): string {
 /** Drop cached probes so a freshly installed CLI is picked up. */
 export function invalidateAgentCommandCache(): void {
   cliCheckCache.clear();
+  packageProbeCache.clear();
+}
+
+// ============================================================================
+// npx / uvx package probes
+// ============================================================================
+
+export interface PackageProbeResult {
+  ok: boolean;
+  version?: string;
+  error?: string;
+}
+
+/** Cache: npx/uvx package probes (positive and negative), short TTL. */
+const packageProbeCache = new Map<string, { result: PackageProbeResult; at: number }>();
+const PACKAGE_PROBE_TTL_MS = 30_000;
+
+/**
+ * Verify an npx/uvx-delivered agent package actually runs, the same way the
+ * installer validates it: `npx -y <pkg> --version` / `uvx <pkg> --version`.
+ *
+ * `probePathCommand('npx')` only proves the runner shim exists on PATH — the
+ * package itself may be missing from the cache, unpublished or broken, so the
+ * registry probe for npx/uvx agents must run the package instead. Results are
+ * cached briefly (the version check spawns a subprocess and can download the
+ * package on first run); `invalidateAgentCommandCache()` drops the cache so
+ * Check Now always probes fresh.
+ */
+export async function probePackageVersion(runner: 'npx' | 'uvx', pkg: string): Promise<PackageProbeResult> {
+  const cacheKey = `${runner}:${pkg}`;
+  const cached = packageProbeCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < PACKAGE_PROBE_TTL_MS) {
+    return cached.result;
+  }
+
+  const result = await runPackageVersionProbe(runner, pkg);
+  packageProbeCache.set(cacheKey, { result, at: Date.now() });
+  return result;
+}
+
+async function runPackageVersionProbe(runner: 'npx' | 'uvx', pkg: string): Promise<PackageProbeResult> {
+  const args = runner === 'npx' ? ['-y', pkg, '--version'] : [pkg, '--version'];
+  const target = resolveForSpawn(runner, args);
+
+  return new Promise((resolvePromise) => {
+    const child = spawn(target.command, target.args, {
+      shell: target.shell,
+      windowsHide: true,
+      env: process.env,
+    });
+
+    let output = '';
+    const collect = (chunk: Buffer) => { output += chunk.toString(); };
+    child.stdout?.on('data', collect);
+    child.stderr?.on('data', collect);
+
+    const timer = setTimeout(() => {
+      try { child.kill(); } catch { /* already gone */ }
+      resolvePromise({ ok: false, error: `${runner} ${pkg} --version timed out after 3min` });
+    }, 3 * 60_000);
+
+    child.on('error', (error) => {
+      clearTimeout(timer);
+      resolvePromise({ ok: false, error: `${runner}: ${error.message}` });
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      const version = parseVersion(output);
+      if (code === 0 && version) {
+        resolvePromise({ ok: true, version });
+        return;
+      }
+      const lastLine = output.split(/\r?\n/).map(l => l.trim()).filter(Boolean).pop();
+      resolvePromise({
+        ok: false,
+        error: lastLine ?? `${runner} ${pkg} --version exited with code ${code ?? 'error'}`,
+      });
+    });
+  });
 }
