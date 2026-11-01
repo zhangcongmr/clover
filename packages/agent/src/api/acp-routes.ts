@@ -770,8 +770,8 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * GET /api/acp/agents
-   * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接），
-   * 并附带 ~/.clover/acp.json 中已安装 agent 的完整配置（installedConfigs）。
+   * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接）。
+   * AgentStatusInfo 已继承 AgentConfig 的全部持久化字段，前端无需单独的配置列表。
    */
   app.get('/api/acp/agents', (_req: Request, res: Response) => {
     if (!registry) {
@@ -779,10 +779,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       return;
     }
     try {
-      res.json({
-        agents: registry.getStatus(),
-        installedConfigs: readAcpConfigFile().agents,
-      });
+      res.json({ agents: registry.getStatus() });
     } catch (error) {
       logger.error('[ACP Routes] List agents error:', error);
       res.status(500).json({ error: (error as Error).message });

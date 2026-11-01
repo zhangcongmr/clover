@@ -708,12 +708,11 @@ export class AcpSseService {
   }
 
   /**
-   * 读取 ~/.clover/acp.json 中已安装的 agent 配置列表（registry / disk 安装的 agent）。
-   * 复用 GET /api/acp/agents 的 installedConfigs 字段。
+   * 读取已安装 agent 的配置列表（~/.clover/acp.json 中的 registry / disk agent）。
+   * AgentStatusInfo 已继承 AgentConfig 的全部持久化字段，直接从状态列表提取。
    */
   async listInstalledAgents(): Promise<AgentConfig[]> {
-    const result = await this.get('/api/acp/agents');
-    return Array.isArray(result?.installedConfigs) ? result.installedConfigs : [];
+    return await this.listAgents();
   }
 
   /**
