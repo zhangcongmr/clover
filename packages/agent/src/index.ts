@@ -108,4 +108,4 @@ export type { AcpSession, SessionMessage, AcpSessionEvent, SessionOperationOptio
 export { SseAcpClient } from './acp/sse-client.js';
 export type { SseAcpClientConfig } from './acp/sse-client.js';
 export { AgentRegistry } from './acp/agent-registry.js';
-export type { AgentStatusInfo, AgentRuntimeStatus } from './acp/agent-registry.js';
+export type { AgentStatusInfo, AgentRuntimeStatus } from './acp/acp-agent.types.js';

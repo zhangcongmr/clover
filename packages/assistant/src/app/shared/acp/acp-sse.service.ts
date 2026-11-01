@@ -1,7 +1,10 @@
 import { Injectable, signal } from '@angular/core';
 import { LocalAgentService } from '../local-agent/local-agent.service';
 import { openSseRequest, readSseFrames } from './sse-transport';
-import type { AgentConfig } from './acp-agent.types';
+import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
+
+// Agent 类型与后端 acp-agent.types.ts 保持单一来源（经 @julyware/clover-agent/acp 转发）。
+export type { AgentConfig, AgentRuntimeStatus, AgentStatusInfo } from './acp-agent.types';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -17,34 +20,6 @@ export interface ServerEvent {
   type: string;
   payload: any;
   timestamp: number;
-}
-
-/**
- * Runtime status of an ACP agent as reported by the backend AgentRegistry.
- * Display precedence: connected > unavailable > offline > available.
- */
-export type AgentRuntimeStatus = 'unknown' | 'available' | 'unavailable' | 'offline' | 'connected';
-
-export interface AgentStatusInfo {
-  id: string;
-  name: string;
-  command: string;
-  args?: string[];
-  description?: string;
-  installed: boolean | null;
-  status: AgentRuntimeStatus;
-  /** 来源：builtin 内置、registry 来自 ACP Registry、disk 来自本地磁盘。 */
-  source?: 'builtin' | 'registry' | 'disk';
-  agentInfo?: unknown;
-  capabilities?: unknown;
-  error?: string;
-  /** Installer command for the missing artifact, when the backend knows one. */
-  install?: { command: string };
-  /** Where the agent CLI lives on disk. */
-  paths?: { cli?: string };
-  /** Installed agent version, when the backend can resolve one. */
-  version?: string;
-  lastChecked: number;
 }
 
 /** Progress of an on-demand agent install started from the settings page. */

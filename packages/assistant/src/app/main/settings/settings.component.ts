@@ -412,6 +412,14 @@ export class SettingsComponent {
     return `${path.slice(0, headLength)}…${path.slice(-tailLength)}`;
   }
 
+  /** Full run command for the agent row: resolved CLI path + launch args,
+   *  e.g. `C:\...\npx.cmd @augmentcode/auggie@0.36.0 --acp`. */
+  agentRunCommand(agent: AgentStatusInfo): string {
+    const cli = agent.cliPath;
+    if (!cli) return '';
+    return [cli, ...(agent.args ?? [])].join(' ');
+  }
+
   agentStatusLabel(status: AgentRuntimeStatus): string {
     switch (status) {
       case 'connected': return 'Connected';
