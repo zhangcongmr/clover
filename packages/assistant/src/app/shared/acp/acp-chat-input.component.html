@@ -152,6 +152,15 @@
 					}
 				  </button>
 				}
+				<div class="agent-dropdown-divider"></div>
+				<button class="agent-option agent-option-action" (mousedown)="openRegistryDialog()">
+				  <span class="agent-name">+ Install From ACP Registry...</span>
+				  <span class="agent-desc">Install an agent from the ACP registry</span>
+				</button>
+				<button class="agent-option agent-option-action" (mousedown)="onAddAgentFromDisk()">
+				  <span class="agent-name">+ Add Agent From Disk...</span>
+				  <span class="agent-desc">Add a local agent from the filesystem</span>
+				</button>
 			  </div>
 			}
 		  </div>
@@ -343,3 +352,12 @@
   </div>
 </ast-modal>
 <app-file-picker-dialog #filePicker (selected)="onFolderSelected($event)"></app-file-picker-dialog>
+<app-acp-registry-dialog
+  [visible]="registryDialogVisible()"
+  [installingIds]="installingAgentIds()"
+  [installedIds]="installedAgentIds()"
+  (close)="closeRegistryDialog()"
+  (install)="onRegistryAgentInstall($event)"
+  (ok)="closeRegistryDialog()"
+  (apply)="closeRegistryDialog()"
+></app-acp-registry-dialog>
