@@ -13,10 +13,10 @@ import {
   type StreamResponse,
 } from '@a2a-js/sdk';
 import { LocalAgentService } from '../../../shared/local-agent/local-agent.service';
-import { AcpSseService, type AgentStatusInfo } from '../../../shared/acp/acp-sse.service';
+import { AcpSseService } from '../../../shared/acp/acp-sse.service';
 import { openSseRequest, readSseFrames } from '../../../shared/acp/sse-transport';
 import type { ConfigOption } from '../../../shared/acp/acp.model';
-import type { ProjectInfo } from '../../../shared/acp/acp.service';
+import { AcpService, type ProjectInfo } from '../../../shared/acp/acp.service';
 
 /**
  * One participating session inside a collaboration space (backend response).
@@ -121,12 +121,12 @@ const MAX_TURNS = 30;
 export class CollabService {
   private localAgent = inject(LocalAgentService);
   private sseService = inject(AcpSseService);
+  /** Agent 列表单一数据源（由全局状态推送保持实时，Settings 页共用）。 */
+  private acp = inject(AcpService);
 
   /** Whether the collaboration panel replaces the ACP panel. */
   readonly panelOpen = signal(false);
   readonly project = signal<ProjectInfo | null>(null);
-  /** All agents reported by the backend registry (unfiltered, bindable targets). */
-  readonly availableAgents = signal<AgentStatusInfo[]>([]);
   /** Editable session slots (session-primary picker). */
   readonly participants = signal<ParticipantDraft[]>([]);
   /** Chosen orchestrator participant id (must be a participant; empty = none). */
@@ -187,8 +187,10 @@ export class CollabService {
     this.project.set(project);
     this.panelOpen.set(true);
     this.error.set(null);
-    if (this.availableAgents().length === 0) {
-      await this.refreshAgents();
+    // 共享列表在 app 启动时已由 AcpService 填充并保持实时；这里只在
+    // 启动拉取失败（如后端暂不可达）导致列表为空时补拉一次。
+    if (this.acp.installedAgents().length === 0) {
+      await this.acp.loadInstalledAgents();
     }
     if (this.participants().length === 0) {
       this.addParticipant();
@@ -210,13 +212,9 @@ export class CollabService {
     this.creating.set(false);
   }
 
+  /** 面板上的手动刷新按钮：重新拉取共享 agent 列表。 */
   async refreshAgents(): Promise<void> {
-    try {
-      this.availableAgents.set(await this.sseService.listAgents());
-    } catch (error) {
-      console.error('[Collab] Failed to list agents:', error);
-      this.error.set((error as Error).message || 'Failed to list agents');
-    }
+    await this.acp.loadInstalledAgents();
   }
 
   // --- Session slots (participants) -----------------------------------------
@@ -939,7 +937,7 @@ export class CollabService {
 
   agentLabelOf(agentId: string | undefined): string {
     if (!agentId) return '';
-    return this.availableAgents().find(agent => agent.id === agentId)?.name ?? agentId;
+    return this.acp.installedAgents().find(agent => agent.id === agentId)?.name ?? agentId;
   }
 
   /** Human label of a participating session (agent name + role). */

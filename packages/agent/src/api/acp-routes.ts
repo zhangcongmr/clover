@@ -824,6 +824,11 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       send({ type: 'agent_status_changed', payload: { agent: info }, timestamp: Date.now() });
     });
 
+    // 卸载推送：条目已从 registry 删除，前端按 id 丢弃本地副本。
+    const unsubscribeRemoved = registry.onAgentRemoved((agentId) => {
+      send({ type: 'agent_removed', payload: { agentId }, timestamp: Date.now() });
+    });
+
     const heartbeat = setInterval(() => {
       if (closed) return;
       try {
@@ -838,6 +843,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       closed = true;
       clearInterval(heartbeat);
       unsubscribe();
+      unsubscribeRemoved();
       logger.log('[ACP Routes] Agent status SSE client disconnected');
     };
     req.on('close', cleanup);

@@ -260,6 +260,8 @@ export class AcpService {
       } else if (event.type === 'agent_status_changed') {
         const agent = event.payload?.agent as AgentStatusInfo | undefined;
         if (agent) this.mergeAgentStatuses([agent]);
+      } else if (event.type === 'agent_removed') {
+        this.removeAgent(String(event.payload?.agentId ?? ''));
       }
     });
     effect(() => {
@@ -322,6 +324,19 @@ export class AcpService {
     }
     if (changed) {
       this.installedAgents.set([...byId.values()]);
+    }
+  }
+
+  /**
+   * 从共享列表中移除已卸载的 agent（后端 agent_removed 推送）。
+   * 若当前选中的正是被移除的 agent，回退到剩余列表的初始选择。
+   */
+  private removeAgent(agentId: string): void {
+    if (!agentId) return;
+    if (!this.installedAgents().some(a => a.id === agentId)) return;
+    this.installedAgents.update(list => list.filter(a => a.id !== agentId));
+    if (this.selectedAgent()?.id === agentId) {
+      this.selectedAgent.set(pickInitialAgent(this.installedAgents()));
     }
   }
 
