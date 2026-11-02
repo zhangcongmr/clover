@@ -1,0 +1,65 @@
+<ast-modal
+  [visible]="visible()"
+  [title]="editing() ? 'Edit Agent (From Disk)' : 'Add Agent From Disk'"
+  modalSize="large"
+  [draggable]="false"
+  [backdrop]="true"
+  (close)="closeDialog()"
+>
+  <div class="ast-modal-body add-disk-dialog">
+    <label class="disk-field-label">ACP Agent Path <span class="disk-required">*</span></label>
+    <div class="disk-path-row">
+      <input
+        type="text"
+        class="disk-input"
+        placeholder="Path to the agent executable or shim"
+        [(ngModel)]="path"
+      />
+      <button class="btn btn-secondary disk-browse-btn" type="button" (click)="openBrowse()">
+        Browse...
+      </button>
+    </div>
+
+    <label class="disk-field-label">Display Name</label>
+    <input
+      type="text"
+      class="disk-input"
+      placeholder="Defaults to the file name"
+      [(ngModel)]="displayName"
+    />
+
+    <label class="disk-field-label">Arguments</label>
+    <input
+      type="text"
+      class="disk-input"
+      placeholder="e.g. --acp   |   -y @scope/pkg --acp"
+      [(ngModel)]="argumentsText"
+    />
+    <div class="disk-hint">
+      Multiple arguments separated by spaces; wrap values containing spaces in double quotes.
+    </div>
+
+    <div class="disk-footer">
+      @if (editing()) {
+        <button
+          class="btn btn-secondary disk-delete-btn"
+          type="button"
+          (click)="deleteAgent()"
+          title="Delete this agent and remove its configuration"
+        >
+          Delete
+        </button>
+      }
+      <button class="btn btn-secondary" type="button" (click)="submit()" [disabled]="!canConfirm()">
+        @if (editing()) {
+          Save Changes
+        } @else {
+          Add Agent
+        }
+      </button>
+      <button class="btn btn-secondary" type="button" (click)="closeDialog()">Cancel</button>
+    </div>
+  </div>
+</ast-modal>
+
+<app-file-picker-dialog #filePicker (selected)="onFileSelected($event)"></app-file-picker-dialog>

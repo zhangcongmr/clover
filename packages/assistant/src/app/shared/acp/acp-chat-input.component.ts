@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
 import { AcpSseService } from './acp-sse.service';
 import { AcpRegistryDialogComponent, type AcpRegistryAgent } from './acp-registry-dialog.component';
+import { AddAgentFromDiskDialogComponent, type AddDiskAgentRequest } from './add-agent-from-disk-dialog.component';
 import { NotificationService } from '../notification/notification.service';
 import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp.model';
@@ -61,7 +62,7 @@ interface McpServerOption {
 @Component({
   selector: 'app-acp-chat-input',
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent, DropdownPlacementDirective, AcpRegistryDialogComponent],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent, DropdownPlacementDirective, AcpRegistryDialogComponent, AddAgentFromDiskDialogComponent],
   templateUrl: './acp-chat-input.component.html',
   styles: [`
     :host {
@@ -1007,10 +1008,6 @@ export class AcpChatInputComponent {
   projectSelectedIndex = signal<number>(0);
   mcpServers = signal<McpServerOption[]>([]);
   selectedMcpServers = signal<Set<string>>(new Set());
-  /** Installed agents (from ~/.clover/acp.json), used by the agent dropdown. */
-  protected get agents(): AgentConfig[] {
-    return this.acpService.installedAgents();
-  }
 
   readonly modeConfig = computed(() => {
     const options = this.acpService.sessionState().configOptions;
@@ -1206,7 +1203,7 @@ export class AcpChatInputComponent {
     const opening = !this.showAgentDropdown();
     this.showAgentDropdown.set(opening);
     if (opening) {
-      const idx = this.agents.findIndex(a => a.id === this.acpService.selectedAgent()?.id);
+      const idx = this.acpService.installedAgents().findIndex(a => a.id === this.acpService.selectedAgent()?.id);
       this.agentSelectedIndex.set(idx >= 0 ? idx : 0);
     }
   }
@@ -1221,6 +1218,8 @@ export class AcpChatInputComponent {
 
   /** ACP Registry 安装对话框可见性。 */
   readonly registryDialogVisible = signal(false);
+  /** "Add Agent From Disk" 对话框可见性（与 Settings 页同一个对话框组件）。 */
+  readonly diskDialogVisible = signal(false);
   /** 正在安装的 agent id（对话框按钮态 + 去重）。 */
   readonly installingAgentIds = signal<string[]>([]);
   /** 已安装 agent id（对话框隐藏对应按钮）。 */
@@ -1249,22 +1248,48 @@ export class AcpChatInputComponent {
     });
   }
 
-  /** 从磁盘添加 agent：与 Settings 相同的 prompt 交互。 */
-  async onAddAgentFromDisk(): Promise<void> {
+  /**
+   * 从磁盘添加 agent：与 Settings 页一致，打开 "Add Agent From Disk" 对话框
+   * （路径 / Display Name / Arguments 一次填完），确认后走安装 job。
+   */
+  onAddAgentFromDisk(): void {
     this.showAgentDropdown.set(false);
-    const command = prompt('Enter the agent command or path to executable:');
-    if (!command) return;
-    const name = prompt('Enter a display name for this agent:', command);
-    if (!name) return;
+    this.diskDialogVisible.set(true);
+  }
+
+  closeDiskDialog(): void {
+    this.diskDialogVisible.set(false);
+  }
+
+  /** 磁盘对话框确认：把表单内容转成 disk 源 agent 配置并安装。 */
+  async onDiskAgentConfirmed(request: AddDiskAgentRequest): Promise<void> {
+    this.diskDialogVisible.set(false);
+
+    if (request.editing) {
+      // 本组件只在新增模式打开该对话框；编辑/删除入口在 Settings 页。
+      try {
+        await this.sseService.updateDiskAgent(request.id, {
+          name: request.name,
+          command: request.command,
+          args: request.args,
+          description: request.description,
+        });
+        this.notification.showNotification(`"${request.name}" updated`, 'success');
+        await this.acpService.loadInstalledAgents();
+      } catch (error) {
+        this.notification.showNotification(`Update failed: ${(error as Error).message}`, 'error');
+      }
+      return;
+    }
+
     await this.startAgentInstall({
-      id: command.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
-      name,
-      command,
-      args: [],
-      description: 'Agent added from disk',
+      id: request.id,
+      name: request.name,
+      command: request.command,
+      args: request.args,
+      description: request.description,
       source: 'disk',
       installed: false,
-      installedAt: new Date().toISOString(),
     });
   }
 
@@ -1740,7 +1765,7 @@ export class AcpChatInputComponent {
     }
 
     if (agentMenuVisible) {
-      const agentCount = this.agents.length;
+      const agentCount = this.acpService.installedAgents().length;
       if (event.key === 'ArrowDown') {
         event.preventDefault();
         const next = (this.agentSelectedIndex() + 1) % agentCount;
@@ -1757,7 +1782,7 @@ export class AcpChatInputComponent {
       }
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        this.selectAgent(this.agents[this.agentSelectedIndex()]);
+        this.selectAgent(this.acpService.installedAgents()[this.agentSelectedIndex()]);
         return;
       }
       if (event.key === 'Escape') {

@@ -105,13 +105,10 @@
 
     <!-- Footer buttons -->
     <div class="registry-footer">
-      <button class="btn btn-primary" (click)="ok.emit()" [disabled]="loading()">
+      <button class="btn btn-secondary" (click)="ok.emit()" [disabled]="loading()">
         OK
       </button>
       <button class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
-      <button class="btn btn-secondary" (click)="apply.emit()" [disabled]="loading()">
-        Apply
-      </button>
     </div>
   </div>
 </ast-modal>

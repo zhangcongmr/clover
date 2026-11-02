@@ -724,6 +724,16 @@ export class AcpSseService {
   }
 
   /**
+   * 编辑 disk 源 agent 的配置（name / command / args / description）。
+   */
+  async updateDiskAgent(
+    agentId: string,
+    patch: { name?: string; command?: string; args?: string[]; description?: string },
+  ): Promise<any> {
+    return await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/update`, patch);
+  }
+
+  /**
    * 查询安装任务进度（设置页轮询）
    */
   async getAgentInstallJob(jobId: string): Promise<AgentInstallJob> {

@@ -131,10 +131,13 @@ export { readAcpConfigFile } from '../acp/acp-config-store.js';
 import { readAcpConfigFile } from '../acp/acp-config-store.js';
 import {
   getInstallJob,
+  startDiskInstall,
   startInstall,
   uninstallAgent,
   type AgentInstallRequest,
 } from '../acp/agent-install.js';
+import { probePathCommand } from '../acp/agent-probe.js';
+import { upsertAcpAgent } from '../acp/acp-config-store.js';
 
 export interface AcpRouteOptions {
   tokenManager: TokenManager;
@@ -872,8 +875,11 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   /**
    * POST /api/acp/agents/install
    * 安装一个 agent。Body 为完整的 AgentInstallRequest（AgentConfig + distribution）。
-   * 仅支持 source=registry；安装由后台 job 执行，成功后才写入 ~/.clover/acp.json
-   * 并注册进 AgentRegistry（失败不落盘）。
+   * - source=registry：按 distribution 执行安装（npx/uvx/binary），由后台 job 执行，
+   *   成功后才写入 ~/.clover/acp.json 并注册进 AgentRegistry（失败不落盘）。
+   * - source=disk：安装包已由用户预先准备好（Add Agent From Disk），仅校验
+   *   可执行文件存在 → 写 acp.json → 注册，job 立即完成。
+   * - source=builtin：暂不支持（501）。
    */
   app.post('/api/acp/agents/install', (req: Request, res: Response) => {
     const config = (req.body ?? {}) as AgentInstallRequest;
@@ -883,12 +889,16 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.status(400).json({ error: 'body must be a full AgentConfig with at least id and name' });
       return;
     }
-    if (config.source !== 'registry') {
-      res.status(501).json({ error: `Installing source="${config.source ?? 'builtin'}" agents is not implemented yet` });
+    if (config.source === 'builtin') {
+      res.status(501).json({ error: 'Installing source="builtin" agents is not implemented yet' });
       return;
     }
-    if (!config.distribution || typeof config.distribution !== 'object') {
+    if (config.source === 'registry' && (!config.distribution || typeof config.distribution !== 'object')) {
       res.status(400).json({ error: 'body.distribution is required for source=registry installs' });
+      return;
+    }
+    if (config.source === 'disk' && (typeof config.command !== 'string' || !config.command.trim())) {
+      res.status(400).json({ error: 'body.command (path to the executable) is required for source=disk installs' });
       return;
     }
     if (!registry) {
@@ -896,16 +906,25 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       return;
     }
 
-    const job = startInstall(config, (finished) => {
-      if (finished.status !== 'succeeded') return;
-      // 注册进内存 registry 并拉起，让新 agent 立即可用（无需重启服务）。
-      const entry = readAcpConfigFile().agents.find(a => a.id === config.id);
+    // 注册进内存 registry 并拉起，让新 agent 立即可用（无需重启服务）。
+    const registerInstalledAgent = (agentId: string) => {
+      const entry = readAcpConfigFile().agents.find(a => a.id === agentId);
       if (entry) {
-        void registry.addConfig(entry).then(() => registry.checkNow(config.id)).catch((error) => {
-          logger.warn(`[ACP Routes] Failed to register installed agent (agent: ${config.id}):`, error);
+        void registry.addConfig(entry).then(() => registry.checkNow(agentId)).catch((error) => {
+          logger.warn(`[ACP Routes] Failed to register installed agent (agent: ${agentId}):`, error);
         });
       }
-    });
+    };
+
+    const job = config.source === 'disk'
+      ? startDiskInstall(config, (finished) => {
+          if (finished.status !== 'succeeded') return;
+          registerInstalledAgent(config.id);
+        })
+      : startInstall(config, (finished) => {
+          if (finished.status !== 'succeeded') return;
+          registerInstalledAgent(config.id);
+        });
     if (!job) {
       res.status(400).json({ error: `No installable distribution for agent: ${config.id}` });
       return;
@@ -954,6 +973,61 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       res.json({ success: true });
     } catch (error) {
       logger.error(`[ACP Routes] Uninstall agent error (agent: ${agentId}):`, error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  /**
+   * POST /api/acp/agents/:id/update
+   * 编辑 disk 源 agent 的配置（name / command / args / description）。
+   * 流程：校验新可执行文件存在 → 断开并停止旧进程（等待退出）→
+   * 更新 ~/.clover/acp.json → 重新注册进 registry 并拉起。
+   */
+  app.post('/api/acp/agents/:id/update', async (req: Request, res: Response) => {
+    const agentId = String(req.params.id);
+    if (!registry) {
+      res.status(503).json({ error: 'Agent registry not initialized' });
+      return;
+    }
+
+    const { name, command, args, description } = req.body ?? {};
+    if (typeof command !== 'string' || !command.trim()) {
+      res.status(400).json({ error: 'command (path to the executable) is required' });
+      return;
+    }
+    const entry = readAcpConfigFile().agents.find(a => a.id === agentId);
+    if (!entry) {
+      res.status(404).json({ error: `Agent not found: ${agentId}` });
+      return;
+    }
+    if (entry.source !== 'disk') {
+      res.status(400).json({ error: 'Only disk-source agents can be edited' });
+      return;
+    }
+    if (!probePathCommand(command).found) {
+      res.status(400).json({ error: `Executable not found: ${command}` });
+      return;
+    }
+
+    try {
+      // 旧 command 可能已被拉起：先断开并等待进程退出，再改配置。
+      await registry.removeConfig(agentId);
+
+      const updated: AgentConfig = {
+        ...entry,
+        name: typeof name === 'string' && name.trim() ? name : entry.name,
+        command,
+        args: Array.isArray(args) ? args : entry.args,
+        description: typeof description === 'string' ? description : entry.description,
+      };
+      upsertAcpAgent(updated);
+      await registry.addConfig(updated);
+      void registry.checkNow(agentId).catch(() => undefined);
+
+      const agent = registry.getStatus().find(a => a.id === agentId) ?? null;
+      res.json({ success: true, agent });
+    } catch (error) {
+      logger.error(`[ACP Routes] Update agent error (agent: ${agentId}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });

@@ -12,6 +12,10 @@ import { ThemePreviewSvgComponent, ThemePreviewVariant } from "../../shared/acp/
 import { NotificationService } from "../../shared/notification/notification.service";
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
 import { AcpRegistryDialogComponent, AcpRegistryAgent } from "../../shared/acp/acp-registry-dialog.component";
+import {
+  AddAgentFromDiskDialogComponent,
+  AddDiskAgentRequest,
+} from "../../shared/acp/add-agent-from-disk-dialog.component";
 import type { AgentRuntimeStatus, AgentStatusInfo } from "../../shared/acp/acp-sse.service";
 import type { AgentConfig } from "../../shared/acp/acp-agent.types";
 
@@ -41,7 +45,7 @@ function readNumber(raw: string): number {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
   standalone: true,
-  imports: [FormsModule, ThemePreviewSvgComponent, AstMenuComponent, AcpRegistryDialogComponent],
+  imports: [FormsModule, ThemePreviewSvgComponent, AstMenuComponent, AcpRegistryDialogComponent, AddAgentFromDiskDialogComponent],
 })
 export class SettingsComponent {
   private settingsService = inject(SettingsService);
@@ -103,6 +107,11 @@ export class SettingsComponent {
 
   /** Whether the ACP Registry install dialog is open. */
   registryDialogVisible = false;
+
+  /** Whether the Add/Edit Agent From Disk dialog is open. */
+  diskDialogVisible = false;
+  /** Disk agent currently being edited (null = add mode). */
+  editingDiskAgent: AgentStatusInfo | null = null;
 
   /** Whether the "Add Agent" dropdown menu is open. */
   agentMenuOpen = false;
@@ -458,11 +467,6 @@ export class SettingsComponent {
     this.registryDialogVisible = false;
   }
 
-  /** Apply button on the ACP Registry dialog. */
-  onRegistryDialogApply(): void {
-    this.registryDialogVisible = false;
-  }
-
   /** Install the selected agent from the ACP registry.
    *  The dialog stays open: the agent's button switches to "Installing..."
    *  while the backend job runs, and disappears once the agent shows up in
@@ -524,31 +528,84 @@ export class SettingsComponent {
     }
   }
 
-  /** Add a local agent from the filesystem. */
-  async onAddAgentFromDisk(): Promise<void> {
+  /**
+   * Delete button in the disk dialog (edit mode): uninstall the agent — the
+   * backend drops the ~/.clover/acp.json entry and any install artifacts — then
+   * close the dialog and refresh the list.
+   */
+  async onDiskAgentRemoved(agentId: string): Promise<void> {
+    if (this.uninstallingAgentId()) return;
+    const name = this.editingDiskAgent?.name
+      ?? this.acp.installedAgents().find(a => a.id === agentId)?.name
+      ?? agentId;
+    if (!confirm(`Delete "${name}"? Its configuration will be removed from ~/.clover/acp.json.`)) return;
+
+    this.uninstallingAgentId.set(agentId);
+    this.agentsError.set(null);
+    try {
+      await this.sseService.uninstallAgent(agentId);
+      this.acp.installedAgents.update(list => list.filter(a => a.id !== agentId));
+      this.notification.showNotification(`"${name}" deleted`, 'success');
+      this.diskDialogVisible = false;
+      this.editingDiskAgent = null;
+      await this.loadAgents();
+    } catch (error) {
+      this.agentsError.set((error as Error).message);
+      this.notification.showNotification(`Delete failed: ${(error as Error).message}`, 'error');
+    } finally {
+      this.uninstallingAgentId.set(null);
+    }
+  }
+
+  /** Add a local agent from the filesystem: opens the disk dialog (add mode). */
+  onAddAgentFromDisk(): void {
     this.agentMenuOpen = false;
     this.agentMenuInitiator = undefined;
+    this.editingDiskAgent = null;
+    this.diskDialogVisible = true;
+  }
 
-    // Use the existing file picker dialog to select an agent executable.
-    // For now, prompt for a path via a simple input; a dedicated disk-picker
-    // dialog can be added later.
-    const command = prompt('Enter the agent command or path to executable:');
-    if (!command) return;
+  /** Open the disk dialog in edit mode for a disk-source agent. */
+  onEditDiskAgent(agent: AgentStatusInfo): void {
+    this.editingDiskAgent = agent;
+    this.diskDialogVisible = true;
+  }
 
-    const name = prompt('Enter a display name for this agent:', command);
-    if (!name) return;
+  onDiskDialogClose(): void {
+    this.diskDialogVisible = false;
+    this.editingDiskAgent = null;
+  }
 
-    const agentConfig: AgentConfig = {
-      id: command.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
-      name,
-      command,
-      args: [],
-      description: 'Agent added from disk',
+  /** Handle the disk dialog's confirm: add (install flow) or edit (update). */
+  async onDiskAgentConfirmed(request: AddDiskAgentRequest): Promise<void> {
+    this.diskDialogVisible = false;
+
+    if (request.editing) {
+      try {
+        await this.sseService.updateDiskAgent(request.id, {
+          name: request.name,
+          command: request.command,
+          args: request.args,
+          description: request.description,
+        });
+        this.notification.showNotification(`"${request.name}" updated`, 'success');
+        await this.loadAgents();
+      } catch (error) {
+        this.agentsError.set((error as Error).message);
+        this.notification.showNotification(`Update failed: ${(error as Error).message}`, 'error');
+      }
+      return;
+    }
+
+    const agentConfig: AgentConfig & { distribution?: any } = {
+      id: request.id,
+      name: request.name,
+      command: request.command,
+      args: request.args,
+      description: request.description,
       source: 'disk',
       installed: false,
-      installedAt: new Date().toISOString(),
     };
-
     await this.onAgentInstalled(agentConfig);
   }
 
