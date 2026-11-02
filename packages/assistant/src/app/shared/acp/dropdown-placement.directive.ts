@@ -16,6 +16,18 @@ export type DropdownPlacement = 'top' | 'bottom';
 const EDGE_GAP = 4;
 
 /**
+ * Extra slack kept between the menu's edge and the clipping edge when the menu
+ * has to be capped.
+ *
+ * Landing exactly on `clip.bottom` (or a fraction past it) is the state where
+ * the clipping ancestor's overflow — and therefore its scrollbar, and therefore
+ * its `clientHeight` — flips. A flip changes the measured room, which changes
+ * the cap, which flips the overflow back: an endless two-state oscillation that
+ * shows up as `max-height` jitter.
+ */
+const CLAMP_SLACK = 1;
+
+/**
  * Keeps an absolutely positioned popup menu inside the box that clips it.
  *
  * The composer menus are anchored with `bottom: 100%` and used to carry a fixed
@@ -35,6 +47,19 @@ const EDGE_GAP = 4;
  * menus is the `.xxx-selector` (or `.acp-chat-input-box`) wrapper — exactly the
  * box the menu is anchored to. CSS only needs to provide the two placement
  * variants (see `.agent-dropdown[data-placement='bottom']` and friends).
+ *
+ * Because the directive writes the very size it measures around, it must never
+ * let its own write feed back into the measurement:
+ *
+ * - the natural height comes from `scrollHeight` plus the border widths from
+ *   computed style, never from `offsetHeight`/`clientHeight` of the (already
+ *   capped) box, so a cap can not change the number that produced it;
+ * - a cap is always {@link CLAMP_SLACK} pixels away from the clipping edge, so
+ *   the cap can not toggle the ancestor's overflow/scrollbar state;
+ * - re-measuring is coalesced into one `requestAnimationFrame`, so a burst of
+ *   scroll or ResizeObserver events can not produce a burst of writes;
+ * - as a last resort, an A → B → A cycle settles on the smaller height instead
+ *   of alternating forever.
  */
 @Directive({
   selector: '[appDropdownPlacement]',
@@ -53,21 +78,31 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
 
   private placement: DropdownPlacement = 'top';
   private resizeObserver?: ResizeObserver;
-  private readonly onLayoutChange = () => this.update();
+  private frame: number | null = null;
+  /** Last applied cap, and the one before it, for cycle detection. */
+  private appliedRoom: number | null = null;
+  private roomBeforeLast: number | null = null;
+
+  private readonly onLayoutChange = () => this.schedule();
+  private readonly onResize = () => this.schedule();
 
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    // First paint needs a cap synchronously, otherwise the menu flashes at its
+    // CSS default height before the first frame callback runs.
     this.update();
     // Menus follow their trigger while the panel scrolls, so re-measure instead
     // of closing: scrolling never detaches the menu from the composer.
     document.addEventListener('scroll', this.onLayoutChange, { capture: true, passive: true });
     window.addEventListener('resize', this.onLayoutChange, { passive: true });
     if (typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(this.onLayoutChange);
-      this.resizeObserver.observe(this.host.nativeElement);
+      this.resizeObserver = new ResizeObserver(this.onResize);
       // Panel size changes (sidebar toggle, splitter drag, layout switch) move
       // the composer without scrolling or resizing the window, so watch the
-      // trigger and the boxes that clip the menu as well.
+      // trigger and the boxes that clip the menu as well. Observing the menu
+      // itself is still required for content changes (agents appearing /
+      // disappearing), the write feedback is handled inside `update`.
+      this.resizeObserver.observe(this.host.nativeElement);
       const el = this.host.nativeElement;
       const anchor = this.anchorOf(el);
       if (anchor) this.resizeObserver.observe(anchor);
@@ -81,6 +116,19 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     document.removeEventListener('scroll', this.onLayoutChange, { capture: true });
     window.removeEventListener('resize', this.onLayoutChange);
     this.resizeObserver?.disconnect();
+    if (this.frame !== null) {
+      cancelAnimationFrame(this.frame);
+      this.frame = null;
+    }
+  }
+
+  /** Coalesce every trigger into a single measurement per frame. */
+  private schedule(): void {
+    if (this.frame !== null) return;
+    this.frame = requestAnimationFrame(() => {
+      this.frame = null;
+      this.update();
+    });
   }
 
   private update(): void {
@@ -95,10 +143,12 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     const clip = this.clipRect(el);
     if (clip.bottom - clip.top <= 0) return;
 
-    // Natural (unclamped) height: the menu is a scroll container, so
-    // `scrollHeight` reports the full content height whatever cap is applied.
-    const borders = Math.max(el.offsetHeight - el.clientHeight, 0);
-    const naturalHeight = Math.max(el.scrollHeight + borders, el.offsetHeight);
+    // Natural (unclamped) border-box height. `scrollHeight` reports the full
+    // content height whatever cap is applied, and the border widths come from
+    // computed style, so this number is independent of the height we wrote last
+    // time — reading `offsetHeight`/`clientHeight` here used to close a
+    // measurement loop with our own write.
+    const naturalHeight = el.scrollHeight + this.borderHeight(el);
     const wantedHeight = Math.min(naturalHeight, this.placementMaxHeight());
 
     const anchorRect = anchor.getBoundingClientRect();
@@ -115,10 +165,26 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     const side: DropdownPlacement = flip
       ? (preferBottom ? 'top' : 'bottom')
       : this.placementPreference();
-    const room = Math.min(wantedHeight, flip ? fallbackSpace : preferredSpace);
+    const sideSpace = flip ? fallbackSpace : preferredSpace;
 
     // Nothing sensible fits (collapsed panel, hidden host): keep the CSS default
     // so the menu is not squashed to zero height.
+    if (sideSpace < 1) return;
+
+    const clamped = sideSpace < wantedHeight;
+    let room = Math.floor(clamped ? sideSpace - CLAMP_SLACK : wantedHeight);
+
+    // Two-value ping-pong (A → B → A): the measurement is still reacting to our
+    // own write. Settle on the smaller height instead of alternating forever.
+    if (
+      this.appliedRoom !== null &&
+      this.roomBeforeLast !== null &&
+      room === this.roomBeforeLast &&
+      room !== this.appliedRoom
+    ) {
+      room = Math.min(room, this.appliedRoom);
+    }
+
     if (room < 1) return;
 
     if (this.placement !== side) {
@@ -127,10 +193,21 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     }
     // Compare before writing: the ResizeObserver below must not loop on our own
     // style change.
-    const nextMaxHeight = `${Math.round(room)}px`;
+    const nextMaxHeight = `${room}px`;
     if (el.style.maxHeight !== nextMaxHeight) {
       el.style.maxHeight = nextMaxHeight;
     }
+
+    this.roomBeforeLast = this.appliedRoom;
+    this.appliedRoom = room;
+  }
+
+  /** Border-box vertical padding-inclusive chrome of the menu, height-agnostic. */
+  private borderHeight(el: HTMLElement): number {
+    const style = getComputedStyle(el);
+    const top = parseFloat(style.borderTopWidth);
+    const bottom = parseFloat(style.borderBottomWidth);
+    return (Number.isFinite(top) ? top : 0) + (Number.isFinite(bottom) ? bottom : 0);
   }
 
   /**
