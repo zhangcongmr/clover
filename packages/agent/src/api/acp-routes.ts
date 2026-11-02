@@ -191,6 +191,21 @@ function parseTakeover(req: Request): boolean {
   return header === '1' || header === 'true';
 }
 
+/** 请求体里的 env 必须是普通对象（数组 / null / 标量都视为未提供）。 */
+function isEnvRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** 规范化为 `Record<string, string>`：丢弃空键与 null 值，其余转字符串。 */
+function normalizeEnv(env: Record<string, unknown>): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (!key || value === null || value === undefined) continue;
+    result[key] = String(value);
+  }
+  return result;
+}
+
 export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
   const { tokenManager, sessionManager, sseManager, fileService, mcpRegistry, registry } = options;
   const requireAuth = createRequireAuth(tokenManager);
@@ -979,7 +994,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
   /**
    * POST /api/acp/agents/:id/update
-   * 编辑 disk 源 agent 的配置（name / command / args / description）。
+   * 编辑 disk 源 agent 的配置（name / command / args / env / description）。
    * 流程：校验新可执行文件存在 → 断开并停止旧进程（等待退出）→
    * 更新 ~/.clover/acp.json → 重新注册进 registry 并拉起。
    */
@@ -990,7 +1005,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       return;
     }
 
-    const { name, command, args, description } = req.body ?? {};
+    const { name, command, args, env, description } = req.body ?? {};
     if (typeof command !== 'string' || !command.trim()) {
       res.status(400).json({ error: 'command (path to the executable) is required' });
       return;
@@ -1018,6 +1033,8 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         name: typeof name === 'string' && name.trim() ? name : entry.name,
         command,
         args: Array.isArray(args) ? args : entry.args,
+        // env 允许整体替换（传空对象即清空），未传则保留原值。
+        env: isEnvRecord(env) ? normalizeEnv(env) : entry.env,
         description: typeof description === 'string' ? description : entry.description,
       };
       upsertAcpAgent(updated);

@@ -586,6 +586,7 @@ export class SettingsComponent {
           name: request.name,
           command: request.command,
           args: request.args,
+          env: request.env,
           description: request.description,
         });
         this.notification.showNotification(`"${request.name}" updated`, 'success');
@@ -602,6 +603,7 @@ export class SettingsComponent {
       name: request.name,
       command: request.command,
       args: request.args,
+      env: request.env,
       description: request.description,
       source: 'disk',
       installed: false,

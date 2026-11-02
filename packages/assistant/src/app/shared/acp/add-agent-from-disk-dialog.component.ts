@@ -10,6 +10,8 @@ export interface AddDiskAgentRequest {
   name: string;
   command: string;
   args: string[];
+  /** 追加给 agent 进程的环境变量（可选，空对象表示不设置）。 */
+  env: Record<string, string>;
   description: string;
   editing: boolean;
 }
@@ -20,6 +22,7 @@ export interface EditDiskAgent {
   name: string;
   command: string;
   args?: string[];
+  env?: Record<string, string>;
   description?: string;
 }
 
@@ -32,6 +35,31 @@ function parseArguments(input: string): string[] {
 /** 含空白的参数回填时加引号。 */
 function quoteArgument(arg: string): string {
   return /\s/.test(arg) ? `"${arg}"` : arg;
+}
+
+/**
+ * 解析环境变量输入：`KEY=value` 以逗号或换行分隔。
+ * 值保留等号右侧的全部内容（含空格），缺少 KEY 或 `=` 的片段忽略。
+ */
+function parseEnv(input: string): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const chunk of input.split(/[,\n\r]+/)) {
+    const entry = chunk.trim();
+    if (!entry) continue;
+    const eq = entry.indexOf('=');
+    if (eq <= 0) continue;
+    const key = entry.slice(0, eq).trim();
+    if (!key) continue;
+    env[key] = entry.slice(eq + 1).trim();
+  }
+  return env;
+}
+
+/** 编辑模式回填：`KEY=value` 以逗号连接，保持单行可编辑。 */
+function formatEnv(env: Record<string, string> | undefined): string {
+  return Object.entries(env ?? {})
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ');
 }
 
 /** 从可执行文件路径派生 agent id：去扩展名 → 非 [a-z0-9] 转 - → 小写。 */
@@ -68,6 +96,7 @@ export class AddAgentFromDiskDialogComponent {
   readonly path = signal('');
   readonly displayName = signal('');
   readonly argumentsText = signal('');
+  readonly envText = signal('');
 
   readonly editing = computed(() => !!this.editAgent());
   readonly canConfirm = computed(() => !!this.path().trim());
@@ -83,10 +112,12 @@ export class AddAgentFromDiskDialogComponent {
         this.path.set(agent.command);
         this.displayName.set(agent.name);
         this.argumentsText.set((agent.args ?? []).map(quoteArgument).join(' '));
+        this.envText.set(formatEnv(agent.env));
       } else {
         this.path.set('');
         this.displayName.set('');
         this.argumentsText.set('');
+        this.envText.set('');
       }
     });
   }
@@ -109,6 +140,7 @@ export class AddAgentFromDiskDialogComponent {
     const command = this.path().trim();
     if (!command) return;
     const args = parseArguments(this.argumentsText().trim());
+    const env = parseEnv(this.envText());
     const description = 'Agent added from disk';
 
     if (this.editing()) {
@@ -118,6 +150,7 @@ export class AddAgentFromDiskDialogComponent {
         name: this.displayName().trim() || agent.name,
         command,
         args,
+        env,
         description,
         editing: true,
       });
@@ -135,6 +168,7 @@ export class AddAgentFromDiskDialogComponent {
       name: this.displayName().trim() || command.split(/[\\/]/).pop() || id,
       command,
       args,
+      env,
       description,
       editing: false,
     });

@@ -1,19 +1,31 @@
 .add-disk-dialog {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   min-width: 460px;
 }
 
 .disk-field-label {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.3;
   opacity: 0.85;
+}
+
+/* The first label already sits against the modal body's padding. */
+.disk-field-label:first-child {
+  margin-top: 0;
 }
 
 .disk-required {
   color: var(--ast-danger, #e5484d);
+}
+
+.disk-optional {
+  margin-left: 4px;
+  font-weight: 400;
+  opacity: 0.55;
 }
 
 .disk-path-row {
@@ -26,12 +38,13 @@
   flex: 1;
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border: 1px solid var(--ast-border, rgba(128, 128, 128, 0.35));
   border-radius: 6px;
   background: transparent;
   color: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
+  line-height: 1.3;
 }
 
 .disk-input:focus {
@@ -42,7 +55,7 @@
 /* Buttons use the same look as the settings page's
    button[class="btn btn-secondary"] (see settings.component.css). */
 .btn {
-  padding: 6px 14px;
+  padding: 5px 12px;
   border: none;
   border-radius: var(--vscode-radius-sm, 3px);
   cursor: pointer;
@@ -87,13 +100,14 @@
 }
 
 .disk-hint {
-  font-size: 11px;
-  opacity: 0.6;
+  font-size: 10.5px;
+  line-height: 1.3;
+  opacity: 0.55;
 }
 
 .disk-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 10px;
 }

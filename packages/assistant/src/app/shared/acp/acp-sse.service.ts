@@ -724,11 +724,11 @@ export class AcpSseService {
   }
 
   /**
-   * 编辑 disk 源 agent 的配置（name / command / args / description）。
+   * 编辑 disk 源 agent 的配置（name / command / args / env / description）。
    */
   async updateDiskAgent(
     agentId: string,
-    patch: { name?: string; command?: string; args?: string[]; description?: string },
+    patch: { name?: string; command?: string; args?: string[]; env?: Record<string, string>; description?: string },
   ): Promise<any> {
     return await this.post(`/api/acp/agents/${encodeURIComponent(agentId)}/update`, patch);
   }
