@@ -80,6 +80,8 @@ export class AgentRegistry {
    * serializable `AgentStatusInfo` snapshot without polling `getStatus()`.
    */
   private statusListeners: Set<(info: AgentStatusInfo) => void> = new Set();
+  /** Removal subscribers: fired after a registry entry is deleted (uninstall). */
+  private removalListeners: Set<(agentId: string) => void> = new Set();
 
   constructor(
     private agentConfigs: AgentConfig[] = [],
@@ -338,6 +340,29 @@ export class AgentRegistry {
   }
 
   /**
+   * Subscribe to agent removals (Settings → Uninstall). Fired after the entry
+   * is deleted from the registry; listeners drop their stale copy by id.
+   *
+   * @returns unsubscribe function.
+   */
+  onAgentRemoved(listener: (agentId: string) => void): () => void {
+    this.removalListeners.add(listener);
+    return () => {
+      this.removalListeners.delete(listener);
+    };
+  }
+
+  private emitRemoved(agentId: string): void {
+    for (const listener of this.removalListeners) {
+      try {
+        listener(agentId);
+      } catch (error) {
+        logger.warn(`[AgentRegistry] Removal listener failed (agent: ${agentId}):`, error);
+      }
+    }
+  }
+
+  /**
    * Re-probe installation and try to bring the agent to `connected`.
    * Dedupes concurrent checks for the same agent.
    */
@@ -425,6 +450,7 @@ export class AgentRegistry {
     for (const [key, entry] of this.stateByKey) {
       if (entry === state) this.stateByKey.delete(key);
     }
+    this.emitRemoved(agentId);
     return true;
   }
 
@@ -499,6 +525,7 @@ export class AgentRegistry {
       this.emitStatus(state);
     }
     this.statusListeners.clear();
+    this.removalListeners.clear();
   }
 
   // ==========================================================================

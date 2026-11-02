@@ -2,6 +2,7 @@ import { Component, ElementRef, effect, HostListener, inject, input, output, sig
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CollabService, type CollabMessage, type CollabMode, type CollabSessionTarget } from './collab.service';
+import { AcpService } from '../../../shared/acp/acp.service';
 import { CollabSessionDetailComponent } from './collab-session-detail.component';
 import { AcpPermissionDialogComponent } from '../../../shared/acp/acp-permission-dialog.component';
 import type { ConfigOption } from '../../../shared/acp/acp.model';
@@ -37,6 +38,8 @@ interface AgentOptionView {
 })
 export class CollabPanelComponent {
   protected readonly collab = inject(CollabService);
+  /** Agent 列表单一数据源（与 Settings 页、agent 选择器共用）。 */
+  protected readonly acp = inject(AcpService);
   protected readonly close = output<void>();
   /** Whether the left sidebar is collapsed; keeps header space free for the floating toggle. */
   sidebarCollapsed = input<boolean>(false);
@@ -173,7 +176,7 @@ export class CollabPanelComponent {
 
   /** Agent registry entry by id (undefined when nothing/an unknown id is bound). */
   protected agentById(id: string): AgentStatusInfo | undefined {
-    return this.collab.availableAgents().find(a => a.id === id);
+    return this.acp.installedAgents().find(a => a.id === id);
   }
 
   protected agentStatusClass(status: AgentRuntimeStatus): string {
@@ -183,8 +186,8 @@ export class CollabPanelComponent {
   /** All agents matching the open picker's filter, selectable ones first (stable within groups). */
   protected readonly filteredAgentViews = computed<AgentOptionView[]>(() => {
     const q = this.agentFilter().trim().toLowerCase();
-    return this.collab
-      .availableAgents()
+    return this.acp
+      .installedAgents()
       .map(a => this.agentView(a))
       .filter(
         v =>
