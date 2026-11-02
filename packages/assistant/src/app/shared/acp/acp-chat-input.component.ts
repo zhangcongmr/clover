@@ -2,6 +2,9 @@ import { Component, inject, signal, computed, ViewChild, ElementRef, HostListene
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
+import { AcpSseService } from './acp-sse.service';
+import { AcpRegistryDialogComponent, type AcpRegistryAgent } from './acp-registry-dialog.component';
+import { NotificationService } from '../notification/notification.service';
 import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
@@ -58,7 +61,7 @@ interface McpServerOption {
 @Component({
   selector: 'app-acp-chat-input',
   standalone: true,
-  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent, DropdownPlacementDirective],
+  imports: [CommonModule, FormsModule, FilePickerDialogComponent, AstModalComponent, DropdownPlacementDirective, AcpRegistryDialogComponent],
   templateUrl: './acp-chat-input.component.html',
   styles: [`
     :host {
@@ -533,7 +536,7 @@ interface McpServerOption {
       bottom: 100%;
       left: 0;
       margin-bottom: 4px;
-      min-width: 200px;
+      min-width: 300px;
       /* Placement directive shrinks this to the room actually left above the
          composer; the value here is only the upper bound / pre-measure default. */
       max-height: min(420px, 60vh);
@@ -562,6 +565,15 @@ interface McpServerOption {
     }
     .agent-option.active {
       background-color: var(--vscode-hover-background);
+    }
+    /* 下拉底部的安装入口与列表项之间的分隔线 */
+    .agent-dropdown-divider {
+      height: 1px;
+      margin: 4px 0;
+      background-color: var(--vscode-dropdown-border, #e0e0e0);
+    }
+    .agent-option-action .agent-name {
+      font-weight: 600;
     }
     .agent-name {
       font-size: 13px;
@@ -965,6 +977,8 @@ interface McpServerOption {
 })
 export class AcpChatInputComponent {
   protected acpService = inject(AcpService);
+  private readonly sseService = inject(AcpSseService);
+  private readonly notification = inject(NotificationService);
   private readonly skillService = inject(SkillService);
   private readonly platformId = inject(PLATFORM_ID);
   /** 项目选择入口只在 agent-first 渲染（content-first 下项目由内容区/文档侧决定） */
@@ -1201,6 +1215,83 @@ export class AcpChatInputComponent {
     this.acpService.selectedAgent.set(agent);
     this.showAgentDropdown.set(false);
     this.messageInput?.nativeElement?.focus();
+  }
+
+  // --- 安装 agent（与 Settings → Agents 相同的两个入口） ----------------------
+
+  /** ACP Registry 安装对话框可见性。 */
+  readonly registryDialogVisible = signal(false);
+  /** 正在安装的 agent id（对话框按钮态 + 去重）。 */
+  readonly installingAgentIds = signal<string[]>([]);
+  /** 已安装 agent id（对话框隐藏对应按钮）。 */
+  protected readonly installedAgentIds = computed(() => this.acpService.installedAgents().map(a => a.id));
+
+  /** 打开 ACP Registry 安装对话框（下拉菜单入口，与 Settings 一致）。 */
+  openRegistryDialog(): void {
+    this.showAgentDropdown.set(false);
+    this.registryDialogVisible.set(true);
+  }
+
+  closeRegistryDialog(): void {
+    this.registryDialogVisible.set(false);
+  }
+
+  onRegistryAgentInstall(agent: AcpRegistryAgent): void {
+    void this.startAgentInstall({
+      id: agent.id,
+      name: agent.name,
+      command: agent.id,
+      description: agent.description,
+      source: 'registry',
+      version: agent.version,
+      installed: false,
+      distribution: (agent as any).distribution,
+    });
+  }
+
+  /** 从磁盘添加 agent：与 Settings 相同的 prompt 交互。 */
+  async onAddAgentFromDisk(): Promise<void> {
+    this.showAgentDropdown.set(false);
+    const command = prompt('Enter the agent command or path to executable:');
+    if (!command) return;
+    const name = prompt('Enter a display name for this agent:', command);
+    if (!name) return;
+    await this.startAgentInstall({
+      id: command.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
+      name,
+      command,
+      args: [],
+      description: 'Agent added from disk',
+      source: 'disk',
+      installed: false,
+      installedAt: new Date().toISOString(),
+    });
+  }
+
+  /** 启动后端安装 job 并轮询至结束；成功后自动选中新 agent。 */
+  private async startAgentInstall(config: AgentConfig & { distribution?: any }): Promise<void> {
+    if (this.installingAgentIds().includes(config.id)) return;
+    this.installingAgentIds.update(ids => [...ids, config.id]);
+    try {
+      let job = await this.sseService.startAgentInstall(config);
+      while (job.status === 'running') {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        job = await this.sseService.getAgentInstallJob(job.id);
+      }
+      if (job.status === 'succeeded') {
+        this.notification.showNotification(`"${config.name}" installed`, 'success');
+        // 等状态推送/列表刷新落定后自动选中新 agent，装完即可用。
+        await this.acpService.loadInstalledAgents();
+        const fresh = this.acpService.installedAgents().find(a => a.id === config.id);
+        if (fresh) this.selectAgent(fresh);
+      } else {
+        this.notification.showNotification(job.error ?? `Install failed for ${config.name}`, 'error');
+      }
+    } catch (error) {
+      this.notification.showNotification(`Install failed: ${(error as Error).message}`, 'error');
+    } finally {
+      this.installingAgentIds.update(ids => ids.filter(id => id !== config.id));
+    }
   }
 
   toggleModeDropdown(event: MouseEvent): void {
