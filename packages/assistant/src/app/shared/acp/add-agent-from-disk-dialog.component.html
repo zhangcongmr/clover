@@ -28,16 +28,29 @@
       [(ngModel)]="displayName"
     />
 
-    <label class="disk-field-label">Arguments</label>
+    <label class="disk-field-label">
+      Arguments
+      <span class="disk-optional">(optional)</span>
+    </label>
     <input
       type="text"
       class="disk-input"
-      placeholder="e.g. --acp   |   -y @scope/pkg --acp"
+      placeholder="e.g. --acp   |   -y @scope/pkg --acp   |   (optional)"
       [(ngModel)]="argumentsText"
     />
-    <div class="disk-hint">
-      Multiple arguments separated by spaces; wrap values containing spaces in double quotes.
-    </div>
+    <div class="disk-hint">Optional. Space separated; quote values containing spaces.</div>
+
+    <label class="disk-field-label">
+      Environment Variables
+      <span class="disk-optional">(optional)</span>
+    </label>
+    <input
+      type="text"
+      class="disk-input"
+      placeholder="e.g. API_KEY=abc123, DEBUG=1   |   (optional)"
+      [(ngModel)]="envText"
+    />
+    <div class="disk-hint">Optional. Comma separated KEY=value pairs; the first = splits.</div>
 
     <div class="disk-footer">
       @if (editing()) {
