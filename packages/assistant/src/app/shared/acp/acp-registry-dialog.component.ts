@@ -44,8 +44,6 @@ export class AcpRegistryDialogComponent {
   readonly install = output<AcpRegistryAgent>();
   /** Emitted when the user clicks OK. */
   readonly ok = output<void>();
-  /** Emitted when the user clicks Apply. */
-  readonly apply = output<void>();
 
   loading = signal(false);
   error = signal<string | null>(null);

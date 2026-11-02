@@ -598,6 +598,27 @@
   background: var(--vscode-hover-background);
 }
 
+/* Uninstall（registry 源）与编辑（disk 源）按钮等宽，保证各行状态徽章列左对齐。 */
+.agent-uninstall-btn {
+  min-width: 88px;
+}
+
+.agent-edit-btn {
+  min-width: 88px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-background);
+  border: 1px solid var(--vscode-border-color);
+  color: var(--vscode-foreground);
+}
+
+.agent-edit-btn:hover:not(:disabled) {
+  background: var(--vscode-hover-background);
+}
+
 .agents-hint {
   margin: 0;
   font-size: 12px;

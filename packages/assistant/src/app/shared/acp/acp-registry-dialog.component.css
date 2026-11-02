@@ -223,39 +223,34 @@ ast-modal .ast-modal-body.acp-registry-dialog {
   border-top: 1px solid var(--vscode-border-color);
 }
 
+/* Footer buttons — same look as the settings page's
+   button[class="btn btn-secondary"] (see settings.component.css). */
 .registry-footer .btn {
-  font-size: 12px;
-  padding: 4px 16px;
-  border-radius: var(--vscode-radius-sm, 3px);
-}
-
-.registry-footer .btn-primary {
-  background: var(--vscode-button-primaryBackground);
-  color: var(--vscode-button-primaryForeground);
+  padding: 6px 14px;
   border: none;
-}
-
-.registry-footer .btn-primary:hover:not(:disabled) {
-  background: var(--vscode-button-primaryHoverBackground);
-  color: var(--vscode-button-primaryForeground);
-  opacity: 1;
+  border-radius: var(--vscode-radius-sm, 3px);
   cursor: pointer;
+  font-size: var(--vscode-font-size);
+  white-space: nowrap;
 }
 
-.registry-footer .btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.registry-footer .btn:focus-visible {
+  outline: 1px solid var(--vscode-primary-background);
+  outline-offset: 1px;
 }
 
 .registry-footer .btn-secondary {
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-  border: 1px solid var(--vscode-button-secondaryBorder);
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-border-color);
 }
 
 .registry-footer .btn-secondary:hover:not(:disabled) {
-  background: var(--vscode-button-secondaryHoverBackground);
-  border-color: var(--vscode-button-secondaryHoverBorder);
-  color: var(--vscode-foreground);
-  cursor: pointer;
+  background: var(--vscode-hover-background);
+  border-color: var(--vscode-secondary-background);
+}
+
+.registry-footer .btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

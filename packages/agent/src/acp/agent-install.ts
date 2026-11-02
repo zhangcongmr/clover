@@ -142,6 +142,74 @@ export function startInstall(
     return null;
   }
 
+  const job = createJob(config, describeInstallCommand(distribution));
+
+  void runInstall(job, config, distribution)
+    .catch((error) => {
+      failJob(job, (error as Error).message);
+    })
+    .finally(() => {
+      settleJob(job, onFinished);
+    });
+
+  return job;
+}
+
+/**
+ * Register a user-prepared disk agent (Settings → Add Agent From Disk).
+ *
+ * No installation is performed — the user already downloaded/installed the
+ * package themselves and provides the executable path + arguments. The job
+ * therefore only verifies the executable resolves (PATH command name, shim or
+ * binary path), persists the config to ~/.clover/acp.json and completes
+ * synchronously, so the frontend polling flow stays uniform with registry
+ * installs. Returns the in-flight job when one is already running.
+ */
+export function startDiskInstall(
+  config: AgentInstallRequest,
+  onFinished?: (job: AgentInstallJob) => void,
+): AgentInstallJob | null {
+  const runningId = runningByAgent.get(config.id);
+  if (runningId) return jobsById.get(runningId) ?? null;
+
+  const job = createJob(config, config.command);
+  try {
+    beginStep(job, 'Verify executable', config.command);
+    const probe = probePathCommand(config.command);
+    if (!probe.found) {
+      failStep(job, `Executable not found: ${config.command}`);
+      throw new Error(`Executable not found: ${config.command}`);
+    }
+    appendStepOutput(job, `Found: ${probe.path ?? 'on PATH'}`);
+    succeedStep(job);
+
+    const entry: AgentConfig = {
+      id: config.id,
+      name: config.name,
+      command: config.command,
+      args: config.args,
+      env: config.env,
+      description: config.description ?? 'Agent added from disk',
+      source: 'disk',
+      version: config.version,
+      installed: true,
+      installedAt: new Date().toISOString(),
+    };
+    upsertAcpAgent(entry);
+    logger.log(`[AgentInstall] Disk agent "${config.id}" registered: ${entry.command} ${(entry.args ?? []).join(' ')}`);
+
+    job.status = 'succeeded';
+    job.finishedAt = Date.now();
+  } catch (error) {
+    failJob(job, (error as Error).message);
+  } finally {
+    settleJob(job, onFinished);
+  }
+  return job;
+}
+
+/** Create + register a job (caller must have handled the dedupe check). */
+function createJob(config: AgentInstallRequest, command: string): AgentInstallJob {
   // Trim history so the job map cannot grow unbounded.
   while (jobsById.size >= MAX_JOBS) {
     const oldest = [...jobsById.values()].sort((a, b) => a.startedAt - b.startedAt)[0];
@@ -152,7 +220,7 @@ export function startInstall(
   const job: AgentInstallJob = {
     id: randomId(),
     agentId: config.id,
-    command: describeInstallCommand(distribution),
+    command,
     status: 'running',
     steps: [],
     startedAt: Date.now(),
@@ -160,21 +228,17 @@ export function startInstall(
   jobsById.set(job.id, job);
   runningByAgent.set(config.id, job.id);
   logger.log(`[AgentInstall] Installing agent "${config.id}" (${config.name}): ${job.command} [job ${job.id}]`);
-
-  void runInstall(job, config, distribution)
-    .catch((error) => {
-      failJob(job, (error as Error).message);
-    })
-    .finally(() => {
-      runningByAgent.delete(config.id);
-      try {
-        onFinished?.(job);
-      } catch (error) {
-        logger.error('[AgentInstall] onFinished callback failed:', error);
-      }
-    });
-
   return job;
+}
+
+/** Release the per-agent running slot and fire the completion callback. */
+function settleJob(job: AgentInstallJob, onFinished?: (job: AgentInstallJob) => void): void {
+  runningByAgent.delete(job.agentId);
+  try {
+    onFinished?.(job);
+  } catch (error) {
+    logger.error('[AgentInstall] onFinished callback failed:', error);
+  }
 }
 
 /**

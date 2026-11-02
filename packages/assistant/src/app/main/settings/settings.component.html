@@ -166,8 +166,20 @@
                         Uninstall
                       }
                     </button>
+                  } @else if (agent.source === 'disk') {
+                    <button
+                      class="btn agent-edit-btn"
+                      (click)="onEditDiskAgent(agent)"
+                      [disabled]="installingAgentId() !== null || uninstallingAgentId() !== null"
+                      title="Edit this agent's executable path and arguments"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        <path d="m15 5 4 4" />
+                      </svg>
+                    </button>
                   } @else {
-                    <!-- Reserves the Uninstall button's width so the status badge
+                    <!-- Reserves the action button's width so the status badge
                          column starts at the same x in every row. -->
                     <span class="agent-install-slot" aria-hidden="true"></span>
                   }
@@ -204,8 +216,16 @@
           (close)="onRegistryDialogClose()"
           (install)="onAgentInstall($event)"
           (ok)="onRegistryDialogOk()"
-          (apply)="onRegistryDialogApply()"
         ></app-acp-registry-dialog>
+
+        <app-add-agent-from-disk-dialog
+          [visible]="diskDialogVisible"
+          [editAgent]="editingDiskAgent"
+          [existingIds]="installedAgentIds()"
+          (close)="onDiskDialogClose()"
+          (confirm)="onDiskAgentConfirmed($event)"
+          (remove)="onDiskAgentRemoved($event)"
+        ></app-add-agent-from-disk-dialog>
 
         <!-- Folder Read/Write Mode -->
         <div class="setting-item">

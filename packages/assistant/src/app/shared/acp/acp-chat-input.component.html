@@ -142,7 +142,7 @@
 			</button>
 			@if (showAgentDropdown()) {
 			  <div class="agent-dropdown custom-scroll" appDropdownPlacement [placementMaxHeight]="420">
-				@for (agent of agents; track agent.id; let i = $index) {
+				@for (agent of acpService.installedAgents(); track agent.id; let i = $index) {
 				  <button class="agent-option" (mousedown)="selectAgent(agent)"
 					(mouseenter)="agentSelectedIndex.set(i)"
 					[class.active]="i === agentSelectedIndex()">
@@ -359,5 +359,10 @@
   (close)="closeRegistryDialog()"
   (install)="onRegistryAgentInstall($event)"
   (ok)="closeRegistryDialog()"
-  (apply)="closeRegistryDialog()"
 ></app-acp-registry-dialog>
+<app-add-agent-from-disk-dialog
+  [visible]="diskDialogVisible()"
+  [existingIds]="installedAgentIds()"
+  (close)="closeDiskDialog()"
+  (confirm)="onDiskAgentConfirmed($event)"
+></app-add-agent-from-disk-dialog>
