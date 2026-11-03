@@ -523,10 +523,19 @@
   cursor: not-allowed;
 }
 
-/* Invisible placeholder matching .agent-install-btn so rows without an Install
-   button keep the status badge column aligned with the rows that have one. */
-.agent-install-slot {
+/* One fixed action column for every row: the Uninstall button, the edit icon and
+   the empty placeholder all occupy the same width, so the status badge starts at
+   the same x no matter which variant a row renders (or none at all). */
+.agent-install-slot,
+.agent-uninstall-btn,
+.agent-edit-btn {
   flex: 0 0 96px;
+  width: 96px;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .agent-status-badge {
@@ -598,13 +607,16 @@
   background: var(--vscode-hover-background);
 }
 
-/* Uninstall（registry 源）与编辑（disk 源）按钮等宽，保证各行状态徽章列左对齐。 */
+/* Uninstall（registry 源）与编辑（disk 源）按钮宽度由上面的
+   .agent-install-slot / .agent-uninstall-btn / .agent-edit-btn 共享规则统一。 */
 .agent-uninstall-btn {
-  min-width: 88px;
+  /* Wider inner text than "Uninstall" (e.g. "Uninstalling") must not widen the
+     column, so keep the side padding small and let the label ellipsize. */
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .agent-edit-btn {
-  min-width: 88px;
   height: 28px;
   padding: 0;
   display: inline-flex;
