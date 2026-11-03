@@ -1,6 +1,6 @@
-export { AVAILABLE_AGENTS } from '@julyware/clover-agent/acp';
+export { AVAILABLE_AGENTS } from '@julyware/clover-server/acp';
 export type {
   AgentConfig,
   AgentRuntimeStatus,
   AgentStatusInfo,
-} from '@julyware/clover-agent/acp';
+} from '@julyware/clover-server/acp';

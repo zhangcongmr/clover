@@ -4,7 +4,7 @@ import { LocalAgentService } from '../local-agent/local-agent.service';
 import { openSseRequest, readSseFrames } from './sse-transport';
 import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
 
-// Agent 类型与后端 acp-agent.types.ts 保持单一来源（经 @julyware/clover-agent/acp 转发）。
+// Agent 类型与后端 acp-agent.types.ts 保持单一来源（经 @julyware/clover-server/acp 转发）。
 export type { AgentConfig, AgentRuntimeStatus, AgentStatusInfo } from './acp-agent.types';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';

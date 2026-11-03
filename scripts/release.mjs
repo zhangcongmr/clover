@@ -17,6 +17,6 @@ if (files.length > 0) {
 }
 
 execSync(
-  'pnpm -r publish --no-git-checks --filter @julyware/clover-agent --filter @julyware/clover-ui --filter @julyware/clover',
+  'pnpm -r publish --no-git-checks --filter @julyware/clover-server --filter @julyware/clover-ui --filter @julyware/clover',
   { stdio: 'inherit' },
 );

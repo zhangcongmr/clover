@@ -17,7 +17,7 @@ A universal development solution combining a browser web app with a local proxy 
 ```
 clover-monorepo/
 ├── packages/
-│   ├── agent/                  # 本地代理 Agent（@julyware/clover-agent）
+│   ├── server/                 # 本地代理 Server（@julyware/clover-server）
 │   │                           # Local proxy agent: Express + WebSocket + ACP + node-pty + Redis
 │   │                           # Redis 需独立部署，默认走内存模式（不订阅 Redis）
 │   ├── assistant/              # 主应用（clover）: Angular 21 + SSR
@@ -87,6 +87,6 @@ pnpm --filter ./packages/agent dev              # 监听构建
 | 命令 | 说明 |
 |------|------|
 | `pnpm build` | 构建全部（带计时） |
-| `pnpm build:agent` | 仅构建 @julyware/clover-agent |
+| `pnpm build:server` | 仅构建 @julyware/clover-server |
 | `pnpm dev` | 并行启动所有包的开发服务 |
 | `pnpm test` | 并行运行所有包的测试 |

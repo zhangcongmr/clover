@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build-with-timer.mjs",
-    "build:agent": "pnpm --filter @julyware/clover-agent build",
+    "build:server": "pnpm --filter @julyware/clover-server build",
     "build:mcp:restaurant": "pnpm --filter @clover/mcp-restaurant build",
     "build:mcp:rag": "pnpm --filter @clover/mcp-rag build",
     "mcp:restaurant": "node packages/mcp-restaurant/dist/index.cjs",
