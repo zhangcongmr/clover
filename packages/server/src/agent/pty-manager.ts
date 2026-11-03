@@ -110,7 +110,7 @@ export class PtyManager {
   }
 
   private startIdleCheck() {
-    setInterval(() => {
+    const timer = setInterval(() => {
       const now = Date.now();
       for (const [id, instance] of this.instances) {
         if (now - instance.createdAt > this.idleTimeout) {
@@ -118,5 +118,8 @@ export class PtyManager {
         }
       }
     }, 60_000);
+    // Library code must not pin the event loop: importing the server (for
+    // example during Angular's build-time prerender) should not block exit.
+    timer.unref?.();
   }
 }
