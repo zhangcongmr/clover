@@ -31,7 +31,12 @@ async function loadNodePty(): Promise<NodePty> {
     return req(moduleName) as NodePty;
   } catch {
     const { createRequire } = await import('node:module');
-    const req = createRequire(import.meta.url);
+    // import.meta.url is unavailable in CJS builds; read it indirectly to avoid
+    // the tsup CJS warning while keeping ESM behavior intact.
+    const moduleUrl = new Function(
+      'return typeof import.meta !== "undefined" ? import.meta.url : undefined',
+    )();
+    const req = createRequire(moduleUrl ?? process.cwd());
     return req(moduleName) as NodePty;
   }
 }
