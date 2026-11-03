@@ -1,5 +1,19 @@
 import { Router, json } from 'express';
 import { SkillRegistry } from '../skills/registry.js';
+import type {
+  ListSkillsResponse,
+  GetSkillResponse,
+  CreateSkillRequest,
+  CreateSkillResponse,
+  UpdateSkillRequest,
+  UpdateSkillResponse,
+  ReloadSkillsResponse,
+  DuplicateSkillResponse,
+  DeleteSkillResponse,
+  SkillErrorResponse,
+  SkillAnyResponse,
+  SkillAnyRequest,
+} from './skill-types.js';
 
 export function createSkillRoutes(skillRegistry: SkillRegistry): Router {
   const router = Router();
@@ -10,76 +24,92 @@ export function createSkillRoutes(skillRegistry: SkillRegistry): Router {
    * GET /api/skills
    * 获取所有 skills（聚合 legacy store 与各用户级 skill 目录）
    */
-  router.get('/', (req, res) => {
-    const discovery = skillRegistry.getDiscovery();
-    const skills = skillRegistry.list().map((skill) => ({
-      ...skill,
-      // 目录 store skill 的附属文件数量（供前端决定是否按需拉取）
-      fileCount: skill.source === '~/.clover/skills' ? skillRegistry.fileCount(skill.name) : 0,
-    }));
-    res.json({
-      skills,
-      sources: discovery?.sources ?? [],
-      configFiles: discovery?.configFiles ?? [],
-      catalogs: discovery?.catalogs ?? [],
-    });
-  });
+  router.get<never, ListSkillsResponse | SkillErrorResponse, any, any, any>(
+    '/',
+    (_req, res) => {
+      const discovery = skillRegistry.getDiscovery();
+      const skills = skillRegistry.list().map((skill) => ({
+        ...skill,
+        // 目录 store skill 的附属文件数量（供前端决定是否按需拉取）
+        fileCount: skill.source === '~/.clover/skills' ? skillRegistry.fileCount(skill.name) : 0,
+      }));
+      res.json({
+        success: true,
+        skills,
+        sources: discovery?.sources ?? [],
+        configFiles: discovery?.configFiles ?? [],
+        catalogs: discovery?.catalogs ?? [],
+      });
+    },
+  );
 
   /**
    * GET /api/skills/:name
    * 获取单个 skill + 附属文件映射（相对路径 → 内容）
    */
-  router.get('/:name', (req, res) => {
-    const skill = skillRegistry.get(req.params.name);
-    if (skill) {
-      res.json({
-        skill,
-        writable: skillRegistry.canModify(req.params.name),
-        files: skillRegistry.listSkillFiles(req.params.name),
-      });
-    } else {
-      res.status(404).json({ error: 'Skill not found' });
-    }
-  });
+  router.get<{ name: string }, GetSkillResponse | SkillErrorResponse, any, any, any>(
+    '/:name',
+    (req, res) => {
+      const skill = skillRegistry.get(req.params.name);
+      if (skill) {
+        res.json({
+          skill,
+          writable: skillRegistry.canModify(req.params.name),
+          files: skillRegistry.listSkillFiles(req.params.name),
+        });
+      } else {
+        res.status(404).json({ error: 'Skill not found' });
+      }
+    },
+  );
 
   /**
    * POST /api/skills
    * 添加 skill（已存在则覆盖）；可携带附属文件（如从 HTTP catalog 安装）
    */
-  router.post('/', (req, res) => {
-    const { name, description, content, files } = req.body;
+  router.post<never, CreateSkillResponse | SkillErrorResponse, CreateSkillRequest, any, any>(
+    '/',
+    (req, res) => {
+      const { name, description, content, files } = req.body;
 
-    if (!name || !String(name).trim()) {
-      res.status(400).json({ error: 'name is required' });
-      return;
-    }
-    if (typeof content !== 'string' || !content.trim()) {
-      res.status(400).json({ error: 'content is required' });
-      return;
-    }
-    if (files !== undefined && (typeof files !== 'object' || files === null || Array.isArray(files))) {
-      res.status(400).json({ error: 'files must be an object of relative path → content' });
-      return;
-    }
+      if (!name || !String(name).trim()) {
+        res.status(400).json({ error: 'name is required' });
+        return;
+      }
+      if (typeof content !== 'string' || !content.trim()) {
+        res.status(400).json({ error: 'content is required' });
+        return;
+      }
+      if (files !== undefined && (typeof files !== 'object' || files === null || Array.isArray(files))) {
+        res.status(400).json({ error: 'files must be an object of relative path → content' });
+        return;
+      }
 
-    try {
-      skillRegistry.upsert(String(name), {
-        description: description || '',
-        content,
-      }, files as Record<string, string> | undefined);
-    } catch (error) {
-      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
-      return;
-    }
+      try {
+        skillRegistry.upsert(String(name), {
+          description: description || '',
+          content,
+        }, files as Record<string, string> | undefined);
+      } catch (error) {
+        res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+        return;
+      }
 
-    res.json({ success: true, name: String(name).trim() });
-  });
+      res.json({ success: true, name: String(name).trim() });
+    },
+  );
 
   /**
    * PUT /api/skills/:name
    * 更新 skill（正文与描述；附属文件保持不变）
    */
-  router.put('/:name', (req, res) => {
+  router.put<
+    { name: string },
+    UpdateSkillResponse | SkillErrorResponse,
+    UpdateSkillRequest,
+    any,
+    any
+  >('/:name', (req, res) => {
     const { name } = req.params;
     const existing = skillRegistry.get(name);
 
@@ -122,23 +152,32 @@ export function createSkillRoutes(skillRegistry: SkillRegistry): Router {
    * POST /api/skills/reload
    * 重新扫描所有 skill 来源（HTTP catalog 由前端直连，与此无关）
    */
-  router.post('/reload', (req, res) => {
-    const discovery = skillRegistry.reload();
-    res.json({
-      success: true,
-      count: skillRegistry.list().length,
-      sources: discovery?.sources ?? [],
-      configFiles: discovery?.configFiles ?? [],
-      catalogs: discovery?.catalogs ?? [],
-      errors: discovery?.errors ?? [],
-    });
-  });
+  router.post<never, ReloadSkillsResponse | SkillErrorResponse, any, any, any>(
+    '/reload',
+    (_req, res) => {
+      const discovery = skillRegistry.reload();
+      res.json({
+        success: true,
+        count: skillRegistry.list().length,
+        sources: discovery?.sources ?? [],
+        configFiles: discovery?.configFiles ?? [],
+        catalogs: discovery?.catalogs ?? [],
+        errors: discovery?.errors ?? [],
+      });
+    },
+  );
 
   /**
    * POST /api/skills/:name/duplicate
    * 复制 skill（含附属文件），副本插入到原 skill 之后
    */
-  router.post('/:name/duplicate', (req, res) => {
+  router.post<
+    { name: string },
+    DuplicateSkillResponse | SkillErrorResponse,
+    any,
+    any,
+    any
+  >('/:name/duplicate', (req, res) => {
     try {
       const copy = skillRegistry.duplicate(req.params.name);
       if (copy) {
@@ -155,7 +194,13 @@ export function createSkillRoutes(skillRegistry: SkillRegistry): Router {
    * DELETE /api/skills/:name
    * 删除 skill（目录 store 删目录；legacy 条目一并从 skills.json 移除）
    */
-  router.delete('/:name', (req, res) => {
+  router.delete<
+    { name: string },
+    DeleteSkillResponse | SkillErrorResponse,
+    any,
+    any,
+    any
+  >('/:name', (req, res) => {
     const { name } = req.params;
 
     if (!skillRegistry.get(name)) {

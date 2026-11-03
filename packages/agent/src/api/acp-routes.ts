@@ -10,6 +10,55 @@ import type { TokenManager } from '../agent/auth.js';
 import type { FileService } from '../agent/file-service.js';
 import type { McpServerRegistry } from '../mcp/registry.js';
 import { createRequireAuth } from './middleware.js';
+import {
+  AcpErrorResponse,
+  AcpSessionLoadRequest,
+  AcpSessionLoadResponse,
+  AcpSessionStatusResponse,
+  AcpHealthResponse,
+  AcpStatusResponse,
+  AgentConfigEntry,
+  AgentConfigFile,
+  CheckAgentResponse,
+  CreateAcpSessionRequest,
+  CreateAcpSessionResponse,
+  DeleteAcpSessionRequest,
+  DeleteAcpSessionResponse,
+  GetAgentConfigResponse,
+  GetInstallJobResponse,
+  GetSelectedProjectResponse,
+  InstallAgentResponse,
+  ListAcpSessionsRequest,
+  ListAcpSessionsResponse,
+  ListAllSessionsRequest,
+  ListAllSessionsResponse,
+  ListAllSessionsSession,
+  ListAllSessionsFailure,
+  ListAgentsResponse,
+  ListProjectsResponse,
+  ListTasksResponse,
+  PingRequest,
+  PingResponse,
+  ProjectInfo,
+  ProjectSession,
+  SaveAgentConfigRequest,
+  SaveAgentConfigResponse,
+  AddProjectRequest,
+  AddProjectResponse,
+  DeleteProjectRequest,
+  DeleteProjectResponse,
+  SaveSessionRequest,
+  SaveSessionResponse,
+  DeleteSessionFromProjectRequest,
+  DeleteSessionFromProjectResponse,
+  SetAcpConfigRequest,
+  SetAcpConfigResponse,
+  SetSelectedProjectRequest,
+  SetSelectedProjectResponse,
+  StreamCommandRequest,
+  StreamCommandResponse,
+  UpdateAgentResponse,
+} from './acp-types.js';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -34,22 +83,6 @@ const AGENT_CONFIG_FILE = join(PROJECTS_DIR, 'agent-config.json');
  * TODO(ownership): 恢复默认开启后删除这个开关。
  */
 const ENFORCE_SESSION_OWNER = process.env.CLOVER_ENFORCE_OWNERSHIP === '1';
-
-interface ProjectSession {
-  sessionId: string;
-  agentId: string;
-  title?: string;
-  updatedAt?: string;
-}
-
-interface ProjectInfo {
-  name: string;
-  path: string;
-  type: 'project' | 'task';
-  sessions: ProjectSession[];
-  id?: string;
-  createdAt?: string;
-}
 
 function readProjects(): ProjectInfo[] {
   if (!existsSync(PROJECTS_FILE)) return [];
@@ -102,14 +135,6 @@ function writeTasks(tasks: ProjectInfo[]): void {
   }));
   writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
 }
-
-/** Agent 配置持久化条目：按 agentId 保存 configOptions（mode/model 选择器）。 */
-interface AgentConfigEntry {
-  configOptions: acp.SessionConfigOption[];
-  updatedAt?: string;
-}
-
-type AgentConfigFile = Record<string, AgentConfigEntry>;
 
 function readAgentConfigFile(): AgentConfigFile {
   if (!existsSync(AGENT_CONFIG_FILE)) return {};
@@ -362,13 +387,15 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 命令通道：`{ id, method, params }` → 202 Accepted，输出全部走 GET 流。
    * 支持的方法：`prompt` / `cancel` / `permission`。
    */
-  app.post('/api/acp/stream/:sessionId', requireSessionOwner, (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    StreamCommandResponse | AcpErrorResponse,
+    StreamCommandRequest,
+    any,
+    any
+  >('/api/acp/stream/:sessionId', requireSessionOwner, (req: Request, res: Response) => {
     const sessionId = req.params.sessionId as string;
-    const { id, method, params } = (req.body ?? {}) as {
-      id?: string;
-      method?: string;
-      params?: any;
-    };
+    const { id, method, params } = req.body;
 
     if (!method) {
       res.status(400).json({ error: 'method is required' });
@@ -417,38 +444,44 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * GET /api/acp/session/:sessionId
    * 获取会话状态
    */
-  app.get('/api/acp/session/:sessionId', (req: Request, res: Response) => {
-    const sessionId = req.params.sessionId as string;
-    const session = sessionManager.getSession(sessionId);
+  app.get<Record<string, string>, AcpSessionStatusResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/session/:sessionId',
+    (req: Request, res: Response) => {
+      const sessionId = req.params.sessionId as string;
+      const session = sessionManager.getSession(sessionId);
 
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
+      if (!session) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
 
-    res.json({
-      sessionId: session.sessionId,
-      status: session.status,
-      createdAt: session.createdAt,
-      lastActivity: session.lastActivity,
-      hasConnection: sseManager.hasConnection(sessionId),
-    });
-  });
+      res.json({
+        sessionId: session.sessionId,
+        status: session.status,
+        createdAt: session.createdAt,
+        lastActivity: session.lastActivity,
+        hasConnection: sseManager.hasConnection(sessionId),
+      });
+    },
+  );
 
   /**
    * DELETE /api/acp/session/:sessionId
    * 删除会话
    */
-  app.delete('/api/acp/session/:sessionId', async (req: Request, res: Response) => {
-    const sessionId = req.params.sessionId as string;
+  app.delete<Record<string, string>, DeleteAcpSessionResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/session/:sessionId',
+    async (req: Request, res: Response) => {
+      const sessionId = req.params.sessionId as string;
 
-    try {
-      await sessionManager.removeSession(sessionId);
-      res.json({ success: true, message: 'Session deleted' });
-    } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
+      try {
+        await sessionManager.removeSession(sessionId);
+        res.json({ success: true, message: 'Session deleted' });
+      } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+      }
+    },
+  );
 
   // ============================================================================
   // 会话操作端点
@@ -461,7 +494,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 响应即会话创建结果：前端拿到 sessionId 后再建立 SSE 连接（先建会话、
    * 后开流；available_commands 等创建期通知由响应字段携带补偿）。
    */
-  app.post('/api/acp/session/create', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    CreateAcpSessionResponse | AcpErrorResponse,
+    CreateAcpSessionRequest,
+    any,
+    any
+  >('/api/acp/session/create', async (req: Request, res: Response) => {
     const { agentId, cwd: rawCwd, mcpServers } = req.body;
 
     if (!agentId || typeof agentId !== 'string') {
@@ -494,7 +533,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
 
       const result = await sessionManager.createAcpSession(agentId, cwd, resolvedMcpServers);
-      res.json({ success: true, agentId, ...result });
+      res.json({ success: true, agentId, ...result } as CreateAcpSessionResponse);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
     }
@@ -504,7 +543,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/session/list
    * 列出会话（同步等待 agent 返回；连接级操作，按 agentId 解析）
    */
-  app.post('/api/acp/session/list', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    ListAcpSessionsResponse | AcpErrorResponse,
+    ListAcpSessionsRequest,
+    any,
+    any
+  >('/api/acp/session/list', async (req: Request, res: Response) => {
     const { agentId, cwd, cursor } = req.body;
 
     if (!agentId) {
@@ -514,7 +559,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
 
     try {
       const result = await sessionManager.listAcpSessions(agentId, cwd, cursor);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result } as ListAcpSessionsResponse);
     } catch (error) {
       logger.error(`[ACP Routes] List sessions error (agent: ${agentId}):`, error);
       res.status(500).json({ error: (error as Error).message });
@@ -525,7 +570,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/list-all-sessions
    * 聚合列出所有 agent 的会话（直接复用 registry 预热连接，不落 session 记录）
    */
-  app.post('/api/acp/list-all-sessions', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    ListAllSessionsResponse | AcpErrorResponse,
+    ListAllSessionsRequest,
+    any,
+    any
+  >('/api/acp/list-all-sessions', async (req: Request, res: Response) => {
     const { cwd, agents } = req.body;
 
     if (!cwd || !String(cwd).trim()) {
@@ -564,8 +615,8 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }),
     );
 
-    const allSessions: any[] = [];
-    const failures: { agentId: string; error: string }[] = [];
+    const allSessions: ListAllSessionsSession[] = [];
+    const failures: ListAllSessionsFailure[] = [];
 
     for (const result of results) {
       if (!result) continue;
@@ -578,14 +629,20 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
     }
 
-    res.json({ success: true, sessions: allSessions, failures });
+    res.json({ success: true, sessions: allSessions, failures } as ListAllSessionsResponse);
   });
 
   /**
    * POST /api/acp/session/load
    * 加载会话（sessionId 即目标 ACP session id；agentId 解析 agent，同步等待）
    */
-  app.post('/api/acp/session/load', requireSessionOwner, async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    AcpSessionLoadResponse | AcpErrorResponse,
+    AcpSessionLoadRequest,
+    any,
+    any
+  >('/api/acp/session/load', requireSessionOwner, async (req: Request, res: Response) => {
     const { sessionId, agentId, cwd, mcpServers } = req.body;
 
     if (!sessionId) {
@@ -605,7 +662,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
 
       const result = await sessionManager.loadAcpSession(sessionId, { agentId, cwd, mcpServers: resolvedMcpServers });
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result } as AcpSessionLoadResponse);
     } catch (error) {
       logger.error(`[ACP Routes] Load session error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
@@ -616,7 +673,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/session/resume
    * 恢复会话（sessionId 即目标 ACP session id；agentId 解析 agent，同步等待）
    */
-  app.post('/api/acp/session/resume', requireSessionOwner, async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    AcpSessionLoadResponse | AcpErrorResponse,
+    AcpSessionLoadRequest,
+    any,
+    any
+  >('/api/acp/session/resume', requireSessionOwner, async (req: Request, res: Response) => {
     const { sessionId, agentId, cwd, mcpServers } = req.body;
 
     if (!sessionId) {
@@ -636,7 +699,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
 
       const result = await sessionManager.resumeAcpSession(sessionId, { agentId, cwd, mcpServers: resolvedMcpServers });
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result } as AcpSessionLoadResponse);
     } catch (error) {
       logger.error(`[ACP Routes] Resume session error (session: ${sessionId}):`, error);
       res.status(500).json({ error: (error as Error).message });
@@ -647,7 +710,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/session/delete
    * 删除会话（同步等待 agent 返回；agentId 仅在服务端记录丢失时用于解析 agent）
    */
-  app.post('/api/acp/session/delete', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    DeleteAcpSessionResponse | AcpErrorResponse,
+    DeleteAcpSessionRequest,
+    any,
+    any
+  >('/api/acp/session/delete', async (req: Request, res: Response) => {
     const { sessionId, agentId } = req.body;
 
     if (!sessionId) {
@@ -668,7 +737,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/config
    * 设置配置选项（同步等待 agent 返回）
    */
-  app.post('/api/acp/config', requireSessionOwner, async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    SetAcpConfigResponse | AcpErrorResponse,
+    SetAcpConfigRequest,
+    any,
+    any
+  >('/api/acp/config', requireSessionOwner, async (req: Request, res: Response) => {
     const { sessionId, configId, type, value } = req.body;
 
     if (!sessionId || !configId || type === undefined || value === undefined) {
@@ -689,20 +764,29 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * GET /api/acp/agent-config?agentId=xxx
    * 读取指定 agent 持久化的 configOptions，页面加载后无需真实会话即可渲染选择器
    */
-  app.get('/api/acp/agent-config', (req: Request, res: Response) => {
-    const agentId = String(req.query.agentId || '').trim();
-    if (!agentId) {
-      res.status(400).json({ error: 'agentId is required' });
-      return;
-    }
-    res.json({ success: true, configOptions: readAgentConfigFile()[agentId]?.configOptions ?? null });
-  });
+  app.get<Record<string, string>, GetAgentConfigResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/agent-config',
+    (req: Request, res: Response) => {
+      const agentId = String(req.query.agentId || '').trim();
+      if (!agentId) {
+        res.status(400).json({ error: 'agentId is required' });
+        return;
+      }
+      res.json({ success: true, configOptions: readAgentConfigFile()[agentId]?.configOptions ?? null });
+    },
+  );
 
   /**
    * POST /api/acp/agent-config
    * 保存指定 agent 的 configOptions 到 ~/.clover/agent-config.json（按 agentId 为 key）
    */
-  app.post('/api/acp/agent-config', (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    SaveAgentConfigResponse | AcpErrorResponse,
+    SaveAgentConfigRequest,
+    any,
+    any
+  >('/api/acp/agent-config', (req: Request, res: Response) => {
     const { agentId, configOptions } = req.body;
     if (!agentId || typeof agentId !== 'string') {
       res.status(400).json({ error: 'agentId is required' });
@@ -737,7 +821,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/ping
    * Ping 检测连接（同步返回）
    */
-  app.post('/api/acp/ping', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    PingResponse | AcpErrorResponse,
+    PingRequest,
+    any,
+    any
+  >('/api/acp/ping', async (req: Request, res: Response) => {
     const { sessionId } = req.body;
 
     if (!sessionId) {
@@ -760,27 +850,33 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * GET /api/acp/status
    * 获取系统状态
    */
-  app.get('/api/acp/status', (req: Request, res: Response) => {
-    res.json({
-      sessions: sessionManager.getSessionCount(),
-      activeSessions: sessionManager.getActiveSessionCount(),
-      connections: sseManager.getConnectionCount(),
-      // 事件面传输：进程内（Redis 已移除，单进程部署）
-      eventSink: 'in-process',
-    });
-  });
+  app.get<Record<string, string>, AcpStatusResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/status',
+    (req: Request, res: Response) => {
+      res.json({
+        sessions: sessionManager.getSessionCount(),
+        activeSessions: sessionManager.getActiveSessionCount(),
+        connections: sseManager.getConnectionCount(),
+        // 事件面传输：进程内（Redis 已移除，单进程部署）
+        eventSink: 'in-process',
+      });
+    },
+  );
 
   /**
    * GET /api/acp/health
    * 健康检查（进程内事件总线没有外部依赖，服务在跑即健康）
    */
-  app.get('/api/acp/health', (req: Request, res: Response) => {
-    res.json({
-      status: 'healthy',
-      eventSink: 'in-process',
-      timestamp: Date.now(),
-    });
-  });
+  app.get<Record<string, string>, AcpHealthResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/health',
+    (req: Request, res: Response) => {
+      res.json({
+        status: 'healthy',
+        eventSink: 'in-process',
+        timestamp: Date.now(),
+      });
+    },
+  );
 
   // ============================================================================
   // Agent 状态管理（Settings → Agents）
@@ -791,18 +887,21 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 列出全部 Agent 及其运行状态（可用/不可用/离线/连接）。
    * AgentStatusInfo 已继承 AgentConfig 的全部持久化字段，前端无需单独的配置列表。
    */
-  app.get('/api/acp/agents', (_req: Request, res: Response) => {
-    if (!registry) {
-      res.status(503).json({ error: 'Agent registry not initialized' });
-      return;
-    }
-    try {
-      res.json({ agents: registry.getStatus() });
-    } catch (error) {
-      logger.error('[ACP Routes] List agents error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
+  app.get<Record<string, string>, ListAgentsResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/agents',
+    (_req: Request, res: Response) => {
+      if (!registry) {
+        res.status(503).json({ error: 'Agent registry not initialized' });
+        return;
+      }
+      try {
+        res.json({ agents: registry.getStatus() });
+      } catch (error) {
+        logger.error('[ACP Routes] List agents error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    },
+  );
 
   /**
    * GET /api/acp/agents/events
@@ -872,20 +971,23 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/acp/agents/:id/check
    * Check Now：重新检测安装状态并尝试将 Agent 拉起到“连接”状态
    */
-  app.post('/api/acp/agents/:id/check', async (req: Request, res: Response) => {
-    if (!registry) {
-      res.status(503).json({ error: 'Agent registry not initialized' });
-      return;
-    }
-    try {
-      const agent = await registry.checkNow(String(req.params.id));
-      res.json({ agent });
-    } catch (error) {
-      logger.error(`[ACP Routes] Check agent error (agent: ${req.params.id}):`, error);
-      const message = (error as Error).message;
-      res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
-    }
-  });
+  app.post<Record<string, string>, CheckAgentResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/agents/:id/check',
+    async (req: Request, res: Response) => {
+      if (!registry) {
+        res.status(503).json({ error: 'Agent registry not initialized' });
+        return;
+      }
+      try {
+        const agent = await registry.checkNow(String(req.params.id));
+        res.json({ agent });
+      } catch (error) {
+        logger.error(`[ACP Routes] Check agent error (agent: ${req.params.id}):`, error);
+        const message = (error as Error).message;
+        res.status(message.startsWith('Unknown agent') ? 404 : 500).json({ error: message });
+      }
+    },
+  );
 
   /**
    * POST /api/acp/agents/install
@@ -896,8 +998,10 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    *   可执行文件存在 → 写 acp.json → 注册，job 立即完成。
    * - source=builtin：暂不支持（501）。
    */
-  app.post('/api/acp/agents/install', (req: Request, res: Response) => {
-    const config = (req.body ?? {}) as AgentInstallRequest;
+  app.post<Record<string, string>, InstallAgentResponse | AcpErrorResponse, AgentInstallRequest, any, any>(
+    '/api/acp/agents/install',
+    (req: Request, res: Response) => {
+      const config = (req.body ?? {}) as AgentInstallRequest;
 
     if (!config || typeof config.id !== 'string' || !config.id.trim()
       || typeof config.name !== 'string' || !config.name.trim()) {
@@ -951,14 +1055,17 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * GET /api/acp/agents/install/:jobId
    * 安装任务进度（设置页轮询）
    */
-  app.get('/api/acp/agents/install/:jobId', (req: Request, res: Response) => {
-    const job = getInstallJob(String(req.params.jobId));
-    if (!job) {
-      res.status(404).json({ error: 'Install job not found' });
-      return;
-    }
-    res.json({ job });
-  });
+  app.get<Record<string, string>, GetInstallJobResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/agents/install/:jobId',
+    (req: Request, res: Response) => {
+      const job = getInstallJob(String(req.params.jobId));
+      if (!job) {
+        res.status(404).json({ error: 'Install job not found' });
+        return;
+      }
+      res.json({ job });
+    },
+  );
 
   /**
    * DELETE /api/acp/agents/:id/uninstall
@@ -967,30 +1074,33 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 不等待会导致删除安装目录失败）→ 清理磁盘产物（binary 安装）→
    * 从 ~/.clover/acp.json 移除配置 → 从内存 AgentRegistry 移除。
    */
-  app.delete('/api/acp/agents/:id/uninstall', async (req: Request, res: Response) => {
-    const agentId = String(req.params.id);
-    if (!registry) {
-      res.status(503).json({ error: 'Agent registry not initialized' });
-      return;
-    }
-
-    try {
-      const entry = readAcpConfigFile().agents.find(a => a.id === agentId);
-      if (!entry) {
-        res.status(404).json({ error: `Agent not found: ${agentId}` });
+  app.delete<Record<string, string>, SetAcpConfigResponse | AcpErrorResponse, any, any, any>(
+    '/api/acp/agents/:id/uninstall',
+    async (req: Request, res: Response) => {
+      const agentId = String(req.params.id);
+      if (!registry) {
+        res.status(503).json({ error: 'Agent registry not initialized' });
         return;
       }
 
-      // 1. Precheck: stop the spawned process (if any) and wait for its exit.
-      await registry.removeConfig(agentId);
-      // 2. Remove on-disk artifacts + drop the acp.json entry.
-      await uninstallAgent(entry);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(`[ACP Routes] Uninstall agent error (agent: ${agentId}):`, error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
+      try {
+        const entry = readAcpConfigFile().agents.find(a => a.id === agentId);
+        if (!entry) {
+          res.status(404).json({ error: `Agent not found: ${agentId}` });
+          return;
+        }
+
+        // 1. Precheck: stop the spawned process (if any) and wait for its exit.
+        await registry.removeConfig(agentId);
+        // 2. Remove on-disk artifacts + drop the acp.json entry.
+        await uninstallAgent(entry);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(`[ACP Routes] Uninstall agent error (agent: ${agentId}):`, error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    },
+  );
 
   /**
    * POST /api/acp/agents/:id/update
@@ -998,7 +1108,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * 流程：校验新可执行文件存在 → 断开并停止旧进程（等待退出）→
    * 更新 ~/.clover/acp.json → 重新注册进 registry 并拉起。
    */
-  app.post('/api/acp/agents/:id/update', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    UpdateAgentResponse | AcpErrorResponse,
+    any,
+    any,
+    any
+  >('/api/acp/agents/:id/update', async (req: Request, res: Response) => {
     const agentId = String(req.params.id);
     if (!registry) {
       res.status(503).json({ error: 'Agent registry not initialized' });
@@ -1059,35 +1175,47 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/projects
    * 列出所有项目
    */
-  app.post('/api/projects', async (_req: Request, res: Response) => {
-    try {
-      const projects = readProjects();
-      res.json({ success: true, projects });
-    } catch (error) {
-      logger.error('[ACP Routes] List projects error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
+  app.post<Record<string, string>, ListProjectsResponse | AcpErrorResponse, any, any, any>(
+    '/api/projects',
+    async (_req: Request, res: Response) => {
+      try {
+        const projects = readProjects();
+        res.json({ success: true, projects });
+      } catch (error) {
+        logger.error('[ACP Routes] List projects error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    },
+  );
 
   /**
    * POST /api/tasks
    * 列出所有任务
    */
-  app.post('/api/tasks', async (_req: Request, res: Response) => {
-    try {
-      const tasks = readTasks();
-      res.json({ success: true, tasks });
-    } catch (error) {
-      logger.error('[ACP Routes] List tasks error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
+  app.post<Record<string, string>, ListTasksResponse | AcpErrorResponse, any, any, any>(
+    '/api/tasks',
+    async (_req: Request, res: Response) => {
+      try {
+        const tasks = readTasks();
+        res.json({ success: true, tasks });
+      } catch (error) {
+        logger.error('[ACP Routes] List tasks error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    },
+  );
 
   /**
    * POST /api/projects/add
    * 新增项目或任务（通过 type 区分）
    */
-  app.post('/api/projects/add', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    AddProjectResponse | AcpErrorResponse,
+    AddProjectRequest,
+    any,
+    any
+  >('/api/projects/add', async (req: Request, res: Response) => {
     const { name, path: projectPath, type, sessions, id, createdAt } = req.body;
 
     if (type === 'task') {
@@ -1146,7 +1274,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/projects/delete
    * 删除项目或任务（通过 type 区分）
    */
-  app.post('/api/projects/delete', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    DeleteProjectResponse | AcpErrorResponse,
+    DeleteProjectRequest,
+    any,
+    any
+  >('/api/projects/delete', async (req: Request, res: Response) => {
     const { name, type, id } = req.body;
 
     if (type === 'task') {
@@ -1180,7 +1314,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/projects/save-session
    * 保存会话到项目（upsert）；path 不属于 project 时回退到 task 记录（tasks.json）
    */
-  app.post('/api/projects/save-session', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    SaveSessionResponse | AcpErrorResponse,
+    SaveSessionRequest,
+    any,
+    any
+  >('/api/projects/save-session', async (req: Request, res: Response) => {
     const { projectPath, session } = req.body;
 
     if (!projectPath || !session?.sessionId || !session?.agentId) {
@@ -1236,7 +1376,13 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
    * POST /api/projects/delete-session
    * 从项目中删除会话
    */
-  app.post('/api/projects/delete-session', async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    DeleteSessionFromProjectResponse | AcpErrorResponse,
+    DeleteSessionFromProjectRequest,
+    any,
+    any
+  >('/api/projects/delete-session', async (req: Request, res: Response) => {
     const { projectPath, sessionId } = req.body;
 
     if (!projectPath || !sessionId) {
@@ -1278,17 +1424,26 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     writeFileSync(SELECTED_PROJECT_FILE, JSON.stringify({ selectedProject: name, selectedSessionId: sessionId }, null, 2));
   }
 
-  app.get('/api/projects/selected', (_req: Request, res: Response) => {
-    try {
-      const { selectedProject, selectedSessionId } = readSelectedProject();
-      res.json({ success: true, selectedProject, selectedSessionId });
-    } catch (error) {
-      logger.error('[ACP Routes] Get selected project error:', error);
-      res.status(500).json({ error: (error as Error).message });
-    }
-  });
+  app.get<Record<string, string>, GetSelectedProjectResponse | AcpErrorResponse, any, any, any>(
+    '/api/projects/selected',
+    (_req: Request, res: Response) => {
+      try {
+        const { selectedProject, selectedSessionId } = readSelectedProject();
+        res.json({ success: true, selectedProject, selectedSessionId });
+      } catch (error) {
+        logger.error('[ACP Routes] Get selected project error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    },
+  );
 
-  app.post('/api/projects/selected', (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    SetSelectedProjectResponse | AcpErrorResponse,
+    SetSelectedProjectRequest,
+    any,
+    any
+  >('/api/projects/selected', (req: Request, res: Response) => {
     const { selectedProject, selectedSessionId } = req.body;
     try {
       writeSelectedProject(selectedProject || null, selectedSessionId || null);
