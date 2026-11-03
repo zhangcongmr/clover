@@ -68,6 +68,6 @@ pnpm release
 
 ## 其他说明
 
-- 所有子包（含私有包）统一版本号同步升级；发布时仅发布 `clover-agent`、`clover-ui`、`clover` 三个包。
+- 所有子包（含私有包）统一版本号同步升级；发布时仅发布 `@julyware/clover-server`、`@julyware/clover-ui`、`@julyware/clover` 三个包。
 - 发版后如需 tag 可手动执行：`git tag vX.Y.Z && git push --tags`。
 - 若某个改动不需要发版，可运行 `pnpm changeset add --empty` 生成空 changeset 跳过该包。
