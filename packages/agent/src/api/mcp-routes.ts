@@ -1,6 +1,17 @@
 import { Router, json } from 'express';
 import { McpServerRegistry } from '../mcp/registry.js';
-import type { McpServerConfig } from '../mcp/types.js';
+import type {
+  ListMcpServersResponse,
+  GetMcpServerResponse,
+  CreateMcpServerRequest,
+  CreateMcpServerResponse,
+  UpdateMcpServerRequest,
+  UpdateMcpServerResponse,
+  DeleteMcpServerResponse,
+  McpErrorResponse,
+  McpServerAnyResponse,
+  McpServerAnyRequest,
+} from './mcp-types.js';
 
 export function createMcpRoutes(mcpRegistry: McpServerRegistry): Router {
   const router = Router();
@@ -10,72 +21,87 @@ export function createMcpRoutes(mcpRegistry: McpServerRegistry): Router {
    * GET /api/mcp/servers
    * 获取所有配置的 MCP servers
    */
-  router.get('/servers', (req, res) => {
-    const servers = mcpRegistry.list();
-    res.json({ servers });
-  });
+  router.get<never, ListMcpServersResponse | McpErrorResponse, any, any, any>(
+    '/servers',
+    (_req, res) => {
+      const servers = mcpRegistry.list();
+      res.json({ servers });
+    },
+  );
 
   /**
    * GET /api/mcp/servers/:name
    * 获取单个 server 配置
    */
-  router.get('/servers/:name', (req, res) => {
-    const server = mcpRegistry.get(req.params.name);
-    if (server) {
-      res.json({ server });
-    } else {
-      res.status(404).json({ error: 'Server not found' });
-    }
-  });
+  router.get<{ name: string }, GetMcpServerResponse | McpErrorResponse, any, any, any>(
+    '/servers/:name',
+    (req, res) => {
+      const server = mcpRegistry.get(req.params.name);
+      if (server) {
+        res.json({ server });
+      } else {
+        res.status(404).json({ error: 'Server not found' });
+      }
+    },
+  );
 
   /**
    * POST /api/mcp/servers
    * 添加 MCP server
    */
-  router.post('/servers', (req, res) => {
-    const { name, type, description, command, args, env, url, headers } = req.body;
+  router.post<never, CreateMcpServerResponse | McpErrorResponse, CreateMcpServerRequest, any, any>(
+    '/servers',
+    (req, res) => {
+      const { name, type, description, command, args, env, url, headers } = req.body;
 
-    if (!name) {
-      res.status(400).json({ error: 'name is required' });
-      return;
-    }
-
-    if (type === 'stdio') {
-      if (!command) {
-        res.status(400).json({ error: 'command is required for stdio type' });
+      if (!name) {
+        res.status(400).json({ error: 'name is required' });
         return;
       }
-      mcpRegistry.upsert(name, {
-        type: 'stdio',
-        description: description || '',
-        command,
-        args: args || [],
-        env: env || {},
-      });
-    } else if (type === 'http') {
-      if (!url) {
-        res.status(400).json({ error: 'url is required for http type' });
+
+      if (type === 'stdio') {
+        if (!command) {
+          res.status(400).json({ error: 'command is required for stdio type' });
+          return;
+        }
+        mcpRegistry.upsert(name, {
+          type: 'stdio',
+          description: description || '',
+          command,
+          args: args || [],
+          env: env || {},
+        });
+      } else if (type === 'http') {
+        if (!url) {
+          res.status(400).json({ error: 'url is required for http type' });
+          return;
+        }
+        mcpRegistry.upsert(name, {
+          type: 'http',
+          description: description || '',
+          url,
+          headers: headers || {},
+        });
+      } else {
+        res.status(400).json({ error: 'type must be stdio or http' });
         return;
       }
-      mcpRegistry.upsert(name, {
-        type: 'http',
-        description: description || '',
-        url,
-        headers: headers || {},
-      });
-    } else {
-      res.status(400).json({ error: 'type must be stdio or http' });
-      return;
-    }
 
-    res.json({ success: true, name });
-  });
+      res.json({ success: true, name });
+    },
+  );
 
   /**
    * PUT /api/mcp/servers/:name
    * 更新 MCP server
    */
-  router.put('/servers/:name', (req, res) => {
+  router.put<
+    { name: string },
+    UpdateMcpServerResponse | McpErrorResponse,
+    UpdateMcpServerRequest,
+    any,
+    any
+  >('/servers/:name', (req, res) => {
     const { name } = req.params;
     const existing = mcpRegistry.get(name);
 
@@ -113,15 +139,18 @@ export function createMcpRoutes(mcpRegistry: McpServerRegistry): Router {
    * DELETE /api/mcp/servers/:name
    * 删除 MCP server
    */
-  router.delete('/servers/:name', (req, res) => {
-    const success = mcpRegistry.remove(req.params.name);
+  router.delete<{ name: string }, DeleteMcpServerResponse | McpErrorResponse, any, any, any>(
+    '/servers/:name',
+    (req, res) => {
+      const success = mcpRegistry.remove(req.params.name);
 
-    if (success) {
-      res.json({ success: true });
-    } else {
-      res.status(404).json({ error: 'Server not found' });
-    }
-  });
+      if (success) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: 'Server not found' });
+      }
+    },
+  );
 
   return router;
 }

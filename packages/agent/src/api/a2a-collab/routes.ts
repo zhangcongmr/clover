@@ -10,6 +10,14 @@ import { CollabSpaceStore } from './spaces.js';
 import { BridgeRunner } from './bridge-runner.js';
 import { BridgeExecutor, OrchestratorExecutor } from './executors.js';
 import { createA2aBundle, type A2aBundle } from './bundles.js';
+import type {
+  CreateCollabSpaceRequest,
+  CreateCollabSpaceResponse,
+  DeleteCollabSpaceResponse,
+  A2aCollabErrorResponse,
+  CollabSpaceAnyResponse,
+  CollabSpaceAnyRequest,
+} from './types.js';
 
 export interface A2aCollabRouteOptions {
   tokenManager: TokenManager;
@@ -70,7 +78,13 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
   // Collaboration spaces
   // ==========================================================================
 
-  app.post('/api/a2a/collab/spaces', express.json(), async (req: Request, res: Response) => {
+  app.post<
+    Record<string, string>,
+    CreateCollabSpaceResponse | A2aCollabErrorResponse,
+    CreateCollabSpaceRequest,
+    any,
+    any
+  >('/api/a2a/collab/spaces', express.json(), async (req: Request, res: Response) => {
     const cwd = typeof req.body?.cwd === 'string' ? req.body.cwd : '';
     const participants = Array.isArray(req.body?.participants) ? req.body.participants : [];
     const orchestratorId =
@@ -103,7 +117,13 @@ export function setupA2aCollabRoutes(app: Express, options: A2aCollabRouteOption
     }
   });
 
-  app.delete('/api/a2a/collab/spaces/:spaceId', async (req: Request, res: Response) => {
+  app.delete<
+    { spaceId: string },
+    DeleteCollabSpaceResponse | A2aCollabErrorResponse,
+    any,
+    any,
+    any
+  >('/api/a2a/collab/spaces/:spaceId', async (req: Request, res: Response) => {
     try {
       const removed = await spaces.remove(String(req.params.spaceId));
       if (!removed) {

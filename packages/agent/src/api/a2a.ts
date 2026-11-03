@@ -10,11 +10,19 @@ export interface A2AOptions {
   agentCardUrl?: string;
 }
 
+/** A2A 端点成功响应：非流式返回 { parts, contextId } */
+export interface A2AResponse {
+  parts: Part[];
+  contextId: string;
+}
+
 export function setupA2ARoute(app: express.Application, options: A2AOptions = {}): void {
   const enableStreaming = options.enableStreaming !== false;
   const agentCardUrl = options.agentCardUrl || 'http://localhost:10002/.well-known/agent-card.json';
 
-  app.post('/a2a', (req, res) => {
+  app.post<Record<string, string>, A2AResponse | { error: string }, any, any, any>(
+    '/a2a',
+    (req, res) => {
     let originalBody = '';
 
     req.on('data', chunk => {
