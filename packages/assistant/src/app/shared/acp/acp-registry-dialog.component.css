@@ -55,6 +55,151 @@ ast-modal .ast-modal-body.acp-registry-dialog {
   color: #f44747;
 }
 
+/* Screen-reader-only text (used to announce the loading state). */
+.registry-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Skeleton loading ---------- */
+
+/* The skeleton mirrors the real agent item so the list does not jump
+   when the registry payload arrives. */
+.registry-skeleton-item {
+  cursor: default;
+  /* Neutralise the hover effect of the real item. */
+  border-color: var(--vscode-border-color);
+  background: var(--vscode-surface-background);
+}
+
+.registry-skeleton-item:hover {
+  border-color: var(--vscode-border-color);
+  background: var(--vscode-surface-background);
+}
+
+/* Shared shimmer block */
+.registry-skeleton-avatar,
+.registry-skeleton-line,
+.registry-skeleton-btn {
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-foreground) 8%,
+    var(--vscode-surface-background)
+  );
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--vscode-foreground) 14%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: registry-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.registry-skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.registry-skeleton-line {
+  display: block;
+  border-radius: 3px;
+  height: 10px;
+}
+
+.registry-skeleton-name {
+  width: 140px;
+  height: 12px;
+}
+
+.registry-skeleton-version {
+  width: 46px;
+  height: 12px;
+  border-radius: 10px;
+}
+
+.registry-skeleton-desc {
+  width: 60%;
+  max-width: 420px;
+}
+
+.registry-skeleton-meta {
+  width: 28%;
+  max-width: 200px;
+  height: 8px;
+}
+
+.registry-skeleton-btn {
+  flex-shrink: 0;
+  width: 72px;
+  height: 28px;
+  border-radius: var(--vscode-radius-sm, 3px);
+}
+
+/* Stagger the shimmer slightly per row for a more organic feel. */
+.registry-skeleton-item:nth-child(1) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(1) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(1) .registry-skeleton-btn {
+  animation-delay: 0ms;
+}
+.registry-skeleton-item:nth-child(2) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(2) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(2) .registry-skeleton-btn {
+  animation-delay: 60ms;
+}
+.registry-skeleton-item:nth-child(3) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(3) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(3) .registry-skeleton-btn {
+  animation-delay: 120ms;
+}
+.registry-skeleton-item:nth-child(4) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(4) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(4) .registry-skeleton-btn {
+  animation-delay: 180ms;
+}
+.registry-skeleton-item:nth-child(5) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(5) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(5) .registry-skeleton-btn {
+  animation-delay: 240ms;
+}
+.registry-skeleton-item:nth-child(6) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(6) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(6) .registry-skeleton-btn {
+  animation-delay: 300ms;
+}
+.registry-skeleton-item:nth-child(7) .registry-skeleton-avatar,
+.registry-skeleton-item:nth-child(7) .registry-skeleton-line,
+.registry-skeleton-item:nth-child(7) .registry-skeleton-btn {
+  animation-delay: 360ms;
+}
+
+@keyframes registry-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .registry-skeleton-avatar,
+  .registry-skeleton-line,
+  .registry-skeleton-btn {
+    animation: none;
+  }
+}
+
 /* Agent list */
 .registry-list {
   display: flex;
