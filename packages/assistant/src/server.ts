@@ -6,7 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { createServer, setupAgentMiddleware } from '@julyware/clover-agent';
+import { createServer, setupAgentMiddleware } from '@julyware/clover-server';
 
 const rootDir = join(import.meta.dirname, '..');
 const browserDistFolder = join(rootDir, 'browser');
@@ -39,13 +39,32 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     app,
   });
 } else {
-  const services = setupAgentMiddleware(app, {
+  // Angular's build-time prerender imports this module but never issues HTTP
+  // requests, so agent warmup must not run at import time. Warm the agents
+  // lazily on the first API/WebSocket request instead, once the dev/preview
+  // server is actually serving traffic. This keeps `ng build` from spawning
+  // ACP subprocesses (and from inheriting their processes/memory pressure).
+  let services: ReturnType<typeof setupAgentMiddleware> | null = null;
+  let warmupRequested = false;
+
+  app.use((req, _res, next) => {
+    if (
+      !warmupRequested &&
+      services &&
+      (req.path.startsWith('/api/') || req.path.startsWith('/ws'))
+    ) {
+      warmupRequested = true;
+      services.agentRegistry.warmupAll().catch((error) => {
+        console.error('[AgentRegistry] Warmup failed:', error);
+      });
+    }
+    next();
+  });
+
+  services = setupAgentMiddleware(app, {
     corsPorts: [4200, 4000],
     corsOrigins: ['192.168.153.129'],
     staticDir: browserDistFolder,
-  });
-  services.agentRegistry.warmupAll().catch((error) => {
-    console.error('[AgentRegistry] Warmup failed:', error);
   });
   // Note: In dev mode, ACP WebSocket setup requires httpServer access.
   // The config endpoint (POST /api/local/acp/config) will work,

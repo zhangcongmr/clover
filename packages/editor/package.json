@@ -26,7 +26,7 @@
     "node-pty": "^1.2.0-beta.14"
   },
   "devDependencies": {
-    "@julyware/clover-agent": "workspace:*",
+    "@julyware/clover-server": "workspace:*",
     "@julyware/clover-ui": "workspace:*",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",

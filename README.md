@@ -15,7 +15,7 @@ A universal development solution combining a browser web app with a local proxy 
 ```
 clover-monorepo/
 ├── packages/
-│   ├── agent/                  # Local proxy agent (@julyware/clover-agent)
+│   ├── server/                 # Local proxy server (@julyware/clover-server)
 │   │                           # Express + WebSocket + ACP + node-pty + Redis
 │   │                           # Redis is optional, runs in memory mode by default
 │   ├── assistant/              # Main app (clover): Angular 21 + SSR
@@ -85,6 +85,6 @@ pnpm --filter ./packages/agent dev              # Watch build
 | Command | Description |
 |---------|-------------|
 | `pnpm build` | Build all packages (with timer) |
-| `pnpm build:agent` | Build @julyware/clover-agent only |
+| `pnpm build:server` | Build @julyware/clover-server only |
 | `pnpm dev` | Start all packages' dev servers in parallel |
 | `pnpm test` | Run all packages' tests in parallel |

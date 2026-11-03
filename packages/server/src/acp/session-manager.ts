@@ -79,6 +79,9 @@ export class AcpSessionManager {
     this.cleanupInterval = setInterval(() => {
       // this.cleanupExpiredSessions();
     }, 60000);
+    // Library code must not pin the event loop: importing the server (for
+    // example during Angular's build-time prerender) should not block exit.
+    this.cleanupInterval.unref?.();
   }
 
   /** Resolve an agent's command/args/env by its public id. */

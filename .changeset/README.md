@@ -1,6 +1,6 @@
 # Changesets 使用说明
 
-本仓库使用 [Changesets](https://github.com/changesets/changesets) 管理发版与版本号升级。所有 `packages/*` 下的子包（含私有包）组成一个固定分组，始终使用同一版本号，一次提交统一升级；对外发布时只发布 `@julyware/clover-agent`、`@julyware/clover-ui`、`@julyware/clover` 三个包。
+本仓库使用 [Changesets](https://github.com/changesets/changesets) 管理发版与版本号升级。所有 `packages/*` 下的子包（含私有包）组成一个固定分组，始终使用同一版本号，一次提交统一升级；对外发布时只发布 `@julyware/clover-server`、`@julyware/clover-ui`、`@julyware/clover` 三个包。
 
 ## 相关命令
 

@@ -98,6 +98,9 @@ export class SseManager {
     this.cleanupInterval = setInterval(() => {
       // this.cleanup();
     }, 30000);
+    // Library code must not pin the event loop: importing the server (for
+    // example during Angular's build-time prerender) should not block exit.
+    this.cleanupInterval.unref?.();
   }
 
   /**
