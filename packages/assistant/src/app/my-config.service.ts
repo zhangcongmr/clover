@@ -8,7 +8,7 @@ export interface MyConfig {
   timeout?: number;
   doc?: DocModelType;
   fileName?: string;
-  agentUrl?: string;
+  serverUrl?: string;
 }
 
 @Injectable({
@@ -33,8 +33,8 @@ export class MyConfigService {
     return this.config.fileName;
   }
 
-  getAgentUrl(): string | undefined {
-    return this.config.agentUrl;
+  getServerUrl(): string | undefined {
+    return this.config.serverUrl;
   }
 
 }

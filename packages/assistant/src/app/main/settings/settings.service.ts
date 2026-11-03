@@ -1,5 +1,5 @@
 import { Injectable, WritableSignal, signal, inject } from '@angular/core';
-import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
+import { LocalServerService } from '../../shared/local-server/local-server.service';
 import { ThemeService } from '../../theme.service';
 import { ThemeLibraryService } from '../../theme-library.service';
 import { BUILTIN_THEME_PRESETS } from '../../builtin-theme-presets';
@@ -49,7 +49,7 @@ function readFontFamily(raw: unknown): string | null {
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
-  private localAgentService = inject(LocalAgentService);
+  private localServerService = inject(LocalServerService);
   private themeService = inject(ThemeService);
   private themeLibrary = inject(ThemeLibraryService);
   private notificationService = inject(NotificationService);

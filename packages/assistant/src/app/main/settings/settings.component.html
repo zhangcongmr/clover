@@ -27,22 +27,22 @@
       <div class="settings-section custom-scroll">
         <h2 class="section-title">General Settings</h2>
 
-        <!-- Agent URL -->
+        <!-- Server URL -->
         <div class="setting-item">
           <div class="setting-info">
-            <label class="setting-label" for="setting-agent-url">Agent URL</label>
-            <p class="setting-desc">Local agent server address for file operations and terminal</p>
+            <label class="setting-label" for="setting-server-url">Server URL</label>
+            <p class="setting-desc">Address of the local server used for file operations and terminal</p>
           </div>
           <div class="setting-control">
             <div class="input-row">
               <input
-                id="setting-agent-url"
+                id="setting-server-url"
                 type="text"
                 class="setting-input"
                 placeholder="http(s)://{ip}:{port}"
-                [(ngModel)]="localAgentService.agentUrl"
+                [(ngModel)]="localServerService.serverUrl"
               />
-              <button class="btn btn btn-secondary" (click)="saveAgentUrl()">Save</button>
+              <button class="btn btn btn-secondary" (click)="saveServerUrl()">Save</button>
             </div>
             @if (showSavedToast()) {
               <span class="toast-saved">Saved</span>
@@ -50,24 +50,24 @@
           </div>
         </div>
 
-        <!-- Agent Status -->
+        <!-- Server Status -->
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Agent Status</span>
-            <p class="setting-desc">Connection status of the local agent</p>
+            <span class="setting-label">Server Status</span>
+            <p class="setting-desc">Connection status of the local server</p>
           </div>
           <div class="setting-control">
             <div class="status-row">
               <span
                 class="status-indicator"
-                [class.status-connected]="agentStatus() === 'connected'"
-                [class.status-disconnected]="agentStatus() === 'disconnected'"
-                [class.status-unknown]="agentStatus() === 'unknown'"
+                [class.status-connected]="serverStatus() === 'connected'"
+                [class.status-disconnected]="serverStatus() === 'disconnected'"
+                [class.status-unknown]="serverStatus() === 'unknown'"
               ></span>
               <span class="status-text">
-                @if (agentStatus() === 'connected') {
+                @if (serverStatus() === 'connected') {
                   Connected
-                } @else if (agentStatus() === 'disconnected') {
+                } @else if (serverStatus() === 'disconnected') {
                   Disconnected
                 } @else {
                   Checking...
@@ -75,10 +75,10 @@
               </span>
               <button
                 class="btn btn-secondary"
-                (click)="testAgentConnection()"
-                [disabled]="agentTesting()"
+                (click)="testServerConnection()"
+                [disabled]="serverTesting()"
               >
-                @if (agentTesting()) {
+                @if (serverTesting()) {
                   Testing...
                 } @else {
                   Test Connection

@@ -2,6 +2,11 @@ import { Injectable, signal } from '@angular/core';
 
 const PROBE_TIMEOUT_MS = 1500;
 
+/** localStorage key holding the local server address. */
+const SERVER_URL_KEY = 'assistant_serverUrl';
+/** Legacy key (pre-rename); read once so existing setups keep their address. */
+const LEGACY_SERVER_URL_KEY = 'assistant_agentUrl';
+
 export interface LocalFileRequest {
   type: 'file-request';
   action: string;
@@ -20,42 +25,45 @@ export interface LocalFileResponse {
 }
 
 @Injectable({ providedIn: 'root' })
-export class LocalAgentService {
-  public agentUrl = '';
+export class LocalServerService {
+  public serverUrl = '';
   private cachedToken: string | null = null;
   private tokenExpiry: number = 0;
 
-  /** Agent availability status (components can subscribe) */
+  /** Server availability status (components can subscribe) */
   isAvailable = signal(false);
-  /** Agent URL */
+  /** Server URL */
   connectedUrl = signal<string>('');
 
   private fileWatchWs: WebSocket | null = null;
   private fileWatchCallbacks = new Map<string, (eventType: string) => void>();
 
   constructor() {
-    // Read agentUrl from localStorage (UI Settings) - only in browser
+    // Read serverUrl from localStorage (UI Settings) - only in browser
     if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem('assistant_agentUrl');
+      const stored = localStorage.getItem(SERVER_URL_KEY)
+        ?? localStorage.getItem(LEGACY_SERVER_URL_KEY);
       if (stored) {
-        this.agentUrl = stored;
+        this.serverUrl = stored;
       }
     }
   }
 
-  /** Get base URL for API requests (same-origin or agentUrl) */
+  /** Get base URL for API requests (same-origin or serverUrl) */
   public getBaseUrl(): string {
-    return this.agentUrl || window.location.origin;
+    return this.serverUrl || window.location.origin;
   }
 
-  /** Update agentUrl at runtime */
-  setAgentUrl(url: string) {
-    this.agentUrl = url;
+  /** Update serverUrl at runtime */
+  setServerUrl(url: string) {
+    this.serverUrl = url;
     if (typeof localStorage !== 'undefined') {
       if (url) {
-        localStorage.setItem('assistant_agentUrl', url);
+        localStorage.setItem(SERVER_URL_KEY, url);
+        localStorage.removeItem(LEGACY_SERVER_URL_KEY);
       } else {
-        localStorage.removeItem('assistant_agentUrl');
+        localStorage.removeItem(SERVER_URL_KEY);
+        localStorage.removeItem(LEGACY_SERVER_URL_KEY);
       }
     }
   }
@@ -74,7 +82,7 @@ export class LocalAgentService {
     return this.cachedToken!;
   }
 
-  async checkAgentAvailable(url?: string): Promise<boolean> {
+  async checkServerAvailable(url?: string): Promise<boolean> {
     const target = url || this.getBaseUrl();
     try {
       const res = await fetch(`${target}/api/local/health`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
@@ -84,9 +92,9 @@ export class LocalAgentService {
     }
   }
 
-  /** Probe and connect to the agent (same-origin or agentUrl) */
+  /** Probe and connect to the server (same-origin or serverUrl) */
   async probeAndConnect(): Promise<boolean> {
-    const ok = await this.checkAgentAvailable();
+    const ok = await this.checkServerAvailable();
     this.isAvailable.set(ok);
     if (ok) this.connectedUrl.set(this.getBaseUrl());
     return ok;
