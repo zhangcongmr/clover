@@ -7,6 +7,7 @@
 ```bash
 pnpm changeset          # 交互式添加变更说明（选择 patch / minor / major）
 pnpm version-packages   # 执行 changeset version：统一 bump 所有子包版本 + 更新 CHANGELOG + 同步内部依赖
+pnpm login              # 发布前登录 npm（必须用 pnpm login，不要用 npm login）
 pnpm release            # 先 version-packages，再发布三个包（会触发各包 prepublishOnly 构建）
 ```
 
@@ -51,8 +52,11 @@ git push
 ### 3. 发布
 
 ```bash
+pnpm login   # 登录 npm，并在浏览器完成认证
 pnpm release
 ```
+
+> 必须使用 `pnpm login`（不要用 `npm login`）。`npm login` 生成的 token 在账号开启 `auth-and-writes` 2FA 时，发布需要 OTP 校验，`pnpm` 会将其显示为误导性的 `404 Not Found`；`pnpm login` 可直接用于 `pnpm release`。
 
 等价于先执行 `pnpm version-packages`，再对三个发布包执行 publish（publish 时会先跑各包的 `prepublishOnly` 构建）。
 
