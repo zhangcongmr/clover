@@ -11,6 +11,9 @@
     "dist-server",
     "!dist-server/node_modules"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "vite build && pnpm run build:server",
     "build:server": "node scripts/build-server.mjs",

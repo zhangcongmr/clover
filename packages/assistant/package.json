@@ -13,6 +13,9 @@
   "files": [
     "dist/clover-common"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host=0.0.0.0 --ssl",
