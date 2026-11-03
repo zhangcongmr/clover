@@ -23,7 +23,7 @@ import { NodeDef } from '@julyware/common';
 import { NotificationService } from '../../shared/notification/notification.service';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { normalizeApiSpec } from "api-render-ui"
-import { LocalAgentService } from '../../shared/local-agent/local-agent.service';
+import { LocalServerService } from '../../shared/local-server/local-server.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 import { SettingsService } from '../settings/settings.service';
 import { AcpService } from '../../shared/acp/acp.service';
@@ -66,7 +66,7 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   public myConfigService = inject(MyConfigService)
   public coreService = inject(CoreService);
   public notificationService = inject(NotificationService);
-  private localAgentService = inject(LocalAgentService);
+  private localServerService = inject(LocalServerService);
   private settingsService = inject(SettingsService);
   private acpService = inject(AcpService);
   private elementRef = inject(ElementRef);
@@ -330,7 +330,7 @@ showButtonPlaceholder = computed(() => {
     }
 
     // 断开本地Agent连接
-    this.localAgentService.disconnect();
+    this.localServerService.disconnect();
   }
 
   shrinkExplorer() {
@@ -354,25 +354,25 @@ showButtonPlaceholder = computed(() => {
     this.isLocalProject.set(isLocal);
 
     if (isLocal) {
-      this.initLocalAgentConnection();
+      this.initLocalServerConnection();
     }
   }
 
-  // Initialize local agent connection
-  private async initLocalAgentConnection() {
+  // Initialize local server connection
+  private async initLocalServerConnection() {
     try {
-      const found = await this.localAgentService.probeAndConnect();
+      const found = await this.localServerService.probeAndConnect();
       if (found) {
         this.startWatchProjectRoot();
         this.startWatchOpenedFiles();
       } else {
-        console.warn('[Content] Local agent not available');
+        console.warn('[Content] Local server not available');
         this.notificationService.showNotification(
-          'Local file system access not available. Configure Agent URL in Settings.', 'warning'
+          'Local file system access not available. Configure Server URL in Settings.', 'warning'
         );
       }
     } catch (err) {
-      console.error('[Content] Failed to connect to local agent:', err);
+      console.error('[Content] Failed to connect to local server:', err);
     }
   }
 
@@ -381,7 +381,7 @@ showButtonPlaceholder = computed(() => {
     for (const tab of openedTabs) {
       if (tab.nodeType === 'file') {
         const filePath = getNodeAbsolutePath(this.dataList(), tab);
-        this.localAgentService.startFileWatch(filePath, (eventType) => {
+        this.localServerService.startFileWatch(filePath, (eventType) => {
           this.onExternalFileChange(tab, eventType);
         });
       }
@@ -393,7 +393,7 @@ showButtonPlaceholder = computed(() => {
     if (list.length === 0 || !list[0].rootPath) return;
 
     const rootPath = list[0].rootPath;
-    this.localAgentService.startFileWatch(rootPath, (eventType) => {
+    this.localServerService.startFileWatch(rootPath, (eventType) => {
       if (eventType === 'rename') {
         this.onProjectRootChanged(rootPath, eventType);
       }
@@ -403,7 +403,7 @@ showButtonPlaceholder = computed(() => {
   private async onProjectRootChanged(rootPath: string, eventType: string): Promise<void> {
     if (eventType === 'rename') {
       try {
-        const data = await this.localAgentService.scanDir(rootPath, 1, [
+        const data = await this.localServerService.scanDir(rootPath, 1, [
           'node_modules', '.git', 'dist', 'build', '__pycache__',
           '.angular', '.vscode', '.idea', '.vs', 'target', 'out',
           'coverage', 'logs', 'log', 'tmp', 'temp', 'cache',
@@ -971,7 +971,7 @@ Always use the welcome_greeting tool.`;
   // Open folder via Node.js API (SSR scan endpoint)
   async openFolderViaNodeApi(path: string, silent: boolean = false): Promise<boolean> {
     try {
-      const data = await this.localAgentService.scanDir(path, 1, [
+      const data = await this.localServerService.scanDir(path, 1, [
         'node_modules', '.git', 'dist', 'build', '__pycache__',
         '.angular', '.vscode', '.idea', '.vs', 'target', 'out',
         'coverage', 'logs', 'log', 'tmp', 'temp', 'cache',
@@ -1092,7 +1092,7 @@ Always use the welcome_greeting tool.`;
 
     const fullPath = getNodeAbsolutePath(this.dataList(), node);
     try {
-      const items = await this.localAgentService.listDir(fullPath);
+      const items = await this.localServerService.listDir(fullPath);
       node.children = items.map((item: any) => ({
         id: this.uuid(),
         label: item.name,
@@ -1112,7 +1112,7 @@ Always use the welcome_greeting tool.`;
   // Open file via Node.js API (SSR readFile endpoint)
   async openFileViaNodeApi(path: string) {
     try {
-      const content = await this.localAgentService.readFile(path);
+      const content = await this.localServerService.readFile(path);
       const fileName = path.split(/[/\\]/).pop() || path;
       const fileNode: AstTreeNode = {
         id: this.uuid(),
@@ -1203,7 +1203,7 @@ Always use the welcome_greeting tool.`;
 
       if (this.isLocalProject() && targetTab.nodeType === 'file') {
         const filePath = getNodeAbsolutePath(this.dataList(), targetTab);
-        this.localAgentService.startFileWatch(filePath, (eventType) => {
+        this.localServerService.startFileWatch(filePath, (eventType) => {
           this.onExternalFileChange(targetTab, eventType);
         });
       }
@@ -1217,15 +1217,15 @@ Always use the welcome_greeting tool.`;
   private async refreshNodeContent(targetTab: any) {
     const handle = targetTab.folderHandle;
 
-    // 本地项目：通过 Local Agent 读取文件
+    // 本地项目：通过 Local Server 读取文件
     if (this.isLocalProject() && targetTab.nodeType === 'file') {
       try {
         const filePath = getNodeAbsolutePath(this.dataList(), targetTab);
-        const content = await this.localAgentService.readFile(filePath);
+        const content = await this.localServerService.readFile(filePath);
         targetTab.content = content;
         return;
       } catch (err: any) {
-        console.warn('[Content] Failed to read file via local agent:', err.message);
+        console.warn('[Content] Failed to read file via local server:', err.message);
         targetTab.content = '';
         return;
       }
@@ -1426,15 +1426,15 @@ Always use the welcome_greeting tool.`;
       return;
     }
 
-    // 本地项目：通过 Local Agent 保存文件
+    // 本地项目：通过 Local Server 保存文件
     if (this.isLocalProject() && evt.nodeType === 'file') {
       try {
         const filePath = getNodeAbsolutePath(this.dataList(), evt);
         this.savingFilePath = filePath;
-        await this.localAgentService.writeFile(filePath, evt.content || '');
+        await this.localServerService.writeFile(filePath, evt.content || '');
         this.notificationService.showNotification('File saved locally', 'success');
       } catch (err: any) {
-        console.error('[Content] Failed to save file via local agent:', err);
+        console.error('[Content] Failed to save file via local server:', err);
         this.notificationService.showNotification(`Failed to save: ${err.message}`, 'error');
       } finally {
         this.savingFilePath = '';
@@ -1539,10 +1539,10 @@ Always use the welcome_greeting tool.`;
     if (evt.action == 'Delete') {
       const deletedNode = evt.target.item;
 
-      // 本地项目：通过 Local Agent 删除文件/文件夹
+      // 本地项目：通过 Local Server 删除文件/文件夹
       if (this.isLocalProject() && deletedNode) {
         const filePath = evt.deletedPath || getNodeAbsolutePath(this.dataList(), deletedNode);
-        this.localAgentService.deleteFile(filePath).then(() => {
+        this.localServerService.deleteFile(filePath).then(() => {
           this.notificationService.showNotification('Deleted: ' + deletedNode.label, 'success');
         }).catch(err => {
           console.error('[Content] Failed to delete file/folder:', err);
@@ -1579,8 +1579,8 @@ Always use the welcome_greeting tool.`;
       if (this.isLocalProject() && evt.target) {
         const filePath = getNodeAbsolutePath(this.dataList(), evt.target);
         const op = evt.action === 'NewFile:confirm'
-          ? this.localAgentService.createFile(filePath)
-          : this.localAgentService.createDir(filePath);
+          ? this.localServerService.createFile(filePath)
+          : this.localServerService.createDir(filePath);
         op.then(() => {
           this.notificationService.showNotification('Created: ' + evt.target.label, 'success');
         }).catch(err => {
@@ -1640,7 +1640,7 @@ Always use the welcome_greeting tool.`;
           
           if (this.isLocalProject() && evt.nodeType === 'file') {
             const filePath = getNodeAbsolutePath(this.dataList(), evt);
-            this.localAgentService.stopFileWatch(filePath);
+            this.localServerService.stopFileWatch(filePath);
           }
           
           datas.splice(index, 1);
@@ -1673,7 +1673,7 @@ Always use the welcome_greeting tool.`;
     }
 
     try {
-      const newContent = await this.localAgentService.readFile(filePath);
+      const newContent = await this.localServerService.readFile(filePath);
       
       if (tab.content !== newContent) {
         tab.content = newContent;
@@ -1952,7 +1952,7 @@ Always use the welcome_greeting tool.`;
   }
 
   async closeFolder() {
-    this.localAgentService.disconnect();
+    this.localServerService.disconnect();
     this.disconnectTerminal.emit();
     this.nodeDef = null;
     this.isLocalProject.set(false);
@@ -1985,7 +1985,7 @@ Always use the welcome_greeting tool.`;
   private stopFileWatchForNodeAndDescendants(node: any) {
     if (node.nodeType === 'file') {
       const filePath = getNodeAbsolutePath(this.dataList(), node);
-      this.localAgentService.stopFileWatch(filePath);
+      this.localServerService.stopFileWatch(filePath);
     }
     if (node.children) {
       for (const child of node.children) {

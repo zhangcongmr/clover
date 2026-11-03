@@ -12,7 +12,7 @@ import {
   type SendMessageRequest,
   type StreamResponse,
 } from '@a2a-js/sdk';
-import { LocalAgentService } from '../../../shared/local-agent/local-agent.service';
+import { LocalServerService } from '../../../shared/local-server/local-server.service';
 import { AcpSseService } from '../../../shared/acp/acp-sse.service';
 import { openSseRequest, readSseFrames } from '../../../shared/acp/sse-transport';
 import type { ConfigOption } from '../../../shared/acp/acp.model';
@@ -119,7 +119,7 @@ const MAX_TURNS = 30;
 
 @Injectable({ providedIn: 'root' })
 export class CollabService {
-  private localAgent = inject(LocalAgentService);
+  private localServer = inject(LocalServerService);
   private sseService = inject(AcpSseService);
   /** Agent 列表单一数据源（由全局状态推送保持实时，Settings 页共用）。 */
   private acp = inject(AcpService);
@@ -258,14 +258,14 @@ export class CollabService {
     this.creating.set(true);
     this.error.set(null);
     try {
-      const token = await this.localAgent.getToken();
+      const token = await this.localServer.getToken();
       const participants = list.map(participant => ({
         id: participant.id,
         agentId: participant.agentId,
         role: participant.role.trim() || undefined,
         responsibility: participant.responsibility.trim() || undefined,
       }));
-      const res = await fetch(`${this.localAgent.getBaseUrl()}/api/a2a/collab/spaces`, {
+      const res = await fetch(`${this.localServer.getBaseUrl()}/api/a2a/collab/spaces`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -305,8 +305,8 @@ export class CollabService {
   }
 
   private async deleteSpace(spaceId: string): Promise<void> {
-    const token = await this.localAgent.getToken();
-    await fetch(`${this.localAgent.getBaseUrl()}/api/a2a/collab/spaces/${encodeURIComponent(spaceId)}`, {
+    const token = await this.localServer.getToken();
+    await fetch(`${this.localServer.getBaseUrl()}/api/a2a/collab/spaces/${encodeURIComponent(spaceId)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -445,7 +445,7 @@ export class CollabService {
 
   private openWrapperSse(space: CollabSpace, token: string): void {
     this.closeWrapperSse();
-    const base = this.localAgent.getBaseUrl();
+    const base = this.localServer.getBaseUrl();
     const clientId = `collab:${space.spaceId}`;
     this.wrapperClientId = clientId;
 
@@ -553,9 +553,9 @@ export class CollabService {
     const requestId = payload.requestId;
     const resolve = async (outcome: any): Promise<void> => {
       try {
-        const token = await this.localAgent.getToken();
+        const token = await this.localServer.getToken();
         const epoch = this.wrapperEpochs.get(sessionId);
-        await fetch(`${this.localAgent.getBaseUrl()}/api/acp/stream/${encodeURIComponent(sessionId)}`, {
+        await fetch(`${this.localServer.getBaseUrl()}/api/acp/stream/${encodeURIComponent(sessionId)}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -801,7 +801,7 @@ export class CollabService {
   // ==========================================================================
 
   private async createOrchestratorClient(): Promise<Client> {
-    const token = await this.localAgent.getToken();
+    const token = await this.localServer.getToken();
     const authFetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const headers = new Headers(init?.headers);
       headers.set('Authorization', `Bearer ${token}`);
@@ -816,7 +816,7 @@ export class CollabService {
     );
     // createFromUrl resolves `base + /.well-known/agent-card.json`, so the
     // base URL must carry a trailing slash to stay under the orchestrator path.
-    return factory.createFromUrl(`${this.localAgent.getBaseUrl()}/${ORCHESTRATOR_PATH}`);
+    return factory.createFromUrl(`${this.localServer.getBaseUrl()}/${ORCHESTRATOR_PATH}`);
   }
 
   private buildRequest(space: CollabSpace, prompt: string): SendMessageRequest {

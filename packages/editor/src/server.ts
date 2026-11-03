@@ -19,7 +19,7 @@ const distDir = isCompiled ? join(__dirname, 'dist') : join(rootDir, 'dist');
 const args = process.argv.slice(2);
 if (args.includes('-h') || args.includes('--help')) {
   console.log([
-    'clover - SSR editor with an embedded local agent server',
+    'clover - SSR editor with an embedded local server',
     '',
     'Usage:',
     '  clover [options]',
@@ -31,7 +31,7 @@ if (args.includes('-h') || args.includes('--help')) {
     '',
     'Environment:',
     '  PORT                  Server port (default 5178)',
-    '  EDITOR_TOKEN_SECRET   Auth token secret for the agent server',
+    '  EDITOR_TOKEN_SECRET   Auth token secret for the server',
   ].join('\n'));
   process.exit(0);
 }

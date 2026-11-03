@@ -5,7 +5,7 @@ import { AstModalComponent } from '../ast-modal/ast-modal.component';
 import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
 import { pickParentObject, getNodeAbsolutePath, getFileIcon, computeFileIcons } from '../ast-tree/ast-tree.component';
-import { LocalAgentService } from '../local-agent/local-agent.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { SettingsService } from '../../main/settings/settings.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
@@ -18,7 +18,7 @@ import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.com
   styleUrls: ['./file-picker-dialog.component.css']
 })
 export class FilePickerDialogComponent {
-  private localAgentService = inject(LocalAgentService);
+  private localServerService = inject(LocalServerService);
   private settingsService = inject(SettingsService);
 
   visible = signal(false);
@@ -63,7 +63,7 @@ export class FilePickerDialogComponent {
     this.loading.set(true);
     this.currentPath.set(path);
     try {
-      const data = await this.localAgentService.scanDir(path, 1, [
+      const data = await this.localServerService.scanDir(path, 1, [
         'node_modules', '.git', 'dist', 'build', '__pycache__',
         '.angular', '.vscode', '.idea', '.vs', 'target', 'out',
         'coverage', 'logs', 'log', 'tmp', 'temp', 'cache',
@@ -112,7 +112,7 @@ export class FilePickerDialogComponent {
     if (node.children?.length > 0) return;
     const fullPath = getNodeAbsolutePath(this.treeData(), node);
     try {
-      const data = await this.localAgentService.scanDir(fullPath, 1);
+      const data = await this.localServerService.scanDir(fullPath, 1);
       const newChildren = (data.children || []).map((child: any) =>
         this.scanNodeToTreeNode(child, node.rootPath || fullPath, node)
       );
@@ -127,12 +127,12 @@ export class FilePickerDialogComponent {
 
   onTabChange(tabId: string) {
     if (tabId === 'local') { 
-      // this.localAgentService.setAgentUrl(this.settingsService.agentUrl());
+      // this.localServerService.setServerUrl(this.settingsService.serverUrl());
     } else {
-      this.localAgentService.setAgentUrl(window.location.origin);
+      this.localServerService.setServerUrl(window.location.origin);
     }
     this.activeTab.set(tabId as 'local' | 'remote');
-    this.localAgentService.disconnect();
+    this.localServerService.disconnect();
     this.loadDirectory('/');
   }
 

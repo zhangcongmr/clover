@@ -5,7 +5,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { AttachAddon } from '@xterm/addon-attach';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { CoreService } from '../../core.service';
-import { LocalAgentService } from '../local-agent/local-agent.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { SettingsService } from '../../main/settings/settings.service';
 
 @Component({
@@ -18,7 +18,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('terminal', { static: true }) terminalElement!: ElementRef;
 
   private coreService = inject(CoreService);
-  private localAgentService = inject(LocalAgentService);
+  private localServerService = inject(LocalServerService);
   /** Terminal typography is owned by Settings → Appearance. */
   private settingsService = inject(SettingsService);
   theme = input<string>('light'); // 'dark' or 'light'
@@ -248,7 +248,7 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
   // Connect to local PTY via SSR WebSocket
   private async connectLocalPty(): Promise<void> {
     try {
-      const wsUrl = await this.localAgentService.getTerminalWsUrl();
+      const wsUrl = await this.localServerService.getTerminalWsUrl();
 
       this.websocket = new WebSocket(wsUrl);
 
@@ -264,19 +264,19 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
         this.attachAddon = new AttachAddon(this.websocket!);
         this.terminal.loadAddon(this.attachAddon);
         this.isConnected = true;
-        console.log('[Terminal] Connected to local agent PTY');
+        console.log('[Terminal] Connected to local server PTY');
       };
 
       this.websocket.onerror = (err) => {
-        console.error('[Terminal] Local agent PTY error:', err);
+        console.error('[Terminal] Local server PTY error:', err);
       };
 
       this.websocket.onclose = () => {
         this.isConnected = false;
       };
     } catch (err) {
-      console.error('[Terminal] Failed to connect to local agent PTY:', err);
-      this.terminal.writeln('\r\n\x1b[31m[Error] Failed to connect to local agent. Check Agent URL in Settings.\x1b[0m');
+      console.error('[Terminal] Failed to connect to local server PTY:', err);
+      this.terminal.writeln('\r\n\x1b[31m[Error] Failed to connect to the local server. Check Server URL in Settings.\x1b[0m');
     }
   }
 

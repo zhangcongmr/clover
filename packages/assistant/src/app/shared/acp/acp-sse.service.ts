@@ -1,6 +1,6 @@
 import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { LocalAgentService } from '../local-agent/local-agent.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { openSseRequest, readSseFrames } from './sse-transport';
 import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
 
@@ -107,7 +107,7 @@ export class AcpSseService {
   /** 续传窗口不足（服务端 ring 已覆盖 / 序号归零），需要重新 load 历史。 */
   private onReplayGapCallback: ((payload: any) => void) | null = null;
 
-  constructor(private localAgentService: LocalAgentService) {}
+  constructor(private localServerService: LocalServerService) {}
 
   // ============================================================================
   // 事件注册方法
@@ -208,7 +208,7 @@ export class AcpSseService {
       this.epoch = undefined;
     }
 
-    this.baseUrl = this.localAgentService.getBaseUrl();
+    this.baseUrl = this.localServerService.getBaseUrl();
     this._currentSessionId = sessionId;
     this._currentAgentId = agentId;
     this.sessionId.set(sessionId);
@@ -232,7 +232,7 @@ export class AcpSseService {
     this.abortController = controller;
 
     try {
-      const token = await this.localAgentService.getToken();
+      const token = await this.localServerService.getToken();
       const headers: Record<string, string> = {
         Accept: 'text/event-stream',
         Authorization: `Bearer ${token}`,
@@ -464,8 +464,8 @@ export class AcpSseService {
   // ============================================================================
 
   private async post(endpoint: string, body: any): Promise<any> {
-    const token = await this.localAgentService.getToken();
-    const base = this.localAgentService.getBaseUrl();
+    const token = await this.localServerService.getToken();
+    const base = this.localServerService.getBaseUrl();
 
     const response = await fetch(`${base}${endpoint}`, {
       method: 'POST',
@@ -492,8 +492,8 @@ export class AcpSseService {
   }
 
   private async get(endpoint: string): Promise<any> {
-    const token = await this.localAgentService.getToken();
-    const base = this.localAgentService.getBaseUrl();
+    const token = await this.localServerService.getToken();
+    const base = this.localServerService.getBaseUrl();
 
     const response = await fetch(`${base}${endpoint}`, {
       method: 'GET',
@@ -510,8 +510,8 @@ export class AcpSseService {
   }
 
   private async delete(endpoint: string): Promise<any> {
-    const token = await this.localAgentService.getToken();
-    const base = this.localAgentService.getBaseUrl();
+    const token = await this.localServerService.getToken();
+    const base = this.localServerService.getBaseUrl();
 
     const response = await fetch(`${base}${endpoint}`, {
       method: 'DELETE',
@@ -759,7 +759,7 @@ export class AcpSseService {
    * 增量事件（`agent_status_changed`）。断线后按指数退避自动重连（封顶 30s）；
    * `unwatchAgentStatus()` 停止订阅。
    *
-   * SSR（服务端渲染）阶段不启动：`LocalAgentService.getBaseUrl` 依赖
+   * SSR（服务端渲染）阶段不启动：`LocalServerService.getBaseUrl` 依赖
    * `window`，且服务器渲染进程也不应持有到本地 agent 的长连接。
    */
   watchAgentStatus(callback: (event: { type: string; payload: any }) => void): void {
@@ -789,12 +789,12 @@ export class AcpSseService {
     this.agentStatusController = controller;
 
     try {
-      const token = await this.localAgentService.getToken();
+      const token = await this.localServerService.getToken();
       const headers: Record<string, string> = {
         Accept: 'text/event-stream',
         Authorization: `Bearer ${token}`,
       };
-      const url = `${this.localAgentService.getBaseUrl()}/api/acp/agents/events`;
+      const url = `${this.localServerService.getBaseUrl()}/api/acp/agents/events`;
       const response = await openSseRequest(url, { headers, signal: controller.signal });
       if (!response.ok || !response.body) {
         throw new Error(`Agent status stream failed: HTTP ${response.status}`);
@@ -831,7 +831,7 @@ export class AcpSseService {
   // ============================================================================
 
   private async postNoAuth(endpoint: string, body: any): Promise<any> {
-    const base = this.localAgentService.getBaseUrl();
+    const base = this.localServerService.getBaseUrl();
 
     const response = await fetch(`${base}${endpoint}`, {
       method: 'POST',
@@ -900,7 +900,7 @@ export class AcpSseService {
    */
   async getSelectedProject(): Promise<{ selectedProject: string | null; selectedSessionId: string | null }> {
     try {
-      const base = this.localAgentService.getBaseUrl();
+      const base = this.localServerService.getBaseUrl();
       const response = await fetch(`${base}/api/projects/selected`, {
         method: 'GET',
       });

@@ -1,7 +1,7 @@
 import { Component, HostListener, inject, input, output, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { SettingsService } from "./settings.service";
-import { LocalAgentService } from "../../shared/local-agent/local-agent.service";
+import { LocalServerService } from "../../shared/local-server/local-server.service";
 import { CoreService } from "../../core.service";
 import { AcpSseService } from "../../shared/acp/acp-sse.service";
 import { AcpService } from "../../shared/acp/acp.service";
@@ -49,7 +49,7 @@ function readNumber(raw: string): number {
 })
 export class SettingsComponent {
   private settingsService = inject(SettingsService);
-  protected localAgentService = inject(LocalAgentService);
+  protected localServerService = inject(LocalServerService);
   private coreService = inject(CoreService);
   private sseService = inject(AcpSseService);
   /** Agent 列表单一数据源（与 agent 选择器共用同一个 installedAgents signal）。 */
@@ -82,8 +82,8 @@ export class SettingsComponent {
   pluginsEnabled = this.settingsService.pluginsEnabled;
   useMemoryMode = this.settingsService.useMemoryMode;
 
-  agentStatus = signal<'unknown' | 'connected' | 'disconnected'>('unknown');
-  agentTesting = signal(false);
+  serverStatus = signal<'unknown' | 'connected' | 'disconnected'>('unknown');
+  serverTesting = signal(false);
 
   /** ACP agents reported by the backend AgentRegistry (Settings → Agents).
    *  Shared single source of truth: AcpService.installedAgents. */
@@ -157,7 +157,7 @@ export class SettingsComponent {
   });
 
   constructor() {
-    this.checkAgentStatus();
+    this.checkServerStatus();
     this.loadAgents();
   }
 
@@ -168,9 +168,9 @@ export class SettingsComponent {
     }
   }
 
-  saveAgentUrl() {
+  saveServerUrl() {
     this.showToast();
-    this.checkAgentStatus();
+    this.checkServerStatus();
   }
 
   onFolderReadWriteModeChange(mode: 'read' | 'readwrite') {
@@ -345,16 +345,16 @@ export class SettingsComponent {
     this.settingsService.setUseMemoryMode(enabled);
   }
 
-  async testAgentConnection() {
-    this.agentTesting.set(true);
-    const ok = await this.localAgentService.checkAgentAvailable();
-    this.agentStatus.set(ok ? 'connected' : 'disconnected');
-    this.agentTesting.set(false);
+  async testServerConnection() {
+    this.serverTesting.set(true);
+    const ok = await this.localServerService.checkServerAvailable();
+    this.serverStatus.set(ok ? 'connected' : 'disconnected');
+    this.serverTesting.set(false);
   }
 
-  private async checkAgentStatus() {
-    const ok = await this.localAgentService.checkAgentAvailable();
-    this.agentStatus.set(ok ? 'connected' : 'disconnected');
+  private async checkServerStatus() {
+    const ok = await this.localServerService.checkServerAvailable();
+    this.serverStatus.set(ok ? 'connected' : 'disconnected');
   }
 
   // ==========================================================================

@@ -19,7 +19,7 @@ import {
   ConfigOption,
 } from './acp.model';
 import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
-import { LocalAgentService } from '../local-agent/local-agent.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { ACP_READ_ONLY } from './acp-readonly.token';
 import { recordRecentOpenedSession } from './recent-sessions.util';
 
@@ -124,7 +124,7 @@ export interface AcpSessionState {
 })
 export class AcpService {
   private sseService = inject(AcpSseService);
-  private localAgentService = inject(LocalAgentService);
+  private localServerService = inject(LocalServerService);
 
   /**
    * Read-only viewer instance (see `ACP_READ_ONLY`): used by the collaboration
@@ -1129,7 +1129,7 @@ export class AcpService {
     const target = workspacePath?.trim();
     if (!target || this.isUnsafeWorkspacePath(target)) return;
     try {
-      await this.localAgentService.deleteFile(target);
+      await this.localServerService.deleteFile(target);
     } catch (error) {
       console.error('[ACP] Failed to delete task workspace:', target, error);
     }
