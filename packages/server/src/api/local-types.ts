@@ -1,4 +1,4 @@
-import type { LocalFileResponse } from '../agent/protocol.js';
+import type { LocalFileResponse } from '../local/protocol.js';
 
 /** 统一的本地文件操作错误响应 */
 export interface LocalFileErrorResponse {

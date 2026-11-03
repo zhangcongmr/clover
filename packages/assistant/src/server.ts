@@ -6,7 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import { createServer, setupAgentMiddleware } from '@julyware/clover-server';
+import { createServer, setupServerMiddleware } from '@julyware/clover-server';
 
 const rootDir = join(import.meta.dirname, '..');
 const browserDistFolder = join(rootDir, 'browser');
@@ -44,7 +44,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
   // lazily on the first API/WebSocket request instead, once the dev/preview
   // server is actually serving traffic. This keeps `ng build` from spawning
   // ACP subprocesses (and from inheriting their processes/memory pressure).
-  let services: ReturnType<typeof setupAgentMiddleware> | null = null;
+  let services: ReturnType<typeof setupServerMiddleware> | null = null;
   let warmupRequested = false;
 
   app.use((req, _res, next) => {
@@ -61,7 +61,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     next();
   });
 
-  services = setupAgentMiddleware(app, {
+  services = setupServerMiddleware(app, {
     corsPorts: [4200, 4000],
     corsOrigins: ['192.168.153.129'],
     staticDir: browserDistFolder,

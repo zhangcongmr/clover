@@ -75,9 +75,9 @@ pnpm --filter ./packages/assistant start        # Dev server (HTTPS)
 pnpm --filter ./packages/assistant build        # Build + style inlining + type declarations
 pnpm --filter ./packages/assistant serve:ssr:clover  # Run SSR server
 
-# agent local proxy
-pnpm --filter ./packages/agent build            # tsup build
-pnpm --filter ./packages/agent dev              # Watch build
+# server local proxy
+pnpm --filter ./packages/server build            # tsup build
+pnpm --filter ./packages/server dev              # Watch build
 ```
 
 ## Root Scripts

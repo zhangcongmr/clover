@@ -1,10 +1,10 @@
-// Agent services
-export { TokenManager } from './agent/auth.js';
-export { FileService } from './agent/file-service.js';
-export type { ScanNode } from './agent/file-service.js';
-export { PtyManager } from './agent/pty-manager.js';
-export type { PtyInstance, IPty } from './agent/pty-manager.js';
-export { validatePath, isPathInside } from './agent/security.js';
+// Local services (file system, PTY terminal, auth)
+export { TokenManager } from './local/auth.js';
+export { FileService } from './local/file-service.js';
+export type { ScanNode } from './local/file-service.js';
+export { PtyManager } from './local/pty-manager.js';
+export type { PtyInstance, IPty } from './local/pty-manager.js';
+export { validatePath, isPathInside } from './local/security.js';
 export type {
   FileAction,
   LocalFileRequest,
@@ -14,14 +14,14 @@ export type {
   FileWatchStartMessage,
   FileWatchStopMessage,
   FileWatchEvent,
-  AgentMessage,
+  LocalMessage,
   TokenResponse,
-  AgentConfig,
-} from './agent/protocol.js';
+  LocalServerConfig,
+} from './local/protocol.js';
 
 // API routes
-export { setupAgentRoutes } from './api/routes.js';
-export type { AgentServices } from './api/routes.js';
+export { setupLocalRoutes } from './api/routes.js';
+export type { LocalServices } from './api/routes.js';
 
 // ACP routes (SSE + Redis)
 export { setupAcpRoutes } from './api/acp-routes.js';
@@ -97,8 +97,8 @@ export type { FileLoggingOptions } from './helpers/log-file.js';
 export type { SslConfig } from './helpers/index.js';
 
 // Server
-export { createServer, setupAgentMiddleware } from './server.js';
-export type { ServerConfig, ServerInstance, AgentMiddlewareOptions } from './server.js';
+export { createServer, setupServerMiddleware } from './server.js';
+export type { ServerConfig, ServerInstance, ServerMiddlewareOptions } from './server.js';
 
 // ACP SSE + Redis
 export { SseManager, StreamConflictError } from './acp/sse-manager.js';

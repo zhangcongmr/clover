@@ -45,7 +45,7 @@ export class FileService {
     const { action, path: filePath, content, newName } = request;
 
     if (this.readonly && ['writeFile', 'deleteFile', 'createFile', 'createDir', 'rename'].includes(action)) {
-      throw new Error('Agent is running in read-only mode');
+      throw new Error('Server is running in read-only mode');
     }
 
     switch (action) {

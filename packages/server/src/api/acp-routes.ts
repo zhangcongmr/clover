@@ -6,8 +6,8 @@ import { AcpSessionManager } from '../acp/session-manager.js';
 import type { AgentRegistry } from '../acp/agent-registry.js';
 import type { AgentConfig } from '../acp/acp-agent.types.js';
 import { SseManager, StreamConflictError } from '../acp/sse-manager.js';
-import type { TokenManager } from '../agent/auth.js';
-import type { FileService } from '../agent/file-service.js';
+import type { TokenManager } from '../local/auth.js';
+import type { FileService } from '../local/file-service.js';
 import type { McpServerRegistry } from '../mcp/registry.js';
 import { createRequireAuth } from './middleware.js';
 import {
