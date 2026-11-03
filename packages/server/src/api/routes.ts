@@ -1,6 +1,6 @@
 import express from 'express';
-import { TokenManager } from '../agent/auth.js';
-import { FileService } from '../agent/file-service.js';
+import { TokenManager } from '../local/auth.js';
+import { FileService } from '../local/file-service.js';
 import { createRequireAuth } from './middleware.js';
 import type {
   ScanRequest,
@@ -30,12 +30,12 @@ import type {
   LocalFileErrorResponse,
 } from './local-types.js';
 
-export interface AgentServices {
+export interface LocalServices {
   tokenManager: TokenManager;
   fileService: FileService;
 }
 
-export function setupAgentRoutes(app: express.Application, services: AgentServices): void {
+export function setupLocalRoutes(app: express.Application, services: LocalServices): void {
   const { tokenManager, fileService } = services;
 
   app.use('/api/local', express.json());

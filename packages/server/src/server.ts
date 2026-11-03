@@ -8,10 +8,10 @@ import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
 import { createCORSMiddleware } from './api/middleware.js';
 import { loadSslConfig } from './helpers/index.js';
-import { FileService } from './agent/file-service.js';
-import { TokenManager } from './agent/auth.js';
-import { PtyManager } from './agent/pty-manager.js';
-import { setupAgentRoutes } from './api/routes.js';
+import { FileService } from './local/file-service.js';
+import { TokenManager } from './local/auth.js';
+import { PtyManager } from './local/pty-manager.js';
+import { setupLocalRoutes } from './api/routes.js';
 import { setupA2ARoute } from './api/a2a.js';
 import { setupWebSocket } from './ws/index.js';
 import { setupAcpRoutes } from './api/acp-routes.js';
@@ -61,7 +61,7 @@ export interface ServerInstance {
   agentRegistry: AgentRegistry;
 }
 
-export interface AgentMiddlewareOptions {
+export interface ServerMiddlewareOptions {
   corsPorts: number[];
   corsOrigins?: string[];
   tokenSecret?: string;
@@ -70,9 +70,9 @@ export interface AgentMiddlewareOptions {
   staticOptions?: StaticOptions;
 }
 
-export function setupAgentMiddleware(
+export function setupServerMiddleware(
   app: express.Express,
-  options: AgentMiddlewareOptions,
+  options: ServerMiddlewareOptions,
 ): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry; skillRegistry: SkillRegistry; agentRegistry: AgentRegistry } {
   const {
     corsPorts,
@@ -94,7 +94,7 @@ export function setupAgentMiddleware(
     app.use(express.static(staticDir, staticOptions));
   }
 
-  setupAgentRoutes(app, { fileService, tokenManager });
+  setupLocalRoutes(app, { fileService, tokenManager });
   setupA2ARoute(app);
 
   // Setup MCP Registry and routes
@@ -141,7 +141,7 @@ export function createServer(config: ServerConfig): ServerInstance {
   const sslDir = sslDirInput ?? (rootDir ? join(rootDir, 'ssl') : undefined);
   const app = existingApp || express();
 
-  const services = setupAgentMiddleware(app, middlewareOptions);
+  const services = setupServerMiddleware(app, middlewareOptions);
 
   // 启动阶段：异步并列预热全部 Agent 子进程并 initialize（不落 session 记录）
   // session、不订阅 Redis、不阻塞 server 启动）。session/create·load·

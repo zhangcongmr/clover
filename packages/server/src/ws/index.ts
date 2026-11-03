@@ -3,10 +3,10 @@ import { randomUUID } from 'node:crypto';
 import type http from 'node:http';
 import type https from 'node:https';
 import { WebSocketServer, WebSocket } from 'ws';
-import { TokenManager } from '../agent/auth.js';
-import { FileService } from '../agent/file-service.js';
-import { PtyManager } from '../agent/pty-manager.js';
-import type { PtyInitMessage, FileWatchStartMessage, FileWatchStopMessage } from '../agent/protocol.js';
+import { TokenManager } from '../local/auth.js';
+import { FileService } from '../local/file-service.js';
+import { PtyManager } from '../local/pty-manager.js';
+import type { PtyInitMessage, FileWatchStartMessage, FileWatchStopMessage } from '../local/protocol.js';
 
 export interface WebSocketServices {
   tokenManager: TokenManager;
@@ -25,7 +25,7 @@ export function setupWebSocket(
   options: WebSocketOptions = {},
 ): void {
   const { tokenManager, fileService, ptyManager } = services;
-  const logPrefix = options.logPrefix || '[Agent]';
+  const logPrefix = options.logPrefix || '[Local]';
   const protocol = sslConfig ? 'https' : 'http';
 
   const wss = new WebSocketServer({ noServer: true });

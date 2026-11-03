@@ -1,5 +1,5 @@
 import type express from 'express';
-import { TokenManager } from '../agent/auth.js';
+import { TokenManager } from '../local/auth.js';
 
 export function createCORSMiddleware(ports: number[], extraHosts?: string[]): express.RequestHandler {
   const allowedOrigins: string[] = [];

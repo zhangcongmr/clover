@@ -63,14 +63,15 @@ export interface FileWatchEvent {
   requestId?: string;
 }
 
-export type AgentMessage = PtyInitMessage | PtyResizeMessage | FileServiceInitMessage | LocalFileRequest | FileWatchStartMessage | FileWatchStopMessage;
+export type LocalMessage = PtyInitMessage | PtyResizeMessage | FileServiceInitMessage | LocalFileRequest | FileWatchStartMessage | FileWatchStopMessage;
 
 export interface TokenResponse {
   token: string;
   expiresIn: number;
 }
 
-export interface AgentConfig {
+/** 本地服务端（本地主机）的启动配置。 */
+export interface LocalServerConfig {
   port: number;
   host: string;
   allowedOrigins?: string[];

@@ -2,7 +2,7 @@ import { logger } from '../../helpers/logger.js';
 import express from 'express';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { createRequireAuth } from '../middleware.js';
-import type { TokenManager } from '../../agent/auth.js';
+import type { TokenManager } from '../../local/auth.js';
 import type { AcpSessionManager } from '../../acp/session-manager.js';
 import type { AgentRegistry } from '../../acp/agent-registry.js';
 import { buildCollabAgentCard } from './agent-card.js';

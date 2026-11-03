@@ -77,9 +77,9 @@ pnpm --filter ./packages/assistant start        # 开发服务器（HTTPS）
 pnpm --filter ./packages/assistant build        # 构建 + 样式内联 + 类型声明
 pnpm --filter ./packages/assistant serve:ssr:clover  # 运行 SSR 服务
 
-# agent 本地代理
-pnpm --filter ./packages/agent build            # tsup 构建
-pnpm --filter ./packages/agent dev              # 监听构建
+# server 本地代理
+pnpm --filter ./packages/server build            # tsup 构建
+pnpm --filter ./packages/server dev              # 监听构建
 ```
 
 ## 根脚本 / Root Scripts
