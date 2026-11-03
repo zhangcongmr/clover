@@ -1,4 +1,7 @@
 .add-disk-dialog {
+  /* One height for every field control, so the path input, the other inputs
+     and the Browse button line up. */
+  --disk-field-height: 26px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -35,8 +38,12 @@
 }
 
 .disk-input {
-  flex: 1;
+  /* flex:1 would be honoured along the main axis of this column flex container,
+     so the inputs absorbed the leftover height of the modal body and ended up
+     ~13px taller than the path input (which lives in a row container). */
+  flex: 0 0 auto;
   width: 100%;
+  height: var(--disk-field-height);
   box-sizing: border-box;
   padding: 4px 8px;
   border: 1px solid var(--ast-border, rgba(128, 128, 128, 0.35));
@@ -45,6 +52,12 @@
   color: inherit;
   font-size: 12.5px;
   line-height: 1.3;
+}
+
+/* Inside the path row the input only has to fill the horizontal space. */
+.disk-path-row .disk-input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .disk-input:focus {
@@ -85,6 +98,8 @@
 }
 
 .disk-browse-btn {
+  height: var(--disk-field-height);
+  padding: 0 12px;
   white-space: nowrap;
 }
 
@@ -109,5 +124,8 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 10px;
+  /* The fields no longer stretch to fill the modal body, so the leftover space
+     goes above the footer and keeps the buttons pinned to the bottom. */
+  margin-top: auto;
+  padding-top: 10px;
 }
