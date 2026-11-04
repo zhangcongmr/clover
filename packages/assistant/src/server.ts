@@ -13,7 +13,7 @@ const browserDistFolder = join(rootDir, 'browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine({
-  allowedHosts: ['localhost', '192.168.153.129', '127.0.0.1', '192.168.253.110'],
+  allowedHosts: ['localhost', '192.168.153.129', '127.0.0.1', '192.168.153.1', '192.168.153.146'],
 });
 
 // Angular SSR handler — skip API routes so agent routes can handle them

@@ -99,7 +99,7 @@
     </ng-template>
 
     <div ast-tab-group [closable]="false" [fobiddenContextMenu]="true" [tabType]="{'type':'lightcolorselection'}">
-      <div ast-tab [label]="'Local Files'" [id]="'local'" [isActivated]="true" (onClickTab)="onTabChange($event.id)">
+      <div ast-tab [label]="'Local Files'" [id]="'local'" [isActivated]="true">
         <ng-container *ngTemplateOutlet="filePickerContent"></ng-container>
       </div>
     </div>

@@ -168,7 +168,16 @@ export class SettingsComponent {
     }
   }
 
+  /**
+   * Persists the Server URL entered in the input box.
+   *
+   * The input is bound with `[(ngModel)]="localServerService.serverUrl"`, so
+   * the value is already in the service when this runs — but only in memory.
+   * `setServerUrl()` is what actually writes it to localStorage; without this
+   * call the address was silently lost on reload.
+   */
   saveServerUrl() {
+    this.localServerService.setServerUrl(this.localServerService.serverUrl);
     this.showToast();
     this.checkServerStatus();
   }
