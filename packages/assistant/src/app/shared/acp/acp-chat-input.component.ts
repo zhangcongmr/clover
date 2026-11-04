@@ -132,7 +132,7 @@ interface McpServerOption {
     }
     .theme-scenario-clear:hover {
       opacity: 1;
-      background-color: var(--vscode-item-active-background);
+      background-color: var(--vscode-hover-background);
     }
     .theme-seed-chips {
       display: flex;
@@ -415,7 +415,7 @@ interface McpServerOption {
     }
     .chat-error-close:hover {
       opacity: 1;
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: var(--vscode-hover-background);
     }
     .message-textarea {
       display: block;
@@ -506,12 +506,12 @@ interface McpServerOption {
       border: none;
       border-radius: 6px;
       background-color: var(--vscode-primary-background);
-      color: var(--vscode-background);
+      color: var(--vscode-primary-foreground);
       cursor: pointer;
-      transition: opacity 0.15s;
+      transition: background-color 0.15s;
     }
     .send-button:hover:not(:disabled) {
-      opacity: 0.9;
+      background-color: var(--vscode-button-hoverBackground);
     }
     .send-button:disabled {
       opacity: 0.4;
@@ -822,17 +822,17 @@ interface McpServerOption {
       background-color: var(--vscode-hover-background);
     }
     .project-option.active {
-      background-color: var(--vscode-primary-background);
+      background-color: var(--vscode-hover-background);
     }
     .project-option.active .project-name {
-      color: var(--vscode-primary-foreground);
+      color: var(--vscode-foreground);
     }
     .project-option.active .project-path {
-      color: var(--vscode-primary-foreground);
+      color: var(--vscode-descriptionForeground);
       opacity: 1;
     }
     .project-option.active .project-check {
-      color: var(--vscode-primary-foreground);
+      color: var(--vscode-primary-background);
     }
     .project-option .project-name {
       font-size: 13px;
@@ -907,13 +907,10 @@ interface McpServerOption {
       background-color: var(--vscode-hover-background);
     }
     .slash-command-item.active {
-      background-color: var(--vscode-primary-background);
-    }
-    .slash-command-item.active .slash-command-name {
-      color: var(--vscode-primary-foreground);
+      background-color: var(--vscode-hover-background);
     }
     .slash-command-item.active .slash-command-desc {
-      color: var(--vscode-primary-foreground);
+      color: var(--vscode-descriptionForeground);
       opacity: 1;
     }
     .slash-command-row {
@@ -926,7 +923,7 @@ interface McpServerOption {
     .slash-command-name {
       font-size: 13px;
       font-weight: 500;
-      color: var(--vscode-accent-color);
+      color: var(--vscode-foreground);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -942,8 +939,8 @@ interface McpServerOption {
       color: var(--vscode-badge-foreground);
     }
     .slash-command-item.active .slash-command-badge {
-      background-color: var(--vscode-primary-foreground);
-      color: var(--vscode-primary-background);
+      background-color: var(--vscode-primary-background);
+      color: var(--vscode-primary-foreground);
     }
     .slash-command-desc {
       font-size: 11px;

@@ -46,13 +46,13 @@
 }
 
 .tab.active {
-  background: var(--vscode-button-background, var(--vscode-primary-background));
-  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--vscode-primary-background);
+  color: var(--vscode-primary-foreground);
 }
 
 .tab.active:hover {
-  background: var(--vscode-button-background, var(--vscode-primary-background));
-  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--vscode-button-hoverBackground);
+  color: var(--vscode-primary-foreground);
 }
 
 /* ===== Registry 浏览 ===== */
@@ -300,11 +300,11 @@
 
 .btn-primary {
   background: var(--vscode-primary-background);
-  color: #ffffff;
+  color: var(--vscode-primary-foreground);
 }
 
 .btn-primary:hover {
-  filter: brightness(1.08);
+  background: var(--vscode-button-hoverBackground);
 }
 
 .btn-primary:active {
@@ -317,7 +317,7 @@
 }
 
 .btn-secondary:hover {
-  filter: brightness(1.08);
+  background: var(--vscode-button-secondaryHoverBackground);
 }
 
 .btn-ghost {

@@ -149,13 +149,13 @@
 }
 
 .acp-option-button.primary {
-  background-color: var(--borderless-accent, #0066cc);
-  color: white;
+  background-color: var(--vscode-primary-background);
+  color: var(--vscode-primary-foreground);
   border: none;
 }
 
 .acp-option-button.primary:hover {
-  background-color: var(--borderless-accent-hover, #0052a3);
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 .option-label {

@@ -64,7 +64,7 @@
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .a2ui-preview-nav:hover {
-  background: color-mix(in srgb, var(--vscode-background, #ffffff) 82%, var(--vscode-foreground, #1f1f1f));
+  background: var(--vscode-hover-background);
 }
 .a2ui-preview-nav:active {
   transform: scale(0.94);

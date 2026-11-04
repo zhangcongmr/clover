@@ -239,8 +239,8 @@
 
 .btn-confirm {
   padding: 0.4rem 1rem;
-  background: var(--borderless-accent, rgb(103, 137, 186));
-  color: #fff;
+  background: var(--vscode-primary-background);
+  color: var(--vscode-primary-foreground);
   border: none;
   border-radius: var(--borderless-item-radius, 8px);
   cursor: pointer;
@@ -248,7 +248,7 @@
 }
 
 .btn-confirm:hover {
-  background: var(--borderless-accent-hover, #0052a3);
+  background: var(--vscode-button-hoverBackground);
 }
 
 .btn-confirm:disabled {

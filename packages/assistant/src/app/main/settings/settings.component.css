@@ -231,11 +231,11 @@
 
 .btn-primary {
   background: var(--vscode-primary-background);
-  color: var(--vscode-foreground);
+  color: var(--vscode-primary-foreground);
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  background: var(--vscode-button-hoverBackground);
 }
 
 .btn-secondary {
@@ -388,12 +388,13 @@
 }
 
 .btn-danger {
-  background: #c44545;
+  background: var(--ast-danger);
   color: #ffffff;
 }
 
 .btn-danger:hover {
-  opacity: 0.9;
+  color: var(--vscode-errorForeground);
+  background: var(--vscode-inputValidation-errorBackground);
 }
 
 .btn-danger:disabled {
@@ -804,9 +805,9 @@
 }
 
 .theme-library-delete:hover {
-  background: #c44545;
-  border-color: #c44545;
-  color: #ffffff;
+  background: var(--vscode-inputValidation-errorBackground);
+  border-color: var(--vscode-errorForeground);
+  color: var(--vscode-errorForeground);
 }
 
 /* Maximised theme preview overlay */
@@ -893,7 +894,7 @@
 }
 
 .theme-preview-nav:hover {
-  background: color-mix(in srgb, var(--vscode-background) 82%, var(--vscode-foreground));
+  background: var(--vscode-hover-background);
 }
 
 .theme-preview-nav:active {

@@ -186,7 +186,7 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--vscode-button-hoverBackground);
 }
 
 .btn-primary:disabled {

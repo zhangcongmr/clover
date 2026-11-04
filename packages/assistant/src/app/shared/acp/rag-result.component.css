@@ -114,7 +114,7 @@
 }
 
 .rag-cite-btn:hover {
-  background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-hover-background));
+  background-color: var(--vscode-hover-background);
 }
 
 .rag-feedback {

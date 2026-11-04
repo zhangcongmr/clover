@@ -315,7 +315,7 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--vscode-button-secondaryHoverBackground);
 }
 
 .btn-ghost {

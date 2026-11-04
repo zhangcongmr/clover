@@ -458,11 +458,11 @@
 
 .btn-primary {
   background: var(--vscode-primary-background);
-  color: #ffffff;
+  color: var(--vscode-primary-foreground);
 }
 
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--vscode-button-hoverBackground);
 }
 
 .btn-secondary {
@@ -471,7 +471,7 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--vscode-button-secondaryHoverBackground);
 }
 
 .btn-ghost {
