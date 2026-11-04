@@ -1,5 +1,5 @@
 :host {
-  /* 继承 app-root 的可用高度，使内部 section 的 max-height:100% 生效 */
+  /* Inherit the available height from app-root so the inner section's max-height:100% takes effect */
   display: block;
   height: 100%;
   min-height: 0;
@@ -607,8 +607,8 @@
   background: var(--vscode-hover-background);
 }
 
-/* Uninstall（registry 源）与编辑（disk 源）按钮宽度由上面的
-   .agent-install-slot / .agent-uninstall-btn / .agent-edit-btn 共享规则统一。 */
+/* The Uninstall (registry source) and Edit (disk source) button widths are unified
+   by the shared .agent-install-slot / .agent-uninstall-btn / .agent-edit-btn rules above. */
 .agent-uninstall-btn {
   /* Wider inner text than "Uninstall" (e.g. "Uninstalling") must not widen the
      column, so keep the side padding small and let the label ellipsize. */

@@ -1,9 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 const PROBE_TIMEOUT_MS = 1500;
 
+/**
+ * Probe budget for a server the user typed in (ms).
+ *
+ * A local server answers instantly, but a remote one is several network hops
+ * away and may need a cold DNS lookup plus a TLS handshake — the 1.5s default
+ * is not enough for those.
+ */
+export const REMOTE_PROBE_TIMEOUT_MS = 8000;
+
 /** localStorage key holding the local server address. */
 const SERVER_URL_KEY = 'assistant_serverUrl';
+
+/** localStorage key holding the recently used server addresses. */
+const SERVER_HISTORY_KEY = 'assistant_serverUrlHistory';
 
 export interface LocalFileRequest {
   type: 'file-request';
@@ -34,6 +46,24 @@ export class LocalServerService {
   private fileWatchWs: WebSocket | null = null;
   private fileWatchCallbacks = new Map<string, (eventType: string) => void>();
 
+  /**
+   * Increments every time the target server changes.
+   *
+   * Consumers that hold a connection to the server (the content panel's
+   * file-watch socket, the agent-status SSE stream) watch this to
+   * re-establish their connection against the new server — the old socket
+   * points at the previous address and is useless afterwards.
+   */
+  readonly serverEpoch = signal(0);
+
+  /**
+   * Recently connected server addresses, most recent first.
+   *
+   * Persisted so the remote-server dialog can offer the addresses the user
+   * already worked with instead of making them type them again.
+   */
+  readonly serverUrlHistory = signal<string[]>([]);
+
   constructor() {
     // Read serverUrl from localStorage (UI Settings) - only in browser
     if (typeof localStorage !== 'undefined') {
@@ -41,7 +71,54 @@ export class LocalServerService {
       if (stored) {
         this.serverUrl = stored;
       }
+      this.serverUrlHistory.set(this.readHistory());
     }
+  }
+
+  /** Reads the persisted address history, ignoring malformed entries. */
+  private readHistory(): string[] {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(SERVER_HISTORY_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((v): v is string => typeof v === 'string' && !!v.trim());
+    } catch {
+      // Corrupt entry: start over rather than break the dialog.
+      return [];
+    }
+  }
+
+  /** Writes the address history back to localStorage. */
+  private writeHistory(list: string[]): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(SERVER_HISTORY_KEY, JSON.stringify(list));
+    } catch {
+      // Storage full or unavailable: the history is a convenience, not critical.
+    }
+  }
+
+  /**
+   * Records an address the user connected to.
+   *
+   * The most recent address moves to the front, so reconnecting to a known
+   * server just promotes it instead of listing it twice.
+   */
+  addToHistory(url: string): void {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    const next = [trimmed, ...this.serverUrlHistory().filter(u => u !== trimmed)];
+    this.serverUrlHistory.set(next);
+    this.writeHistory(next);
+  }
+
+  /** Removes a single address from the history. */
+  removeFromHistory(url: string): void {
+    const next = this.serverUrlHistory().filter(u => u !== url);
+    this.serverUrlHistory.set(next);
+    this.writeHistory(next);
   }
 
   /** Get base URL for API requests (same-origin or serverUrl) */
@@ -52,6 +129,7 @@ export class LocalServerService {
   /** Update serverUrl at runtime and persist it (Settings → Server URL) */
   setServerUrl(url: string) {
     const trimmed = url.trim();
+    const changed = trimmed !== this.serverUrl;
     this.serverUrl = trimmed;
     if (typeof localStorage !== 'undefined') {
       if (trimmed) {
@@ -59,6 +137,10 @@ export class LocalServerService {
       } else {
         localStorage.removeItem(SERVER_URL_KEY);
       }
+    }
+    // Signal the switch so server-bound connections can be re-established.
+    if (changed) {
+      this.serverEpoch.update(n => n + 1);
     }
   }
 
@@ -83,10 +165,17 @@ export class LocalServerService {
     return this.cachedToken!;
   }
 
-  async checkServerAvailable(url?: string): Promise<boolean> {
+  /**
+   * Probe a server's health endpoint.
+   *
+   * @param url       Address to probe; defaults to the currently configured one.
+   * @param timeoutMs Probe budget. A remote server needs a longer one than the
+   *                  local default (cold DNS + TLS handshake).
+   */
+  async checkServerAvailable(url?: string, timeoutMs: number = PROBE_TIMEOUT_MS): Promise<boolean> {
     const target = url || this.getBaseUrl();
     try {
-      const res = await fetch(`${target}/api/local/health`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+      const res = await fetch(`${target}/api/local/health`, { signal: AbortSignal.timeout(timeoutMs) });
       return res.ok;
     } catch {
       return false;

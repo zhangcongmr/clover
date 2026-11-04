@@ -254,16 +254,7 @@ export class AcpService {
     // Agent 状态推送：页面打开即收到后端全量快照与后续每次状态迁移，
     // 状态不再依赖 loadInstalledAgents 与后端 warmupAll 的赛跑结果
     // （后端 warmup 未完成时快照是 unknown，迁移完成后这里会自动更新）。
-    this.sseService.watchAgentStatus((event) => {
-      if (event.type === 'agents_status_snapshot') {
-        this.mergeAgentStatuses((event.payload?.agents ?? []) as AgentStatusInfo[]);
-      } else if (event.type === 'agent_status_changed') {
-        const agent = event.payload?.agent as AgentStatusInfo | undefined;
-        if (agent) this.mergeAgentStatuses([agent]);
-      } else if (event.type === 'agent_removed') {
-        this.removeAgent(String(event.payload?.agentId ?? ''));
-      }
-    });
+    this.sseService.watchAgentStatus((event) => this.handleAgentStatusEvent(event));
     effect(() => {
       const agent = this.selectedAgent();
       if (typeof localStorage !== 'undefined' && !this.readOnly) {
@@ -281,6 +272,67 @@ export class AcpService {
       });
     });
     this.setupSseCallbacks();
+  }
+
+  /**
+   * Handles the global agent-status push: a full snapshot on connect, an
+   * incremental change per transition, and a removal when an agent is gone.
+   */
+  private handleAgentStatusEvent(event: { type: string; payload: any }): void {
+    if (event.type === 'agents_status_snapshot') {
+      this.mergeAgentStatuses((event.payload?.agents ?? []) as AgentStatusInfo[]);
+    } else if (event.type === 'agent_status_changed') {
+      const agent = event.payload?.agent as AgentStatusInfo | undefined;
+      if (agent) this.mergeAgentStatuses([agent]);
+    } else if (event.type === 'agent_removed') {
+      this.removeAgent(String(event.payload?.agentId ?? ''));
+    }
+  }
+
+  /**
+   * Rebinds the whole ACP layer to the server that is currently configured
+   * (`LocalServerService.serverUrl`).
+   *
+   * Called after the server address changed (switching to a remote server or
+   * back to the local one). Everything that was bound to the previous server
+   * has to be re-established:
+   *
+   *  - the session SSE stream (its base URL is captured on connect),
+   *  - the global agent-status push (same, plus its own abort controller),
+   *  - the project / task / agent lists, which are now served by another host.
+   *
+   * The stale session is dropped first: it lives on the old server and its
+   * messages are meaningless here.
+   */
+  async rebindToServer(): Promise<void> {
+    // Tear down the session bound to the old server.
+    await this.disconnect();
+
+    // The agent list is server-owned: the new server may expose a different
+    // set, so the merged list must not survive the switch. Cleared before the
+    // status stream re-subscribes, so its first snapshot lands on an empty
+    // list instead of being wiped afterwards.
+    const previousAgentId = this.selectedAgent()?.id;
+    this.installedAgents.set([]);
+
+    // The agent-status stream is a long-lived connection to the old server;
+    // unwatch it and re-subscribe so it re-opens against the new address.
+    this.sseService.unwatchAgentStatus();
+    this.sseService.watchAgentStatus((event) => this.handleAgentStatusEvent(event));
+
+    await this.loadInstalledAgents();
+
+    // Fall back to another agent when the previous selection is not
+    // installed on the new server. The selection itself is kept otherwise,
+    // so the stored preference (localStorage) survives the switch.
+    if (previousAgentId && !this.installedAgents().some(a => a.id === previousAgentId)) {
+      this.selectedAgent.set(pickInitialAgent(this.installedAgents()));
+    }
+
+    await Promise.all([
+      this.listProjects(),
+      this.listTasks(),
+    ]);
   }
 
   /**

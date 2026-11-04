@@ -31,21 +31,29 @@
         <div class="setting-item">
           <div class="setting-info">
             <label class="setting-label" for="setting-server-url">Server URL</label>
-            <p class="setting-desc">Address of the local server used for file operations and terminal</p>
+            <p class="setting-desc">URL address for connecting to a local or remote server</p>
           </div>
           <div class="setting-control">
             <div class="input-row">
+              <!-- One-way binding: the input holds a local draft. Typing must
+                   not repoint the app — only Connect commits it to the service. -->
               <input
                 id="setting-server-url"
                 type="text"
                 class="setting-input"
                 placeholder="http(s)://{ip}:{port}"
-                [(ngModel)]="localServerService.serverUrl"
+                [ngModel]="serverUrlInput()"
+                (ngModelChange)="onServerUrlInput($event)"
               />
-              <button class="btn btn btn-secondary" (click)="saveServerUrl()">Save</button>
+              <!-- One button for both directions: it reads "Connect" while the
+                   app talks to the server that hosts this page, and flips to
+                   "Disconnect" once a remote server is in use. -->
+              <button class="btn btn btn-secondary" (click)="onPrimaryAction()">
+                {{ isServerConnected() ? 'Disconnect' : 'Connect' }}
+              </button>
             </div>
-            @if (showSavedToast()) {
-              <span class="toast-saved">Saved</span>
+            @if (serverUrlToast(); as toast) {
+              <span class="toast-saved">{{ toast }}</span>
             }
           </div>
         </div>
@@ -54,7 +62,7 @@
         <div class="setting-item">
           <div class="setting-info">
             <span class="setting-label">Server Status</span>
-            <p class="setting-desc">Connection status of the local server</p>
+            <p class="setting-desc">Connection status of the local or remote server</p>
           </div>
           <div class="setting-control">
             <div class="status-row">
