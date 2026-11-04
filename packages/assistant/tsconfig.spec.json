@@ -5,12 +5,14 @@
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
     "types": [
-      "vitest/globals"
+      "vitest/globals",
+      "chrome"
     ]
   },
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.d.ts",
-    "src/test-providers.ts"
+    "src/test-providers.ts",
+    "node_modules/@types/chrome/index.d.ts"
   ]
 }

@@ -6,7 +6,6 @@ import { AstTreeComponent } from '../ast-tree/ast-tree.component';
 import { AstTreeNode } from '../model';
 import { pickParentObject, getNodeAbsolutePath, getFileIcon, computeFileIcons } from '../ast-tree/ast-tree.component';
 import { LocalServerService } from '../local-server/local-server.service';
-import { SettingsService } from '../../main/settings/settings.service';
 import { AstTabComponent } from '../ast-tab/ast-tab.component';
 import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.component';
 
@@ -19,7 +18,6 @@ import { AstTabGroupComponent } from '../ast-tab/ast-tab-group/ast-tab-group.com
 })
 export class FilePickerDialogComponent {
   private localServerService = inject(LocalServerService);
-  private settingsService = inject(SettingsService);
 
   visible = signal(false);
   mode = signal<'folder' | 'file'>('folder');
@@ -28,7 +26,6 @@ export class FilePickerDialogComponent {
   treeData = signal<AstTreeNode[]>([]);
   selectedNode = signal<AstTreeNode | null>(null);
   loading = signal(false);
-  activeTab = signal<'local' | 'remote'>('local');
   viewMode = signal<'tree' | 'icon'>('icon');
   directoryItems = signal<AstTreeNode[]>([]);
 
@@ -43,7 +40,6 @@ export class FilePickerDialogComponent {
     this.mode.set('folder');
     this.title.set('Open Folder');
     this.selectedNode.set(null);
-    this.activeTab.set('local');
     this.viewMode.set('icon');
     this.visible.set(true);
     this.loadDirectory(startPath);
@@ -53,7 +49,6 @@ export class FilePickerDialogComponent {
     this.mode.set('file');
     this.title.set('Open File');
     this.selectedNode.set(null);
-    this.activeTab.set('local');
     this.viewMode.set('icon');
     this.visible.set(true);
     this.loadDirectory(startPath);
@@ -124,17 +119,6 @@ export class FilePickerDialogComponent {
   }
 
   expandFolderFn = (node: AstTreeNode) => this.expandFolder(node);
-
-  onTabChange(tabId: string) {
-    if (tabId === 'local') { 
-      // this.localServerService.setServerUrl(this.settingsService.serverUrl());
-    } else {
-      this.localServerService.setServerUrl(window.location.origin);
-    }
-    this.activeTab.set(tabId as 'local' | 'remote');
-    this.localServerService.disconnect();
-    this.loadDirectory('/');
-  }
 
   onTreeNodeClick(node: AstTreeNode) {
     if (this.mode() === 'folder' && node.nodeType === 'folder') {

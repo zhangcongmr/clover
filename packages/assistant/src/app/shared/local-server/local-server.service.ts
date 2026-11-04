@@ -1,11 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 
 const PROBE_TIMEOUT_MS = 1500;
 
 /** localStorage key holding the local server address. */
 const SERVER_URL_KEY = 'assistant_serverUrl';
-/** Legacy key (pre-rename); read once so existing setups keep their address. */
-const LEGACY_SERVER_URL_KEY = 'assistant_agentUrl';
 
 export interface LocalFileRequest {
   type: 'file-request';
@@ -26,14 +24,12 @@ export interface LocalFileResponse {
 
 @Injectable({ providedIn: 'root' })
 export class LocalServerService {
+  /** The configured server address (Settings → Server URL). Persisted. */
   public serverUrl = '';
   private cachedToken: string | null = null;
   private tokenExpiry: number = 0;
-
-  /** Server availability status (components can subscribe) */
-  isAvailable = signal(false);
-  /** Server URL */
-  connectedUrl = signal<string>('');
+  /** Base URL the cached token was issued for; another base needs its own token. */
+  private tokenBaseUrl = '';
 
   private fileWatchWs: WebSocket | null = null;
   private fileWatchCallbacks = new Map<string, (eventType: string) => void>();
@@ -41,8 +37,7 @@ export class LocalServerService {
   constructor() {
     // Read serverUrl from localStorage (UI Settings) - only in browser
     if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem(SERVER_URL_KEY)
-        ?? localStorage.getItem(LEGACY_SERVER_URL_KEY);
+      const stored = localStorage.getItem(SERVER_URL_KEY);
       if (stored) {
         this.serverUrl = stored;
       }
@@ -54,30 +49,36 @@ export class LocalServerService {
     return this.serverUrl || window.location.origin;
   }
 
-  /** Update serverUrl at runtime */
+  /** Update serverUrl at runtime and persist it (Settings → Server URL) */
   setServerUrl(url: string) {
-    this.serverUrl = url;
+    const trimmed = url.trim();
+    this.serverUrl = trimmed;
     if (typeof localStorage !== 'undefined') {
-      if (url) {
-        localStorage.setItem(SERVER_URL_KEY, url);
-        localStorage.removeItem(LEGACY_SERVER_URL_KEY);
+      if (trimmed) {
+        localStorage.setItem(SERVER_URL_KEY, trimmed);
       } else {
         localStorage.removeItem(SERVER_URL_KEY);
-        localStorage.removeItem(LEGACY_SERVER_URL_KEY);
       }
     }
   }
 
   async getToken(): Promise<string> {
+    const base = this.getBaseUrl();
+    // A token is only valid for the server that issued it: drop the cached
+    // one when the base URL changed.
+    if (this.cachedToken && this.tokenBaseUrl !== base) {
+      this.cachedToken = null;
+      this.tokenExpiry = 0;
+    }
     if (this.cachedToken && Date.now() < this.tokenExpiry) {
       return this.cachedToken;
     }
 
-    const base = this.getBaseUrl();
     const res = await fetch(`${base}/api/local/auth/token`);
     if (!res.ok) throw new Error(`Token request failed: ${res.status}`);
     const data = await res.json();
     this.cachedToken = data.token;
+    this.tokenBaseUrl = base;
     this.tokenExpiry = Date.now() + (data.expiresIn * 1000) - 5000;
     return this.cachedToken!;
   }
@@ -94,10 +95,7 @@ export class LocalServerService {
 
   /** Probe and connect to the server (same-origin or serverUrl) */
   async probeAndConnect(): Promise<boolean> {
-    const ok = await this.checkServerAvailable();
-    this.isAvailable.set(ok);
-    if (ok) this.connectedUrl.set(this.getBaseUrl());
-    return ok;
+    return this.checkServerAvailable();
   }
 
   /** Get WebSocket terminal URL */
@@ -311,8 +309,7 @@ export class LocalServerService {
   disconnect() {
     this.cachedToken = null;
     this.tokenExpiry = 0;
-    this.isAvailable.set(false);
-    this.connectedUrl.set('');
+    this.tokenBaseUrl = '';
     this.fileWatchWs?.close();
     this.fileWatchWs = null;
     this.fileWatchCallbacks.clear();
