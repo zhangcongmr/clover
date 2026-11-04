@@ -73,13 +73,7 @@
         (click)="onPrimaryAction()"
         [disabled]="connecting()"
       >
-        @if (connecting()) {
-          Connecting...
-        } @else if (isConnected()) {
-          Disconnect
-        } @else {
-          Connect
-        }
+        {{ connecting() ? 'Connecting...' : isConnected() ? 'Disconnect' : 'Connect' }}
       </button>
       <button class="btn btn-secondary" type="button" (click)="close.emit()">Cancel</button>
     </div>
