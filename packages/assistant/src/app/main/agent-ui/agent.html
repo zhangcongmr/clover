@@ -34,6 +34,22 @@
         </svg>
         <span>New Task</span>
       </div>
+
+      <!-- Remote server connector: point the app at a local or remote server. -->
+      <div class="nav-item" [class.active]="remoteServerDialogVisible()"
+        (click)="openRemoteServerDialog()"
+        [title]="remoteServerTitle()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="7" rx="2"/>
+          <rect x="2" y="14" width="20" height="7" rx="2"/>
+          <line x1="6" y1="6.5" x2="6.01" y2="6.5"/>
+          <line x1="6" y1="17.5" x2="6.01" y2="17.5"/>
+        </svg>
+        <span>Remote Server</span>
+        @if (remoteServerUrl()) {
+          <span class="nav-item-badge">remote</span>
+        }
+      </div>
     </div>
 
     <div class="sidebar-content custom-scroll">
@@ -356,6 +372,16 @@
                   </span>
                 }
               </button>
+              <!-- Remote server connector: point the app at a local or remote server. -->
+              <button class="cf-tool-btn" [title]="remoteServerTitle()" (click)="openRemoteServerDialog()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="7" rx="2"/>
+                  <rect x="2" y="14" width="20" height="7" rx="2"/>
+                  <line x1="6" y1="6.5" x2="6.01" y2="6.5"/>
+                  <line x1="6" y1="17.5" x2="6.01" y2="17.5"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -365,3 +391,11 @@
     }
   </div>
 }
+
+<!-- Remote server connector. Rendered outside the dock-mode branches so the
+     entry point is available in both the agent-first and content-first layouts. -->
+<app-remote-server-dialog
+  [visible]="remoteServerDialogVisible()"
+  (close)="closeRemoteServerDialog()"
+  (connected)="onRemoteServerConnected($event)"
+></app-remote-server-dialog>

@@ -10,6 +10,8 @@ import { AcpChatComponent } from "../../shared/acp/acp-chat.component";
 import { AcpChatInputComponent } from "../../shared/acp/acp-chat-input.component";
 import { AcpPermissionDialogComponent } from "../../shared/acp/acp-permission-dialog.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
+import { RemoteServerDialogComponent } from "../../shared/remote-server/remote-server-dialog.component";
+import { LocalServerService } from "../../shared/local-server/local-server.service";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
 import { RagService } from "../../shared/rag/rag.service";
@@ -62,6 +64,7 @@ function readCollapsedProjects(): Set<string> {
     AcpPermissionDialogComponent,
     CollabPanelComponent,
     AstMenuComponent,
+    RemoteServerDialogComponent,
   ],
 })
 export class AgentComponent {
@@ -69,6 +72,7 @@ export class AgentComponent {
   protected layoutService = inject(LayoutService);
   protected collabService = inject(CollabService);
   protected ragService = inject(RagService);
+  protected localServerService = inject(LocalServerService);
   private readonly ragMetrics = inject(RagMetricsService);
   private readonly platformId = inject(PLATFORM_ID);
   /** True only in the browser; used to skip rendering the ACP panel during SSR. */
@@ -82,6 +86,57 @@ export class AgentComponent {
 
   /** Session currently being loaded/resumed (spinner on item, guards double-click). */
   sessionLoadingId = signal<string | null>(null);
+
+  // ============================================================================
+  // Remote server connector
+  // ============================================================================
+
+  /** Whether the remote-server dialog is open. */
+  protected readonly remoteServerDialogVisible = signal(false);
+  /**
+   * The server the app is currently bound to; empty means the server that
+   * hosts this page (same origin). Tracked as a signal because the service
+   * exposes the address as a plain field, not a signal.
+   */
+  protected readonly remoteServerUrl = signal(this.localServerService.serverUrl);
+  /** Tooltip for the remote-server entry points. */
+  protected readonly remoteServerTitle = computed(() =>
+    this.remoteServerUrl()
+      ? `Connected to ${this.remoteServerUrl()}`
+      : 'Connect to a local or remote server'
+  );
+
+  /** Open the remote-server dialog. */
+  openRemoteServerDialog(): void {
+    this.remoteServerDialogVisible.set(true);
+  }
+
+  /** Close the remote-server dialog without switching servers. */
+  closeRemoteServerDialog(): void {
+    this.remoteServerDialogVisible.set(false);
+  }
+
+  /**
+   * The app is now bound to a different server. The project / task / agent
+   * lists were reloaded by `rebindToServer()`, so the local view state only
+   * has to be reset: the selected project and session belonged to the old
+   * server, and the new server keeps its own selection.
+   */
+  async onRemoteServerConnected(url: string): Promise<void> {
+    this.remoteServerUrl.set(url);
+    this.remoteServerDialogVisible.set(false);
+
+    // The selected project/session live on the previous server.
+    this.contentFirstOpenSessionId.set(null);
+    this.sessionLoadingId.set(null);
+    this.panelError.set(null);
+    this.acpService.selectedProjectPath.set(null);
+    this.acpService.isNewSession.set(true);
+    this.acpService.isSwitchingSession.set(false);
+
+    // Restore whatever the newly connected server had selected.
+    await this.hydrateSelection();
+  }
 
   // ============================================================================
   // Content-first agent panel
@@ -310,35 +365,43 @@ export class AgentComponent {
     this.acpService.isNewSession.set(true);
     if (typeof window !== 'undefined') {
       this.acpService.listAll().then(() => {
-        // Hydrate the persisted selected project path and session id
-        this.acpService.getSelectedProject().then(p => {
-          if (p.selectedProject) this.acpService.selectedProjectPath.set(p.selectedProject);
-
-          if (!p.selectedSessionId) {
-            this.acpService.isSwitchingSession.set(false);
-          }
-
-          const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
-          if (cur) {
-            if (cur.type === 'project') {
-              this.loadSessionsForProject(cur.path).then(() => {
-                if (p.selectedSessionId) {
-                  this.loadSession(p.selectedSessionId);
-                }
-              });
-            } else if (cur.type === 'task' && cur.sessions?.length > 0) {
-              // task: 页面刷新时加载 session 消息
-              const sessionId = cur.sessions[0]?.sessionId;
-              if (sessionId) {
-                this.loadTaskSession(cur.id!, sessionId);
-              }
-            }
-          }
-        });
+        this.hydrateSelection();
       }).catch(err => {
         console.error('[Agent] Failed to list projects and tasks:', err);
         this.panelError.set(err?.message || 'Failed to list projects and tasks');
       });
+    }
+  }
+
+  /**
+   * Restores the project / session selection persisted on the current server.
+   *
+   * Called on startup and after switching servers: each server keeps its own
+   * selected project, so the selection has to be re-read from whichever one
+   * is now in use rather than carried over.
+   */
+  private async hydrateSelection(): Promise<void> {
+    const p = await this.acpService.getSelectedProject();
+    if (p.selectedProject) this.acpService.selectedProjectPath.set(p.selectedProject);
+
+    if (!p.selectedSessionId) {
+      this.acpService.isSwitchingSession.set(false);
+    }
+
+    const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
+    if (!cur) return;
+
+    if (cur.type === 'project') {
+      await this.loadSessionsForProject(cur.path);
+      if (p.selectedSessionId) {
+        await this.loadSession(p.selectedSessionId);
+      }
+    } else if (cur.type === 'task' && cur.sessions?.length > 0) {
+      // task: 页面刷新时加载 session 消息
+      const sessionId = cur.sessions[0]?.sessionId;
+      if (sessionId) {
+        await this.loadTaskSession(cur.id!, sessionId);
+      }
     }
   }
 

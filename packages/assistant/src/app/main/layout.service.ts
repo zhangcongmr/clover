@@ -11,7 +11,7 @@ export type DockMode = 'agent-first' | 'content-first';
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
   /** 当前 dock 布局模式，唯一真源 */
-  readonly dockMode = signal<DockMode>('content-first');
+  readonly dockMode = signal<DockMode>('agent-first');
 
   /** 中间面板（编辑器）是否展开 */
   readonly astContentPanelOpen = signal(false);

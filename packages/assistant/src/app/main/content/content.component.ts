@@ -135,6 +135,21 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
     super();
     // 在构造器注入上下文中创建联动 effect，确保其一定存在且能响应 selectedProjectPath 变化
     this.setupProjectSyncEffect();
+    this.setupServerChangeEffect();
+  }
+
+  /**
+   * Re-open the file watches when the app is pointed at another server.
+   *
+   * The file-watch socket belongs to one server; after a switch it is closed
+   * and the watches must be re-established against the new address.
+   */
+  private setupServerChangeEffect(): void {
+    effect(() => {
+      // Depend on the epoch so this runs once per server switch.
+      this.localServerService.serverEpoch();
+      void this.rewatchAfterServerChange();
+    });
   }
 
   private static readonly SIDE_PANEL_HOVER_THRESHOLD = 50;
@@ -374,6 +389,18 @@ showButtonPlaceholder = computed(() => {
     } catch (err) {
       console.error('[Content] Failed to connect to local server:', err);
     }
+  }
+
+  /**
+   * Re-establish the file-watch connections after the target server changed.
+   *
+   * The watch socket is bound to one server: when the app is pointed at
+   * another one, the old socket is closed and the watches have to be opened
+   * again against the new address.
+   */
+  private async rewatchAfterServerChange(): Promise<void> {
+    if (!this.isLocalProject()) return;
+    await this.initLocalServerConnection();
   }
 
   private startWatchOpenedFiles() {

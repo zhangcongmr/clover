@@ -1,7 +1,7 @@
-import { Component, HostListener, inject, input, output, signal, computed } from "@angular/core";
+import { Component, HostListener, effect, inject, input, output, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { SettingsService } from "./settings.service";
-import { LocalServerService } from "../../shared/local-server/local-server.service";
+import { LocalServerService, REMOTE_PROBE_TIMEOUT_MS } from "../../shared/local-server/local-server.service";
 import { CoreService } from "../../core.service";
 import { AcpSseService } from "../../shared/acp/acp-sse.service";
 import { AcpService } from "../../shared/acp/acp.service";
@@ -52,7 +52,7 @@ export class SettingsComponent {
   protected localServerService = inject(LocalServerService);
   private coreService = inject(CoreService);
   private sseService = inject(AcpSseService);
-  /** Agent 列表单一数据源（与 agent 选择器共用同一个 installedAgents signal）。 */
+  /** Single source of truth for the agent list (shared with the agent selector's installedAgents signal). */
   protected acp = inject(AcpService);
   protected themeLibrary = inject(ThemeLibraryService);
   private notification = inject(NotificationService);
@@ -118,7 +118,8 @@ export class SettingsComponent {
   /** Bounding rect of the menu trigger button, used to position the dropdown. */
   agentMenuInitiator: DOMRect | undefined;
 
-  showSavedToast = signal(false);
+  /** Confirmation message shown under the Server URL input, if any. */
+  serverUrlToast = signal<string | null>(null);
 
   /** Built-in Light/Dark presets, shown as the first Theme Library group. */
   private readonly builtinThemes: ThemeLibraryEntry[] = [
@@ -129,8 +130,8 @@ export class SettingsComponent {
   /**
    * Saved themes grouped by chip-library category, preceded by the built-in
    * Light/Dark group. Groups follow `THEME_CHIP_CATEGORIES` order (the
-   * library's own "其他" category is last), themes without a valid
-   * `categoryId` fall into "其他", and empty saved groups are hidden.
+   * library's own "Other" category is last), themes without a valid
+   * `categoryId` fall into "Other", and empty saved groups are hidden.
    */
   readonly themeGroups = computed<ThemeGroup[]>(() => {
     const builtinGroup: ThemeGroup = {
@@ -156,9 +157,58 @@ export class SettingsComponent {
     return active?.title ?? 'Custom Theme';
   });
 
+  /**
+   * Draft value of the Server URL input.
+   *
+   * The input is deliberately NOT bound to `localServerService.serverUrl`
+   * with `[(ngModel)]`: two-way binding would push every keystroke straight
+   * into the service, so a half-typed address would immediately repoint the
+   * whole app (every request goes through `getBaseUrl()`). The draft is
+   * committed to the service only when `connect()` runs.
+   */
+  serverUrlInput = signal('');
+
+  /** Whether the user has edited the draft (i.e. it is no longer a mirror). */
+  private serverUrlDirty = false;
+
+  /**
+   * Whether the app is bound to a remote server.
+   *
+   * Drives the Connect / Disconnect button: it reads "Disconnect" while a
+   * remote server is in use. It is only true when the input still holds that
+   * address, so typing a different one turns the button back into Connect —
+   * moving to another server stays a single action.
+   */
+  readonly isServerConnected = computed(() => {
+    // `serverUrl` is a plain field, so depend on the epoch to be re-evaluated
+    // when the server changes somewhere else (the main view's dialog).
+    this.localServerService.serverEpoch();
+    const current = this.localServerService.serverUrl;
+    return !!current && this.serverUrlInput().trim() === current;
+  });
+
   constructor() {
+    // Seed the draft with the address currently in use.
+    this.serverUrlInput.set(this.localServerService.serverUrl);
     this.checkServerStatus();
     this.loadAgents();
+
+    // The server can also be switched from the main view's remote-server
+    // dialog. Re-seed the draft then, so the input never shows a stale
+    // address — but only while the user has not edited it, so an
+    // in-progress edit is never overwritten.
+    effect(() => {
+      this.localServerService.serverEpoch();
+      if (!this.serverUrlDirty) {
+        this.serverUrlInput.set(this.localServerService.serverUrl);
+      }
+    });
+  }
+
+  /** Keeps track of the draft being edited by the user. */
+  onServerUrlInput(value: string): void {
+    this.serverUrlDirty = true;
+    this.serverUrlInput.set(value);
   }
 
   setActiveCategory(id: string) {
@@ -169,16 +219,68 @@ export class SettingsComponent {
   }
 
   /**
-   * Persists the Server URL entered in the input box.
+   * Commits the Server URL entered in the input box.
    *
-   * The input is bound with `[(ngModel)]="localServerService.serverUrl"`, so
-   * the value is already in the service when this runs — but only in memory.
-   * `setServerUrl()` is what actually writes it to localStorage; without this
-   * call the address was silently lost on reload.
+   * The input holds a local draft (`serverUrlInput`), not the service value,
+   * so nothing changes in the app until this runs: typing a new address
+   * leaves the running server untouched.
+   *
+   * `setServerUrl()` writes the address to the service and persists it to
+   * localStorage. Because the app was pointing at a different server, the
+   * ACP layer has to be rebound as well — its SSE streams captured the old
+   * address when they were opened and would keep talking to it otherwise.
    */
-  saveServerUrl() {
-    this.localServerService.setServerUrl(this.localServerService.serverUrl);
-    this.showToast();
+  async connect() {
+    const url = this.serverUrlInput().trim();
+    if (url !== this.localServerService.serverUrl) {
+      // Tear down the previous server's connections before the address
+      // changes, so the ones re-established afterwards are not closed again.
+      this.localServerService.disconnect();
+      this.localServerService.setServerUrl(url);
+      await this.acp.rebindToServer();
+      // Remember the address, so it shows up in the remote-server dialog's
+      // history like any other server the user connected to.
+      this.localServerService.addToHistory(url);
+    }
+    // The draft now matches the service again: it may follow external changes.
+    this.serverUrlDirty = false;
+    this.serverUrlInput.set(this.localServerService.serverUrl);
+    this.showToast(url ? `Connected to ${url}` : 'Connected');
+    this.checkServerStatus();
+  }
+
+  /**
+   * The Server URL button's action: connects to the address in the input, or
+   * disconnects from the remote server when one is already in use.
+   *
+   * The button is a single element whose label and behaviour follow the
+   * current state, so the two directions never sit side by side.
+   */
+  onPrimaryAction(): void {
+    if (this.isServerConnected()) {
+      void this.disconnect();
+    } else {
+      void this.connect();
+    }
+  }
+
+  /**
+   * Disconnects from the remote server: goes back to the server that hosts
+   * this page (same origin).
+   *
+   * The counterpart of `connect()` — the button shows whichever of the two
+   * applies to the current state.
+   */
+  async disconnect() {
+    // Tear down the previous server's connections before the address changes,
+    // so the ones re-established afterwards are not closed again.
+    this.localServerService.disconnect();
+    this.localServerService.setServerUrl('');
+    await this.acp.rebindToServer();
+
+    this.serverUrlDirty = false;
+    this.serverUrlInput.set('');
+    this.showToast('Disconnected');
     this.checkServerStatus();
   }
 
@@ -354,13 +456,30 @@ export class SettingsComponent {
     this.settingsService.setUseMemoryMode(enabled);
   }
 
+  /**
+   * Tests the address currently shown in the input box.
+   *
+   * The input holds a draft, so it is probed explicitly instead of falling
+   * back to the configured address — otherwise the button would test the
+   * old server while the user looks at a new address.
+   */
   async testServerConnection() {
     this.serverTesting.set(true);
-    const ok = await this.localServerService.checkServerAvailable();
+    const draft = this.serverUrlInput().trim();
+    const ok = await this.localServerService.checkServerAvailable(
+      draft || undefined,
+      REMOTE_PROBE_TIMEOUT_MS,
+    );
     this.serverStatus.set(ok ? 'connected' : 'disconnected');
     this.serverTesting.set(false);
   }
 
+  /**
+   * Refreshes the status of the server the app is actually bound to.
+   *
+   * Unlike `testServerConnection()` this ignores the input draft: it reports
+   * the live connection, not the address being typed.
+   */
   private async checkServerStatus() {
     const ok = await this.localServerService.checkServerAvailable();
     this.serverStatus.set(ok ? 'connected' : 'disconnected');
@@ -384,7 +503,7 @@ export class SettingsComponent {
   }
 
   /**
-   * Check Now：重新检测安装状态，并尝试把 Agent 拉到“连接”状态。
+   * Check Now: re-detect the installation status and try to bring the agent into a "connected" state.
    */
   async checkNow(agentId: string): Promise<void> {
     if (this.checkingAgentId()) return;
@@ -620,9 +739,10 @@ export class SettingsComponent {
     await this.onAgentInstalled(agentConfig);
   }
 
-  private showToast() {
-    this.showSavedToast.set(true);
-    setTimeout(() => this.showSavedToast.set(false), 2000);
+  /** Shows a short confirmation under the Server URL input. */
+  private showToast(message: string) {
+    this.serverUrlToast.set(message);
+    setTimeout(() => this.serverUrlToast.set(null), 2000);
   }
 
   onGoBack() {

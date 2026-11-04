@@ -149,6 +149,20 @@
   flex-shrink: 0;
 }
 
+/* Badge marking that the app is bound to a remote server. */
+.nav-item-badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--vscode-badge-background, var(--vscode-button-background));
+  color: var(--vscode-badge-foreground, #ffffff);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* ===== Task List ===== */
 .task-list {
   min-height: 0;

@@ -1,0 +1,87 @@
+<ast-modal
+  [visible]="visible()"
+  title="Connect to Server"
+  modalSize="medium"
+  [draggable]="false"
+  (close)="close.emit()"
+>
+  <div class="ast-modal-body remote-server-dialog">
+    <label class="rs-field-label" for="remote-server-url">Server URL</label>
+    <input
+      id="remote-server-url"
+      type="text"
+      class="rs-input"
+      placeholder="http(s)://{ip}:{port}"
+      [ngModel]="url()"
+      (ngModelChange)="url.set($event)"
+      (keyup.enter)="connect()"
+    />
+    <div class="rs-hint">
+      URL of the local or remote server to connect to. Use Disconnect to go
+      back to the server that hosts this page.
+    </div>
+
+    <!-- Previously connected servers. Clicking one fills the input; the
+         per-row delete button forgets it. -->
+    @if (history().length > 0) {
+      <div class="rs-history">
+        <div class="rs-history-label">Recent</div>
+        <div class="rs-history-list">
+          @for (entry of history(); track entry) {
+            <div class="rs-history-row">
+              <button
+                class="rs-history-entry"
+                type="button"
+                (click)="useHistoryEntry(entry)"
+                [title]="'Use ' + entry"
+              >
+                {{ entry }}
+              </button>
+              <button
+                class="rs-history-remove"
+                type="button"
+                (click)="removeHistoryEntry(entry, $event)"
+                [title]="'Remove ' + entry"
+                aria-label="Remove history entry"
+              >
+                <svg width="12" height="12">
+                  <use href="#icon-close-icon"></use>
+                </svg>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="rs-error">{{ error() }}</div>
+    }
+
+    <div class="rs-current">
+      <span class="rs-current-label">Current:</span>
+      <span class="rs-current-value">{{ currentUrl() || 'This page\'s own server' }}</span>
+    </div>
+
+    <div class="rs-footer">
+      <!-- One button for both directions: it reads "Connect" while the app
+           talks to the server that hosts this page, and flips to "Disconnect"
+           once a remote server is in use. -->
+      <button
+        class="btn btn-primary rs-connect-btn"
+        type="button"
+        (click)="onPrimaryAction()"
+        [disabled]="connecting()"
+      >
+        @if (connecting()) {
+          Connecting...
+        } @else if (isConnected()) {
+          Disconnect
+        } @else {
+          Connect
+        }
+      </button>
+      <button class="btn btn-secondary" type="button" (click)="close.emit()">Cancel</button>
+    </div>
+  </div>
+</ast-modal>
