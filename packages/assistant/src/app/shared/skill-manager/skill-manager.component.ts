@@ -1,8 +1,9 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SkillService, type SkillInfo } from '../skills/skill.service';
 import { BUILT_IN_SKILL_NAMES } from './built-in-skills';
+import { SkeletonGate, createSkeletonRows } from '../skeleton/skeleton';
 import {
   SkillCatalogService,
   sanitizeSkillName,
@@ -19,7 +20,7 @@ type ManagerTab = 'configured' | 'catalog';
   templateUrl: './skill-manager.component.html',
   styleUrls: ['./skill-manager.component.css'],
 })
-export class SkillManagerComponent implements OnInit {
+export class SkillManagerComponent implements OnInit, OnDestroy {
   private readonly skillService = inject(SkillService);
   private readonly catalogService = inject(SkillCatalogService);
 
@@ -36,14 +37,28 @@ export class SkillManagerComponent implements OnInit {
   // HTTP Catalog 浏览（浏览器直连各 catalog 的 index.json）
   tab: ManagerTab = 'configured';
   catalogSources: CatalogSourceState[] = [];
-  catalogLoading = false;
+  /** catalog 加载态。用 signal —— zoneless 变更检测下，普通字段在 Promise
+   *  回调里赋值不保证触发刷新，signal 写入则一定触发。 */
+  catalogLoading = signal(false);
+  /** 首屏骨架屏可见态。独立于 catalogLoading —— 后者会在收到数据时立即
+   *  置 false，而骨架需要按最短展示时长延后消失。 */
+  catalogSkeleton = signal(false);
   catalogSearch = '';
   /** 正在安装的条目 key（防连点）。 */
   installingKey: string | null = null;
   private catalogLoaded = false;
 
+  /** 骨架屏占位行。 */
+  readonly skeletonRows = createSkeletonRows();
+  /** 骨架屏最短展示时长闸门。 */
+  private readonly skeletonGate = new SkeletonGate();
+
   ngOnInit(): void {
     this.loadSkills();
+  }
+
+  ngOnDestroy(): void {
+    this.skeletonGate.clear();
   }
 
   loadSkills(): void {
@@ -76,19 +91,34 @@ export class SkillManagerComponent implements OnInit {
   /** 加载全部 catalog 源（配置 ∪ 内置默认；单源失败只标记该源）。 */
   loadCatalogs(): void {
     this.catalogLoaded = true;
-    this.catalogLoading = true;
+    this.catalogLoading.set(true);
+    this.catalogSkeleton.set(true);
+    this.skeletonGate.begin();
     const configUrls = this.skillService.catalogs();
     this.catalogService
       .loadSources(configUrls, url => configUrls.includes(url))
       .then(sources => {
         this.catalogSources = sources;
-        this.catalogLoading = false;
+        this.catalogLoading.set(false);
+        this.finishCatalogSkeleton();
       })
       .catch(err => {
-        this.catalogLoading = false;
+        // error 是普通字段，必须在 signal 写入（触发变更检测）之前赋值，
+        // 否则模板可能读到上一轮的旧值。
         this.error = 'Failed to load skill catalogs';
+        this.catalogLoading.set(false);
+        this.finishCatalogSkeleton();
         console.error('Failed to load skill catalogs:', err);
       });
+  }
+
+  /**
+   * 结束骨架屏。
+   *
+   * 骨架至少展示 MIN_SKELETON_DURATION，避免请求秒回时骨架一闪而过。
+   */
+  private finishCatalogSkeleton(): void {
+    this.skeletonGate.end(() => this.catalogSkeleton.set(false));
   }
 
   /** 过滤后的全部条目（跨源扁平化，按名称排序）。 */

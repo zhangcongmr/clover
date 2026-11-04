@@ -85,8 +85,25 @@
         />
       </div>
 
-      @if (catalogLoading) {
-        <div class="status-line">Loading catalogs…</div>
+      @if (catalogSkeleton()) {
+        <!-- 骨架屏：占位块复刻真实条目结构，避免数据到位后列表跳动 -->
+        <ul class="item-list" [attr.aria-busy]="catalogLoading()">
+          @for (row of skeletonRows; track row) {
+            <li class="item-row skeleton-row">
+              <div class="item-main">
+                <div class="item-name">
+                  <span class="skeleton-block skeleton-line-name"></span>
+                  <span class="skeleton-block skeleton-line-badge"></span>
+                </div>
+                <span class="skeleton-block skeleton-line-desc"></span>
+              </div>
+              <div class="item-actions">
+                <span class="skeleton-block skeleton-block-button"></span>
+              </div>
+            </li>
+          }
+        </ul>
+        <span class="skeleton-sr-only">Loading skill catalogs…</span>
       } @else {
         @for (source of catalogSources; track source.url) {
           @if (source.error) {
