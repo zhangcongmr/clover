@@ -48,6 +48,7 @@
 }
 
 .detail-session:hover {
+  background: var(--vscode-hover-background);
   color: var(--vscode-foreground);
   border-color: var(--vscode-accent-color);
 }

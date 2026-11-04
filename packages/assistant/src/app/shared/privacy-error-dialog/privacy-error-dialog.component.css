@@ -17,8 +17,8 @@
 
 .confirm-button {
     padding: 4px 8px;
-    background-color: #007bff;
-    color: white;
+    background-color: var(--vscode-primary-background);
+    color: var(--vscode-primary-foreground);
     border: none;
     border-radius: 2px;
     font-size: 12px;
@@ -26,7 +26,7 @@
 }
 
 .confirm-button:hover {
-    background-color: #0056b3;
+    background-color: var(--vscode-button-hoverBackground);
 }
 
 /* 内联样式提取 */

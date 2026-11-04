@@ -234,8 +234,8 @@
   padding: 4px 12px;
   border: none;
   border-radius: var(--borderless-item-radius, 8px);
-  background-color: var(--borderless-accent, #3794ff);
-  color: #fff;
+  background-color: var(--vscode-primary-background);
+  color: var(--vscode-primary-foreground);
   font-size: var(--vscode-small-font-size);
   font-weight: 500;
   cursor: pointer;
@@ -244,7 +244,7 @@
 
 .btn-next:hover,
 .btn-submit:hover {
-  background-color: var(--borderless-accent-hover, #2b7de9);
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 .btn-next:disabled,

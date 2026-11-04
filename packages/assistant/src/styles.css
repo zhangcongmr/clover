@@ -65,6 +65,11 @@
   --vscode-primary-foreground: #ffffff;
   --vscode-secondary-background: #bcddf3;
 
+  /* Unified hover colors per button role */
+  --vscode-button-hoverBackground: #0062a3;
+  --vscode-button-secondaryHoverBackground: #667486;
+  --ast-danger: #e5484d;
+
   /* Unified interactive hover background (neutral) */
   --vscode-hover-background: #e8e8e8;
   --vscode-item-active-background: rgba(0, 102, 204, 0.12);
@@ -241,6 +246,10 @@
   --vscode-primary-background: #0078d4;
   --vscode-primary-foreground: #ffffff;
   --vscode-secondary-background: #252526;
+
+  /* Unified hover colors per button role */
+  --vscode-button-hoverBackground: #026ec1;
+  --vscode-button-secondaryHoverBackground: #4a4a4a;
 
   /* Unified interactive hover background (neutral) */
   --vscode-hover-background: #FFFFFF1A;

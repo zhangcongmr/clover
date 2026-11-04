@@ -242,12 +242,13 @@
 }
 
 .btn-danger {
-  background: #c44545;
+  background: var(--ast-danger);
   color: #ffffff;
 }
 
 .btn-danger:hover {
-  opacity: 0.9;
+  color: var(--vscode-errorForeground);
+  background: var(--vscode-inputValidation-errorBackground);
 }
 
 .empty-text {

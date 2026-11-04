@@ -111,12 +111,9 @@
 }
 
 .close-button:hover {
-    color: white;
-    background-color: #dc3545;
+    color: var(--vscode-errorForeground);
+    background-color: var(--vscode-inputValidation-errorBackground);
     cursor: pointer;
-}
-.close-button svg:hover {
-    color: white;
 }
 
 ast-modal .ast-modal-body {
@@ -149,7 +146,8 @@ ast-modal .ast-describe-btns {
 .ast-confirm-btn {
     border: none;
     align-items: center;
-    background: var(--borderless-accent, #0066cc);
+    background: var(--vscode-primary-background);
+    color: var(--vscode-primary-foreground);
     display: flex;
     gap: 10px;
     justify-content: center;
@@ -188,7 +186,7 @@ button[type="submit"] {
 }
 
 .ast-confirm-btn:hover {
-    background-color: var(--borderless-accent-hover, #0056b3);
+    background-color: var(--vscode-button-hoverBackground);
     /* 鼠标悬停时改变背景颜色 */
 }
 

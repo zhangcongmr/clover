@@ -223,7 +223,7 @@
 }
 
 .intermediate-header:hover {
-  background-color: transparent;
+  background-color: var(--vscode-hover-background);
 }
 
 .intermediate-toggle {

@@ -41,9 +41,9 @@
 }
 
 .sendRequestBtn {
-    border: 0.8px solid #D9D9D9;
-    background-color: var(--second-color, (206, 216, 231));
-    color: black;
+    border: 1px solid var(--vscode-border-color);
+    background-color: var(--vscode-background);
+    color: var(--vscode-foreground);
     border-radius: 8px;
     margin-left: 5px;
     line-height: 2.4rem;
@@ -51,7 +51,7 @@
 }
 
 .sendRequestBtn:hover {
-    background-color: var(--primary-color, rgb(103, 137, 186));
+    background-color: var(--vscode-hover-background);
 }
 
 .parameter-content {
@@ -312,10 +312,8 @@ tr:nth-child(odd) {
     /* 使用浅灰色背景 */
 }
 
-/* 移除鼠标悬停时的默认效果（如果需要的话） */
 table tr:hover {
-    background-color: transparent;
-    /* 透明背景 */
+    background-color: var(--vscode-hover-background);
 }
 
 /* 如果有需要，可以添加其他样式，如字体大小、行高、圆角等 */

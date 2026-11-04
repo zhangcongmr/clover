@@ -64,14 +64,14 @@
 }
 
 .ast-outline-title .ast-outline-title-text:hover {
-    color: rgb(34, 100, 241);
+    color: var(--vscode-primary-background);
     text-decoration: underline;
-    text-decoration-color: rgb(34, 100, 241);        /* 下划线颜色 */
+    text-decoration-color: var(--vscode-primary-background);        /* 下划线颜色 */
     text-decoration-thickness: 1px;    /* 下划线粗细 */
 }
 
 .ast-outline-title-text {
-    color: black;
+    color: var(--vscode-foreground);
     font-size: 18px;
     font-weight: 400;
     word-wrap: break-word
@@ -119,7 +119,7 @@
 }
 
 .ast-view-btn-text {
-    color: #404040;
+    color: var(--vscode-foreground);
     display: flex;
     flex-direction: column;
     font-size: 16px;
@@ -130,7 +130,7 @@
 }
 
 .ast-view-btn-text:hover {
-    color: rgb(34, 100, 241);
+    color: var(--vscode-primary-background);
 }
 
 .ast-del-btn-text {

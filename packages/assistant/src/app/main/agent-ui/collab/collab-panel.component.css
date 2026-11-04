@@ -362,9 +362,9 @@
 }
 
 .collab-btn.primary {
-  background: var(--vscode-button-background);
+  background: var(--vscode-primary-background);
   border-color: transparent;
-  color: var(--vscode-button-foreground);
+  color: var(--vscode-primary-foreground);
 }
 
 .collab-btn.primary:hover:not(:disabled) {
@@ -375,6 +375,11 @@
   background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
   border-color: var(--vscode-inputValidation-errorBorder, #f14c4c);
   color: var(--vscode-foreground);
+}
+
+.collab-btn.danger:hover:not(:disabled) {
+  background: var(--vscode-inputValidation-errorBackground);
+  color: var(--vscode-errorForeground);
 }
 
 /* ===== Active space ===== */
@@ -670,7 +675,8 @@
 }
 
 .message-detail-btn:hover {
-  color: var(--vscode-accent-color);
+  color: var(--vscode-foreground);
+  background: var(--vscode-hover-background);
   border-color: var(--vscode-accent-color);
 }
 
@@ -1147,7 +1153,7 @@
 }
 
 .ap-option:hover:not(.disabled) {
-  background: var(--vscode-list-hoverBackground, var(--vscode-hover-background));
+  background: var(--vscode-hover-background);
 }
 
 .ap-option.active:not(.disabled) {

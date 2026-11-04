@@ -214,35 +214,17 @@
   flex-shrink: 0;
 }
 
-.task-delete-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  border-radius: 3px;
-  cursor: pointer;
-  color: var(--vscode-foreground);
+/* 任务项内的删除按钮复用会话的 session-action-btn，仅在悬停任务项时显示 */
+.task-item .session-action-btn--delete {
   opacity: 0;
-  transition: opacity 0.12s, background-color 0.12s;
 }
 
-.task-item:hover .task-delete-btn {
-  opacity: 0.6;
+.task-item:hover .session-action-btn--delete {
+  opacity: 0.7;
 }
 
-.task-delete-btn:hover {
-  opacity: 1 !important;
-  background: var(--vscode-hover-background);
-}
-
-.task-delete-btn svg {
-  width: 12px;
-  height: 12px;
+.task-item .session-action-btn--delete:hover {
+  opacity: 1;
 }
 
 .empty-tasks {
@@ -723,7 +705,8 @@
 }
 
 .session-action-btn--delete:hover {
-  color: var(--vscode-foreground);
+  color: var(--vscode-errorForeground);
+  background: var(--vscode-inputValidation-errorBackground);
 }
 
 /* ===== Session Context Menu ===== */
