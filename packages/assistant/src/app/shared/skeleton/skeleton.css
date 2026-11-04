@@ -1,0 +1,109 @@
+/**
+ * 骨架屏公共样式。
+ *
+ * 远程数据源（MCP 官方 registry、Skill HTTP catalog）加载时先用占位块撑出
+ * 与真实条目一致的布局，数据到达后替换为真实列表，避免空白闪烁与布局跳动。
+ *
+ * 被 mcp-manager 与 skill-manager 引用（各自组件样式表 @import 本文件）。
+ */
+
+/* 占位条：底色用 color-mix 从主题色推导，明暗主题自动适配。 */
+.skeleton-block {
+  display: block;
+  border-radius: 3px;
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-foreground) 8%,
+    var(--vscode-surface-background)
+  );
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--vscode-foreground) 14%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* 名称条 */
+.skeleton-line-name {
+  width: 150px;
+  height: 13px;
+}
+
+/* 徽章条（版本号 / 来源标签） */
+.skeleton-line-badge {
+  width: 52px;
+  height: 13px;
+  border-radius: 10px;
+}
+
+/* 描述条 */
+.skeleton-line-desc {
+  width: 65%;
+  max-width: 420px;
+  height: 11px;
+}
+
+/* 次要信息条（命令预览 / 来源） */
+.skeleton-line-meta {
+  width: 34%;
+  max-width: 220px;
+  height: 10px;
+}
+
+/* 右侧按钮条 */
+.skeleton-block-button {
+  width: 72px;
+  height: 26px;
+  border-radius: var(--vscode-radius-sm, 4px);
+}
+
+/* 逐行错峰，让微光像自上而下依次掠过 */
+.skeleton-row:nth-child(1) .skeleton-block,
+.skeleton-row:nth-child(2) .skeleton-block {
+  animation-delay: 0ms;
+}
+.skeleton-row:nth-child(3) .skeleton-block {
+  animation-delay: 60ms;
+}
+.skeleton-row:nth-child(4) .skeleton-block {
+  animation-delay: 120ms;
+}
+.skeleton-row:nth-child(5) .skeleton-block {
+  animation-delay: 180ms;
+}
+.skeleton-row:nth-child(6) .skeleton-block {
+  animation-delay: 240ms;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 尊重系统的「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block {
+    animation: none;
+  }
+}
+
+/* 仅供屏幕阅读器读取（骨架屏的可访问性提示）。 */
+.skeleton-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

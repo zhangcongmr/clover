@@ -30,9 +30,26 @@
       />
     </div>
 
-    <!-- Loading state -->
+    <!-- Loading state: skeleton placeholders that mirror the real agent item
+         layout, so the list does not jump when the registry data arrives. -->
     @if (loading()) {
-      <div class="registry-loading">Loading agents from ACP registry…</div>
+      <div class="registry-list registry-skeleton custom-scroll" aria-busy="true">
+        @for (row of skeletonRows; track row) {
+          <div class="registry-agent-item registry-skeleton-item">
+            <div class="registry-agent-avatar registry-skeleton-avatar"></div>
+            <div class="registry-agent-details">
+              <div class="registry-agent-header">
+                <span class="registry-skeleton-line registry-skeleton-name"></span>
+                <span class="registry-skeleton-line registry-skeleton-version"></span>
+              </div>
+              <span class="registry-skeleton-line registry-skeleton-desc"></span>
+              <span class="registry-skeleton-line registry-skeleton-meta"></span>
+            </div>
+            <span class="registry-skeleton-btn"></span>
+          </div>
+        }
+        <span class="registry-sr-only">Loading agents from ACP registry…</span>
+      </div>
     }
     <!-- Error state -->
     @else if (error()) {

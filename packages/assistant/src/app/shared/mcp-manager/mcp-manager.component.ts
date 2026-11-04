@@ -10,6 +10,7 @@ import {
   type RegistryListItem,
   type LocalMcpServerConfig as McpServerConfig,
 } from './mcp-registry.service';
+import { SkeletonGate, createSkeletonRows } from '../skeleton/skeleton';
 
 type ManagerTab = 'configured' | 'registry';
 
@@ -42,6 +43,9 @@ export class McpManagerComponent implements OnInit, OnDestroy {
   registryItems: RegistryListItem[] = [];
   registryCursor: string | null = null;
   registryLoading = signal(false);
+  /** 首屏骨架屏可见态。独立于 registryLoading —— 后者会在收到数据时立即
+   *  置 false，而骨架需要按最短展示时长延后消失。 */
+  registrySkeleton = signal(false);
   registryError: string | null = null;
   registrySearch = '';
   /** 正在安装的 registry 条目 key（用于按钮态）。 */
@@ -49,6 +53,11 @@ export class McpManagerComponent implements OnInit, OnDestroy {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   /** 请求序号，丢弃过期的搜索/分页响应。 */
   private registryRequestSeq = 0;
+
+  /** 骨架屏占位行。 */
+  readonly skeletonRows = createSkeletonRows();
+  /** 骨架屏最短展示时长闸门。 */
+  private readonly skeletonGate = new SkeletonGate();
 
   ngOnInit(): void {
     this.loadServers();
@@ -59,6 +68,7 @@ export class McpManagerComponent implements OnInit, OnDestroy {
       clearTimeout(this.searchTimer);
       this.searchTimer = null;
     }
+    this.skeletonGate.clear();
   }
 
   loadServers(): void {
@@ -113,8 +123,15 @@ export class McpManagerComponent implements OnInit, OnDestroy {
     const cursor = this.registryCursor;
     const search = this.registrySearch.trim();
 
+    // 首屏（尚无任何条目）时展示骨架屏；后续翻页保留已有列表，不遮挡。
+    const firstLoad = this.registryItems.length === 0;
+
     this.registryLoading.set(true);
     this.registryError = null;
+    if (firstLoad) {
+      this.registrySkeleton.set(true);
+      this.skeletonGate.begin();
+    }
 
     this.registryService
       .listServers({ search: search || undefined, cursor })
@@ -131,16 +148,42 @@ export class McpManagerComponent implements OnInit, OnDestroy {
         }
         this.registryCursor = page.nextCursor;
         this.registryLoading.set(false);
+        this.finishRegistrySkeleton(requestId, firstLoad);
       })
       .catch(err => {
         if (requestId !== this.registryRequestSeq) return;
+        // registryError 是普通字段，必须在 signal 写入（触发变更检测）之前
+        // 赋值，否则模板可能读到上一轮的旧值。
         this.registryError =
           err instanceof Error && err.message
             ? err.message
             : 'Failed to reach the official MCP registry';
         this.registryLoading.set(false);
+        this.finishRegistrySkeleton(requestId, firstLoad);
         console.error('Failed to load official MCP registry:', err);
       });
+  }
+
+  /**
+   * 结束骨架屏。
+   *
+   * 首屏走闸门，保证骨架至少展示 MIN_SKELETON_DURATION，避免接口秒回时
+   * 骨架一闪而过；翻页（Load more）没有骨架，立即收起。
+   * 过期的请求（requestId 不匹配）直接忽略。
+   */
+  private finishRegistrySkeleton(requestId: number, firstLoad: boolean): void {
+    if (requestId !== this.registryRequestSeq) return;
+
+    if (!firstLoad) {
+      this.registrySkeleton.set(false);
+      return;
+    }
+
+    this.skeletonGate.end(() => {
+      if (requestId === this.registryRequestSeq) {
+        this.registrySkeleton.set(false);
+      }
+    });
   }
 
   /** 条目的本地安装名（已被本地同名配置占用时返回该名，视为已安装）。 */
