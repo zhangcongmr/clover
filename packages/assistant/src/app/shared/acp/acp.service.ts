@@ -693,7 +693,6 @@ export class AcpService {
           type: 'task',
           sessions: [{ sessionId: acpSessionId, agentId, title, ...(mcpServers?.length ? { mcpServers } : {}) }],
           id: taskId,
-          createdAt: new Date().toISOString(),
         }
         this.tasks.update(list => [
           newTask,
@@ -702,9 +701,16 @@ export class AcpService {
 
         if (taskId) {
           try {
-            await this.sseService.addProject(newTask);
+            const result = await this.sseService.addProject(newTask);
+            // createdAt 由服务端生成，回填本地状态，保证前后端一致
+            const createdAt = result?.task?.createdAt;
+            if (createdAt) {
+              this.tasks.update(list => list.map(t =>
+                t.id === taskId ? { ...t, createdAt } : t
+              ));
+            }
             await this.saveSelectedProject(cwd);
-            await this.saveSelectedSession(acpSessionId);
+            await this.saveSelectedSessionId(acpSessionId);
           } catch (err) {
             console.error('[ACP] Failed to create task:', err);
           }
@@ -724,17 +730,18 @@ export class AcpService {
           sessionId: acpSessionId,
           agentId,
           title: this.sessionState().title || 'New session',
-          updatedAt: new Date().toISOString(),
           ...(mcpServers?.length ? { mcpServers } : {}),
         };
-        await this.saveSessionToProject(cwd, record);
+        // updatedAt 由服务端生成，回传后用于本地状态，避免前端自取时间
+        const result = await this.saveSessionToProject(cwd, record);
+        const saved = result?.session ? { ...record, ...result.session } : record;
         // 本地同步 upsert，新会话立即出现在侧边栏，无需等待 listProjects 刷新
         this.projects.update(list => list.map(p =>
           p.path === cwd
-            ? { ...p, sessions: [...(p.sessions || []).filter(s => s.sessionId !== acpSessionId), record] }
+            ? { ...p, sessions: [...(p.sessions || []).filter(s => s.sessionId !== acpSessionId), saved] }
             : p
         ));
-        await this.saveSelectedSession(acpSessionId);
+        await this.saveSelectedSessionId(acpSessionId);
       }
     }
   }
@@ -863,24 +870,25 @@ export class AcpService {
       }
     }
 
-    const updatedAt = new Date().toISOString();
-
     // 补偿性更新：在 owner 查找之前无条件立即同步本地 project/task 记录中
     // 该 session 的标题，UI 无需等待后端刷新即可反映新标题
     //（替代原 sessions 列表的即时更新）
-    const updateTitle = (list: ProjectInfo[]): ProjectInfo[] =>
+    // updatedAt 不在此处生成：先只更新标题，服务端返回后再用服务端时间补齐排序字段。
+    const updateTitle = (list: ProjectInfo[], updatedAt?: string): ProjectInfo[] =>
       list.map(item => {
         if (!item.sessions?.some(s => s.sessionId === sessionId)) return item;
         return {
           ...item,
           name: item.type === 'task' ? next : item.name,
           sessions: item.sessions.map(s =>
-            s.sessionId === sessionId ? { ...s, title: next, updatedAt } : s
+            s.sessionId === sessionId
+              ? { ...s, title: next, ...(updatedAt ? { updatedAt } : {}) }
+              : s
           ),
         };
       });
-    this.projects.update(updateTitle);
-    this.tasks.update(updateTitle);
+    this.projects.update(list => updateTitle(list));
+    this.tasks.update(list => updateTitle(list));
 
     // Locate the owning project/task record: match by session id first,
     // fall back to the current cwd.
@@ -900,13 +908,18 @@ export class AcpService {
     const existingMcpServers =
       owner.sessions?.find(s => s.sessionId === sessionId)?.mcpServers;
 
-    await this.saveSessionToProject(owner.path, {
+    // updatedAt 由服务端生成，回传后用于本地状态，避免前端自取时间
+    const result = await this.saveSessionToProject(owner.path, {
       sessionId,
       agentId,
       title: next,
-      updatedAt,
       ...(existingMcpServers?.length ? { mcpServers: existingMcpServers } : {}),
     });
+    const updatedAt = result?.session?.updatedAt;
+    if (updatedAt) {
+      this.projects.update(list => updateTitle(list, updatedAt));
+      this.tasks.update(list => updateTitle(list, updatedAt));
+    }
   }
 
   /** Delays the agent-title fetch — agents generate titles asynchronously
@@ -1043,11 +1056,13 @@ export class AcpService {
           }
 
           try {
+            // updatedAt 透传 agent 上报的最后活跃时间（属于外部事实，
+            // 前端不自取时间）；agent 未提供时由服务端生成。
             await this.sseService.saveSessionToProject(cwd, {
               sessionId: session.sessionId,
               agentId,
               title: session.title || `Session ${session.sessionId.substring(0, 8)}`,
-              updatedAt: session.updatedAt || new Date().toISOString(),
+              ...(session.updatedAt ? { updatedAt: session.updatedAt } : {}),
             });
             existingRecords.set(key, { sessionId: session.sessionId, agentId, title: session.title });
           } catch (error) {
@@ -1113,13 +1128,20 @@ export class AcpService {
     await this.listProjects();
   }
 
-  async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<void> {
+  /**
+   * 持久化会话记录到项目/任务。
+   *
+   * 返回后端响应，其中 `session.updatedAt` 为服务端盖章的时间戳，
+   * 调用方可用它回写本地状态，保证前后端一致。
+   */
+  async saveSessionToProject(projectPath: string, session: ProjectSessionInfo): Promise<any> {
     // 只读查看实例不得写入项目/任务记录
-    if (this.readOnly) return;
+    if (this.readOnly) return undefined;
     try {
-      await this.sseService.saveSessionToProject(projectPath, session);
+      return await this.sseService.saveSessionToProject(projectPath, session);
     } catch (error) {
       console.error('[ACP] Failed to save session to project:', error);
+      return undefined;
     }
   }
 
@@ -1141,7 +1163,7 @@ export class AcpService {
     await this.sseService.saveSelectedProject(selectedProject);
   }
 
-  async saveSelectedSession(sessionId: string | null): Promise<void> {
+  async saveSelectedSessionId(sessionId: string | null): Promise<void> {
     await this.sseService.saveSelectedProject(this.selectedProjectPath(), sessionId);
   }
 

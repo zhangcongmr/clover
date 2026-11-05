@@ -865,7 +865,7 @@ export class AcpSseService {
   /**
    * 新增项目或任务（通过 type 区分）
    */
-  async addProject(project: { name: string; path: string; type: string; sessions?: any[]; id?: string; createdAt?: string }): Promise<any> {
+  async addProject(project: { name: string; path: string; type: string; sessions?: any[]; id?: string }): Promise<any> {
     return this.postNoAuth('/api/projects/add', project);
   }
 

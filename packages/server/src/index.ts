@@ -90,6 +90,7 @@ export type { EventSink, SessionEvent, AttachOptions } from './events/event-sink
 
 // Helpers
 export { loadSslConfig, isJson } from './helpers/index.js';
+export { TIME_ZONE, toIsoTimestamp, toPathTimestamp } from './helpers/time.js';
 export { logger, formatLogTimestamp, configureFileLogging, logDirectory, currentLogFile, flushLogs, closeLogs } from './helpers/logger.js';
 export type { Logger, LogArgs, LogLevel } from './helpers/logger.js';
 export { RollingFileLogger, defaultLogDir } from './helpers/log-file.js';

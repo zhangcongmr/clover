@@ -1,4 +1,5 @@
 import { logger } from '../helpers/logger.js';
+import { toIsoTimestamp, toPathTimestamp } from '../helpers/time.js';
 import type { Express, NextFunction, Request, Response } from 'express';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
@@ -513,10 +514,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       if (cwd && String(cwd).trim()) {
         cwd = String(cwd).trim().replace(/^~(?=\/|\\|$)/, homedir());
       } else {
-        const now = new Date();
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-        cwd = join(PROJECTS_DIR, ts);
+        cwd = join(PROJECTS_DIR, toPathTimestamp());
       }
       mkdirSync(cwd, { recursive: true });
 
@@ -806,7 +804,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
       data[agentId] = {
         configOptions,
-        updatedAt: new Date().toISOString(),
+        updatedAt: toIsoTimestamp(),
       };
       writeAgentConfigFile(data);
       res.json({ success: true });
@@ -1216,7 +1214,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     any,
     any
   >('/api/projects/add', async (req: Request, res: Response) => {
-    const { name, path: projectPath, type, sessions, id, createdAt } = req.body;
+    const { name, path: projectPath, type, sessions, id } = req.body;
 
     if (type === 'task') {
       if (!id || !name) {
@@ -1232,7 +1230,9 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
           type: 'task',
           sessions: sessions || [],
           id,
-          createdAt: createdAt || new Date().toISOString(),
+          // createdAt 由服务端统一生成，调用方不再传入；
+          // 已存在的任务保留最初的创建时间（重复保存不应改写创建时刻）。
+          createdAt: existing >= 0 ? (tasks[existing].createdAt || toIsoTimestamp()) : toIsoTimestamp(),
         };
         if (existing >= 0) {
           tasks[existing] = { ...tasks[existing], ...task };
@@ -1329,6 +1329,15 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     }
 
     try {
+      // updatedAt 由服务端统一生成：调用方（前端）不再自行取时间，
+      // 避免多端时钟漂移导致同一会话的排序不一致。
+      // 例外：调用方透传 agent 上报的 updatedAt（会话最后活跃时间）时予以保留——
+      // 该值是外部事实，不能被服务端写入时间覆盖。
+      const stamped: ProjectSession = {
+        ...session,
+        updatedAt: session.updatedAt || toIsoTimestamp(),
+      };
+
       const matches = (s: ProjectSession) =>
         s.sessionId === session.sessionId && s.agentId === session.agentId;
 
@@ -1337,9 +1346,9 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const ownerProject = projects.find(p => p.path === projectPath && p.sessions?.some(matches));
       if (ownerProject) {
         const idx = ownerProject.sessions.findIndex(matches);
-        ownerProject.sessions[idx] = { ...ownerProject.sessions[idx], ...session };
+        ownerProject.sessions[idx] = { ...ownerProject.sessions[idx], ...stamped };
         writeProjects(projects);
-        res.json({ success: true, project: ownerProject });
+        res.json({ success: true, project: ownerProject, session: ownerProject.sessions[idx] });
         return;
       }
 
@@ -1348,20 +1357,20 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       const ownerTask = tasks.find(t => t.path === projectPath && t.sessions?.some(matches));
       if (ownerTask) {
         const idx = ownerTask.sessions.findIndex(matches);
-        ownerTask.sessions[idx] = { ...ownerTask.sessions[idx], ...session };
+        ownerTask.sessions[idx] = { ...ownerTask.sessions[idx], ...stamped };
         // 任务标题与会话标题保持一致（task.name 用于会话头部回填）
         if (session.title) ownerTask.name = session.title;
         writeTasks(tasks);
-        res.json({ success: true, task: ownerTask });
+        res.json({ success: true, task: ownerTask, session: ownerTask.sessions[idx] });
         return;
       }
 
       // 3. 兼容原行为：path 命中 project 但会话尚不存在 → 追加
       const project = projects.find(p => p.path === projectPath);
       if (project) {
-        project.sessions.push(session);
+        project.sessions.push(stamped);
         writeProjects(projects);
-        res.json({ success: true, project });
+        res.json({ success: true, project, session: stamped });
         return;
       }
 

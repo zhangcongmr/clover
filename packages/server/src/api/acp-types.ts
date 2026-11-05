@@ -249,7 +249,6 @@ export interface AddProjectRequest {
   type: 'project' | 'task';
   sessions?: ProjectSession[];
   id?: string;
-  createdAt?: string;
 }
 
 /** POST /api/projects/add 响应体 */
@@ -282,6 +281,8 @@ export interface SaveSessionResponse {
   success: true;
   project?: ProjectInfo;
   task?: ProjectInfo;
+  /** 服务端落盘后的会话记录（含服务端生成的 updatedAt）。 */
+  session?: ProjectSession;
 }
 
 /** POST /api/projects/delete-session 请求体 */
