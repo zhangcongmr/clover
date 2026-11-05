@@ -443,18 +443,15 @@ export class AgentComponent {
     this.acpService.saveSelectedSession(null);
   }
 
-  selectProject(name: string): void {
-    const projectInfo = this.acpService.projects().find(p => p.name === name);
+  selectProject(path: string): void {
+    const projectInfo = this.acpService.projects().find(p => p.path === path);
     if (!projectInfo) return;
 
-    // If already selected, toggle collapse instead of re-selecting
-    if (this.selectedProject()?.name === name && this.selectedProject()?.type === 'project') {
-      this.toggleProjectCollapse(name);
-      return;
+    if (this.isProjectCollapsed(projectInfo.path)) {
+      this.expandProject(projectInfo.path);
+    } else {
+      this.toggleProjectCollapse(projectInfo.path);
     }
-
-    // Expand if it was collapsed
-    this.expandProject(name);
 
     this.acpService.saveSelectedProject(projectInfo.path);
     if (!projectInfo.sessions?.length) {
@@ -462,29 +459,29 @@ export class AgentComponent {
     }
   }
 
-  toggleProjectCollapse(name: string): void {
+  toggleProjectCollapse(path: string): void {
     this.collapsedProjects.update(set => {
       const next = new Set(set);
-      if (next.has(name)) {
-        next.delete(name);
+      if (next.has(path)) {
+        next.delete(path);
       } else {
-        next.add(name);
+        next.add(path);
       }
       return next;
     });
   }
 
-  expandProject(name: string): void {
+  expandProject(path: string): void {
     this.collapsedProjects.update(set => {
-      if (!set.has(name)) return set;
+      if (!set.has(path)) return set;
       const next = new Set(set);
-      next.delete(name);
+      next.delete(path);
       return next;
     });
   }
 
-  isProjectCollapsed(name: string): boolean {
-    return this.collapsedProjects().has(name);
+  isProjectCollapsed(path: string): boolean {
+    return this.collapsedProjects().has(path);
   }
 
   private async loadSessionsForProject(cwd: string): Promise<void> {
@@ -648,7 +645,7 @@ export class AgentComponent {
     if (!project) return;
 
     if (action === 'toggle-collapse') {
-      this.toggleProjectCollapse(project.name);
+      this.toggleProjectCollapse(project.path);
     } else if (action === 'collab') {
       void this.openCollab(project);
     } else {

@@ -55,7 +55,7 @@
     <div class="sidebar-content custom-scroll">
       <!-- Tasks Header -->
       <div class="nav-item"
-        (click)="switchToTasksView(); layoutService.toggleTasksSection()">
+        (click)="layoutService.toggleTasksSection()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 11l3 3L22 4" />
           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
@@ -106,10 +106,10 @@
       <!-- Left: Project List -->
       @if (!layoutService.projectsSectionCollapsed()) {
         <div class="project-list custom-scroll">
-        @for (project of projects(); track project.name) {
+        @for (project of projects(); track project.path) {
           <div class="project-item" [class.active]="isProjectActive(project)"
-            (click)="selectProject(project.name)">
-            <svg class="sidebar-chevron" [class.collapsed]="isProjectCollapsed(project.name)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            (click)="selectProject(project.path)">
+            <svg class="sidebar-chevron" [class.collapsed]="isProjectCollapsed(project.path)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
             <span class="project-icon" [style.background]="project.color">{{ getInitial(project.name) }}</span>
@@ -123,7 +123,7 @@
             </button>
           </div>
 
-          @if (!isProjectCollapsed(project.name) && sessionsOf(project).length > 0) {
+          @if (!isProjectCollapsed(project.path) && sessionsOf(project).length > 0) {
           <div class="project-sessions">
             @for (session of sessionsOf(project); track session.sessionId) {
               <div class="session-item" [class.active]="isSessionActive(project, session)"
@@ -191,7 +191,7 @@
     [menuWidth]="300"
     class="more-btn-dropdown-content ast-right-menu project-context-menu">
     <div class="ast-menu-every-item" (click)="onProjectMenuAction('toggle-collapse', $event)">
-      @if (contextProject && isProjectCollapsed(contextProject.name)) {
+      @if (contextProject && isProjectCollapsed(contextProject.path)) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
