@@ -137,11 +137,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected readonly dockItems: DockItem[] = [
     {
       id: 'agent-first', title: 'Agent First, Content Right', activate: () => this.applyDockMode('agent-first'),
-      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: true },
+      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: false },
     },
     {
       id: 'content-first', title: 'Content First, Agent Right', activate: () => this.applyDockMode('content-first'),
-      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: true },
+      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: false },
     },
   ];
   terminalPanelShow = false;

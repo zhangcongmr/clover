@@ -41,6 +41,7 @@ export type { CollabMetadata, RunTaskInput } from './api/a2a-collab/bridge-runne
 
 // Middleware
 export { createCORSMiddleware, createRequireAuth } from './api/middleware.js';
+export type { CORSMiddlewareOptions } from './api/middleware.js';
 
 // Skills
 export { SkillRegistry, isValidSkillName, validateSkillFiles } from './skills/index.js';

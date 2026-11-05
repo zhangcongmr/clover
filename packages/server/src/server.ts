@@ -39,8 +39,19 @@ export interface ServerConfig {
   defaultPort?: number;
   tokenSecret?: string;
   tokenSecretEnvKey?: string;
-  corsPorts: number[];
+  /**
+   * 白名单模式（默认，corsAllowAnyOrigin 为 false）下允许的来源端口，
+   * 与 corsOrigins 组合成 host × port 的来源白名单。两者都省略则不额外
+   * 放行任何来源。
+   */
+  corsPorts?: number[];
+  /** 白名单模式下额外允许的主机名，与 corsPorts 组合成来源白名单。 */
   corsOrigins?: string[];
+  /**
+   * 放行任意来源（跨域读取）。开启后忽略 corsPorts / corsOrigins 白名单，
+   * 直接回显请求的 Origin，见 CORSMiddlewareOptions。
+   */
+  corsAllowAnyOrigin?: boolean;
   rootDir?: string;
   sslDir?: string;
   logPrefix?: string;
@@ -62,8 +73,12 @@ export interface ServerInstance {
 }
 
 export interface ServerMiddlewareOptions {
-  corsPorts: number[];
+  /** 白名单模式下允许的来源端口，见 ServerConfig.corsPorts。 */
+  corsPorts?: number[];
+  /** 白名单模式下额外允许的主机名，见 ServerConfig.corsOrigins。 */
   corsOrigins?: string[];
+  /** 放行任意来源。默认 false，见 ServerConfig.corsAllowAnyOrigin。 */
+  corsAllowAnyOrigin?: boolean;
   tokenSecret?: string;
   tokenSecretEnvKey?: string;
   staticDir?: string;
@@ -75,8 +90,9 @@ export function setupServerMiddleware(
   options: ServerMiddlewareOptions,
 ): { tokenManager: TokenManager; fileService: FileService; ptyManager: PtyManager; mcpRegistry: McpServerRegistry; skillRegistry: SkillRegistry; agentRegistry: AgentRegistry } {
   const {
-    corsPorts,
+    corsPorts = [],
     corsOrigins = [],
+    corsAllowAnyOrigin = false,
     tokenSecret,
     tokenSecretEnvKey = 'CLOVER_TOKEN_SECRET',
     staticDir,
@@ -88,7 +104,7 @@ export function setupServerMiddleware(
   const fileService = new FileService(process.env['CLOVER_READONLY'] === 'true');
   const ptyManager = new PtyManager();
 
-  app.use(createCORSMiddleware(corsPorts, corsOrigins));
+  app.use(createCORSMiddleware(corsPorts, corsOrigins, { allowAnyOrigin: corsAllowAnyOrigin }));
 
   if (staticDir) {
     app.use(express.static(staticDir, staticOptions));
