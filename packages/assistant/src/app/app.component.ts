@@ -123,7 +123,6 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected readonly agentOverlayOverviewOpen = computed(() =>
     this.layoutService.dockMode() === 'content-first' && this.layoutService.overviewOpen());
   dockMode = this.layoutService.dockMode;
-  dockPosition = computed(() => this.layoutService.dockPosition());
   /** Whether the Skills Manager dialog is open. */
   showSkillsManager = signal<boolean>(false);
   /** Whether the MCP Manager dialog is open. */
@@ -1235,7 +1234,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   private getHorizontalPct(evt: MouseEvent): number {
     const baseWidth = this.hostEl.nativeElement.clientWidth;
     const usable = baseWidth - this.leftSideAreaWidth - 15;
-    if (this.dockPosition() === 'left') {
+    if (this.dockMode() === 'agent-first') {
       return 1 - (evt.clientX - this.leftSideAreaWidth) / usable;
     }
     return 1 - (baseWidth - evt.clientX - 4) / usable;

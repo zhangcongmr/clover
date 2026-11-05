@@ -26,7 +26,7 @@ import {
   ],
   templateUrl: './acp-panel.component.html',
   host: {
-    '[class.dock-left]': "layoutService.dockPosition() === 'left'",
+    '[class.dock-left]': "layoutService.dockMode() === 'agent-first'",
     '(wheel)': 'onWheel($event)'
   },
   styleUrls: ['./acp-panel.component.css'],
