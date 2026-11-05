@@ -431,7 +431,7 @@ export class AgentComponent {
   async closeContentFirstSession(): Promise<void> {
     if (this.acpService.isProcessing()) return;
     this.contentFirstOpenSessionId.set(null);
-    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedSessionId(null);
     await this.acpService.disconnect();
     this.acpService.isNewSession.set(true);
     // disconnect() resets sessionState; restore the persisted config selectors.
@@ -440,7 +440,7 @@ export class AgentComponent {
 
   switchToTasksView(): void {
     this.acpService.saveSelectedProject(null);
-    this.acpService.saveSelectedSession(null);
+    this.acpService.saveSelectedSessionId(null);
   }
 
   selectProject(path: string): void {
@@ -509,7 +509,7 @@ export class AgentComponent {
     try {
       await this.acpService.loadSession(sessionId, cwd, agentId);
       this.acpService.selectedProjectPath.set(cwd || null);
-      await this.acpService.saveSelectedSession(sessionId);
+      await this.acpService.saveSelectedSessionId(sessionId);
       recordRecentOpenedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to load session:', error);
@@ -532,7 +532,7 @@ export class AgentComponent {
     try {
       await this.acpService.resumeSession(sessionId, cwd, agentId, undefined);
       this.acpService.selectedProjectPath.set(cwd || null);
-      await this.acpService.saveSelectedSession(sessionId);
+      await this.acpService.saveSelectedSessionId(sessionId);
       recordRecentOpenedSession(sessionId);
     } catch (error: any) {
       console.error('[Agent] Failed to resume session:', error);
@@ -701,7 +701,7 @@ export class AgentComponent {
     this.layoutChanged.emit();
     // 先清空 selectedProject，再设 isNewSession，
     // 防止 effect 在 selectedProject 仍指向 Task 时触发 loadTaskSession
-    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedSessionId(null);
     await this.acpService.saveSelectedProject(null);
     await this.acpService.disconnect();
     this.acpService.isNewSession.set(true);
@@ -753,7 +753,7 @@ export class AgentComponent {
   private async resetToNewTask(): Promise<void> {
     this.leaveCollab();
     this.panelError.set(null);
-    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedSessionId(null);
     await this.acpService.saveSelectedProject(null);
     await this.acpService.disconnect();
     this.acpService.isNewSession.set(true);
@@ -763,7 +763,7 @@ export class AgentComponent {
   /** 清空当前会话并重置右侧面板，但保留指定项目/任务为选中项。 */
   private async resetSessionPanelKeepingSelection(path: string): Promise<void> {
     this.panelError.set(null);
-    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedSessionId(null);
     await this.acpService.disconnect();
     await this.acpService.saveSelectedProject(path);
     this.acpService.isNewSession.set(true);

@@ -1384,7 +1384,7 @@ export class AcpChatInputComponent {
 
   async clearProject(): Promise<void> {
     await this.acpService.saveSelectedProject(null);
-    await this.acpService.saveSelectedSession(null);
+    await this.acpService.saveSelectedSessionId(null);
     this.showProjectDropdown.set(false);
     this.messageInput?.nativeElement?.focus();
   }
