@@ -221,7 +221,6 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  margin: 5px;
 }
 
 /* Content-first 的 Overview 浮窗：脱离面板容器的 flex 约束，agent/content 面板均不受影响 */

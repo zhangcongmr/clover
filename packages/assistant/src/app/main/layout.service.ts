@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 /**
  * Dock 布局模式，只有两种：
@@ -21,13 +21,6 @@ export class LayoutService {
 
   /** Overview 面板是否展开。仅 content-first 模式下可达（入口图标在 Agent 面板右上角） */
   readonly overviewOpen = signal(false);
-
-  /**
-   * 停靠侧，由 dockMode 单向派生。
-   * 模板/CSS/拖拽换算（.dock-left class、ast-content [leftOffset]、getHorizontalPct）继续消费该值。
-   */
-  readonly dockPosition = computed<'left' | 'right'>(() =>
-    this.dockMode() === 'agent-first' ? 'left' : 'right');
 
   toggleAstContentPanel(value?: boolean): void {
     // Toggle the state of the AST content panel. If a value is provided, set it to that value; otherwise, toggle the current state.
