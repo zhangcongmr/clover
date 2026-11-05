@@ -1117,6 +1117,14 @@ export class AcpChatInputComponent {
     effect(() => {
       if (!this.isThemeScenario()) this.showChipsLibrary.set(false);
     });
+    // Switching sessions replaces the transcript under the ↑/↓ history index;
+    // drop the browsing state so it cannot recall a prompt from another chat.
+    effect(() => {
+      const sessionId = this.acpService.sessionState().sessionId;
+      if (sessionId === this.historySessionId) return;
+      this.historySessionId = sessionId;
+      this.resetHistoryNavigation();
+    });
   }
 
   @HostListener('document:click', ['$event'])
@@ -1606,6 +1614,7 @@ export class AcpChatInputComponent {
     this.errorMessage.set(null);
     this.acpService.pendingSlashCommand.set(null);
     this.inputValue.set('');
+    this.resetHistoryNavigation();
 
     const textarea = this.messageInput?.nativeElement;
     if (textarea) {
@@ -1710,18 +1719,129 @@ export class AcpChatInputComponent {
     if (this.acpService.pendingSlashCommand()) {
       this.acpService.pendingSlashCommand.set(null);
     }
+    // Editing a recalled prompt ends history browsing: whatever is in the box
+    // now becomes the draft restored by ↓ past the newest prompt.
+    this.historyIndex = null;
+    this.draftBeforeHistory = '';
     const textarea = this.messageInput?.nativeElement;
     if (textarea) {
       // Only reset selectedIndex when the value actually changed (not on arrow key navigation)
       if (textarea.value !== this.inputValue()) {
         this.selectedIndex.set(0);
       }
-      textarea.style.height = 'auto';
-      const maxHeight = 160;
-      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-      textarea.style.height = newHeight + 'px';
-      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+      this.resizeTextarea(textarea);
     }
+  }
+
+  private resizeTextarea(textarea: HTMLTextAreaElement): void {
+    textarea.style.height = 'auto';
+    const maxHeight = 160;
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = newHeight + 'px';
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+  }
+
+  // ============================================================================
+  // Prompt history (↑ / ↓ recall)
+  // ============================================================================
+
+  /** Index into the prompt history while browsing; `null` means "editing the draft". */
+  private historyIndex: number | null = null;
+  /** Text that was in the textarea when history browsing started. */
+  private draftBeforeHistory = '';
+  /** Session the browsing state belongs to; a switch invalidates the index. */
+  private historySessionId: string | null = null;
+
+  /** User prompts already sent in the current transcript, oldest → newest. */
+  private getPromptHistory(): string[] {
+    return this.acpService.messages()
+      .filter(msg => msg.role === 'user' && !!msg.content && msg.content.trim().length > 0)
+      .map(msg => msg.content);
+  }
+
+  /**
+   * ↑/↓ recall in the composer.
+   *
+   * `↑` fills the last user prompt, each further `↑` walks one prompt further
+   * back (n presses = n-th prompt from the end). `↓` walks forward again and,
+   * past the newest prompt, restores the draft that was in the box before
+   * browsing started.
+   *
+   * Boundaries:
+   * - Oldest prompt reached → no newer recall exists, so the key is not
+   *   consumed and the caret behaves natively (pressing ↑ does not re-paint the
+   *   same prompt).
+   * - Newest prompt reached → the next ↓ leaves history mode and restores the
+   *   draft (which may be empty), i.e. "zero prompts from the end".
+   * - Empty transcript / session switch → history mode is dropped so a stale
+   *   index can never point at a prompt from another session.
+   *
+   * Keys are only consumed when they actually navigate; otherwise the caret
+   * keeps its native behaviour (e.g. moving through a multi-line draft).
+   */
+  private navigateHistory(event: KeyboardEvent): boolean {
+    if (event.isComposing || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return false;
+
+    const textarea = this.messageInput?.nativeElement as HTMLTextAreaElement | undefined;
+    if (!textarea || textarea.disabled) return false;
+
+    const history = this.getPromptHistory();
+    if (history.length === 0) {
+      this.resetHistoryNavigation();
+      return false;
+    }
+    // A session switch can shrink (or replace) the transcript under an active index.
+    if (this.historyIndex !== null && this.historyIndex > history.length - 1) {
+      this.resetHistoryNavigation();
+    }
+
+    const current = this.historyIndex;
+    let nextIndex: number;
+
+    if (event.key === 'ArrowUp') {
+      if (current === null) {
+        // Enter history only from the first line, so ↑ still moves the caret
+        // inside a multi-line draft. A single-line box enters from anywhere.
+        if (textarea.selectionStart !== textarea.selectionEnd) return false;
+        const firstLine = textarea.value.lastIndexOf('\n', textarea.selectionStart - 1) === -1;
+        if (!firstLine) return false;
+        this.draftBeforeHistory = textarea.value;
+        nextIndex = history.length - 1;
+      } else {
+        // Already at the oldest prompt: leave native caret movement alone.
+        if (current <= 0) return false;
+        nextIndex = current - 1;
+      }
+    } else if (event.key === 'ArrowDown' && current !== null) {
+      if (current >= history.length - 1) {
+        // Past the newest prompt → back to the draft the user was typing.
+        const draft = this.draftBeforeHistory;
+        this.resetHistoryNavigation();
+        event.preventDefault();
+        this.applyHistoryValue(draft);
+        return true;
+      }
+      nextIndex = current + 1;
+    } else {
+      return false;
+    }
+
+    this.historyIndex = nextIndex;
+    event.preventDefault();
+    this.applyHistoryValue(history[nextIndex]);
+    return true;
+  }
+
+  /** Paints a recalled prompt into the composer with the caret at the end. */
+  private applyHistoryValue(value: string): void {
+    this.inputValue.set(value);
+    this.selectedIndex.set(0);
+    this.focusInputAtEnd(value);
+  }
+
+  private resetHistoryNavigation(): void {
+    this.historyIndex = null;
+    this.draftBeforeHistory = '';
   }
 
   onKeydown(event: KeyboardEvent): void {
@@ -1896,6 +2016,10 @@ export class AcpChatInputComponent {
       }
     }
 
+    if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && this.navigateHistory(event)) {
+      return;
+    }
+
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendMessage();
@@ -1916,6 +2040,7 @@ export class AcpChatInputComponent {
    */
   prefillPrompt(text: string): void {
     this.acpService.pendingSlashCommand.set(null);
+    this.resetHistoryNavigation();
     this.inputValue.set(text);
     this.selectedIndex.set(0);
     this.focusInputAtEnd(text);
@@ -1925,6 +2050,7 @@ export class AcpChatInputComponent {
   applyThemeSeed(seed: ThemePromptSeed): void {
     const value = `/${THEME_SKILL_NAME} ${buildThemePrompt(seed)}`;
     this.acpService.pendingSlashCommand.set(null);
+    this.resetHistoryNavigation();
     this.inputValue.set(value);
     this.selectedIndex.set(0);
     this.focusInputAtEnd(value);
@@ -1949,6 +2075,7 @@ export class AcpChatInputComponent {
     const categoryLabel = this.chipCategories.find(c => c.id === categoryId)?.label ?? 'Other';
     const value = `/${THEME_SKILL_NAME} ${buildThemePrompt(chip)}\nChip category: ${categoryLabel} (id: ${categoryId})`;
     this.acpService.pendingSlashCommand.set(null);
+    this.resetHistoryNavigation();
     this.inputValue.set(value);
     this.selectedIndex.set(0);
     this.focusInputAtEnd(value);
@@ -1959,6 +2086,7 @@ export class AcpChatInputComponent {
   clearThemeScenario(): void {
     this.acpService.pendingSlashCommand.set(null);
     this.showChipsLibrary.set(false);
+    this.resetHistoryNavigation();
     this.inputValue.set('');
     const el = this.messageInput?.nativeElement as HTMLTextAreaElement | undefined;
     el?.focus();
@@ -1966,6 +2094,7 @@ export class AcpChatInputComponent {
 
   private fillSlashCommand(name: string): void {
     const value = name.startsWith('/') ? `${name} ` : `/${name} `;
+    this.resetHistoryNavigation();
     this.inputValue.set(value);
     this.selectedIndex.set(0);
     this.focusInputAtEnd(value);
@@ -1986,6 +2115,7 @@ export class AcpChatInputComponent {
       el.focus();
       if (document.activeElement === el) {
         el.setSelectionRange(expected.length, expected.length);
+        this.resizeTextarea(el);
         return;
       }
       // focus() was refused (e.g. the subtree is still inert) → keep trying.
