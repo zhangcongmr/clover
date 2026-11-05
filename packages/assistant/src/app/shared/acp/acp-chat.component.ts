@@ -1,5 +1,7 @@
-import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output, WritableSignal, input } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output, WritableSignal, input, HostListener, TemplateRef, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
 import { AcpService, AcpMessage } from './acp.service';
 import { AcpPlanComponent } from './acp-plan.component';
 import { AcpQuestionComponent, QuestionItem } from './acp-question.component';
@@ -27,6 +29,17 @@ export interface MessageGroup {
 })
 export class AcpChatComponent implements OnDestroy {
   @ViewChild('messagesContainer', { read: ElementRef }) private messagesContainer?: ElementRef<HTMLElement>;
+  @ViewChild('imageLightboxOverlay') private imageLightboxOverlay?: TemplateRef<unknown>;
+
+  private readonly overlay = inject(Overlay);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private imageLightboxRef: OverlayRef | null = null;
+
+  /**
+   * Data URL of the content-block image maximised in the lightbox; null when
+   * the lightbox is closed.
+   */
+  readonly zoomedImage = signal<string | null>(null);
 
   /**
    * Read-only rendering (collaboration session detail panel): hides the
@@ -185,12 +198,58 @@ export class AcpChatComponent implements OnDestroy {
         return new Set([...prev, ...missing]);
       });
     });
+
+    // Content-block image lightbox: attach/detach a body-level overlay so the
+    // zoom view escapes the virtual scroll wrapper (which carries an inline
+    // transform and would otherwise become its containing block).
+    effect(() => {
+      if (this.zoomedImage()) {
+        this.openImageLightbox();
+      } else {
+        this.closeImageLightbox();
+      }
+    });
   }
 
   ngOnDestroy(): void {
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
     }
+    this.imageLightboxRef?.dispose();
+    this.imageLightboxRef = null;
+  }
+
+  /** Opens the image lightbox for a content-block image (data URL). */
+  openImagePreview(src: string): void {
+    if (!src) return;
+    this.zoomedImage.set(src);
+  }
+
+  closeImagePreview(): void {
+    this.zoomedImage.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeImagePreview(): void {
+    this.closeImagePreview();
+  }
+
+  private openImageLightbox(): void {
+    if (!this.imageLightboxRef) {
+      this.imageLightboxRef = this.overlay.create({
+        scrollStrategy: this.overlay.scrollStrategies.block(),
+        disposeOnNavigation: true,
+      });
+    }
+    if (!this.imageLightboxRef.hasAttached() && this.imageLightboxOverlay) {
+      this.imageLightboxRef.attach(
+        new TemplatePortal(this.imageLightboxOverlay, this.viewContainerRef),
+      );
+    }
+  }
+
+  private closeImageLightbox(): void {
+    this.imageLightboxRef?.detach();
   }
 
   toggleTodosCollapse(): void {
