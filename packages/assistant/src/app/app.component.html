@@ -238,7 +238,7 @@
     <div class="ast-panel-container" [class.dock-left]="dockMode() === 'agent-first'">
       <!-- 水平拖动条 -->
       @if(astContentPanelOpen() && agentPanelOpen()) {
-        <div style="position: absolute;width: 100%;height: 100%;">
+        <div class="ast-split-overlay">
           <div class="split-line-ew ast-split-handle-ew"
             [style.left]="dockMode() === 'content-first' ? 'calc(100% - ' + agentPanelWidthPx() + 'px - 4px)' : agentPanelWidthPx() + 'px'"
             (mousedown)="dragStart($event, 'ew')"></div>
@@ -251,7 +251,7 @@
       <!-- Middle panel -->
       <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen() ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
           <!-- 垂直拖动条 -->
-          <div style="position: absolute;width: 100%;height: 100%;" [style.display]="terminalPanelShow ? 'block' : 'none'">
+          <div class="ast-split-overlay" [style.display]="terminalPanelShow ? 'block' : 'none'">
             <div class="split-line-ns ast-split-handle-ns"
               [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
           </div>
