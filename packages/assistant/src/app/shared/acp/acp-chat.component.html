@@ -123,7 +123,10 @@
                     @switch (block.type) {
                       @case ('image') {
                         <div class="content-block content-image">
-                          <img [src]="blockDataUrl(block)" alt="Image" />
+                          <button type="button" class="content-image-trigger" title="Click to enlarge" aria-label="Enlarge image"
+                            (click)="openImagePreview(blockDataUrl(block))">
+                            <img [src]="blockDataUrl(block)" alt="Image" />
+                          </button>
                         </div>
                       }
                       @case ('audio') {
@@ -388,6 +391,23 @@
       <div class="message-content">
         <div class="message-text" [innerHTML]="message.content | formatMessage"></div>
       </div>
+    </div>
+  }
+</ng-template>
+
+<!-- Rendered through a CDK Overlay (TemplatePortal) so the lightbox escapes the
+     virtual scroll wrapper, whose inline transform would otherwise become the
+     containing block for this fixed-position view. -->
+<ng-template #imageLightboxOverlay>
+  @if (zoomedImage(); as src) {
+    <div class="image-lightbox-overlay" (click)="closeImagePreview()">
+      <img class="image-lightbox-image" [src]="src" alt="Image preview" (click)="$event.stopPropagation()" />
+      <button type="button" class="image-lightbox-close" title="Close" aria-label="Close image preview" (click)="closeImagePreview()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
     </div>
   }
 </ng-template>
