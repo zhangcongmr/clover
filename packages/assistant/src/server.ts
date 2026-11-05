@@ -13,7 +13,7 @@ const browserDistFolder = join(rootDir, 'browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine({
-  allowedHosts: ['localhost', '192.168.153.129', '127.0.0.1', '192.168.153.1', '192.168.153.146'],
+  allowedHosts: ['localhost', '192.168.153.129', '127.0.0.1', '192.168.163.1', '192.168.153.146'],
 });
 
 // Angular SSR handler — skip API routes so agent routes can handle them
@@ -32,8 +32,10 @@ app.use((req, res, next) => {
 
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   createServer({
-    corsPorts: [4200, 4000],
-    corsOrigins: ['192.168.153.129'],
+    // 放行任意来源的跨域读取：内网多机调试时前端可能来自任意 host/端口。
+    // 注意这同时放开了携带凭证的请求，且 /api/local/auth/token 本身不需要
+    // 鉴权 —— 仅适用于受信任网络，勿将本服务暴露到公网。
+    corsAllowAnyOrigin: true,
     rootDir,
     staticDir: browserDistFolder,
     app,
@@ -62,8 +64,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
   });
 
   services = setupServerMiddleware(app, {
-    corsPorts: [4200, 4000],
-    corsOrigins: ['192.168.153.129'],
+    corsAllowAnyOrigin: true,
     staticDir: browserDistFolder,
   });
   // Note: In dev mode, ACP WebSocket setup requires httpServer access.
