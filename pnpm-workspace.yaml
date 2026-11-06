@@ -26,4 +26,9 @@ allowBuilds:
   lmdb: true
   msgpackr-extract: true
   node-pty: true
-  onnxruntime-node: true
+  # onnxruntime-node's postinstall only downloads optional CUDA/TensorRT
+  # provider libraries on linux/x64. The CPU runtime is bundled with the npm
+  # package and @clover/mcp-rag uses executionProviders: ['cpu'], so skip the
+  # download (it fails on networks where api.nuget.org redirects, e.g. to
+  # nuget.azure.cn, because the installer does not follow HTTP redirects).
+  onnxruntime-node: false
