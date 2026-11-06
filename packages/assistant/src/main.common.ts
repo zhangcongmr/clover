@@ -12,7 +12,9 @@ import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog, provideMarkdown
 import { IMAGE_CONFIG } from '@angular/common';
 import {renderMarkdown} from '@a2ui/markdown-it';
 
-//svg sprite 注入到 DOM
+// SVG sprite 注入到 DOM（浏览器端）。服务端在 main.server.ts 的 app initializer 中
+// 用 DOCUMENT 注入同一份 sprite，这样 SSR/预渲染的首屏 HTML 里就带有 symbol，
+// `<use href="#icon-*">` 不会等到客户端脚本执行完才显示。重复调用会复用已存在的 sprite。
 injectSvgSprite();
 
 loadCommunityWidget().then(() => {
