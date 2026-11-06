@@ -147,7 +147,25 @@ export class AcpService {
   readonly messages = signal<AcpMessage[]>([]);
   readonly plans = signal<Map<string, AcpPlan>>(new Map());
   readonly isProcessing = signal<boolean>(false);
-  readonly isSwitchingSession = signal<boolean>(true);
+
+  /**
+   * ACP session id currently being loaded/resumed. Drives the per-row spinner in
+   * the sidebar and is the single "one load at a time" guard.
+   */
+  readonly loadingSessionId = signal<string | null>(null);
+
+  /**
+   * True until the boot-time selection has been resolved. The read-only viewer
+   * instance never boots a selection, so it starts resolved.
+   */
+  private readonly bootPending = signal<boolean>(!this.readOnly);
+
+  /**
+   * True while the panel has nothing to show yet: still resolving the persisted
+   * selection at startup, or a session load/resume is in flight.
+   */
+  readonly isLoading = computed(() => this.bootPending() || this.loadingSessionId() !== null);
+
   readonly loadingText = signal<string | null>(null);
   readonly processingStartTime = signal<number | null>(null);
 
@@ -1009,6 +1027,24 @@ export class AcpService {
     this.processingStartTime.set(null);
   }
 
+  /**
+   * Marks the persisted selection as unknown again (boot, or after rebinding to
+   * another server). Keeps `isLoading` true until {@link finishBoot} runs, so the
+   * panel shows a loading state instead of a welcome screen that is about to be
+   * replaced by the restored session.
+   */
+  beginBoot(): void {
+    this.bootPending.set(true);
+  }
+
+  /**
+   * Marks the persisted selection as resolved. Idempotent; a session load that is
+   * still in flight keeps `isLoading` true through `loadingSessionId`.
+   */
+  finishBoot(): void {
+    this.bootPending.set(false);
+  }
+
   // ============================================================================
   // Session history
   // ============================================================================
@@ -1239,8 +1275,20 @@ export class AcpService {
   }
 
   async loadSession(sessionId: string, cwd?: string, agentId?: string, mcpServers?: string[]): Promise<void> {
-    this.isSwitchingSession.set(true);
+    // Own the whole load window (agent switch + state reset + history replay) so
+    // the sidebar spinner and the "one load at a time" guard cover all of it,
+    // and a failure in any phase cannot leave the panel spinning forever.
+    this.loadingSessionId.set(sessionId);
+    try {
+      await this.loadSessionInternal(sessionId, cwd, agentId, mcpServers);
+    } finally {
+      this.loadingText.set(null);
+      this.loadingSessionId.set(null);
+    }
+  }
 
+  /** @see loadSession */
+  private async loadSessionInternal(sessionId: string, cwd?: string, agentId?: string, mcpServers?: string[]): Promise<void> {
     // Phase 1: Switch agent if needed
     if (agentId && agentId !== this.selectedAgent()?.id) {
       this.loadingText.set('Switching agent...');
@@ -1321,14 +1369,22 @@ export class AcpService {
       await replayComplete;
     } finally {
       this.finishHistoryReplay();
-      this.isSwitchingSession.set(false);
-      this.loadingText.set(null);
     }
   }
 
   async resumeSession(sessionId: string, cwd?: string, agentId?: string, replayFrom?: { type: string }, mcpServers?: string[]): Promise<void> {
-    this.isSwitchingSession.set(true);
+    // Same ownership rule as loadSession: cover every phase, always clear.
+    this.loadingSessionId.set(sessionId);
+    try {
+      await this.resumeSessionInternal(sessionId, cwd, agentId, mcpServers);
+    } finally {
+      this.loadingText.set(null);
+      this.loadingSessionId.set(null);
+    }
+  }
 
+  /** @see resumeSession */
+  private async resumeSessionInternal(sessionId: string, cwd?: string, agentId?: string, mcpServers?: string[]): Promise<void> {
     // Phase 1: Switch agent if needed
     if (agentId && agentId !== this.selectedAgent()?.id) {
       this.loadingText.set('Switching agent...');
@@ -1396,8 +1452,6 @@ export class AcpService {
       await replayComplete;
     } finally {
       this.finishHistoryReplay();
-      this.isSwitchingSession.set(false);
-      this.loadingText.set(null);
     }
   }
 
@@ -1838,12 +1892,6 @@ export class AcpService {
     window.dispatchEvent(event);
   }
 
-  private maybeClearSwitchingSession(): void {
-    if (this.isSwitchingSession() && !this.isReplayingHistory()) {
-      this.isSwitchingSession.set(false);
-    }
-  }
-
   /** Flush all buffered replay messages into the `messages` signal in one shot. */
   private flushReplayBuffer(): void {
     if (this.replayBuffer.length > 0) {
@@ -1908,7 +1956,7 @@ export class AcpService {
   private handleReplayGap(payload: any): void {
     // A load/resume is already in flight — its history replay covers the gap,
     // and re-entering would fight over `replayBuffer`.
-    if (this.isReplayingHistory() || this.isSwitchingSession()) return;
+    if (this.isReplayingHistory() || this.isLoading()) return;
 
     const sessionId = this.sessionState().sessionId;
     if (!sessionId) return;
@@ -1951,7 +1999,6 @@ export class AcpService {
   }
 
   private appendAssistantChunk(content: ContentBlock): void {
-    this.maybeClearSwitchingSession();
     if (content?.type === 'text') {
       if (content.text) {
         this.appendAssistantMessage(content.text);
@@ -1962,7 +2009,6 @@ export class AcpService {
   }
 
   private appendThoughtChunk(content: ContentBlock): void {
-    this.maybeClearSwitchingSession();
     if (content?.type === 'text') {
       if (content.text) {
         this.appendThoughtMessage(content.text);
@@ -1973,7 +2019,6 @@ export class AcpService {
   }
 
   private appendReplayedUserChunk(content: ContentBlock, messageId?: string): void {
-    this.maybeClearSwitchingSession();
     if (content?.type === 'text') {
       if (content.text) {
         this.appendReplayedUserMessage(content.text, messageId);

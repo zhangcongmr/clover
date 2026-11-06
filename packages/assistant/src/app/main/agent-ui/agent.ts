@@ -84,9 +84,6 @@ export class AgentComponent {
   /** Projects whose session list is collapsed (keyed by project name). */
   collapsedProjects = signal<Set<string>>(readCollapsedProjects());
 
-  /** Session currently being loaded/resumed (spinner on item, guards double-click). */
-  sessionLoadingId = signal<string | null>(null);
-
   // ============================================================================
   // Remote server connector
   // ============================================================================
@@ -128,11 +125,14 @@ export class AgentComponent {
 
     // The selected project/session live on the previous server.
     this.contentFirstOpenSessionId.set(null);
-    this.sessionLoadingId.set(null);
+    // Drop the previous server's in-flight load marker: the new server starts clean.
+    this.acpService.loadingSessionId.set(null);
     this.panelError.set(null);
     this.acpService.selectedProjectPath.set(null);
     this.acpService.isNewSession.set(true);
-    this.acpService.isSwitchingSession.set(false);
+    // The new server's selection is unknown until hydrateSelection() returns.
+    this.acpService.beginBoot();
+    this.selectionPending.set(true);
 
     // Restore whatever the newly connected server had selected.
     await this.hydrateSelection();
@@ -187,8 +187,6 @@ export class AgentComponent {
   projectMenuOpen = false;
   projectMenuInitiator: DOMRect | undefined;
   contextProject: ProjectInfo | null = null;
-  /** Whether the ACP panel is waiting for a session load/resume to complete. */
-  panelLoading = signal<boolean>(false);
   /** Load/resume failure message shown inside the panel. */
   panelError = signal<string | null>(null);
 
@@ -265,6 +263,16 @@ export class AgentComponent {
   protected activeSessionId = computed(() => this.acpService.sessionState().sessionId);
 
   /**
+   * True until the persisted project / session selection has been resolved.
+   *
+   * At boot the selection is unknown (`selectedProjectPath`, `sessionId` and
+   * `projects()` are all empty), so every highlight below would fall through to
+   * `new-task` and then jump to the real item once the query returns. Keeping
+   * the highlight dark while unknown avoids that "wrong → right" transition.
+   */
+  private readonly selectionPending = signal<boolean>(true);
+
+  /**
    * Single source of truth for the sidebar highlight: exactly one of
    * New Task / Task / Project / Session can be active at a time.
    *
@@ -279,8 +287,13 @@ export class AgentComponent {
    * created to prefetch config options, which acp.service records before it
    * knows the session is internal) never wins, so the highlight falls back
    * instead of going dark.
+   *
+   * Returns `null` while the persisted selection is still being restored, so
+   * nothing is highlighted until the real item is known.
    */
-  private readonly activeItemKey = computed(() => {
+  private readonly activeItemKey = computed<string | null>(() => {
+    if (this.selectionPending()) return null;
+
     const selected = this.selectedProject();
     const sessionId = this.activeSessionId();
 
@@ -381,27 +394,37 @@ export class AgentComponent {
    * is now in use rather than carried over.
    */
   private async hydrateSelection(): Promise<void> {
-    const p = await this.acpService.getSelectedProject();
-    if (p.selectedProject) this.acpService.selectedProjectPath.set(p.selectedProject);
+    try {
+      const p = await this.acpService.getSelectedProject();
+      if (p.selectedProject) this.acpService.selectedProjectPath.set(p.selectedProject);
 
-    if (!p.selectedSessionId) {
-      this.acpService.isSwitchingSession.set(false);
-    }
-
-    const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
-    if (!cur) return;
-
-    if (cur.type === 'project') {
-      await this.loadSessionsForProject(cur.path);
-      if (p.selectedSessionId) {
-        await this.loadSession(p.selectedSessionId);
+      if (!p.selectedSessionId) {
+        // Nothing to restore: end the boot loading state right away instead of
+        // waiting for the (still pending) project/task listing.
+        this.acpService.finishBoot();
       }
-    } else if (cur.type === 'task' && cur.sessions?.length > 0) {
-      // task: 页面刷新时加载 session 消息
-      const sessionId = cur.sessions[0]?.sessionId;
-      if (sessionId) {
-        await this.loadTaskSession(cur.id!, sessionId);
+
+      const cur = this.acpService.getSelectedProjectInfo(p.selectedProject);
+      if (!cur) return;
+
+      if (cur.type === 'project') {
+        await this.loadSessionsForProject(cur.path);
+        if (p.selectedSessionId) {
+          await this.loadSession(p.selectedSessionId);
+        }
+      } else if (cur.type === 'task' && cur.sessions?.length > 0) {
+        // task: 页面刷新时加载 session 消息
+        const sessionId = cur.sessions[0]?.sessionId;
+        if (sessionId) {
+          await this.loadTaskSession(cur.id!, sessionId);
+        }
       }
+    } finally {
+      // Whatever happened above, the selection is no longer unknown: let the
+      // sidebar highlight resolve (even if it resolves to New Task). A session
+      // load that is still in flight keeps `isLoading` true on its own.
+      this.selectionPending.set(false);
+      this.acpService.finishBoot();
     }
   }
 
@@ -417,7 +440,7 @@ export class AgentComponent {
 
   /** Content-first: open a session's chat content over the session list. */
   async openContentFirstSession(sessionId: string): Promise<void> {
-    if (this.sessionLoadingId()) return;
+    if (this.acpService.loadingSessionId()) return;
     // Show the overlay immediately; the chat component renders its loading state.
     this.contentFirstOpenSessionId.set(sessionId);
     await this.loadSession(sessionId);
@@ -498,13 +521,11 @@ export class AgentComponent {
   }
 
   async loadSession(sessionId: string): Promise<void> {
-    if (this.sessionLoadingId()) return;
+    if (this.acpService.loadingSessionId()) return;
     this.leaveCollab();
     const { cwd, agentId } = this.acpService.findSessionInfo(sessionId, this.selectedProject());
-    this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.isNewSession.set(false);
-    this.panelLoading.set(true);
 
     try {
       await this.acpService.loadSession(sessionId, cwd, agentId);
@@ -514,20 +535,15 @@ export class AgentComponent {
     } catch (error: any) {
       console.error('[Agent] Failed to load session:', error);
       this.panelError.set(error?.message || 'Failed to load session');
-    } finally {
-      this.panelLoading.set(false);
-      this.sessionLoadingId.set(null);
     }
   }
 
   async resumeSession(sessionId: string): Promise<void> {
-    if (this.sessionLoadingId()) return;
+    if (this.acpService.loadingSessionId()) return;
     this.leaveCollab();
     const { cwd, agentId } = this.acpService.findSessionInfo(sessionId, this.selectedProject());
-    this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.isNewSession.set(false);
-    this.panelLoading.set(true);
 
     try {
       await this.acpService.resumeSession(sessionId, cwd, agentId, undefined);
@@ -537,9 +553,6 @@ export class AgentComponent {
     } catch (error: any) {
       console.error('[Agent] Failed to resume session:', error);
       this.panelError.set(error?.message || 'Failed to resume session');
-    } finally {
-      this.panelLoading.set(false);
-      this.sessionLoadingId.set(null);
     }
   }
 
@@ -599,7 +612,7 @@ export class AgentComponent {
     this.sessionMenuOpen = false;
     const session = this.contextSession;
     this.contextSession = null;
-    if (!session || this.sessionLoadingId()) return;
+    if (!session || this.acpService.loadingSessionId()) return;
 
     if (action === 'load') {
       void this.loadSession(session.sessionId);
@@ -773,20 +786,17 @@ export class AgentComponent {
   async loadTaskSession(taskId: string, sessionId: string): Promise<void> {
     const task = this.acpService.tasks().find(t => t.id === taskId);
     if (!task) return;
-    if (this.sessionLoadingId()) return;
+    if (this.acpService.loadingSessionId()) return;
     this.leaveCollab();
-    this.sessionLoadingId.set(sessionId);
     this.panelError.set(null);
     this.acpService.saveSelectedProject(task.path || null);
 
     // 已在此任务会话上（真实 ACP 会话 id 匹配）且连接中，直接打开面板
     if (this.acpService.sessionState().sessionId === sessionId && this.acpService.sessionState().isConnected) {
-      this.sessionLoadingId.set(null);
       return;
     }
 
     this.acpService.isNewSession.set(false);
-    this.panelLoading.set(true);
     // 用任务记录的标题填充会话标题（任务会话通常不在 sessions 列表，无法回填）
     if (task.name) {
       this.acpService.sessionState.update(s => ({ ...s, title: task.name }));
@@ -799,9 +809,6 @@ export class AgentComponent {
     } catch (error: any) {
       console.error('[Agent] Failed to load task session:', error);
       this.panelError.set(error?.message || 'Failed to load session');
-    } finally {
-      this.panelLoading.set(false);
-      this.sessionLoadingId.set(null);
     }
   }
 
@@ -812,7 +819,7 @@ export class AgentComponent {
    * backfills the session title), project sessions through `loadSession`.
    */
   async openRecentSession(entry: RecentSessionEntry): Promise<void> {
-    if (this.sessionLoadingId()) return;
+    if (this.acpService.loadingSessionId()) return;
     if (entry.kind === 'task' && entry.taskId) {
       await this.loadTaskSession(entry.taskId, entry.sessionId);
     } else {
