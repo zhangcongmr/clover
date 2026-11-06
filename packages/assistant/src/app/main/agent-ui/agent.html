@@ -72,10 +72,10 @@
           @for (task of filteredTasks(); track task.id) {
             <div class="task-item"
               [class.active]="isTaskActive(task)"
-              [class.loading]="sessionLoadingId() === (task.sessions[0]?.sessionId || '')"
+              [class.loading]="acpService.loadingSessionId() === (task.sessions[0]?.sessionId || '')"
               (click)="loadTaskSession(task.id!, task.sessions[0]?.sessionId || '')">
               <span class="task-title">{{ task.sessions[0]?.title || 'Untitled' }}</span>
-              <button class="session-action-btn session-action-btn--delete" [disabled]="sessionLoadingId() !== null" (click)="deleteTask($event, task.id!)" title="Delete Task">
+              <button class="session-action-btn session-action-btn--delete" [disabled]="acpService.loadingSessionId() !== null" (click)="deleteTask($event, task.id!)" title="Delete Task">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -127,8 +127,8 @@
           <div class="project-sessions">
             @for (session of sessionsOf(project); track session.sessionId) {
               <div class="session-item" [class.active]="isSessionActive(project, session)"
-                [class.loading]="sessionLoadingId() === session.sessionId"
-                [class.disabled]="sessionLoadingId() !== null"
+                [class.loading]="acpService.loadingSessionId() === session.sessionId"
+                [class.disabled]="acpService.loadingSessionId() !== null"
                 (click)="loadSession(session.sessionId)"
                 (contextmenu)="showSessionContextMenu($event, session)">
                 <span class="session-title">{{ session.title || 'Untitled Session' }}</span>
@@ -136,20 +136,20 @@
                   <span class="session-agent" [title]="getAgentName(session.agentId)">
                     {{ getAgentIcon(session.agentId) }}
                   </span>
-                  <span class="session-spinner" [class.visible]="sessionLoadingId() === session.sessionId"></span>
+                  <span class="session-spinner" [class.visible]="acpService.loadingSessionId() === session.sessionId"></span>
                   <div class="session-actions">
-                    <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="loadSession(session.sessionId); $event.stopPropagation()" title="Load Session">
+                    <button class="session-action-btn" [disabled]="acpService.loadingSessionId() !== null" (click)="loadSession(session.sessionId); $event.stopPropagation()" title="Load Session">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
                         <polyline points="13 2 13 9 20 9"/>
                       </svg>
                     </button>
-                    <button class="session-action-btn" [disabled]="sessionLoadingId() !== null" (click)="resumeSession(session.sessionId); $event.stopPropagation()" title="Resume Session">
+                    <button class="session-action-btn" [disabled]="acpService.loadingSessionId() !== null" (click)="resumeSession(session.sessionId); $event.stopPropagation()" title="Resume Session">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="5 3 19 12 5 21 5 3"/>
                       </svg>
                     </button>
-                    <button class="session-action-btn session-action-btn--delete" [disabled]="sessionLoadingId() !== null" (click)="deleteSession($event, session.sessionId, session.agentId)" title="Delete Session">
+                    <button class="session-action-btn session-action-btn--delete" [disabled]="acpService.loadingSessionId() !== null" (click)="deleteSession($event, session.sessionId, session.agentId)" title="Delete Session">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -226,7 +226,7 @@
   @if (sessionMenuOpen) {
   <div ast-menu [(isOpen)]="sessionMenuOpen" [menuInitiator]="sessionMenuInitiator"
     class="more-btn-dropdown-content ast-right-menu session-context-menu">
-    <div class="ast-menu-every-item" [class.disabled]="sessionLoadingId() !== null"
+    <div class="ast-menu-every-item" [class.disabled]="acpService.loadingSessionId() !== null"
       (click)="onSessionMenuAction('load', $event)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
@@ -234,14 +234,14 @@
       </svg>
       <span>Load Session</span>
     </div>
-    <div class="ast-menu-every-item" [class.disabled]="sessionLoadingId() !== null"
+    <div class="ast-menu-every-item" [class.disabled]="acpService.loadingSessionId() !== null"
       (click)="onSessionMenuAction('resume', $event)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="5 3 19 12 5 21 5 3"/>
       </svg>
       <span>Resume Session</span>
     </div>
-    <div class="ast-menu-every-item" [class.disabled]="sessionLoadingId() !== null"
+    <div class="ast-menu-every-item" [class.disabled]="acpService.loadingSessionId() !== null"
       (click)="onSessionMenuAction('delete', $event)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="3 6 5 6 21 6"/>
@@ -290,8 +290,8 @@
               @for (session of contentFirstSessions(); track session.sessionId) {
                 <button class="cf-session-item"
                   [class.active]="acpService.sessionState().sessionId === session.sessionId && contentFirstSessionOpen()"
-                  [class.loading]="sessionLoadingId() === session.sessionId"
-                  [disabled]="sessionLoadingId() !== null"
+                  [class.loading]="acpService.loadingSessionId() === session.sessionId"
+                  [disabled]="acpService.loadingSessionId() !== null"
                   (click)="openContentFirstSession(session.sessionId)">
                   <span class="cf-session-icon" [title]="getAgentName(session.agentId)">
                     {{ getAgentIcon(session.agentId) }}

@@ -59,8 +59,8 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   protected hostWidth = signal<number>(0);
   protected isPanelWide = computed(() => this.hostWidth() >= AcpPanelComponent.PANEL_WIDE_THRESHOLD);
   protected hasSession = computed(() => this.acpService.sessionState().sessionId !== null);
-  /** Welcome screen shows only when the session has no messages and is not switching. */
-  protected showWelcomeScreen = computed(() => !this.hasSession() && !this.acpService.isSwitchingSession());
+  /** Welcome screen shows only when the session has no messages and nothing is loading. */
+  protected showWelcomeScreen = computed(() => !this.hasSession() && !this.acpService.isLoading());
 
   /** Session id → last opened timestamp (localStorage mirror, see `recordRecentOpenedSession`). */
   private readonly recentOpenedAt = signal<Record<string, number>>(readRecentOpenedSessions());

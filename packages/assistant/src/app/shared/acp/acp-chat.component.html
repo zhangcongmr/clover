@@ -1,17 +1,12 @@
 <div class="acp-chat-container">
   @if (acpService.messages().length === 0) {
-    @if (acpService.isSwitchingSession()) {
+    @if (acpService.isLoading()) {
       <div class="acp-loading-screen">
         <div class="loading-spinner"></div>
         <p class="loading-text">{{ acpService.loadingText() || 'Loading...' }}</p>
       </div>
     } @else {
-      <div class="acp-chat-empty">
-        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        <p>Start a conversation with the ACP agent</p>
-      </div>
+      <div class="acp-chat-empty"></div>
     }
   } @else {
     <cdk-virtual-scroll-viewport

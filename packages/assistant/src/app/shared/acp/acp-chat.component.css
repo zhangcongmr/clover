@@ -1094,6 +1094,15 @@
   justify-content: center;
   gap: 16px;
   padding: 24px 16px;
+  /* A fast boot (local server) finishes before the delay elapses, so the
+     spinner never paints — no "loading" flash when there is nothing to
+     restore. Genuinely slow loads still fade in normally. */
+  animation: acp-loading-fade-in 120ms ease-out 150ms both;
+}
+
+@keyframes acp-loading-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .loading-spinner {
