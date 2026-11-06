@@ -952,7 +952,7 @@ Always use the welcome_greeting tool.`;
     // Open the FilePickerDialog for folder selection
     const picker = this.filePicker();
     if (picker) {
-      picker.openFolderPicker('/');
+      picker.openFolderPicker();
     }
   }
 
@@ -962,7 +962,7 @@ Always use the welcome_greeting tool.`;
     // Open the FilePickerDialog for file selection
     const picker = this.filePicker();
     if (picker) {
-      picker.openFilePicker('/');
+      picker.openFilePicker();
     }
   }
 
@@ -1008,6 +1008,7 @@ Always use the welcome_greeting tool.`;
         id: this.uuid(),
         label: data.name,
         rootPath: data.absolutePath,
+        separator: data.separator,
         isLocal: true,
         nodeType: 'folder',
         children: (data.children || []).map((e: any) => ({

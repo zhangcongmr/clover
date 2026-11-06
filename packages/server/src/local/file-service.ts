@@ -9,7 +9,7 @@ import {
   rename,
   access
 } from 'node:fs/promises';
-import { join, basename, resolve, dirname } from 'node:path';
+import { join, basename, resolve, dirname, sep } from 'node:path';
 import { statSync, watch, type FSWatcher } from 'node:fs';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -17,11 +17,32 @@ import type { LocalFileRequest, LocalFileResponse } from './protocol.js';
 
 const execAsync = promisify(exec);
 
+/** How long a single drive probe may take before the drive is considered absent. */
+const DRIVE_PROBE_TIMEOUT_MS = 1000;
+
 export interface ScanNode {
   name: string;
   kind: 'directory' | 'file';
   absolutePath: string;
+  /** Platform of the machine running this service, e.g. "win32" or "linux". */
+  platform?: NodeJS.Platform;
+  /** Separator used by `absolutePath` on that platform ("\\" on Windows). */
+  separator?: '\\' | '/';
   children?: ScanNode[];
+}
+
+/** A mountable filesystem root, e.g. "C:\\" on Windows or "/" on POSIX. */
+export interface RootEntry {
+  /** Display label, e.g. "C:" or "/". */
+  name: string;
+  /** Absolute path used to scan the root. */
+  path: string;
+}
+
+export interface RootsResult {
+  platform: NodeJS.Platform;
+  separator: '\\' | '/';
+  roots: RootEntry[];
 }
 
 export class FileService {
@@ -70,6 +91,8 @@ export class FileService {
         return this.exists(filePath);
       case 'scan':
         return this.scan(filePath, (request as any).depth ?? 1, (request as any).ignore ?? []);
+      case 'roots':
+        return this.roots();
       case 'openInFileExplorer':
         return this.openInFileExplorer(filePath);
       default:
@@ -80,7 +103,46 @@ export class FileService {
   async scan(dirPath: string, depth: number = 1, ignore: string[] = []): Promise<ScanNode> {
     const resolved = resolve(dirPath);
     const ignoreSet = new Set(ignore);
-    return this.scanRecursive(resolved, depth, 0, ignoreSet);
+    const root = await this.scanRecursive(resolved, depth, 0, ignoreSet);
+    // Report the server's own platform so clients never have to guess whether
+    // paths use "\" or "/" (the browser may run on a different OS).
+    root.platform = process.platform;
+    root.separator = sep === '\\' ? '\\' : '/';
+    // A filesystem root has no basename, so label it with the drive ("C:") on
+    // Windows and "/" elsewhere, letting the tree show an identifiable root.
+    if (!root.name) {
+      const drive = /^[A-Za-z]:/.exec(resolved);
+      root.name = drive ? drive[0] : (process.platform === 'win32' ? resolved : '/');
+    }
+    return root;
+  }
+
+  /**
+   * List the filesystem roots this machine can browse. Windows may expose
+   * several partitions, so the picker needs all of them instead of assuming a
+   * single root.
+   */
+  async roots(): Promise<RootsResult> {
+    const roots: RootEntry[] = [];
+    if (process.platform === 'win32') {
+      // Probe every letter concurrently, and bound each probe: a mapped network
+      // drive that is offline can block for seconds and must not delay the list.
+      const letters = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+      const probes = await Promise.all(
+        letters.map(async (letter): Promise<RootEntry | null> => {
+          const drive = `${letter}:\\`;
+          const available = await Promise.race([
+            access(drive).then(() => true).catch(() => false),
+            new Promise<boolean>(resolve => setTimeout(() => resolve(false), DRIVE_PROBE_TIMEOUT_MS)),
+          ]);
+          return available ? { name: `${letter}:`, path: drive } : null;
+        }),
+      );
+      roots.push(...probes.filter((root): root is RootEntry => root !== null));
+    } else {
+      roots.push({ name: '/', path: '/' });
+    }
+    return { platform: process.platform, separator: sep === '\\' ? '\\' : '/', roots };
   }
 
   private async scanRecursive(dirPath: string, maxDepth: number, currentDepth: number, ignoreSet: Set<string>): Promise<ScanNode> {

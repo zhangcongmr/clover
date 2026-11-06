@@ -9,6 +9,7 @@ export type FileAction =
   | 'stat'
   | 'exists'
   | 'scan'
+  | 'roots'
   | 'openInFileExplorer';
 
 export interface LocalFileRequest {

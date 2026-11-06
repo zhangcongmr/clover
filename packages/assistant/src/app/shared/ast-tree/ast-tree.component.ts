@@ -632,13 +632,29 @@ export function getNodeAbsolutePath(nodes: AstTreeNode[], node: AstTreeNode, wit
     pathSegments.pop();
   }
 
-  const root = nodes[0];
+  const root = findContainingRoot(nodes, node.id) || nodes[0];
   const rootPath = (root?.rootPath || '');
   const fullPath = pathSegments.join('/');
   if (!rootPath) return fullPath;
-  const sep = rootPath.includes('\\') ? '\\' : '/';
+  const sep = root?.separator || (rootPath.includes('\\') ? '\\' : '/');
   const norm = rootPath.endsWith('/') || rootPath.endsWith('\\') ? '' : sep;
   return rootPath + norm + fullPath.replace(/\//g, sep);
+}
+
+/**
+ * 找到目标节点所属的顶层根节点。
+ * 树可能有多棵并列的根（例如 Windows 的多个磁盘分区），
+ * 必须用目标节点自己的根来决定基准路径和分隔符。
+ */
+export function findContainingRoot(nodes: AstTreeNode[], targetId: string): AstTreeNode | undefined {
+  for (const node of nodes) {
+    if (node.id === targetId) return node;
+    if (node.children && node.children.length > 0) {
+      const segments: string[] = [];
+      if (findNodePath(node.children, targetId, segments)) return node;
+    }
+  }
+  return undefined;
 }
 
 /**

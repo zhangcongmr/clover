@@ -211,6 +211,23 @@ export class LocalServerService {
     return data.data;
   }
 
+  /**
+   * List the filesystem roots the server can browse. Windows may expose several
+   * drives, so the picker renders all of them as parallel roots.
+   */
+  async listRoots(): Promise<{ platform: string; separator: string; roots: Array<{ name: string; path: string }> }> {
+    const token = await this.getToken();
+    const base = this.getBaseUrl();
+    const res = await fetch(`${base}/api/local/roots`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  }
+
   async listDir(path: string): Promise<any[]> {
     const token = await this.getToken();
     const base = this.getBaseUrl();
