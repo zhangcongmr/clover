@@ -221,7 +221,10 @@ export class DynamicVirtualScrollStrategy {
         viewport.scrollToOffset(clamped);
       }
     }
-    this.applyContentOffset(this.offsets[this.range().start] ?? 0);
+    // The rendered range may point past the end right after a shrink; fall back
+    // to the last item instead of translating the block to offset 0.
+    const rangeStart = Math.min(this.range().start, Math.max(0, lengths - 1));
+    this.applyContentOffset(this.offsets[rangeStart] ?? 0);
   }
 
   private contentSize(): number {
@@ -285,9 +288,9 @@ export class DynamicVirtualScrollStrategy {
     const viewport = this.viewport;
     if (!viewport) return;
     const dataLength = viewport.getDataLength();
-    const current = viewport.getRenderedRange();
+    const previous = viewport.getRenderedRange();
     if (dataLength === 0) {
-      if (current.start !== 0 || current.end !== 0) {
+      if (previous.start !== 0 || previous.end !== 0) {
         viewport.setRenderedRange({ start: 0, end: 0 });
       }
       return;
@@ -295,6 +298,24 @@ export class DynamicVirtualScrollStrategy {
 
     const viewportSize = viewport.getViewportSize();
     const scrollOffset = viewport.measureScrollOffset();
+
+    // The rendered range goes stale when the data length shrinks — a finished
+    // turn merges its per-message groups into per-round groups (e.g. 204 groups
+    // -> 48 groups). `CdkVirtualForOf` slices the data with this window, so an
+    // out-of-range window yields an empty slice and every rendered view is
+    // removed, blanking the list. Rebuild the window from the scroll offset
+    // whenever the previous one no longer fits.
+    const stale =
+      previous.start >= dataLength ||
+      previous.end > dataLength ||
+      previous.end <= previous.start;
+    const current: Range = stale
+      ? {
+          start: this.firstIndexAt(Math.max(0, scrollOffset - MIN_BUFFER_PX)),
+          end: Math.min(dataLength, this.indexAt(scrollOffset + viewportSize + MAX_BUFFER_PX) + 1),
+        }
+      : previous;
+
     const range: Range = { start: current.start, end: current.end };
 
     const startBuffer = scrollOffset - (this.offsets[current.start] ?? 0);
@@ -311,7 +332,13 @@ export class DynamicVirtualScrollStrategy {
       }
     }
 
-    if (range.start !== current.start || range.end !== current.end) {
+    // Never publish an empty window: the viewport would drop every view.
+    if (range.end <= range.start) {
+      range.start = Math.min(current.start, dataLength - 1);
+      range.end = Math.min(dataLength, range.start + 1);
+    }
+
+    if (range.start !== previous.start || range.end !== previous.end) {
       viewport.setRenderedRange(range);
     }
     this.applyContentOffset(this.offsets[range.start] ?? 0);
