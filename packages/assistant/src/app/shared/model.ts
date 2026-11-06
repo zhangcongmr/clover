@@ -55,6 +55,11 @@ export interface AstTreeNode {
     isLocal?: boolean;
     rootPath?: string;  // Absolute path root for local projects
     /**
+     * Separator used by `rootPath`, reported by the file server ("\\" on Windows).
+     * When absent, callers fall back to inferring it from the path shape.
+     */
+    separator?: '\\' | '/';
+    /**
      * locked node cannot be edited or deleted, but can be viewed and copied
      */
     isLocked?: boolean;

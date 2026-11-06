@@ -1400,7 +1400,7 @@ export class AcpChatInputComponent {
   openFolderPicker(): void {
     const picker = this.filePicker();
     if (picker) {
-      picker.openFolderPicker('/');
+      picker.openFolderPicker();
     }
   }
 

@@ -10,7 +10,7 @@
             </svg>
           </button>
           <input [value]="currentPath()" (keyup.enter)="loadDirectory($any($event.target).value)" class="path-input"
-            placeholder="Enter path...">
+            [placeholder]="isRootsView() ? 'This PC' : 'Enter path...'">
           <button (click)="refresh()" class="nav-btn" title="Refresh">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"/>

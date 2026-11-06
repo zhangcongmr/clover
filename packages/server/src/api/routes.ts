@@ -5,6 +5,7 @@ import { createRequireAuth } from './middleware.js';
 import type {
   ScanRequest,
   ScanResponse,
+  RootsResponse,
   ListDirRequest,
   ListDirResponse,
   ReadFileRequest,
@@ -75,6 +76,16 @@ export function setupLocalRoutes(app: express.Application, services: LocalServic
     const result = await fileService.handle({ type: 'file-request', action: 'scan', path: dirPath, depth, ignore } as any);
     res.json(result as ScanResponse);
   });
+
+  // Filesystem roots (Windows drives / POSIX "/")
+  app.post<Record<string, string>, RootsResponse | LocalFileErrorResponse, any, any, any>(
+    '/api/local/roots',
+    requireAuth,
+    async (_req, res) => {
+      const result = await fileService.handle({ type: 'file-request', action: 'roots', path: '' } as any);
+      res.json(result as RootsResponse);
+    },
+  );
 
   app.post<
     Record<string, string>,

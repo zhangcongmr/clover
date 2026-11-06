@@ -123,7 +123,7 @@ export class AddAgentFromDiskDialogComponent {
   }
 
   openBrowse(): void {
-    this.filePicker()?.openFilePicker('/');
+    this.filePicker()?.openFilePicker();
   }
 
   onFileSelected(result: { path: string; kind: 'folder' | 'file' }): void {

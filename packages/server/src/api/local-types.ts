@@ -24,6 +24,15 @@ export interface ScanResponse extends LocalFileSuccessResponse {
   data: any; // ScanNode 树
 }
 
+/** POST /api/local/roots 响应体 */
+export interface RootsResponse extends LocalFileSuccessResponse {
+  data: {
+    platform: string;
+    separator: string;
+    roots: Array<{ name: string; path: string }>;
+  };
+}
+
 /** POST /api/local/listDir 请求体 */
 export interface ListDirRequest {
   path: string;
@@ -141,6 +150,7 @@ export interface HealthResponse {
 /** 联合类型：任意本地文件端点的成功响应 */
 export type LocalFileAnySuccessResponse =
   | ScanResponse
+  | RootsResponse
   | ListDirResponse
   | ReadFileResponse
   | WriteFileResponse

@@ -860,7 +860,7 @@ export class AgentComponent {
   openFolderPicker(): void {
     const picker = this.filePicker();
     if (picker) {
-      picker.openFolderPicker('/');
+      picker.openFolderPicker();
     }
   }
 
