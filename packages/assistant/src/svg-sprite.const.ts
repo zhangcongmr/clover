@@ -1,8 +1,12 @@
 /**
  * SVG Sprite 统一在ts文件中定义，方便读取
  */
+
+/** 全局 sprite 根节点的 id，用于 SSR 复用与动态 symbol 注入时定位 */
+export const SVG_SPRITE_ID = 'ast-svg-sprite';
+
 export const SVG_SPRITE_CONTENT = `
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: none;">
+<svg id="${SVG_SPRITE_ID}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: none;">
 <defs>
 
         <clipPath id="icon-community-manage-btn-clip0_464_566">
@@ -380,30 +384,62 @@ export const SVG_SPRITE_CONTENT = `
 
 
 // svg-injector.ts
-let hasInjected = false;
 let dynamicSvgContainer: SVGElement | null = null;
 
-export function injectSvgSprite() {
-  if (hasInjected || typeof document === 'undefined') return;
+/**
+ * 把全局 sprite 注入到文档中。
+ *
+ * 需要在渲染发生之前调用：
+ * - 浏览器端：bootstrap 之前（main.common.ts 模块加载时）
+ * - 服务端：SSR / 预渲染时传入 Angular 的 DOCUMENT（见 main.server.ts）
+ *
+ * 服务端也注入的原因：sprite 只靠客户端脚本注入的话，SSR/预渲染输出的 HTML 里
+ * `<use href="#icon-*">` 引用不到 symbol，图标会一直空白，直到 JS 包下载并执行完才出现。
+ * 把 sprite 写进首屏 HTML 后，图标在首帧就能显示。
+ */
+export function injectSvgSprite(doc?: Document): SVGElement | null {
+  const targetDoc = doc ?? (typeof document !== 'undefined' ? document : null);
+  if (!targetDoc) return dynamicSvgContainer;
 
-  const container = document.createElement('div');
-  container.innerHTML = SVG_SPRITE_CONTENT;
-  container.style.display = 'none';
-  document.body.appendChild(container);
-
-  const svg = container.querySelector('svg');
-  if (svg) {
-    dynamicSvgContainer = svg;
+  // 宿主页面可能在 <body> 解析完成前就调用了 Clover()，此时等 DOM 就绪再注入
+  if (!targetDoc.body) {
+    if (targetDoc.readyState === 'loading') {
+      targetDoc.addEventListener('DOMContentLoaded', () => injectSvgSprite(targetDoc), { once: true });
+    }
+    return dynamicSvgContainer;
   }
 
-  hasInjected = true;
+  // 已经存在（SSR 输出的 HTML、或重复调用）时直接复用，避免出现两份 sprite
+  const existing = targetDoc.getElementById(SVG_SPRITE_ID) as SVGElement | null;
+  if (existing) {
+    dynamicSvgContainer = existing;
+    return existing;
+  }
+
+  const container = targetDoc.createElement('div');
+  container.style.display = 'none';
+  container.innerHTML = SVG_SPRITE_CONTENT;
+
+  const body = targetDoc.body;
+  const appRoot = targetDoc.querySelector('app-root');
+  if (appRoot && appRoot.parentElement === body) {
+    // 应用自身的页面：sprite 放在 app-root 之前，保证首屏解析到图标时 symbol 已就绪
+    body.insertBefore(container, appRoot);
+  } else {
+    // 作为库嵌入宿主页面时 app-root 在宿主容器里，追加到 body 末尾即可，
+    // 不去改动宿主页面 body 的第一个子节点。
+    body.appendChild(container);
+  }
+
+  dynamicSvgContainer = container.querySelector('svg');
+  return dynamicSvgContainer;
 }
 
 export function addDynamicFileIconSymbol(extension: string, svgPath: string): string {
   const symbolId = `icon-file-theme-${extension}`;
   if (typeof document === 'undefined') return symbolId;
   if (!dynamicSvgContainer) {
-    dynamicSvgContainer = document.querySelector('svg[style*="display: none"]') as SVGElement;
+    dynamicSvgContainer = document.getElementById(SVG_SPRITE_ID) as SVGElement | null;
   }
   if (!dynamicSvgContainer) return symbolId;
   const existing = dynamicSvgContainer.querySelector(`#${CSS.escape(symbolId)}`);
