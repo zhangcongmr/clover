@@ -243,6 +243,11 @@ ast-modal .ast-modal-body.acp-registry-dialog {
   height: 100%;
   object-fit: cover;
   display: block;
+  /* All 45 registry icons are monochrome glyphs authored with currentColor.
+     An <img> renders the SVG as a standalone document, so `color` cannot be
+     inherited and the glyph always paints black; the declaration is kept so
+     the icon picks it up if it is ever inlined as <svg>. */
+  background: var(--vscode-surface-background);
 }
 
 .registry-agent-avatar-fallback {
