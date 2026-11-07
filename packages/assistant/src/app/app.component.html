@@ -101,7 +101,7 @@
         <div ast-menu [(isOpen)]="isMenuOpen" [menuInitiator]="menuAnchor" [verticalOffset]="menuBtn.offsetHeight - 10"
           (mouseentermenu)="onMenuMouseEnter()" (mouseleavemenu)="onMenuMouseLeave()"
           class="app-menu-dropdown ast-right-menu">
-          @if(!agentPanelOpen()) {
+          @if(dockMode() === 'content-first') {
             <!-- File Group -->
             <div #fileMenuItem class="app-menu-item has-submenu"
             (mouseenter)="fileSubmenu.onParentHover()"
