@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild, computed } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Injector, OnDestroy, OnInit, WritableSignal, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild, computed } from '@angular/core';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -48,6 +48,16 @@ interface DockLayoutParams {
   left: number;
   previousLeftPct: number;
   expanded: boolean;
+  /**
+   * 该布局下 div[ast-agent] 的宽度(px)，每个布局各持一份、互不覆盖。
+   * 两种布局的分栏语义相反，宽度算法也不同（见 refreshAgentPanelWidth）：
+   * - agent-first：Agent 面板在左，占 leftPct 比例；
+   * - content-first：Agent 面板在右，占 1 - leftPct 比例。
+   * 这是运行时派生状态（窗口尺寸 × leftPct × 布局），不写入快照，每次都会重算。
+   * 
+   * 不参与JSON序列化和反序列化
+   */
+  agentPanelWidthPx: WritableSignal<number>; 
 }
 
 interface DockItem {
@@ -91,18 +101,39 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
 
   private hostEl = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
-  protected agentPanelWidthPx = signal(0);
 
+  /** 当前 dock 布局的参数集（dockItems 是静态表，这里只随 dockMode 变化） */
+  private readonly activeDockItem = computed(
+    () => this.dockItems.find(i => i.id === this.layoutService.dockMode()));
+
+  /** 当前布局下 div[ast-agent] 的宽度(px)：从该布局自己的参数集投影出来，不另存状态 */
+  protected readonly agentPanelWidthPx = computed(
+    () => this.activeDockItem()?.params.agentPanelWidthPx() ?? 0);
+
+  /** 按当前 dock 布局重算 Agent 面板宽度，并写回该布局自己的参数集 */
   private refreshAgentPanelWidth(): void {
     const baseWidth = this.hostEl.nativeElement.clientWidth;
     const raw = getComputedStyle(this.hostEl.nativeElement)
       .getPropertyValue('--left-side-area-width').trim();
     const leftArea = parseFloat(raw) || this.leftSideAreaWidth;
+
+    let width: number;
     if (!this.astContentPanelOpen()) {
-      this.agentPanelWidthPx.set(baseWidth - leftArea);
-      return;
+      // 内容面板收起时 Agent 面板占满整宽，与 dock 布局无关
+      width = baseWidth - leftArea;
+    } else {
+      // 15 = 分隔条与边框的预留，与模板中 middle panel 的 100% - 15px 同源
+      const usable = baseWidth - leftArea - 15;
+      // 两种布局下面板的左右顺序相反，leftPct 的语义也随之相反：
+      // agent-first 下 Agent 在左，宽度就是 leftPct 那份；
+      // content-first 下 Agent 在右，占的是内容区剩下的 1 - leftPct
+      width = this.layoutService.dockMode() === 'agent-first'
+        ? this.leftPct * usable
+        : (1 - this.leftPct) * usable;
     }
-    this.agentPanelWidthPx.set((1 - this.leftPct) * (baseWidth - leftArea - 15));
+
+    // 各布局独立记账：切换布局时不会用另一种布局算出的宽度覆盖掉这一份
+    this.activeDockItem()?.params.agentPanelWidthPx.set(width);
   }
   
   title = 'clover';
@@ -137,11 +168,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   protected readonly dockItems: DockItem[] = [
     {
       id: 'agent-first', title: 'Agent First, Content Right', activate: () => this.applyDockMode('agent-first'),
-      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: false },
+      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: false, agentPanelWidthPx: signal(0) },
     },
     {
       id: 'content-first', title: 'Content First, Agent Right', activate: () => this.applyDockMode('content-first'),
-      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: false },
+      params: { left: this.getDefaultLeftPct(), previousLeftPct: this.getDefaultLeftPct(), expanded: false, agentPanelWidthPx: signal(0) },
     },
   ];
   terminalPanelShow = false;
@@ -1155,7 +1186,11 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(this.ACP_DOCK_LAYOUTS_KEY, JSON.stringify({
       activeMode: this.layoutService.dockMode(),
-      modes: this.dockItems.map(({ id, params }) => ({ id, params })),
+      // 只存纯数据：agentPanelWidthPx 是派生值（signal），换窗口尺寸必定重算，不入快照
+      modes: this.dockItems.map(({ id, params }) => ({
+        id,
+        params: { left: params.left, previousLeftPct: params.previousLeftPct, expanded: params.expanded },
+      })),
     }));
   }
 
@@ -1235,7 +1270,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     const baseWidth = this.hostEl.nativeElement.clientWidth;
     const usable = baseWidth - this.leftSideAreaWidth - 15;
     if (this.dockMode() === 'agent-first') {
-      return 1 - (evt.clientX - this.leftSideAreaWidth) / usable;
+      // Agent 在左，分隔条就压在 Agent 面板右边缘，leftPct 直接是它的占比（与 refreshAgentPanelWidth 同向）
+      return (evt.clientX - this.leftSideAreaWidth) / usable;
     }
     return 1 - (baseWidth - evt.clientX - 4) / usable;
   }
