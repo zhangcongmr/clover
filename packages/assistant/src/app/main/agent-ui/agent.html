@@ -276,12 +276,6 @@
                 <span class="cf-header-name">Sessions</span>
               }
             </div>
-            <button class="cf-icon-btn" [class.active]="layoutService.overviewOpen()"
-              (click)="overviewToggle.emit()" title="Overview">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-overview"></use>
-              </svg>
-            </button>
           </div>
 
           <div class="cf-body">
@@ -326,6 +320,12 @@
                   <span class="cf-session-overlay-title">
                     {{ contentFirstActiveSession()?.title || acpService.sessionState().title || 'Session' }}
                   </span>
+                  <button class="cf-icon-btn" [class.active]="layoutService.overviewOpen()"
+                    (click)="overviewToggle.emit()" title="Overview" style="margin-left: auto;">
+                    <svg class="icon" width="20" height="20">
+                      <use href="#icon-overview"></use>
+                    </svg>
+                  </button>
                 </div>
                 @if (panelError(); as error) {
                   <div class="cf-session-error">{{ error }}</div>
