@@ -139,6 +139,23 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   }
 
   /**
+   * OPFS 恢复是否仍在进行中。
+   *
+   * ngOnInit 里从 OPFS 恢复目录树是异步的（await restoreHandles）。若在恢复完成前
+   * 清空内容区，恢复随后会把旧树写回 dataList，表现为「清空后项目又回来了」。
+   */
+  private restoringFromOpfs = false;
+
+  /**
+   * 恢复期间收到的清理请求：恢复结束后需要重放一次。
+   *
+   * 场景：内容面板被 *appKeepAlive 懒创建，用户在组件刚创建的瞬间切换 dock 模式，
+   * 此时 afterNextRender 触发的清理会早于 OPFS 恢复完成 —— 必须把清理挂起，
+   * 等恢复结束后再执行一次，否则已删除项目的目录树会被恢复回来。
+   */
+  private pendingClearAfterRestore = false;
+
+  /**
    * Re-open the file watches when the app is pointed at another server.
    *
    * The file-watch socket belongs to one server; after a switch it is closed
@@ -261,6 +278,21 @@ showButtonPlaceholder = computed(() => {
 
 
   async ngOnInit() {
+    // 恢复期间收到的清理请求要挂起到恢复结束后重放，否则恢复会把旧树写回来
+    this.restoringFromOpfs = true;
+    try {
+      await this.restoreContentFromDoc();
+    } finally {
+      this.restoringFromOpfs = false;
+      if (this.pendingClearAfterRestore) {
+        this.pendingClearAfterRestore = false;
+        this.clearContentForDeletedProject();
+      }
+    }
+  }
+
+  /** 从 OPFS 恢复文档内容（目录树 / 已打开文件 / doc 定义）。 */
+  private async restoreContentFromDoc(): Promise<void> {
     const doc = this.myConfigService.getDoc();
     if (doc == null || doc === undefined) {
       setTimeout(() => {
@@ -1100,6 +1132,29 @@ Always use the welcome_greeting tool.`;
     this.openedList.set([]);
     this.dataList.set([]);
     // 同步清除 OPFS 中残留的 dataList / openedList，避免下次启动恢复出已删除项目的数据
+    void this.clearOpfsEditorData();
+  }
+
+  /**
+   * 显式清空内容区（供外部在确定时机调用）。
+   *
+   * 与内部 effect 的区别：effect 依赖视图参与变更检测，内容面板被 `*appKeepAlive`
+   * detach 后不会执行；这里由 AppComponent 在 dock 模式切换后直接调用，与视图是否
+   * attach 无关。
+   *
+   * 同时清除 OPFS 里的持久化残留 —— 否则下次启动会从 /dir/file.txt 恢复出已删除
+   * 项目的目录树，表现为「删了又活过来」。
+   */
+  clearContentForDeletedProject(): void {
+    // 恢复尚未完成时不能直接清：恢复会把旧树写回 dataList。
+    // 挂起这次清理，等恢复结束后重放。
+    if (this.restoringFromOpfs) {
+      this.pendingClearAfterRestore = true;
+      return;
+    }
+    this.currentProjectPath = null;
+    this.openedList.set([]);
+    this.dataList.set([]);
     void this.clearOpfsEditorData();
   }
 
