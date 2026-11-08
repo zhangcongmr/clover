@@ -268,7 +268,7 @@
           <div class="cf-header">
             <div class="cf-header-title">
               @if (selectedProject(); as project) {
-                <span class="cf-project-icon" [style.background]="project.type === 'project' ? getProjectColor(project.name) : null">
+                <span class="cf-project-icon" [style.background]="project.type === 'project' ? getProjectColor(project) : null">
                   {{ getInitial(project.name) }}
                 </span>
                 <span class="cf-header-name">{{ project.name }}</span>
