@@ -260,7 +260,7 @@ export interface AddProjectResponse {
 
 /** POST /api/projects/delete 请求体 */
 export interface DeleteProjectRequest {
-  name?: string;
+  path?: string;
   type?: 'project' | 'task';
   id?: string;
 }

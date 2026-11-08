@@ -662,7 +662,7 @@ export class AgentComponent {
     } else if (action === 'collab') {
       void this.openCollab(project);
     } else {
-      void this.deleteProject(evt, project.name);
+      void this.deleteProject(evt, project);
     }
   }
 
@@ -881,25 +881,31 @@ export class AgentComponent {
     }
   }
 
-  async deleteProject(event: MouseEvent, name: string): Promise<void> {
+  async deleteProject(event: MouseEvent, project: ProjectInfo): Promise<void> {
     event.stopPropagation();
-    if (!confirm(`Delete project "${name}"?`)) return;
+    if (!confirm(`Delete project "${project.name}"?`)) return;
 
     const selected = this.selectedProject();
-    const wasActive = selected?.type === 'project' && selected.name === name;
-    const index = this.projects().findIndex(p => p.name === name);
+    const wasActive = selected?.type === 'project' && selected.path === project.path;
+    const index = this.projects().findIndex(p => p.path === project.path);
 
     // deleteProject 内部会刷新 projects 列表
-    await this.acpService.deleteProject(name);
+    await this.acpService.deleteProject(project.path);
 
     // 只有删除的是当前选中项目时才自动跳转
-    if (!wasActive) return;
+    if (!wasActive) {
+      if(this.projects().length == 0) {
+        await this.acpService.saveSelectedSessionId(null);
+        await this.acpService.saveSelectedProject(null);
+      }
+      return
+    }
 
     const next = this.pickNeighbor(this.projects(), index);
     // 先回到 New Task 清空旧项目残留，再选中下一个项目
     await this.resetToNewTask();
     if (next) {
-      this.selectProject(next.name);
+      this.selectProject(next.path);
     }
   }
 }

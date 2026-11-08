@@ -1153,10 +1153,10 @@ export class AcpService {
     await this.listProjects();
   }
 
-  async deleteProject(name: string): Promise<void> {
-    const project = this.projects().find(p => p.name === name);
+  async deleteProject(path: string): Promise<void> {
+    const project = this.projects().find(p => p.path === path);
     try {
-      await this.sseService.deleteProject(name, project?.type || 'project');
+      await this.sseService.deleteProject(path, project?.type || 'project');
     } catch (error) {
       console.error('[ACP] Failed to delete project:', error);
       throw error;
@@ -1221,7 +1221,7 @@ export class AcpService {
           console.error('[ACP] Failed to delete task session:', session.sessionId, error);
         }
       }
-      await this.sseService.deleteProject(task.name, 'task', id);
+      await this.sseService.deleteProject(task.path, 'task', id);
       await this.listTasks();
       // 任务记录删除后，连同其工作目录文件夹一并删除（默认工作目录位于 ~/.clover/<时间戳>）
       await this.deleteTaskWorkspace(task.path);

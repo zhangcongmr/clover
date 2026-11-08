@@ -1281,31 +1281,31 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
     any,
     any
   >('/api/projects/delete', async (req: Request, res: Response) => {
-    const { name, type, id } = req.body;
+    const { path, type, id } = req.body;
 
     if (type === 'task') {
-      if (!id && !name) {
-        res.status(400).json({ error: 'id or name is required for tasks' });
+      if (!id && !path) {
+        res.status(400).json({ error: 'id or path is required for tasks' });
         return;
       }
-    } else if (!name) {
-      res.status(400).json({ error: 'name is required' });
+    } else if (!path) {
+      res.status(400).json({ error: 'path is required' });
       return;
     }
 
     try {
       if (type === 'task') {
-        // 优先按 id 精确匹配，避免同名任务被误删；无 id 时回退按 name
-        const tasks = readTasks().filter(t => (id ? t.id !== id : t.name !== name));
+        // 优先按 id 精确匹配，避免同名任务被误删；无 id 时回退按 path
+        const tasks = readTasks().filter(t => (id ? t.id !== id : t.path !== path));
         writeTasks(tasks);
       } else {
         let projects = readProjects();
-        projects = projects.filter(p => p.name !== name);
+        projects = projects.filter(p => p.path !== path);
         writeProjects(projects);
       }
       res.json({ success: true });
     } catch (error) {
-      logger.error(`[ACP Routes] Delete error (name: ${name}, type: ${type}):`, error);
+      logger.error(`[ACP Routes] Delete error (path: ${path}, type: ${type}):`, error);
       res.status(500).json({ error: (error as Error).message });
     }
   });
