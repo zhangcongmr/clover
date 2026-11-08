@@ -332,8 +332,6 @@ export class AgentComponent {
     return this.activeItemKey() === `session:${project.name}:${session.sessionId}`;
   }
 
-  private isLoadingSessions = false;
-
   constructor() {
     // Persist collapsed project state to localStorage whenever it changes (browser only).
     if (isPlatformBrowser(this.platformId)) {
@@ -433,8 +431,9 @@ export class AgentComponent {
   }
 
   /** Accent color of a project, reusing the sidebar palette. */
-  getProjectColor(name: string): string {
-    const index = this.projects().findIndex(p => p.name === name);
+  getProjectColor(project: ProjectInfo): string {
+    // 按 path 找 index，不能按 name：不同目录下可能有同名项目，按 name 会撞色。
+    const index = this.projects().findIndex(p => p.path === project.path);
     return index >= 0 ? PROJECT_COLORS[index % PROJECT_COLORS.length] : 'transparent';
   }
 
@@ -508,16 +507,9 @@ export class AgentComponent {
   }
 
   private async loadSessionsForProject(cwd: string): Promise<void> {
-    if (this.isLoadingSessions) {
-      return;
-    }
-    
-    this.isLoadingSessions = true;
-    try {
-      await this.acpService.listSessionsFromAllAgents(cwd);
-    } finally {
-      this.isLoadingSessions = false;
-    }
+    // 转发到 AcpService：重入守卫放在服务层，内容区选文件夹等其它入口共用同一把锁，
+    // 避免两处并发拉取同一目录的会话。
+    await this.acpService.loadSessionsForProject(cwd);
   }
 
   async loadSession(sessionId: string): Promise<void> {
@@ -584,7 +576,9 @@ export class AgentComponent {
       return;
     }
 
-    const refreshed = this.acpService.projects().find(p => p.name === owner.name);
+    // 按 path 回找 owner，不能按 name：不同目录下可能有同名项目，按 name 会找到
+    // 另一个项目，导致跳转到错误的项目下。
+    const refreshed = this.acpService.projects().find(p => p.path === owner.path);
     const next = refreshed ? this.pickNeighbor(this.sessionsOf(refreshed), index) : null;
     if (next) {
       await this.loadSession(next.sessionId);

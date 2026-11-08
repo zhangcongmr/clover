@@ -183,6 +183,9 @@ export class AcpService {
   // Currently selected project path (synced from agent project selection)
   readonly selectedProjectPath = signal<string | null>(null);
 
+  /** 正在拉取某个目录的会话列表：防止多个入口并发重复请求。 */
+  private isLoadingSessions = false;
+
   // Session display state (persisted across panel show/hide)
   readonly showSessionHistory = signal<boolean>(true);
 
@@ -1048,6 +1051,22 @@ export class AcpService {
   // ============================================================================
   // Session history
   // ============================================================================
+
+  /**
+   * 加载某个工作目录下的会话列表（跨所有已安装 agent 聚合）。
+   *
+   * 带重入守卫：多个入口（Agent 面板点项目、content-first 的懒加载 effect、
+   * 内容区选文件夹）可能同时请求同一目录，避免重复拉取。
+   */
+  async loadSessionsForProject(cwd: string): Promise<void> {
+    if (this.isLoadingSessions) return;
+    this.isLoadingSessions = true;
+    try {
+      await this.listSessionsFromAllAgents(cwd);
+    } finally {
+      this.isLoadingSessions = false;
+    }
+  }
 
   async listSessionsFromAllAgents(cwd?: string): Promise<void> {
     try {

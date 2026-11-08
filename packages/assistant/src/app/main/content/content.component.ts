@@ -1001,10 +1001,63 @@ Always use the welcome_greeting tool.`;
   // Callback from FilePickerDialog when a folder or file is selected
   async onFilePickerSelected(result: { path: string; kind: 'folder' | 'file' }) {
     if (result.kind === 'folder') {
-      // saveSelectedProject triggers setupProjectSyncEffect → loadAgentProject
-      await this.acpService.saveSelectedProject(result.path);
+      const path = result.path;
+      // 1) 先把文件夹加入 Agent 的项目列表（写入服务端 projects.json）。
+      //    只写选中态是不够的 —— saveSelectedProject 仅记录「当前选中哪个路径」，
+      //    不会往列表里加条目，不入列表的话切到 agent-first 就看不到这个文件夹。
+      //    入列表失败（已存在 / 服务端不可用）不阻断后面的加载：文件夹仍应在内容区可用。
+      await this.addFolderToProjectList(path);
+
+      // 2) 写选中态，让 Agent 面板与内容区指向同一个目录（统一入口）。
+      await this.acpService.saveSelectedProject(path);
+
+      // 3) 内容区自己显式加载，不能指望联动 effect：
+      //    setupProjectSyncEffect 只在 agent-first 模式下生效，而文件选择器只在
+      //    content-first 模式下可用（agent-first 下 openFolderInContent 直接 return），
+      //    这里等 effect 不会执行，dataList 会停在旧目录上。
+      await this.loadAgentProject(path);
+
+      // 4) 项目还没有会话时，拉取该目录的会话列表（与 Agent 面板 selectProject 一致）。
+      //    不能依赖 agent.ts 里那个 content-first 懒加载 effect：它是 Agent 面板的
+      //    view effect，而 content-first 下 Agent 面板可能被收起（agentPanelOpen
+      //    跟随各布局自己的展开态），收起后 effect 不执行，会话就拉不到。
+      const project = this.acpService.projects().find(p => p.path === path);
+      if (project && !project.sessions?.length) {
+        await this.acpService.loadSessionsForProject(path);
+      }
     } else {
       await this.openFileViaNodeApi(result.path);
+    }
+  }
+
+  /**
+   * 把选中的文件夹加入 Agent 的项目列表。
+   *
+   * 与 Agent 面板的 onFolderSelected 走同一条链路（acpService.addProject → 服务端
+   * /api/projects/add → 写入 projects.json），这样两侧看到的是同一份项目列表。
+   *
+   * 服务端按项目名判重，重复添加同一个文件夹会返回 409；此时列表里本来就有它，
+   * 视为成功即可。其它失败（服务端不可达等）只提示，不影响内容区加载。
+   */
+  private async addFolderToProjectList(path: string): Promise<void> {
+    const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+    const name = parts[parts.length - 1] || '';
+    if (!name) return;
+
+    // 已经在列表里就不必再请求服务端
+    if (this.acpService.projects().some(p => p.path === path)) return;
+
+    try {
+      await this.acpService.addProject(name, path);
+    } catch (error: any) {
+      const message = error?.message || 'Unknown error';
+      // 「已存在」不是错误：列表里本来就有这个文件夹
+      if (message.includes('already exists')) return;
+      console.warn('[Content] Failed to add folder to project list:', message);
+      this.notificationService.showNotification(
+        `文件夹已打开，但未能加入 Agent 项目列表：${message}`,
+        'warning'
+      );
     }
   }
 

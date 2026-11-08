@@ -1256,7 +1256,9 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       }
       try {
         const projects = readProjects();
-        if (projects.some(p => p.name === name)) {
+        // 按 path 判重，而不是 name：name 只是展示用的标签，不同目录下的同名文件夹
+        // 是两个不同的项目，按 name 判重会把它们误判成同一个而拒绝添加。
+        if (projects.some(p => p.path === projectPath)) {
           res.status(409).json({ error: 'Project already exists' });
           return;
         }
@@ -1264,7 +1266,7 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
         writeProjects(projects);
         res.json({ success: true, projects });
       } catch (error) {
-        logger.error(`[ACP Routes] Add project error (name: ${name}):`, error);
+        logger.error(`[ACP Routes] Add project error (name: ${name}, path: ${projectPath}):`, error);
         res.status(500).json({ error: (error as Error).message });
       }
     }
