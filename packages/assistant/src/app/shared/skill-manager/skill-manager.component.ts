@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SkillService, type SkillInfo } from '../skills/skill.service';
 import { BUILT_IN_SKILL_NAMES } from './built-in-skills';
 import { SkeletonGate, createSkeletonRows } from '../skeleton/skeleton';
+import { LocalServerService } from '../local-server/local-server.service';
 import {
   SkillCatalogService,
   sanitizeSkillName,
@@ -23,6 +24,7 @@ type ManagerTab = 'configured' | 'catalog';
 export class SkillManagerComponent implements OnInit, OnDestroy {
   private readonly skillService = inject(SkillService);
   private readonly catalogService = inject(SkillCatalogService);
+  private readonly localServer = inject(LocalServerService);
 
   skills: SkillInfo[] = [];
   loading = false;
@@ -165,7 +167,7 @@ export class SkillManagerComponent implements OnInit, OnDestroy {
     this.catalogService
       .prepareInstall(item)
       .then(prepared =>
-        fetch('/api/skills', {
+        fetch(`${this.localServer.getBaseUrl()}/api/skills`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(prepared),
@@ -256,9 +258,10 @@ export class SkillManagerComponent implements OnInit, OnDestroy {
     this.formData.description = this.formData.description?.trim() || '';
     this.formData.content = content;
 
+    const base = this.localServer.getBaseUrl();
     const url = this.editingSkill
-      ? `/api/skills/${encodeURIComponent(this.editingSkill.name)}`
-      : '/api/skills';
+      ? `${base}/api/skills/${encodeURIComponent(this.editingSkill.name)}`
+      : `${base}/api/skills`;
     const method = this.editingSkill ? 'PUT' : 'POST';
 
     fetch(url, {
@@ -282,7 +285,7 @@ export class SkillManagerComponent implements OnInit, OnDestroy {
   }
 
   copySkill(name: string): void {
-    fetch(`/api/skills/${encodeURIComponent(name)}/duplicate`, { method: 'POST' })
+    fetch(`${this.localServer.getBaseUrl()}/api/skills/${encodeURIComponent(name)}/duplicate`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -302,7 +305,7 @@ export class SkillManagerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    fetch(`/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' })
+    fetch(`${this.localServer.getBaseUrl()}/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' })
       .then(res => res.json())
       .then(data => {
         if (data.error) {

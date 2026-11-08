@@ -10,6 +10,7 @@ import {
   type RegistryListItem,
   type LocalMcpServerConfig as McpServerConfig,
 } from './mcp-registry.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { SkeletonGate, createSkeletonRows } from '../skeleton/skeleton';
 
 type ManagerTab = 'configured' | 'registry';
@@ -26,6 +27,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 })
 export class McpManagerComponent implements OnInit, OnDestroy {
   private readonly registryService = inject(McpRegistryService);
+  private readonly localServer = inject(LocalServerService);
   private readonly platformId = inject(PLATFORM_ID);
 
   servers: McpServerConfig[] = [];
@@ -79,7 +81,7 @@ export class McpManagerComponent implements OnInit, OnDestroy {
     this.error = null;
 
     // 使用 fetch 调用 MCP API
-    fetch('/api/mcp/servers')
+    fetch(`${this.localServer.getBaseUrl()}/api/mcp/servers`)
       .then(res => res.json())
       .then(data => {
         this.servers = data.servers || [];
@@ -234,7 +236,7 @@ export class McpManagerComponent implements OnInit, OnDestroy {
     }
 
     this.installingKey = item.key;
-    fetch('/api/mcp/servers', {
+    fetch(`${this.localServer.getBaseUrl()}/api/mcp/servers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config),
@@ -297,9 +299,10 @@ export class McpManagerComponent implements OnInit, OnDestroy {
     this.formData.description = this.formData.description?.trim() || '';
     this.formData.command = this.formData.command?.trim() || '';
 
+    const base = this.localServer.getBaseUrl();
     const url = this.editingServer
-      ? `/api/mcp/servers/${this.editingServer.name}`
-      : '/api/mcp/servers';
+      ? `${base}/api/mcp/servers/${this.editingServer.name}`
+      : `${base}/api/mcp/servers`;
 
     const method = this.editingServer ? 'PUT' : 'POST';
 
@@ -328,7 +331,7 @@ export class McpManagerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    fetch(`/api/mcp/servers/${name}`, { method: 'DELETE' })
+    fetch(`${this.localServer.getBaseUrl()}/api/mcp/servers/${name}`, { method: 'DELETE' })
       .then(res => res.json())
       .then(data => {
         if (data.error) {

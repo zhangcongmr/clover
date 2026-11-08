@@ -3,6 +3,7 @@ import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@a
 import { file, write } from 'opfs-tools';
 import { ServiceRouteInfo, AstTreeNode, UserInfo } from './shared/model';
 import { NotificationService } from './shared/notification/notification.service';
+import { LocalServerService } from './shared/local-server/local-server.service';
 import JSZip from 'jszip';
 
 // 定义上传任务接口
@@ -19,6 +20,7 @@ interface UploadTask {
 export class CoreService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
+  private readonly localServer = inject(LocalServerService);
 
   // public selectedServerAndServiceInfo: ServerAndServiceInfo = new ServerAndServiceInfo();
 
@@ -1404,7 +1406,7 @@ export class CoreService {
         const uploadProgress = ((i + 1) / totalChunks) * 0.7 + 0.3; // 加上压缩的30%
         this.updateUploadProgress(taskId, uploadProgress);
         
-        const response = await this.http.post('/user/api/chunk/upload', formData, {
+        const response = await this.http.post(`${this.localServer.getBaseUrl()}/user/api/chunk/upload`, formData, {
           reportProgress: true,
           observe: 'events'
         }).toPromise();

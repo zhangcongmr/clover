@@ -17,11 +17,13 @@
 import {A2uiRendererService} from '@a2ui/angular/v0_9';
 import * as Types from '@a2ui/web_core/types/types';
 import {inject, Injectable, signal} from '@angular/core';
+import {LocalServerService} from './shared/local-server/local-server.service';
 import {A2uiClientAction, A2uiMessage} from '@a2ui/web_core/v0_9';
 
 @Injectable({providedIn: 'root'})
 export class Client {
   private readonly renderer = inject(A2uiRendererService);
+  private readonly localServer = inject(LocalServerService);
   private contextId?: string;
 
   readonly isLoading = signal(false);
@@ -53,7 +55,7 @@ export class Client {
         ? {query: request, contextId: this.contextId}
         : {event: request, contextId: this.contextId};
 
-      const response = await fetch('/a2a', {
+      const response = await fetch(`${this.localServer.getBaseUrl()}/a2a`, {
         body: JSON.stringify(bodyData),
         method: 'POST',
       });
