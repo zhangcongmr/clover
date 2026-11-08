@@ -200,10 +200,21 @@ li[data-layer="tab"].active-tab .tab-close {
 
 /**
  * when tabType is 'lightcolorselection'
+ *
+ * 注意：必须用 li[data-layer="tab"].xxx 提高优先级，并覆盖掉 li 基类（见文件上方
+ * `li[data-layer="tab"] { transition: background-color .15s, border-color .15s }`）里的
+ * border-color 过渡。
+ * 原因：未激活时 tab 的类是 borderless-tab（border-bottom: none），此时 border-bottom-color
+ * 的计算值仍是初始值 currentColor，也就是 tab 的文字颜色（--vscode-foreground）。
+ * 激活后类变为 active-tab lightcolorselection-tab，border-color 变为 --vscode-background。
+ * 有 border-color 过渡时，这 1px 边框会先以文字色画出来，再用 150ms 渐变到背景色，
+ * 于是看起来就是“边框闪一下然后消失”。
  */
-.lightcolorselection-tab {
+li[data-layer="tab"].lightcolorselection-tab {
     z-index: 1;
-    border-bottom: 1px var(--vscode-background) solid
+    border-bottom: 1px var(--vscode-background) solid;
+    /* 只保留背景色过渡，边框直接以最终颜色出现，不再有闪现 */
+    transition: background-color 0.15s ease;
 }
 
 
