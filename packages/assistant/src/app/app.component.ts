@@ -15,6 +15,7 @@ import { ThemeLibraryService } from './theme-library.service';
 import { customFileIcons, customFileIconPaths } from './shared/ast-tree/ast-tree.component';
 import { computeFileIcons } from './shared/ast-tree/ast-tree.component';
 import { addDynamicFileIconSymbol } from '../svg-sprite.const';
+import { LocalServerService } from './shared/local-server/local-server.service';
 import { NotificationComponent } from './shared/notification/notification.component';
 import { TerminalComponent } from './shared/terminal/terminal.component'; // Import the terminal component
 import { AcpService } from './shared/acp/acp.service';
@@ -98,6 +99,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   upBtnlist = viewChild<ElementRef<HTMLElement>>('upBtnlist');
   http = inject(HttpClient);
   injector = inject(Injector);
+  private readonly localServer = inject(LocalServerService);
 
   private hostEl = inject(ElementRef<HTMLElement>);
   private resizeObserver?: ResizeObserver;
@@ -268,7 +270,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       }
 
       try {
-        const response = await fetch(`/api/auth/profile`, {
+        const response = await fetch(`${this.localServer.getBaseUrl()}/api/auth/profile`, {
           credentials: 'include', // 携带 Cookie
         });
         this.coreService.userData = await response.json();
@@ -1044,7 +1046,7 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     sessionStorage.clear();
     this.closeMenu();
     try {
-      await fetch('/api/auth/logout', {
+      await fetch(`${this.localServer.getBaseUrl()}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include' // 确保发送 Cookie
       });

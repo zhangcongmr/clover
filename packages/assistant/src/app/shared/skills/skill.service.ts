@@ -1,5 +1,6 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { LocalServerService } from '../local-server/local-server.service';
 import { BUILT_IN_SKILLS } from '../skill-manager/built-in-skills';
 
 export interface SkillInfo {
@@ -13,6 +14,7 @@ export interface SkillInfo {
 @Injectable({ providedIn: 'root' })
 export class SkillService {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly localServer = inject(LocalServerService);
 
   readonly skills = signal<SkillInfo[]>([]);
   /** 后端配置的 HTTP catalog URL（供 skill 管理器直连查询）。 */
@@ -25,7 +27,7 @@ export class SkillService {
     // SSR: Node's fetch rejects relative URLs; the browser re-runs this on hydration.
     if (!isPlatformBrowser(this.platformId)) return Promise.resolve();
 
-    return fetch('/api/skills')
+    return fetch(`${this.localServer.getBaseUrl()}/api/skills`)
       .then(res => res.json())
       .then(async data => {
         const skills: SkillInfo[] = data.skills || [];
@@ -55,7 +57,7 @@ export class SkillService {
       return Promise.resolve({});
     }
 
-    const promise = fetch(`/api/skills/${encodeURIComponent(name)}`)
+    const promise = fetch(`${this.localServer.getBaseUrl()}/api/skills/${encodeURIComponent(name)}`)
       .then(res => (res.ok ? res.json() : { files: {} }))
       .then(data =>
         data && typeof data.files === 'object' && data.files
@@ -94,8 +96,8 @@ export class SkillService {
       try {
         const res = await fetch(
           !current
-            ? '/api/skills'
-            : `/api/skills/${encodeURIComponent(builtin.name)}`,
+            ? `${this.localServer.getBaseUrl()}/api/skills`
+            : `${this.localServer.getBaseUrl()}/api/skills/${encodeURIComponent(builtin.name)}`,
           {
             method,
             headers: { 'Content-Type': 'application/json' },

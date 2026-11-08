@@ -514,8 +514,10 @@ showButtonPlaceholder = computed(() => {
       }
 
       // 创建WebSocket连接
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/storage/ws`;
+      const base = this.localServerService.getBaseUrl();
+      const url = new URL(base);
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${url.host}/api/storage/ws`;
       this.wsConnection = new WebSocket(wsUrl);
 
       this.wsConnection.onopen = () => {
@@ -670,7 +672,7 @@ The icon should be a simple 24x24 SVG path representing the tip theme.
 Always use the welcome_greeting tool.`;
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${this.localServerService.getBaseUrl()}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -899,7 +901,7 @@ Always use the welcome_greeting tool.`;
           next: (saveResponse: any) => {
             if (saveResponse.id !== undefined) {
               // 保存成功后，发送 /user/fork
-              fetch(`/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
+              fetch(`${this.localServerService.getBaseUrl()}/user/fork/${this.nodeDef?.name}?sourceUserName=${this.nodeDef?.username}&destUserName=${this.coreService.userData?.username}`, {
                 method: 'POST'
               })
                 .then(response => response.json())
@@ -946,7 +948,7 @@ Always use the welcome_greeting tool.`;
 
           // Delete the corresponding container after successful deletion of nodedef
           const containerName = `con-${this.coreService.userData?.username}-${this.nodeDef?.name}`;
-          fetch('/api/cmn/delete', {
+          fetch(`${this.localServerService.getBaseUrl()}/api/cmn/delete`, {
             method: 'POST',
             headers: {
               'x-api-key': 'secret123',

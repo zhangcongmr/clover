@@ -3,6 +3,7 @@ import { Injectable, PLATFORM_ID, computed, effect, inject, signal, untracked } 
 import { AcpService, type AcpMessage } from '../acp/acp.service';
 import type { ContentBlock } from '../acp/acp.model';
 import type { LocalMcpServerConfig } from '../mcp-manager/mcp-registry.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { extractRagResult, type RagDocumentInfo, type RagSearchHit, type RagToolKind } from '../acp/tool-call-info.pipe';
 import { RagMetricsService } from './rag-metrics.service';
 import {
@@ -48,6 +49,7 @@ export class RagService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly acpService = inject(AcpService);
   private readonly metrics = inject(RagMetricsService);
+  private readonly localServer = inject(LocalServerService);
 
   /** Every configured MCP server; used to spot RAG ones. */
   readonly servers = signal<LocalMcpServerConfig[]>([]);
@@ -267,7 +269,7 @@ export class RagService {
     this.serversLoading.set(true);
     this.serversError.set(null);
     try {
-      const response = await fetch('/api/mcp/servers');
+      const response = await fetch(`${this.localServer.getBaseUrl()}/api/mcp/servers`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const body = await response.json();
       const servers: LocalMcpServerConfig[] = Array.isArray(body?.servers) ? body.servers : [];

@@ -9,6 +9,7 @@ import { NotificationService } from '../notification/notification.service';
 import type { AgentConfig } from './acp-agent.types';
 import type { ContentBlock, SessionInfo } from './acp.model';
 import type { ProjectInfo } from './acp.service';
+import { LocalServerService } from '../local-server/local-server.service';
 import { FilePickerDialogComponent } from '../../shared/file-picker-dialog/file-picker-dialog.component';
 import { AstModalComponent } from '../../shared/ast-modal/ast-modal.component';
 import { DropdownPlacementDirective } from './dropdown-placement.directive';
@@ -979,6 +980,7 @@ export class AcpChatInputComponent {
   private readonly notification = inject(NotificationService);
   private readonly skillService = inject(SkillService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly localServer = inject(LocalServerService);
   /** 项目选择入口只在 agent-first 渲染（content-first 下项目由内容区/文档侧决定） */
   protected readonly layoutService = inject(LayoutService);
 
@@ -1161,7 +1163,7 @@ export class AcpChatInputComponent {
     // SSR: Node's fetch rejects relative URLs; the browser re-runs this on hydration.
     if (!isPlatformBrowser(this.platformId)) return;
 
-    fetch('/api/mcp/servers')
+    fetch(`${this.localServer.getBaseUrl()}/api/mcp/servers`)
       .then(res => res.json())
       .then(data => {
         const servers = (data.servers || []).map((s: any) => ({

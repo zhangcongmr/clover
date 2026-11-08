@@ -222,14 +222,14 @@ export class TerminalComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       const pixelWidth = Math.round(this.terminal!.dimensions?.css?.canvas?.width ?? 0);
       const pixelHeight = Math.round(this.terminal!.dimensions?.css?.canvas?.height ?? 0);
-      const res = await fetch('/terminals?cols=' + this.terminal!.cols + '&rows=' + this.terminal!.rows + '&name=' + this.containerName
-        + '&pixelWidth=' + pixelWidth + '&pixelHeight=' + pixelHeight + '&cwd=' + encodeURIComponent(this.customCwd), { method: 'POST' });
+      const base = this.localServerService.getBaseUrl();
+      const res = await fetch(`${base}/terminals?cols=${this.terminal!.cols}&rows=${this.terminal!.rows}&name=${this.containerName}&pixelWidth=${pixelWidth}&pixelHeight=${pixelHeight}&cwd=${encodeURIComponent(this.customCwd)}`, { method: 'POST' });
       const processId = await res.text();
       this.pid = processId;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      const wsUrl = `${protocol}//${host}/terminals/${this.pid}` + '?name=' + this.containerName;
+      const url = new URL(base);
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${url.host}/terminals/${this.pid}` + '?name=' + this.containerName;
 
       this.websocket = new WebSocket(wsUrl);
 
