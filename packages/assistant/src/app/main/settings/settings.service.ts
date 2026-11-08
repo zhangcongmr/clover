@@ -1,4 +1,4 @@
-import { Injectable, WritableSignal, signal, inject } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { LocalServerService } from '../../shared/local-server/local-server.service';
 import { ThemeService } from '../../theme.service';
 import { ThemeLibraryService } from '../../theme-library.service';
@@ -62,7 +62,6 @@ export class SettingsService {
 
   activeCategoryId = signal<string>('general');
 
-  folderReadWriteMode: WritableSignal<'read' | 'readwrite'> = signal<'read' | 'readwrite'>('readwrite');
   autoRefreshEnabled = signal<boolean>(true);
 
   currentTheme = signal<string>('default');
@@ -76,8 +75,6 @@ export class SettingsService {
   notificationDuration = signal<number>(5);
 
   selectedModel = signal<string>('deepseek-v4-flash');
-  pluginsEnabled = signal<boolean>(false);
-  useMemoryMode = signal<boolean>(true);
 
   constructor() {
     this.currentTheme.set(this.themeService.getCurrentTheme());
@@ -117,14 +114,6 @@ export class SettingsService {
       if (model) {
         this.selectedModel.set(model);
       }
-      const plugins = localStorage.getItem('clover_plugins_enabled');
-      if (plugins === 'true') {
-        this.pluginsEnabled.set(true);
-      }
-      const useMemory = localStorage.getItem('clover_use_memory_mode');
-      if (useMemory === 'false') {
-        this.useMemoryMode.set(false);
-      }
       const dur = localStorage.getItem('clover_notification_duration');
       if (dur) {
         const num = Number(dur);
@@ -138,10 +127,6 @@ export class SettingsService {
 
   setActiveCategory(id: string) {
     this.activeCategoryId.set(id);
-  }
-
-  setFolderReadWriteMode(mode: 'read' | 'readwrite') {
-    this.folderReadWriteMode.set(mode);
   }
 
   setAutoRefreshEnabled(enabled: boolean) {
@@ -239,17 +224,5 @@ export class SettingsService {
     }
   }
 
-  setPluginsEnabled(enabled: boolean) {
-    this.pluginsEnabled.set(enabled);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('clover_plugins_enabled', String(enabled));
-    }
-  }
 
-  setUseMemoryMode(enabled: boolean) {
-    this.useMemoryMode.set(enabled);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('clover_use_memory_mode', String(enabled));
-    }
-  }
 }

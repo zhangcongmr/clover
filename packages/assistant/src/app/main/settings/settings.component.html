@@ -235,38 +235,6 @@
           (remove)="onDiskAgentRemoved($event)"
         ></app-add-agent-from-disk-dialog>
 
-        <!-- Folder Read/Write Mode -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label" id="setting-folder-mode-label">Folder Read/Write Mode</span>
-            <p class="setting-desc">File system access permission mode for local folders</p>
-          </div>
-          <div class="setting-control">
-            <div class="radio-group" role="radiogroup" aria-labelledby="setting-folder-mode-label">
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  name="folderMode"
-                  value="read"
-                  [checked]="folderReadWriteMode() === 'read'"
-                  (change)="onFolderReadWriteModeChange('read')"
-                />
-                <span class="radio-label">Read only</span>
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  name="folderMode"
-                  value="readwrite"
-                  [checked]="folderReadWriteMode() === 'readwrite'"
-                  (change)="onFolderReadWriteModeChange('readwrite')"
-                />
-                <span class="radio-label">Read & Write</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
         <!-- Auto Refresh -->
         <div class="setting-item">
           <div class="setting-info">
@@ -510,43 +478,6 @@
       <div class="settings-section">
         <h2 class="section-title">Advanced Settings</h2>
 
-        <!-- Plugins View -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <label class="setting-label" for="setting-plugins-view">Plugins View</label>
-            <p class="setting-desc">Enable the plugins section in the sidebar</p>
-          </div>
-          <div class="setting-control">
-            <label class="toggle-switch">
-              <input
-                id="setting-plugins-view"
-                type="checkbox"
-                [checked]="pluginsEnabled()"
-                (change)="onPluginsEnabledChange($event)"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Memory Mode -->
-        <div class="setting-item">
-          <div class="setting-info">
-            <label class="setting-label" for="setting-memory-mode">Memory Mode (ACP)</label>
-            <p class="setting-desc">Use in-memory mode instead of Redis for ACP communication. Requires server restart.</p>
-          </div>
-          <div class="setting-control">
-            <label class="toggle-switch">
-              <input
-                id="setting-memory-mode"
-                type="checkbox"
-                [checked]="useMemoryMode()"
-                (change)="onUseMemoryModeChange($event)"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
       </div>
     }
   </div>
