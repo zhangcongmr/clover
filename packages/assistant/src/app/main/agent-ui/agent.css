@@ -12,7 +12,8 @@
   min-height: 0;
   min-width: 0;
   background-color: var(--vscode-background);
-  border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  border-left: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  border-right: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
   overflow: hidden;
 }
 
