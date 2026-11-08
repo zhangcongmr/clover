@@ -65,7 +65,6 @@ export class SettingsComponent {
   categories = this.settingsService.categories;
   activeCategoryId = this.settingsService.activeCategoryId;
 
-  folderReadWriteMode = this.settingsService.folderReadWriteMode;
   autoRefreshEnabled = this.settingsService.autoRefreshEnabled;
 
   currentTheme = this.settingsService.currentTheme;
@@ -79,8 +78,6 @@ export class SettingsComponent {
   notificationDuration = this.settingsService.notificationDuration;
 
   selectedModel = this.settingsService.selectedModel;
-  pluginsEnabled = this.settingsService.pluginsEnabled;
-  useMemoryMode = this.settingsService.useMemoryMode;
 
   serverStatus = signal<'unknown' | 'connected' | 'disconnected'>('unknown');
   serverTesting = signal(false);
@@ -284,10 +281,6 @@ export class SettingsComponent {
     this.checkServerStatus();
   }
 
-  onFolderReadWriteModeChange(mode: 'read' | 'readwrite') {
-    this.settingsService.setFolderReadWriteMode(mode);
-  }
-
   onAutoRefreshChange(event: Event) {
     const enabled = (event.target as HTMLInputElement).checked;
     this.settingsService.setAutoRefreshEnabled(enabled);
@@ -444,16 +437,6 @@ export class SettingsComponent {
   onModelChange(event: Event) {
     const value = (event.target as HTMLSelectElement).value;
     this.settingsService.setSelectedModel(value);
-  }
-
-  onPluginsEnabledChange(event: Event) {
-    const enabled = (event.target as HTMLInputElement).checked;
-    this.settingsService.setPluginsEnabled(enabled);
-  }
-
-  onUseMemoryModeChange(event: Event) {
-    const enabled = (event.target as HTMLInputElement).checked;
-    this.settingsService.setUseMemoryMode(enabled);
   }
 
   /**
