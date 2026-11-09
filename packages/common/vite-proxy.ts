@@ -47,7 +47,7 @@ export const sharedAppProxy: Record<string, ProxyOptions> = {
     ...defaultProxyOptions,
     secure: false,
   },
-  '/editor': {
+  '/clover': {
     target: 'https://localhost:5178',
     ...defaultProxyOptions,
     secure: false,
