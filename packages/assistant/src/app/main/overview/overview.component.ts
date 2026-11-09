@@ -85,7 +85,7 @@ export class OverviewComponent {
   });
 
   readonly overviewMessageCount = computed(() => this.acpService.messageCount());
-  readonly overviewProcessing = computed(() => this.acpService.isProcessing());
+  readonly overviewProcessing = computed(() => this.acpService.isCurrentSessionProcessing());
 
   readonly overviewActivityText = computed(() => {
     const messages = this.acpService.messages();

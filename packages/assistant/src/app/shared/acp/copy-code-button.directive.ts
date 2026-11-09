@@ -1,4 +1,5 @@
 import { Directive, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { copyText } from '../clipboard.util';
 
 const COPY_ICON_SVG = `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -58,18 +59,16 @@ export class CopyCodeButtonDirective implements AfterViewInit, OnDestroy {
   private async copyCode(pre: HTMLElement, btn: HTMLElement): Promise<void> {
     const code = pre.querySelector('code');
     const text = code?.textContent || pre.textContent || '';
+    const span = btn.querySelector('span');
 
-    try {
-      await navigator.clipboard.writeText(text);
-      const span = btn.querySelector('span');
-      if (span) {
-        span.textContent = 'Copied!';
-        setTimeout(() => {
-          span.textContent = 'Copy';
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+    // `copyText` 自带安全上下文降级，局域网 IP 下也能复制成功。
+    const ok = await copyText(text);
+
+    if (!span) return;
+    span.textContent = ok ? 'Copied!' : 'Failed';
+    setTimeout(() => {
+      span.textContent = 'Copy';
+    }, 2000);
+    if (!ok) console.error('Failed to copy code to clipboard');
   }
 }

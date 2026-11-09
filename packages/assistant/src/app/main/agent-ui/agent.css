@@ -487,6 +487,20 @@
   background: var(--vscode-item-active-background);
 }
 
+/* Title line of a session row: the title plus, while the session is running,
+   the processing spinner at its right edge. Keeping both in one flex row makes
+   the spinner ride the title's first line instead of adding a line below. */
+.session-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-title-row .session-title {
+  flex: 1;
+  min-width: 0;
+}
+
 .session-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;

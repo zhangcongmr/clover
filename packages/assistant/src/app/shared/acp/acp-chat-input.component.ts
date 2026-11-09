@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, ViewChild, ElementRef, HostListene
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AcpService } from './acp.service';
+import { uuid } from '../uuid.util';
 import { AcpSseService } from './acp-sse.service';
 import { AcpRegistryDialogComponent, type AcpRegistryAgent } from './acp-registry-dialog.component';
 import { AddAgentFromDiskDialogComponent, type AddDiskAgentRequest } from './add-agent-from-disk-dialog.component';
@@ -1497,7 +1498,7 @@ export class AcpChatInputComponent {
    */
   private async fileToAttachment(file: File): Promise<AttachmentEntry | null> {
     const mimeType = file.type || 'application/octet-stream';
-    const id = crypto.randomUUID();
+    const id = uuid();
     const uri = `file:///${file.name}`;
 
     if (mimeType.startsWith('image/')) {
@@ -1593,7 +1594,7 @@ export class AcpChatInputComponent {
     if (!uri) return;
     const name = this.linkName().trim() || uri.split('/').pop() || uri;
     this.attachments.update(list => [...list, {
-      id: crypto.randomUUID(),
+      id: uuid(),
       name,
       size: 0,
       mimeType: '',
@@ -1609,7 +1610,7 @@ export class AcpChatInputComponent {
   async sendMessage(): Promise<void> {
     const rawText = this.inputValue().trim();
     const attachments = this.attachments();
-    if ((!rawText && attachments.length === 0) || this.acpService.isProcessing() || this.acpService.hasActiveQuestions()) {
+    if ((!rawText && attachments.length === 0) || this.acpService.isCurrentSessionProcessing() || this.acpService.hasActiveQuestions()) {
       return;
     }
 

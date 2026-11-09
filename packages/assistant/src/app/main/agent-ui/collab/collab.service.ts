@@ -17,6 +17,7 @@ import { AcpSseService } from '../../../shared/acp/acp-sse.service';
 import { openSseRequest, readSseFrames } from '../../../shared/acp/sse-transport';
 import type { ConfigOption } from '../../../shared/acp/acp.model';
 import { AcpService, type ProjectInfo } from '../../../shared/acp/acp.service';
+import { uuid } from '../../../shared/uuid.util';
 
 /**
  * One participating session inside a collaboration space (backend response).
@@ -871,7 +872,7 @@ export class CollabService {
     return {
       tenant: '',
       message: {
-        messageId: crypto.randomUUID(),
+        messageId: uuid(),
         contextId: '',
         taskId: '',
         role: Role.ROLE_USER,

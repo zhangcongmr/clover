@@ -19,6 +19,7 @@ import { RagMetricsService } from "../../shared/rag/rag-metrics.service";
 import { LayoutService } from "../layout.service";
 import { CollabPanelComponent } from "./collab/collab-panel.component";
 import { CollabService } from "./collab/collab.service";
+import { ProcessingIndicatorComponent } from "./processing-indicator.component";
 
 interface SessionWithAgent extends SessionInfo {
   agentId?: string;
@@ -65,6 +66,7 @@ function readCollapsedProjects(): Set<string> {
     CollabPanelComponent,
     AstMenuComponent,
     RemoteServerDialogComponent,
+    ProcessingIndicatorComponent,
   ],
 })
 export class AgentComponent {
@@ -332,6 +334,17 @@ export class AgentComponent {
     return this.activeItemKey() === `session:${project.name}:${session.sessionId}`;
   }
 
+  /**
+   * Whether the agent is currently running a turn for this session.
+   *
+   * Looks the row's own id up in `processingSessions`, so several sessions can
+   * be spinning at once (a background one keeps running after the user
+   * switches away) and each row only reflects its own state.
+   */
+  protected isSessionProcessing(sessionId?: string | null): boolean {
+    return !!sessionId && this.acpService.processingSessions().has(sessionId);
+  }
+
   constructor() {
     // Persist collapsed project state to localStorage whenever it changes (browser only).
     if (isPlatformBrowser(this.platformId)) {
@@ -449,9 +462,13 @@ export class AgentComponent {
    * Content-first: close the session content overlay and return to the list.
    * The session selection is cleared (keeping the project), so the next message
    * starts a fresh session as described by the panel behaviour.
+   *
+   * Allowed while the turn is still running: closing the overlay only detaches
+   * this view, the prompt keeps going on the server and the list row keeps its
+   * processing indicator, so the user can come back later and pick the turn up
+   * through the normal replay path.
    */
   async closeContentFirstSession(): Promise<void> {
-    if (this.acpService.isProcessing()) return;
     this.contentFirstOpenSessionId.set(null);
     await this.acpService.saveSelectedSessionId(null);
     await this.acpService.disconnect();

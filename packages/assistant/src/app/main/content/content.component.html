@@ -235,11 +235,7 @@
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         }
-        @if (welcomeTip()) {
-          <p class="empty-state-text">{{ welcomeTip() }}</p>
-        } @else {
-          <p class="empty-state-text">No tabs open</p>
-        }
+        <p class="empty-state-text">{{ welcomeTip() || 'No tabs open' }}</p>
       </div>
     }
   </div>

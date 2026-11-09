@@ -109,7 +109,7 @@ export class RagService {
     // A RAG turn is "done" once the agent stops processing: clear the indexing
     // badge and let the metrics service fold the stream back into a record.
     effect(() => {
-      const processing = this.acpService.isProcessing();
+      const processing = this.acpService.isCurrentSessionProcessing();
       if (processing) {
         if (untracked(() => this.isIndexing())) this.indexingTurnStarted = true;
         if (untracked(() => this.metrics.hasPending())) this.turnActive = true;

@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, computed, effect, inject, signal, untracked } from '@angular/core';
 import { AcpService, type AcpMessage } from '../acp/acp.service';
 import { extractRagResult, type RagSearchHit } from '../acp/tool-call-info.pipe';
+import { uuid } from '../uuid.util';
 
 /**
  * Retrieval observability & evaluation store.
@@ -66,11 +67,7 @@ export interface RagMetricsSummary {
 }
 
 function uid(): string {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `rag-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  }
+  return uuid();
 }
 
 function percentile(sortedAsc: number[], p: number): number | null {

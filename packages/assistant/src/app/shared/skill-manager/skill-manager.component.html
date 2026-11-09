@@ -141,11 +141,7 @@
                       [disabled]="!!installingKey"
                       (click)="installSkill(row.item)"
                     >
-                      @if (installingKey === row.item.key) {
-                        Installing…
-                      } @else {
-                        Install
-                      }
+                      {{ installingKey === row.item.key ? 'Installing…' : 'Install' }}
                     </button>
                   }
                 </div>

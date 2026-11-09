@@ -65,7 +65,7 @@ export class RagManagerComponent implements OnInit {
   readonly profiles = this.ragService.profiles;
 
   /** A prompt is running; don't allow a second one to interleave with it. */
-  readonly isProcessing = this.acpService.isProcessing;
+  readonly isProcessing = this.acpService.isCurrentSessionProcessing;
   readonly requiresNewSession = computed(() => this.ragService.requiresNewSession());
   readonly canSubmit = computed(() => !this.isProcessing() && !this.busy());
 

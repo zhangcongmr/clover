@@ -63,11 +63,7 @@
         </button>
       }
       <button class="btn btn-secondary" type="button" (click)="submit()" [disabled]="!canConfirm()">
-        @if (editing()) {
-          Save Changes
-        } @else {
-          Add Agent
-        }
+        {{ editing() ? 'Save Changes' : 'Add Agent' }}
       </button>
       <button class="btn btn-secondary" type="button" (click)="closeDialog()">Cancel</button>
     </div>
