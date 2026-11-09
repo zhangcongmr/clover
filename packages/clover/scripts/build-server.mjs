@@ -137,7 +137,7 @@ if (napiSource && existsSync(napiSource)) {
 
 // Generate dist-server/package.json for proper ESM module resolution
 const pkgJson = {
-  name: 'editor-server',
+  name: 'clover-server',
   private: true,
   type: 'module',
 };

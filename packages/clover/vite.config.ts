@@ -13,12 +13,12 @@ const server = {
     https: {},
     proxy: {
       ...sharedApiProxy,
-      ...createSharedAppProxy('/editor')
+      ...createSharedAppProxy('/clover')
     }
 }
 
 export default defineConfig(({ command }) => ({
-  base: command === 'serve' ? '/editor/' : './',
+  base: command === 'serve' ? '/clover/' : './',
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them

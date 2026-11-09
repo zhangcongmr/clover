@@ -44,7 +44,7 @@ export function ApiTester() {
       <div className="w-64 border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-sm font-medium text-gray-700">Editor</span>
+            <span className="text-sm font-medium text-gray-700">Clover</span>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />

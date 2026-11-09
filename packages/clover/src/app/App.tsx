@@ -84,7 +84,7 @@ async function afterQueryApiModel(rawData: any): Promise<void> {
     processInstanceContainer(userData, rawData);
   }
 
-  Clover("coderEditor", rawData, rawData?.name)
+  Clover("cloverDom", rawData, rawData?.name)
     .catch(err => {
       console.error('Angular failed to start', err);
       angularLoaded = false;
@@ -115,7 +115,7 @@ function ViewPage() {
     if (params && params.id) {
       projectDef({ id: params.id });
     } else {
-      Clover("coderEditor")
+      Clover("clover")
         .catch(err => {
           console.error('Angular failed to start', err);
           angularLoaded = false; // 可选：允许重试
@@ -128,7 +128,7 @@ function ViewPage() {
       {/* <h1>React App</h1> */}
       {/* 使用 Angular Web Component */}
       {/* <app-root style={{ height: '100vh', display: 'block' }}></app-root> */}
-      <div id="coderEditor"></div>
+      <div id="cloverDom"></div>
       {/* <p>Back to React</p> */}
       {/* <Example /> */}
     </>
@@ -140,10 +140,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* 首页 */}
-        <Route path="editor" element={<ViewPage />} />
+        <Route path="clover" element={<ViewPage />} />
 
         {/* 动态路由：匹配 /view/任意ID */}
-        <Route path="editor/:id" element={<ViewPage />} />
+        <Route path="clover/:id" element={<ViewPage />} />
 
         {/* 可选：404 页面 */}
         {/* <Route path="*" element={<ViewPage />} /> */}

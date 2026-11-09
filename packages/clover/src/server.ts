@@ -19,7 +19,7 @@ const distDir = isCompiled ? join(__dirname, 'dist') : join(rootDir, 'dist');
 const args = process.argv.slice(2);
 if (args.includes('-h') || args.includes('--help')) {
   console.log([
-    'clover - SSR editor with an embedded local server',
+    'clover - SSR with an embedded local server',
     '',
     'Usage:',
     '  clover [options]',
@@ -89,8 +89,8 @@ createServer({
   tokenSecretEnvKey: 'EDITOR_TOKEN_SECRET',
   corsPorts: [5178, 5179, 5173, 4200, 4000],
   rootDir,
-  logPrefix: '[Editor Server]',
-  logUrlPath: '/editor',
+  logPrefix: '[Clover Server]',
+  logUrlPath: '/clover',
   staticDir: isDev ? undefined : distDir,
   app,
 });
@@ -103,10 +103,10 @@ if (isDev && viteMiddlewares) {
 
 if (!isDev) {
   // The built SPA uses base-relative asset URLs (./assets/...), which
-  // resolve under /editor/ when served at that prefix. Serve static and
-  // SPA fallback under /editor as well as at the root.
-  app.use('/editor', express.static(distDir, { index: false, redirect: false, maxAge: '1y' }));
-  app.use('/editor', (_req, res) => {
+  // resolve under /clover/ when served at that prefix. Serve static and
+  // SPA fallback under /clover as well as at the root.
+  app.use('/clover', express.static(distDir, { index: false, redirect: false, maxAge: '1y' }));
+  app.use('/clover', (_req, res) => {
     res.sendFile(join(distDir, 'index.html'));
   });
   app.use((_req, res) => {
