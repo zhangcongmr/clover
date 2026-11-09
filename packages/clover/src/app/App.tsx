@@ -115,7 +115,7 @@ function ViewPage() {
     if (params && params.id) {
       projectDef({ id: params.id });
     } else {
-      Clover("clover")
+      Clover("cloverDom")
         .catch(err => {
           console.error('Angular failed to start', err);
           angularLoaded = false; // 可选：允许重试
