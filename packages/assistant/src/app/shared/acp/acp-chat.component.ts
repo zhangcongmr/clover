@@ -139,7 +139,7 @@ export class AcpChatComponent implements OnDestroy {
         }
       }
 
-      const groups = this.groupMessages(preMessages);
+      const groups = this.groupMessages(preMessages, { openTail: true });
 
       for (const msg of postMessages) {
         const groupType: MessageGroup['type'] = (msg.role === 'tool_call' || msg.role === 'tool_call_update' || msg.role === 'thought')
@@ -151,7 +151,10 @@ export class AcpChatComponent implements OnDestroy {
       return groups;
     }
 
-    return this.groupMessages(messages);
+    // 没有 processingStartTime 可用（加载中、或处理中标记刚落地）：整个列表就是
+    // 当前会话，末尾那一轮同样可能正在生成。
+    const turnOpen = this.acpService.isCurrentSessionProcessing() || this.acpService.loadingSessionId() !== null;
+    return this.groupMessages(messages, { openTail: turnOpen });
   });
 
   constructor() {
@@ -322,7 +325,12 @@ export class AcpChatComponent implements OnDestroy {
     return `(${info.matchCount}${info.truncated ? '+' : ''} matches)`;
   }
 
-  private groupMessages(messages: AcpMessage[]): MessageGroup[] {
+  /**
+   * @param options.openTail 末尾那一轮仍在生成中：此时「没有以 assistant 收尾」
+   *   是进行中的常态，不能当成中断。仅当轮次确实已经结束（完成 / 取消 / 断开 /
+   *   出错）时，末尾缺少 assistant 才意味着中断。
+   */
+  private groupMessages(messages: AcpMessage[], options?: { openTail?: boolean }): MessageGroup[] {
     const groups: MessageGroup[] = [];
     let currentRound: AcpMessage[] = [];
 
@@ -348,6 +356,13 @@ export class AcpChatComponent implements OnDestroy {
 
     if (currentRound.length > 0) {
       this.flushRound(groups, currentRound);
+    }
+
+    // 生成中的轮次不产生中断分隔线：load/resume 到一个仍在后台跑的会话时，
+    // 回放出来的末尾同样缺 assistant 消息，但后续增量还会继续追加分组，
+    // 提前插一条分隔线就会把它永久留在对话中间。
+    if (options?.openTail && groups.length > 0 && groups[groups.length - 1].type === 'interrupted') {
+      groups.pop();
     }
 
     return groups;
