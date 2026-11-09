@@ -162,11 +162,41 @@ export class SettingsComponent {
    * into the service, so a half-typed address would immediately repoint the
    * whole app (every request goes through `getBaseUrl()`). The draft is
    * committed to the service only when `connect()` runs.
+   *
+   * Defaults to {@link defaultServerAddress} — the configured remote server,
+   * or the origin serving this page when none is configured. An empty box
+   * looked like "not connected" even though the app was talking to the server
+   * right next to it.
    */
   serverUrlInput = signal('');
 
   /** Whether the user has edited the draft (i.e. it is no longer a mirror). */
   private serverUrlDirty = false;
+
+  /**
+   * Address the input falls back to when no remote server is configured.
+   *
+   * `serverUrl === ''` means "the server that hosts this page", so the input
+   * has to spell that out: `window.location.origin` is exactly what
+   * `getBaseUrl()` resolves to in that case. Guarded for SSR, where the
+   * settings view is rendered without a `window`.
+   */
+  private defaultServerAddress(): string {
+    const configured = this.localServerService.serverUrl;
+    if (configured) return configured;
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
+
+  /**
+   * Maps "this page's own origin" back to `''` — the service's marker for
+   * "same origin". Any other address is returned unchanged, so the two spellings
+   * of the same target do not end up as different values in `serverUrl`.
+   */
+  private normalizeServerUrl(url: string): string {
+    if (!url || typeof window === 'undefined') return url;
+    const stripSlash = (value: string) => value.replace(/\/+$/, '');
+    return stripSlash(url) === stripSlash(window.location.origin) ? '' : url;
+  }
 
   /**
    * Whether the app is bound to a remote server.
@@ -185,8 +215,8 @@ export class SettingsComponent {
   });
 
   constructor() {
-    // Seed the draft with the address currently in use.
-    this.serverUrlInput.set(this.localServerService.serverUrl);
+    // Seed the draft with the address currently in use (defaults to this page's origin).
+    this.serverUrlInput.set(this.defaultServerAddress());
     this.checkServerStatus();
     this.loadAgents();
 
@@ -197,7 +227,7 @@ export class SettingsComponent {
     effect(() => {
       this.localServerService.serverEpoch();
       if (!this.serverUrlDirty) {
-        this.serverUrlInput.set(this.localServerService.serverUrl);
+        this.serverUrlInput.set(this.defaultServerAddress());
       }
     });
   }
@@ -228,7 +258,12 @@ export class SettingsComponent {
    * address when they were opened and would keep talking to it otherwise.
    */
   async connect() {
-    const url = this.serverUrlInput().trim();
+    // The input is pre-filled with this page's origin when no remote server is
+    // configured (see `defaultServerAddress`), and `''` already means "same
+    // origin". Normalise it back to `''` so clicking Connect on the default
+    // value does not persist the page's own origin as if it were a remote
+    // server (or push it into the address history).
+    const url = this.normalizeServerUrl(this.serverUrlInput().trim());
     if (url !== this.localServerService.serverUrl) {
       // Tear down the previous server's connections before the address
       // changes, so the ones re-established afterwards are not closed again.
@@ -241,7 +276,7 @@ export class SettingsComponent {
     }
     // The draft now matches the service again: it may follow external changes.
     this.serverUrlDirty = false;
-    this.serverUrlInput.set(this.localServerService.serverUrl);
+    this.serverUrlInput.set(this.defaultServerAddress());
     this.showToast(url ? `Connected to ${url}` : 'Connected');
     this.checkServerStatus();
   }
@@ -276,7 +311,9 @@ export class SettingsComponent {
     await this.acp.rebindToServer();
 
     this.serverUrlDirty = false;
-    this.serverUrlInput.set('');
+    // `serverUrl` is now empty, so this falls back to the page's own origin —
+    // the server the app just went back to.
+    this.serverUrlInput.set(this.defaultServerAddress());
     this.showToast('Disconnected');
     this.checkServerStatus();
   }
