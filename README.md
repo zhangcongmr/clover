@@ -22,13 +22,7 @@ clover-monorepo/
 │   │                           # Editor / terminal / ACP client UI
 │   ├── common/                 # Shared TypeScript library (@julyware/common)
 │   ├── community-widget/       # Community widget
-│   ├── editor/                 # Editor
-│   ├── forgotpassword/         # Forgot password flow
-│   ├── home/                   # Homepage
-│   ├── official-site/          # Official website
-│   ├── resetpassword/          # Reset password flow
-│   ├── signin/                 # Sign in
-│   └── signup/                 # Sign up
+│   ├── clover/                 # Clover
 ├── docs/                       # Design documents
 ├── .opencode/plans/            # Feature plan documents
 ├── scripts/                    # Build scripts (build-with-timer.mjs)
