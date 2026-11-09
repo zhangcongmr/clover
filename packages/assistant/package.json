@@ -28,10 +28,6 @@
     "prepublishOnly": "node ../../scripts/guard-publish.mjs && pnpm run build:common"
   },
   "keywords": [
-    "clover",
-    "clover",
-    "angular",
-    "editor"
   ],
   "license": "MIT",
   "repository": {
