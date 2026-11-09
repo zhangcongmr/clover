@@ -496,7 +496,17 @@ export class SettingsComponent {
       const updated = await this.sseService.checkAgent(agentId);
       this.acp.installedAgents.update(list => list.map(a => a.id === updated.id ? updated : a));
     } catch (error) {
-      this.agentsError.set((error as Error).message);
+      const message = (error as Error).message;
+      this.agentsError.set(message);
+      // A failed re-check tells us nothing new about the agent, but the row
+      // still carries the last *successful* probe result — leaving the badge
+      // on "Connected" after the check blew up is a lie. Roll that row to
+      // `unavailable` and attach the reason so the badge, the CLI line and
+      // the inline error all describe what just happened. The row stays in
+      // the list: a transport/check failure is not evidence the agent is gone.
+      this.acp.installedAgents.update(list =>
+        list.map(a => (a.id === agentId ? { ...a, status: 'unavailable' as const, error: message } : a)),
+      );
     } finally {
       this.checkingAgentId.set(null);
     }

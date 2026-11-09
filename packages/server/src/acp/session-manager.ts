@@ -1,10 +1,20 @@
 import { logger } from '../helpers/logger.js';
 import { SseAcpClient } from './sse-client.js';
 import { getSharedEventSink } from '../events/in-process-event-sink.js';
+import { getSharedSessionActivity } from './session-activity.js';
 import type { EventSink } from '../events/event-sink.js';
 import type { AgentRegistry } from './agent-registry.js';
 import type { SseAcpClientConfig } from './sse-client.js';
 import type * as acp from '@agentclientprotocol/sdk';
+
+/**
+ * 结束「处理中」状态的事件类型。
+ *
+ * `prompt_processing` 是开始信号（见 `handlePrompt` / `promptAndWait`）。
+ * `cancel_complete` 单独列出：取消不一定伴随 `prompt_complete`（agent 可能
+ * 直接让 Promise 以 cancelled 拒绝），多清一次是无害且幂等的。
+ */
+const PROCESSING_END_EVENT_TYPES = new Set(['prompt_complete', 'error', 'cancel_complete']);
 
 export interface AcpSession {
   /** ACP session id (agent-generated) — the only session identifier in use. */
@@ -63,6 +73,8 @@ export class AcpSessionManager {
   private sessions: Map<string, AcpSession> = new Map();
   /** 事件面出口（唯一的会话事件流）。 */
   private sink: EventSink;
+  /** 处理中状态的 client 级广播（与事件流并行，见 session-activity.ts）。 */
+  private readonly activity = getSharedSessionActivity();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private publishCallbacks: Map<string, (event: any) => void> = new Map();
 
@@ -273,6 +285,16 @@ export class AcpSessionManager {
    */
   async publishEvent(sessionId: string, event: any): Promise<void> {
     await this.sink.append(sessionId, event);
+
+    // 处理中状态额外广播到 client 级通道。会话事件流是按 session 建的，前端
+    // 同一时刻只订阅一个会话：切走之后旧会话的 prompt_complete 就再没有通道
+    // 能到达页面（详见 session-activity.ts）。这里只映射生命周期事件，其余
+    // 事件（session_update / status 等）仍只留在各自的会话流里。
+    if (event?.type === 'prompt_processing') {
+      this.activity.publish(sessionId, true);
+    } else if (PROCESSING_END_EVENT_TYPES.has(event?.type)) {
+      this.activity.publish(sessionId, false);
+    }
   }
 
   /**
@@ -699,6 +721,25 @@ export class AcpSessionManager {
 
   getSessionCount(): number {
     return this.sessions.size;
+  }
+
+  /**
+   * 当前确实有一轮 prompt 在跑的会话 id（全局状态流的快照用）。
+   *
+   * 以 agent 侧 `isPrompting` 为准，而不是任何本地标记：服务重启、prompt
+   * 异常退出、客户端断线重连之后，只有它反映真实状态。前端拿它做一次全量
+   * 校正，就能清掉任何残留的「处理中」。
+   */
+  getProcessingSessionIds(): string[] {
+    const ids: string[] = [];
+    for (const [sessionId, session] of this.sessions) {
+      try {
+        if (session.client.isPrompting(sessionId)) ids.push(sessionId);
+      } catch {
+        // 连接已销毁：当作没在跑，避免一个坏记录拖垮整次快照
+      }
+    }
+    return ids;
   }
 
   getActiveSessionCount(): number {

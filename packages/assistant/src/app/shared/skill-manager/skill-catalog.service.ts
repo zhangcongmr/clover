@@ -253,12 +253,35 @@ export async function gunzip(buffer: ArrayBuffer): Promise<ArrayBuffer> {
   return new Response(stream).arrayBuffer();
 }
 
-/** 校验 sha256 digest（0.2.0）；未声明 digest 时跳过。 */
+/** 只在控制台提示一次，避免多文件安装时刷屏。 */
+let digestSkipWarned = false;
+
+/**
+ * 校验 sha256 digest（0.2.0）；未声明 digest 时跳过。
+ *
+ * `crypto.subtle` 同样只在**安全上下文**暴露（HTTPS 或 localhost）。用局域网
+ * IP 以纯 HTTP 打开页面时它是 `undefined`，此时降级为「跳过校验」并给出一次
+ * 控制台告警——否则一个无法校验的环节会把整个安装流程卡死。完整性由目录方
+ * 的 digest 声明保证，本地开发环境放宽它可以接受。
+ */
 async function verifyDigest(bytes: ArrayBuffer, digest: string, name: string): Promise<void> {
   if (!digest) return;
   const expected = SHA256_RE.exec(digest)?.[1]?.toLowerCase();
   if (!expected) return;
-  const actual = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+
+  const subtle = (globalThis.crypto as Crypto | undefined)?.subtle;
+  if (!subtle) {
+    if (!digestSkipWarned) {
+      digestSkipWarned = true;
+      console.warn(
+        '[skills] crypto.subtle is unavailable (insecure context, e.g. plain HTTP on a LAN IP) — ' +
+        'skipping the sha256 integrity check for downloaded skills. Serve over HTTPS to restore it.',
+      );
+    }
+    return;
+  }
+
+  const actual = [...new Uint8Array(await subtle.digest('SHA-256', bytes))]
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
   if (actual !== expected) {

@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
+import { uuid } from '../uuid.util';
 import {
   AcpSseService,
   ConnectionState as SseConnectionState,
@@ -146,7 +147,31 @@ export class AcpService {
 
   readonly messages = signal<AcpMessage[]>([]);
   readonly plans = signal<Map<string, AcpPlan>>(new Map());
-  readonly isProcessing = signal<boolean>(false);
+
+  /**
+   * ACP session ids with a prompt currently in flight.
+   *
+   * A Set rather than a single boolean, because more than one session can run
+   * at once: the server keeps driving a turn after the user switches away, so
+   * "the open session is busy" and "some session is busy" are different
+   * questions. Keyed by ACP session id so a sidebar row can ask about its own
+   * session and only that row lights up.
+   *
+   * Read it as `processingSessions().has(sessionId)`. Every write installs a
+   * new Set — the signal compares by reference, so mutating in place would not
+   * notify anything.
+   */
+  readonly processingSessions = signal<ReadonlySet<string>>(new Set());
+
+  /**
+   * Convenience for the call sites whose subject is the session this panel has
+   * open (chat input gating, stop button, RAG turn bookkeeping). Derived from
+   * {@link processingSessions}; never written directly.
+   */
+  readonly isCurrentSessionProcessing = computed(() => {
+    const sessionId = this.sessionState().sessionId;
+    return !!sessionId && this.processingSessions().has(sessionId);
+  });
 
   /**
    * ACP session id currently being loaded/resumed. Drives the per-row spinner in
@@ -276,6 +301,8 @@ export class AcpService {
     // 状态不再依赖 loadInstalledAgents 与后端 warmupAll 的赛跑结果
     // （后端 warmup 未完成时快照是 unknown，迁移完成后这里会自动更新）。
     this.sseService.watchAgentStatus((event) => this.handleAgentStatusEvent(event));
+    // 会话「处理中」状态：全局流，首帧快照 + 后续增量（见 handleSessionActivityEvent）。
+    this.sseService.watchSessionActivity((event) => this.handleSessionActivityEvent(event));
     effect(() => {
       const agent = this.selectedAgent();
       if (typeof localStorage !== 'undefined' && !this.readOnly) {
@@ -311,6 +338,32 @@ export class AcpService {
   }
 
   /**
+   * Applies the client-level "which sessions are processing" push.
+   *
+   * The session event stream is per ACP session, so a turn that finishes while
+   * the user is looking at another session would never reach this view (see
+   * `session-activity.ts` on the server). This stream carries every session's
+   * transitions, which is what lets {@link processingSessions} stay truthful.
+   *
+   * The opening snapshot *replaces* the set: it comes straight from the agent's
+   * own `isPrompting`, so any marker left behind by a crash or a lost
+   * connection is dropped here.
+   */
+  private handleSessionActivityEvent(event: { type: string; payload: any }): void {
+    if (event.type === 'sessions_processing_snapshot') {
+      const ids = Array.isArray(event.payload?.sessionIds)
+        ? (event.payload.sessionIds as unknown[]).filter((id): id is string => typeof id === 'string')
+        : [];
+      this.processingSessions.set(new Set(ids));
+    } else if (event.type === 'session_processing_changed') {
+      const sessionId = event.payload?.sessionId;
+      if (typeof sessionId === 'string') {
+        this.markSessionProcessing(sessionId, event.payload?.processing === true);
+      }
+    }
+  }
+
+  /**
    * Rebinds the whole ACP layer to the server that is currently configured
    * (`LocalServerService.serverUrl`).
    *
@@ -340,6 +393,13 @@ export class AcpService {
     // unwatch it and re-subscribe so it re-opens against the new address.
     this.sseService.unwatchAgentStatus();
     this.sseService.watchAgentStatus((event) => this.handleAgentStatusEvent(event));
+
+    // Same for the session-activity push: the other server has its own sessions,
+    // so the old markers are meaningless. Drop them and let the new snapshot
+    // rebuild the set.
+    this.processingSessions.set(new Set());
+    this.sseService.unwatchSessionActivity();
+    this.sseService.watchSessionActivity((event) => this.handleSessionActivityEvent(event));
 
     await this.loadInstalledAgents();
 
@@ -514,13 +574,15 @@ export class AcpService {
     });
 
     this.sseService.onPromptComplete((stopReason, acpSessionId) => {
-      // 只处理「当前会话」的完成事件：切换会话后，旧会话的 prompt_complete
-      // 仍可能迟到（它按 ACP session 路由，与当前视图无关），若不忽略就会
-      // 把当前会话的 isProcessing 误置为 false。
+      // 事件按 ACP session 路由，与当前视图无关：先用事件自己的 id 熄灭处理中
+      // 状态，这样「切走之后才跑完」的后台会话也能正确清掉，而不只是当前会话。
+      this.markSessionProcessing(acpSessionId ?? this.sessionState().sessionId, false);
+
+      // 会话级的善后只对当前视图做：旧会话的 prompt_complete 仍可能迟到，
+      // 不能让它清掉当前会话的计时、todos 与标题刷新。
       if (acpSessionId && acpSessionId !== this.sessionState().sessionId) {
         return;
       }
-      this.isProcessing.set(false);
       this.processingStartTime.set(null);
       if (stopReason === 'end_turn') {
         this.activeTodosId.set(null);
@@ -552,14 +614,14 @@ export class AcpService {
 
     this.sseService.onError((message, source, acpSessionId) => {
       if (source === 'server') {
-        // 只处理「当前会话」的错误：旧会话的迟到 error 与 prompt_complete
-        // 同理，必须忽略，否则会误清当前会话的处理中状态。
+        // 同 prompt_complete：先按事件自带的 session id 清处理中状态（后台会话
+        // 失败也要熄灭），再决定是否影响当前视图。
+        this.markSessionProcessing(acpSessionId ?? this.sessionState().sessionId, false);
         if (acpSessionId && acpSessionId !== this.sessionState().sessionId) {
           return;
         }
         // 后端发布的服务端错误（如 prompt 失败）：sessionState 保持不变，
         // 只结束处理状态并把错误作为消息插入对话流展示。
-        this.isProcessing.set(false);
         this.processingStartTime.set(null);
         this.appendErrorMessage(message);
         return;
@@ -585,7 +647,9 @@ export class AcpService {
     // 单消费者：会话被另一个标签页占用/接管。本页停止驱动会话，
     // 且 SSE 服务不会再自动重连（否则两个 tab 会互相抢）。
     this.sseService.onSuperseded((reason) => {
-      this.isProcessing.set(false);
+      // 本页不再驱动这个会话，但后台可能还有别的会话在跑：只摘掉当前这一个，
+      // 其余标记交给全局状态流校正（这里 sessionState 还没清空，取得到 id）。
+      this.markSessionProcessing(this.sessionState().sessionId, false);
       this.processingStartTime.set(null);
       this.sessionState.update(s => ({
         ...s,
@@ -841,6 +905,22 @@ export class AcpService {
     });
   }
 
+  /**
+   * Adds or removes one session in {@link processingSessions}.
+   *
+   * No-op when the state already matches, so late/duplicate events do not churn
+   * the signal (and cannot wipe another session's marker).
+   */
+  private markSessionProcessing(sessionId: string | null | undefined, processing: boolean): void {
+    if (!sessionId) return;
+    const current = this.processingSessions();
+    if (current.has(sessionId) === processing) return;
+    const next = new Set(current);
+    if (processing) next.add(sessionId);
+    else next.delete(sessionId);
+    this.processingSessions.set(next);
+  }
+
   async sendPrompt(content: ContentBlock[]): Promise<void> {
     const sessionId = this.sessionState().sessionId;
     if (!sessionId) {
@@ -848,7 +928,7 @@ export class AcpService {
     }
 
     this.processingStartTime.set(Date.now());
-    this.isProcessing.set(true);
+    this.markSessionProcessing(sessionId, true);
 
     // 会话标题占位：使用固定文案；agent 下发正式标题
     // （session_info_update 或 session/list）后由 applySessionTitle 覆盖
@@ -981,7 +1061,7 @@ export class AcpService {
    */
   addUserMessage(content: string, contentBlocks?: ContentBlock[]): void {
     this.messages.update(msgs => [...msgs, {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: 'user',
       content,
       contentBlocks,
@@ -994,7 +1074,8 @@ export class AcpService {
     if (sessionId) {
       await this.sseService.cancel(sessionId);
     }
-    this.isProcessing.set(false);
+    // 只清这一个会话：别的会话仍在跑，不应被一起熄灭。
+    this.markSessionProcessing(sessionId, false);
   }
 
   async disconnect(): Promise<void> {
@@ -1024,9 +1105,11 @@ export class AcpService {
     // them would leave hasActiveQuestions() true and the chat textarea disabled.
     this.activeQuestionsMessages.set([]);
     this.activeTodosMessages.set([]);
-    // 处理中状态同属刚断开的会话：必须一并清掉，否则 isProcessing 残留为 true，
-    // sendMessage 会被直接 return（输入框表现为「发不出去」）。
-    this.isProcessing.set(false);
+    // 「处理中」标记不在这里清：断开的是**当前视图**，不是那些 prompt 本身。
+    // 点 New Task / 切 agent 之后后台会话仍在跑，侧边栏那一行必须继续转；
+    // 各会话的真实状态由全局快照与增量事件校正。
+    // 新视图也不会被残留标记卡住：isCurrentSessionProcessing 以 sessionState()
+    // 的 sessionId 为准（上面刚置空），而新会话拿到的是全新 id。
     this.processingStartTime.set(null);
   }
 
@@ -1324,10 +1407,9 @@ export class AcpService {
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     this.provisionalTitle = false;
-    // 切换会话 = 换了一轮「处理中」上下文。旧会话的 isProcessing 必须清掉，
-    // 否则它会一直卡住输入框（sendMessage 会因 isProcessing 直接 return）。
-    // 目标会话若在服务端仍在跑，由 Phase 4 的 result.prompting 恢复。
-    this.isProcessing.set(false);
+    // 切换会话不再清除「处理中」状态：标记是按 session 存的，旧会话在后台
+    // 继续跑时必须保持点亮（侧边栏那一行仍然要转）。目标会话的真实状态由
+    // Phase 4 的 result.prompting 校正；这里只重置当前视图的计时。
     this.processingStartTime.set(null);
     // 会话标题：从项目/任务记录取回；记录存在但无标题时清空，避免残留上一个会话的标题
     const loaded = this.findSessionRecord(sessionId);
@@ -1366,8 +1448,9 @@ export class AcpService {
 
       // 该会话在服务端可能仍有一轮 prompt 在跑（例如切走又切回）：
       // 恢复处理中状态，等待它真正的 prompt_complete。
+      // 服务端的 prompting 是权威值，同时也用它清掉可能残留的标记。
+      this.markSessionProcessing(sessionId, !!result?.prompting);
       if (result?.prompting) {
-        this.isProcessing.set(true);
         this.processingStartTime.set(Date.now());
       }
       this.sessionState.update(s => ({
@@ -1419,8 +1502,8 @@ export class AcpService {
     this.activeQuestionsMessages.set([]);
     this.isNewSession.set(false);
     this.provisionalTitle = false;
-    // 切换会话 = 换了一轮「处理中」上下文（同 loadSession）。
-    this.isProcessing.set(false);
+    // 切换会话不再清除「处理中」状态（同 loadSession）：标记按 session 存，
+    // 旧会话在后台继续跑时仍要保持点亮。
     this.processingStartTime.set(null);
     // 会话标题：从项目/任务记录取回；记录存在但无标题时清空，避免残留上一个会话的标题
     const resumed = this.findSessionRecord(sessionId);
@@ -1451,9 +1534,10 @@ export class AcpService {
         sessionId, resolvedAgentId, cwd || undefined, persistedMcpServers ?? mcpServers,
       );
 
-      // 该会话在服务端可能仍有一轮 prompt 在跑：恢复处理中状态。
+      // 该会话在服务端可能仍有一轮 prompt 在跑：恢复处理中状态（同 loadSession，
+      // result.prompting 为权威值）。
+      this.markSessionProcessing(sessionId, !!result?.prompting);
       if (result?.prompting) {
-        this.isProcessing.set(true);
         this.processingStartTime.set(Date.now());
       }
       this.sessionState.update(s => ({
@@ -1484,6 +1568,8 @@ export class AcpService {
   async deleteSession(sessionId: string, agentId?: string): Promise<void> {
     const resolvedAgentId = agentId || this.findSessionRecord(sessionId)?.agentId;
     await this.sseService.deleteAcpSession(sessionId, resolvedAgentId);
+    // 删掉的会话不会再有 prompt_complete，标记留着就永远转下去。
+    this.markSessionProcessing(sessionId, false);
   }
 
   // ============================================================================
@@ -1562,7 +1648,7 @@ export class AcpService {
    *  `messages.set(replayBuffer)` 把错误冲掉。 */
   private appendErrorMessage(message: string): void {
     const errorMsg: AcpMessage = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: 'error',
       content: message,
       timestamp: new Date()
@@ -1746,7 +1832,7 @@ export class AcpService {
     const toolCallId = update.toolCallId;
     const isUpdate = update.sessionUpdate === 'tool_call_update';
     return {
-      id: isUpdate ? `${toolCallId}-update-${crypto.randomUUID().slice(0, 8)}` : (toolCallId || crypto.randomUUID()),
+      id: isUpdate ? `${toolCallId}-update-${uuid().slice(0, 8)}` : (toolCallId || uuid()),
       role: update.sessionUpdate,
       content: '',
       timestamp: new Date(),
@@ -2054,7 +2140,7 @@ export class AcpService {
         last.contentBlocks = [...(last.contentBlocks ?? []), content];
       } else {
         this.replayBuffer.push({
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: 'assistant',
           content: '',
           contentBlocks: [content],
@@ -2070,7 +2156,7 @@ export class AcpService {
         return [...msgs];
       }
       return [...msgs, {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'assistant',
         content: '',
         contentBlocks: [content],
@@ -2086,7 +2172,7 @@ export class AcpService {
         last.contentBlocks = [...(last.contentBlocks ?? []), content];
       } else {
         this.replayBuffer.push({
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: 'thought',
           content: '',
           contentBlocks: [content],
@@ -2102,7 +2188,7 @@ export class AcpService {
         return [...msgs];
       }
       return [...msgs, {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'thought',
         content: '',
         contentBlocks: [content],
@@ -2118,7 +2204,7 @@ export class AcpService {
         last.contentBlocks = [...(last.contentBlocks ?? []), content];
       } else {
         this.replayBuffer.push({
-          id: messageId || crypto.randomUUID(),
+          id: messageId || uuid(),
           role: 'user',
           content: '',
           contentBlocks: [content],
@@ -2134,7 +2220,7 @@ export class AcpService {
         return [...msgs];
       }
       return [...msgs, {
-        id: messageId || crypto.randomUUID(),
+        id: messageId || uuid(),
         role: 'user',
         content: '',
         contentBlocks: [content],
@@ -2150,7 +2236,7 @@ export class AcpService {
         last.content += text;
       } else {
         this.replayBuffer.push({
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: 'assistant',
           content: text,
           timestamp: new Date()
@@ -2165,7 +2251,7 @@ export class AcpService {
         return [...msgs];
       }
       return [...msgs, {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'assistant',
         content: text,
         timestamp: new Date()
@@ -2180,7 +2266,7 @@ export class AcpService {
         last.content += text;
       } else {
         this.replayBuffer.push({
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: 'thought',
           content: text,
           timestamp: new Date()
@@ -2195,7 +2281,7 @@ export class AcpService {
         return [...msgs];
       }
       return [...msgs, {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: 'thought',
         content: text,
         timestamp: new Date()
@@ -2210,7 +2296,7 @@ export class AcpService {
         last.content += text;
       } else {
         this.replayBuffer.push({
-          id: messageId || crypto.randomUUID(),
+          id: messageId || uuid(),
           role: 'user',
           content: text,
           timestamp: new Date()
@@ -2225,7 +2311,7 @@ export class AcpService {
         return [...msgs];
       }
       return [...msgs, {
-        id: messageId || crypto.randomUUID(),
+        id: messageId || uuid(),
         role: 'user',
         content: text,
         timestamp: new Date()

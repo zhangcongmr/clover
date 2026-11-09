@@ -127,7 +127,7 @@ export class AcpChatComponent implements OnDestroy {
     const messages = this.acpService.messages();
     const processingStartTime = this.acpService.processingStartTime();
 
-    if (this.acpService.isProcessing() && processingStartTime !== null) {
+    if (this.acpService.isCurrentSessionProcessing() && processingStartTime !== null) {
       const preMessages: AcpMessage[] = [];
       const postMessages: AcpMessage[] = [];
 
@@ -186,7 +186,7 @@ export class AcpChatComponent implements OnDestroy {
 
     // 正在流式输出的这一轮保持展开；结束后这些 key 留在集合里，步骤不会突然收起。
     effect(() => {
-      if (!this.acpService.isProcessing()) return;
+      if (!this.acpService.isCurrentSessionProcessing()) return;
       const liveKeys = this.groupedMessages()
         .filter(group => group.type === 'intermediate' && group.isNew)
         .map(group => this.sectionKey(group))

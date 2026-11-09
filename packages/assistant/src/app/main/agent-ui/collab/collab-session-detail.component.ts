@@ -4,6 +4,8 @@ import { AcpService } from '../../../shared/acp/acp.service';
 import { AcpSseService } from '../../../shared/acp/acp-sse.service';
 import { ACP_READ_ONLY } from '../../../shared/acp/acp-readonly.token';
 import { AcpChatComponent } from '../../../shared/acp/acp-chat.component';
+import { NotificationService } from '../../../shared/notification/notification.service';
+import { copyText } from '../../../shared/clipboard.util';
 import type { CollabSessionTarget } from './collab.service';
 
 /**
@@ -51,6 +53,7 @@ export class CollabSessionDetailComponent implements OnDestroy {
 
   /** Shadow ACP instance — resolves to the local provider, not the root one. */
   protected readonly acp = inject(AcpService);
+  private readonly notificationService = inject(NotificationService);
 
   protected readonly loading = signal(false);
   protected readonly loadError = signal<string | null>(null);
@@ -121,8 +124,12 @@ export class CollabSessionDetailComponent implements OnDestroy {
 
   protected copySessionId(): void {
     const id = this.target().sessionId;
-    if (!id || typeof navigator === 'undefined' || !navigator.clipboard) return;
-    void navigator.clipboard.writeText(id).catch(() => undefined);
+    if (!id) return;
+    // `copyText` 在非安全上下文（局域网 IP + HTTP）会退回 execCommand，
+    // 只有两条路都失败才提示用户，而不是点了完全没反应。
+    void copyText(id).then(ok => {
+      if (!ok) this.notificationService.showNotification('Failed to copy the session ID to the clipboard.', 'error');
+    });
   }
 
   /**

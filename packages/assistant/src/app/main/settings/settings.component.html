@@ -73,24 +73,16 @@
                 [class.status-unknown]="serverStatus() === 'unknown'"
               ></span>
               <span class="status-text">
-                @if (serverStatus() === 'connected') {
-                  Connected
-                } @else if (serverStatus() === 'disconnected') {
-                  Disconnected
-                } @else {
-                  Checking...
-                }
+                {{ serverStatus() === 'connected' ? 'Connected'
+                  : serverStatus() === 'disconnected' ? 'Disconnected'
+                  : 'Checking...' }}
               </span>
               <button
                 class="btn btn-secondary"
                 (click)="testServerConnection()"
                 [disabled]="serverTesting()"
               >
-                @if (serverTesting()) {
-                  Testing...
-                } @else {
-                  Test Connection
-                }
+                {{ serverTesting() ? 'Testing...' : 'Test Connection' }}
               </button>
             </div>
           </div>
@@ -138,11 +130,13 @@
                       }
                     </div>
                     <span class="agent-desc">{{ agent.description }}</span>
-                    @if (agent.cliPath; as cliPath) {
-                      <span class="agent-path" [title]="agentRunCommand(agent)">CLI: {{ agentRunCommand(agent) }}</span>
-                    } @else {
-                      <span class="agent-path agent-path-missing">CLI: not installed</span>
-                    }
+                    <span
+                      class="agent-path"
+                      [class.agent-path-missing]="!agent.cliPath"
+                      [title]="agentRunCommand(agent)"
+                    >
+                      CLI: {{ agent.cliPath ? agentRunCommand(agent) : 'not installed' }}
+                    </span>
                     @if (agent.error) {
                       <span class="agent-error" [title]="agent.error">{{ agent.error }}</span>
                     }
@@ -168,11 +162,7 @@
                       [disabled]="uninstallingAgentId() !== null || installingAgentId() !== null || checkingAgentId() === agent.id"
                       title="Remove this agent's configuration from ~/.clover/acp.json"
                     >
-                      @if (uninstallingAgentId() === agent.id) {
-                        Uninstalling
-                      } @else {
-                        Uninstall
-                      }
+                      {{ uninstallingAgentId() === agent.id ? 'Uninstalling' : 'Uninstall' }}
                     </button>
                   } @else if (agent.source === 'disk') {
                     <button
@@ -196,22 +186,21 @@
                     (click)="checkNow(agent.id)"
                     [disabled]="checkingAgentId() === agent.id || agentsLoading() || installingAgentId() !== null"
                   >
-                    @if (checkingAgentId() === agent.id) {
-                      Checking...
-                    } @else {
-                      Check Now
-                    }
+                    {{ checkingAgentId() === agent.id ? 'Checking...' : 'Check Now' }}
                   </button>
                 </div>
               }
               @if (agentsLoading() && acp.installedAgents().length === 0) {
                 <p class="agents-hint">Loading agents...</p>
-              }
-              @if (!agentsLoading() && acp.installedAgents().length === 0 && !agentsError()) {
-                <p class="agents-hint">No agents available</p>
-              }
-              @if (agentsError()) {
-                <p class="agents-hint agents-error">{{ agentsError() }}</p>
+              } @else if (acp.installedAgents().length === 0) {
+                <!-- Only for the empty list: a per-agent failure belongs on its
+                     own row (see the agent-meta block above), where it is shown
+                     next to the agent it applies to instead of once for the
+                     whole list. What is left here is the list-level case — the
+                     fetch itself failed, so there is no row to carry it. -->
+                <p class="agents-hint" [class.agents-error]="agentsError() !== null">
+                  {{ agentsError() ?? 'No agents available' }}
+                </p>
               }
             </div>
           </div>

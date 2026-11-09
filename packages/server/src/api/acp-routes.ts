@@ -7,6 +7,7 @@ import { AcpSessionManager } from '../acp/session-manager.js';
 import type { AgentRegistry } from '../acp/agent-registry.js';
 import type { AgentConfig } from '../acp/acp-agent.types.js';
 import { SseManager, StreamConflictError } from '../acp/sse-manager.js';
+import { getSharedSessionActivity } from '../acp/session-activity.js';
 import type { TokenManager } from '../local/auth.js';
 import type { FileService } from '../local/file-service.js';
 import type { McpServerRegistry } from '../mcp/registry.js';
@@ -960,6 +961,67 @@ export function setupAcpRoutes(app: Express, options: AcpRouteOptions): void {
       unsubscribe();
       unsubscribeRemoved();
       logger.log('[ACP Routes] Agent status SSE client disconnected');
+    };
+    req.on('close', cleanup);
+    res.on('close', cleanup);
+  });
+
+  /**
+   * GET /api/acp/sessions/events
+   * 会话「处理中」状态的全局推送（client 级 SSE，独立于会话事件流）。
+   *
+   * 会话事件流是按 session 建流的，而前端一次只订阅一个会话：用户从 A 切到
+   * B 之后，A 的 prompt_complete 就再也没有通道能到达页面，侧边栏里 A 那一行
+   * 会一直转。这条流把状态提升到客户端级别，订阅一次即可掌握全部会话。
+   *
+   * - 连接建立即推送全量快照 `sessions_processing_snapshot`（当前真在跑的
+   *   会话 id 列表，取自 agent 侧 `isPrompting`），前端据此整体替换本地集合，
+   *   顺带清掉任何残留标记；
+   * - 之后每次开始/结束推送增量 `session_processing_changed`；
+   * - 每 25s 注释行心跳，防止代理掐断空闲连接。
+   */
+  app.get('/api/acp/sessions/events', (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('Content-Encoding', 'none');
+    res.flushHeaders?.();
+
+    let closed = false;
+    const send = (event: { type: string; payload: unknown; timestamp: number }) => {
+      if (closed || res.writableEnded || res.destroyed) return;
+      try {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      } catch (error) {
+        logger.error('[ACP Routes] Session activity SSE write failed:', error);
+      }
+    };
+
+    // 连接即全量快照：前端不必额外发一次查询，也不必自己拼状态。
+    send({
+      type: 'sessions_processing_snapshot',
+      payload: { sessionIds: sessionManager.getProcessingSessionIds() },
+      timestamp: Date.now(),
+    });
+
+    const unsubscribe = getSharedSessionActivity().subscribe((event) => send(event));
+
+    const heartbeat = setInterval(() => {
+      if (closed) return;
+      try {
+        res.write(': heartbeat\n\n');
+      } catch {
+        // 写失败会触发 'close'，由 cleanup 统一收尾
+      }
+    }, 25000);
+
+    const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      clearInterval(heartbeat);
+      unsubscribe();
+      logger.log('[ACP Routes] Session activity SSE client disconnected');
     };
     req.on('close', cleanup);
     res.on('close', cleanup);

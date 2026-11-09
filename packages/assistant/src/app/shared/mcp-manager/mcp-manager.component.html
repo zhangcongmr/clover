@@ -103,11 +103,7 @@
         <span class="skeleton-sr-only">Loading the official MCP registry…</span>
       } @else if (registryItems.length === 0) {
         <div class="status-line">
-          @if (registryError) {
-            {{ registryError }}
-          } @else {
-            No servers found in the official registry.
-          }
+          {{ registryError || 'No servers found in the official registry.' }}
         </div>
       } @else {
         @if (registryError) {
@@ -146,11 +142,7 @@
                     [disabled]="!!installingKey"
                     (click)="installRegistryServer(item)"
                   >
-                    @if (installingKey === item.key) {
-                      Installing…
-                    } @else {
-                      Install
-                    }
+                    {{ installingKey === item.key ? 'Installing…' : 'Install' }}
                   </button>
                 }
                 @if (registryLink(item); as link) {
@@ -174,11 +166,7 @@
               [disabled]="registryLoading()"
               (click)="loadRegistry(false)"
             >
-              @if (registryLoading()) {
-                Loading…
-              } @else {
-                Load more
-              }
+              {{ registryLoading() ? 'Loading…' : 'Load more' }}
             </button>
           </div>
         }

@@ -1,6 +1,7 @@
 import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { LocalServerService } from '../local-server/local-server.service';
+import { uuid } from '../uuid.util';
 import { openSseRequest, readSseFrames } from './sse-transport';
 import type { AgentConfig, AgentStatusInfo } from './acp-agent.types';
 
@@ -48,16 +49,12 @@ export interface AgentInstallJob {
  * 「同一页面的重连」，表现为一方静默失联。
  */
 function createClientId(): string {
-  const c = globalThis.crypto as Crypto | undefined;
-  if (c?.randomUUID) return c.randomUUID();
-  return `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  return `c-${uuid()}`;
 }
 
 /** 命令请求 id（服务端用它关联 `prompt_complete` 等事件）。 */
 function newRequestId(): string {
-  const c = globalThis.crypto as Crypto | undefined;
-  if (c?.randomUUID) return c.randomUUID();
-  return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  return `r-${uuid()}`;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -742,88 +739,142 @@ export class AcpSseService {
   }
 
   // ============================================================================
-  // Agent 状态变更推送（全局 SSE 流，独立于会话流）
+  // 全局推送流（独立于会话流）
+  //
+  // 两条流结构完全一样：连接 → 首帧快照 → 增量事件；断线按指数退避重连
+  // （封顶 30s）。差别只有 URL 与事件类型，因此共用同一个连接助手。
   // ============================================================================
 
-  private agentStatusController: AbortController | null = null;
-  private agentStatusWatchStarted = false;
-  private agentStatusReconnectAttempts = 0;
-  private agentStatusReconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private onAgentStatusEventCallback: ((event: { type: string; payload: any }) => void) | null = null;
   private readonly platformId = inject(PLATFORM_ID);
+  /** key → 停止函数（幂等）。 */
+  private readonly globalStreams = new Map<string, () => void>();
+  private onAgentStatusEventCallback: ((event: { type: string; payload: any }) => void) | null = null;
+  private onSessionActivityEventCallback: ((event: { type: string; payload: any }) => void) | null = null;
+
+  /**
+   * 订阅一条全局 SSE 流，返回停止函数（幂等）。
+   *
+   * SSR 阶段不连接：`LocalServerService.getBaseUrl` 依赖 `window`，服务端渲染
+   * 进程也不应持有到本地 agent 的长连接。
+   */
+  private openGlobalStream(
+    path: string,
+    onEvent: (event: { type: string; payload: any }) => void,
+  ): () => void {
+    if (!isPlatformBrowser(this.platformId)) return () => undefined;
+
+    let stopped = false;
+    let controller: AbortController | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+
+    const connect = async (): Promise<void> => {
+      if (stopped) return;
+      const current = new AbortController();
+      controller = current;
+
+      try {
+        const token = await this.localServerService.getToken();
+        const url = `${this.localServerService.getBaseUrl()}${path}`;
+        const response = await openSseRequest(url, {
+          headers: {
+            Accept: 'text/event-stream',
+            Authorization: `Bearer ${token}`,
+          },
+          signal: current.signal,
+        });
+        if (!response.ok || !response.body) {
+          throw new Error(`${path} failed: HTTP ${response.status}`);
+        }
+
+        attempts = 0;
+        for await (const frame of readSseFrames(response.body, current.signal)) {
+          if (current.signal.aborted) return;
+          if (!frame.data) continue;
+          try {
+            onEvent(JSON.parse(frame.data) as { type: string; payload: any });
+          } catch (error) {
+            console.error(`[ACP SSE] Failed to parse event from ${path}:`, error);
+          }
+        }
+      } catch (error) {
+        if (current.signal.aborted) return;
+        console.error(`[ACP SSE] Stream error (${path}):`, error);
+      }
+
+      // 流结束/网络错误：指数退避重连（封顶 30s），直到显式停止。
+      if (stopped || current.signal.aborted) return;
+      const delay = Math.min(30_000, 1_000 * 2 ** attempts);
+      attempts++;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        void connect();
+      }, delay);
+    };
+
+    void connect();
+
+    return () => {
+      if (stopped) return;
+      stopped = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      controller?.abort();
+      controller = null;
+    };
+  }
+
+  private stopGlobalStream(key: string): void {
+    const stop = this.globalStreams.get(key);
+    if (!stop) return;
+    stop();
+    this.globalStreams.delete(key);
+  }
 
   /**
    * 订阅全局 Agent 状态推送（`GET /api/acp/agents/events`）。
    *
    * 连接建立即收到全量快照（`agents_status_snapshot`），之后每次状态迁移收到
-   * 增量事件（`agent_status_changed`）。断线后按指数退避自动重连（封顶 30s）；
-   * `unwatchAgentStatus()` 停止订阅。
-   *
-   * SSR（服务端渲染）阶段不启动：`LocalServerService.getBaseUrl` 依赖
-   * `window`，且服务器渲染进程也不应持有到本地 agent 的长连接。
+   * 增量事件（`agent_status_changed`）。断线后自动重连；
+   * `unwatchAgentStatus()` 停止订阅。重复调用只替换回调，不新开连接。
    */
   watchAgentStatus(callback: (event: { type: string; payload: any }) => void): void {
     this.onAgentStatusEventCallback = callback;
-    if (!isPlatformBrowser(this.platformId)) return;
-    if (this.agentStatusWatchStarted) return;
-    this.agentStatusWatchStarted = true;
-    void this.connectAgentStatusStream();
+    if (this.globalStreams.has('agents')) return;
+    this.globalStreams.set(
+      'agents',
+      this.openGlobalStream('/api/acp/agents/events', (event) => this.onAgentStatusEventCallback?.(event)),
+    );
   }
 
   /** 停止状态订阅并关闭底层连接。 */
   unwatchAgentStatus(): void {
     this.onAgentStatusEventCallback = null;
-    this.agentStatusWatchStarted = false;
-    this.agentStatusReconnectAttempts = 0;
-    if (this.agentStatusReconnectTimer) {
-      clearTimeout(this.agentStatusReconnectTimer);
-      this.agentStatusReconnectTimer = null;
-    }
-    this.agentStatusController?.abort();
-    this.agentStatusController = null;
+    this.stopGlobalStream('agents');
   }
 
-  private async connectAgentStatusStream(): Promise<void> {
-    if (!this.agentStatusWatchStarted || !isPlatformBrowser(this.platformId)) return;
-    const controller = new AbortController();
-    this.agentStatusController = controller;
+  /**
+   * 订阅会话「处理中」状态的全局推送（`GET /api/acp/sessions/events`）。
+   *
+   * 首帧是快照 `sessions_processing_snapshot`（当前真在跑的全部会话 id），
+   * 之后是增量 `session_processing_changed`。之所以要这条流：会话事件流按
+   * session 建流，切走之后旧会话的完成事件就收不到了。
+   */
+  watchSessionActivity(callback: (event: { type: string; payload: any }) => void): void {
+    this.onSessionActivityEventCallback = callback;
+    if (this.globalStreams.has('sessions')) return;
+    this.globalStreams.set(
+      'sessions',
+      this.openGlobalStream('/api/acp/sessions/events', (event) => this.onSessionActivityEventCallback?.(event)),
+    );
+  }
 
-    try {
-      const token = await this.localServerService.getToken();
-      const headers: Record<string, string> = {
-        Accept: 'text/event-stream',
-        Authorization: `Bearer ${token}`,
-      };
-      const url = `${this.localServerService.getBaseUrl()}/api/acp/agents/events`;
-      const response = await openSseRequest(url, { headers, signal: controller.signal });
-      if (!response.ok || !response.body) {
-        throw new Error(`Agent status stream failed: HTTP ${response.status}`);
-      }
-
-      this.agentStatusReconnectAttempts = 0;
-      for await (const frame of readSseFrames(response.body, controller.signal)) {
-        if (controller.signal.aborted) return;
-        if (!frame.data) continue;
-        try {
-          const event = JSON.parse(frame.data) as { type: string; payload: any };
-          this.onAgentStatusEventCallback?.(event);
-        } catch (error) {
-          console.error('[ACP SSE] Failed to parse agent status event:', error);
-        }
-      }
-    } catch (error) {
-      if (controller.signal.aborted) return;
-      console.error('[ACP SSE] Agent status stream error:', error);
-    }
-
-    // 流结束/网络错误：指数退避重连（封顶 30s），直到显式 unwatch。
-    if (!this.agentStatusWatchStarted || controller.signal.aborted) return;
-    const delay = Math.min(30_000, 1_000 * 2 ** this.agentStatusReconnectAttempts);
-    this.agentStatusReconnectAttempts++;
-    this.agentStatusReconnectTimer = setTimeout(() => {
-      this.agentStatusReconnectTimer = null;
-      void this.connectAgentStatusStream();
-    }, delay);
+  /** 停止会话状态订阅并关闭底层连接。 */
+  unwatchSessionActivity(): void {
+    this.onSessionActivityEventCallback = null;
+    this.stopGlobalStream('sessions');
   }
 
   // ============================================================================

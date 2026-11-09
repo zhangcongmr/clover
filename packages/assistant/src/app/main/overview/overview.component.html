@@ -74,11 +74,7 @@
       </span>
       <span class="overview-item-value">{{ overviewMessageCount() }} message{{ overviewMessageCount() === 1 ? '' : 's' }}</span>
       <span class="overview-item-sub">
-        @if (overviewProcessing()) {
-          Agent is working…
-        } @else {
-          {{ overviewActivityText() }}
-        }
+        {{ overviewProcessing() ? 'Agent is working…' : overviewActivityText() }}
       </span>
     </button>
 

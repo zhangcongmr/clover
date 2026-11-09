@@ -49,7 +49,7 @@
                   </div>
                 } @else if (message.role === 'assistant') {
                   <app-a2ui-json-renderer [content]="message.content" (themeApply)="themeApply.emit($event)"></app-a2ui-json-renderer>
-                  @if (!acpService.isProcessing()) {
+                  @if (!acpService.isCurrentSessionProcessing()) {
                     @if (changedFilesFor(message); as files) {
                       <div class="files-changed">
                         <div class="files-changed-header">
@@ -225,7 +225,7 @@
     </div>
   }
 
-  @if (acpService.isProcessing()) {
+  @if (acpService.isCurrentSessionProcessing()) {
     <div class="typing-indicator">
       <span></span>
       <span></span>
