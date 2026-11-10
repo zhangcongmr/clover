@@ -1,5 +1,11 @@
 # @julyware/community-widget
 
+## 0.1.5
+
+### Patch Changes
+
+- @julyware/common@0.1.5
+
 ## 0.1.3
 
 ### Patch Changes
