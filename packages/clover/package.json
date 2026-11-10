@@ -1,6 +1,6 @@
 {
   "name": "@julyware/clover",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Clover - SSR application (Vite + React) with an embedded local server",
   "type": "module",
   "bin": {

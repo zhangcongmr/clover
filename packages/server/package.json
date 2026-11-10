@@ -1,6 +1,6 @@
 {
   "name": "@julyware/clover-server",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Local proxy server for Clover - provides file system access, PTY terminal, and ACP server",
   "type": "module",
   "main": "./dist/index.cjs",
