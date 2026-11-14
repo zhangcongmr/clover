@@ -24,20 +24,11 @@ clover-monorepo/
 │   │                           # Main app: editor / terminal / ACP client UI
 │   ├── common/                 # 共享 TypeScript 库（@julyware/common）
 │   ├── community-widget/       # 社区挂件
-│   ├── editor/                 # 编辑器
-│   ├── forgotpassword/         # 忘记密码流程
-│   ├── home/                   # 首页
-│   ├── official-site/          # 官方网站
-│   ├── resetpassword/          # 重置密码流程
-│   ├── signin/                 # 登录
-│   └── signup/                 # 注册
+│   ├── clover/                 # Clover
 ├── docs/                       # 设计文档
 ├── .opencode/plans/            # 功能方案文档
 ├── scripts/                    # 构建脚本（build-with-timer.mjs）
 ├── static/                     # 静态资源
-├── nginx-conf/                 # Nginx 配置
-├── supabase/                   # Supabase Edge Functions
-├── nginx-containerization.md   # Nginx 容器化方案
 ├── pnpm-workspace.yaml         # pnpm workspace 配置
 ├── package.json                # 根 package.json
 └── README.md
