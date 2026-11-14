@@ -27,9 +27,6 @@ clover-monorepo/
 ├── .opencode/plans/            # Feature plan documents
 ├── scripts/                    # Build scripts (build-with-timer.mjs)
 ├── static/                     # Static assets
-├── nginx-conf/                 # Nginx configuration
-├── supabase/                   # Supabase Edge Functions
-├── nginx-containerization.md   # Nginx containerization plan
 ├── pnpm-workspace.yaml         # pnpm workspace config
 ├── package.json                # Root package.json
 └── README.md
