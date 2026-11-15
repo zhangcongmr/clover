@@ -102,6 +102,10 @@ export type { SslConfig } from './helpers/index.js';
 export { createServer, setupServerMiddleware } from './server.js';
 export type { ServerConfig, ServerInstance, ServerMiddlewareOptions } from './server.js';
 
+// CLI
+export { processCliArgs } from './cli.js';
+export type { CliOptions, CliResult } from './cli.js';
+
 // ACP SSE + Redis
 export { SseManager, StreamConflictError } from './acp/sse-manager.js';
 export type { SseConnection, SseConnectionOptions, SseAttachResult, ServerEvent } from './acp/sse-manager.js';

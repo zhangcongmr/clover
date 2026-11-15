@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import express from 'express';
 import { existsSync, readFileSync } from 'node:fs';
-import { createServer } from '@julyware/clover-server';
+import { createServer, processCliArgs } from '@julyware/clover-server';
 import type { Connect } from 'vite';
 
 declare const isProdBuild: boolean | undefined;
@@ -16,45 +16,21 @@ const isDev = !isCompiled;
 const rootDir = resolve(__dirname, '..');
 const distDir = isCompiled ? join(__dirname, 'dist') : join(rootDir, 'dist');
 
-const args = process.argv.slice(2);
-if (args.includes('-h') || args.includes('--help')) {
-  console.log([
-    'clover - SSR with an embedded local server',
-    '',
-    'Usage:',
-    '  clover [options]',
-    '',
-    'Options:',
-    '  -v, --version  Print the clover version',
-    '  -h, --help     Show this help message',
-    '  -p, --port N   Set the server port (default 5178)',
-    '',
-    'Environment:',
-    '  PORT                  Server port (default 5178)',
-    '  EDITOR_TOKEN_SECRET   Auth token secret for the server',
-  ].join('\n'));
-  process.exit(0);
-}
-
-if (args.includes('-v') || args.includes('--version')) {
-  const pkgPath = join(rootDir, 'package.json');
-  const version = existsSync(pkgPath)
-    ? JSON.parse(readFileSync(pkgPath, 'utf8')).version
-    : 'unknown';
-  console.log(version);
-  process.exit(0);
-}
-
-const portIndex = args.findIndex((a) => a === '-p' || a === '--port');
-if (portIndex !== -1) {
-  const rawPort = args[portIndex + 1];
-  const port = Number(rawPort);
-  if (Number.isInteger(port) && port > 0 && port <= 65535) {
-    process.env['PORT'] = String(port);
-  } else {
-    console.error(`Invalid port: ${rawPort}`);
-    process.exit(1);
-  }
+const cliResult = processCliArgs(process.argv.slice(2), {
+  commandName: 'clover',
+  description: 'SSR with an embedded local server',
+  getVersion: () => {
+    const pkgPath = join(rootDir, 'package.json');
+    return existsSync(pkgPath)
+      ? JSON.parse(readFileSync(pkgPath, 'utf8')).version
+      : 'unknown';
+  },
+  defaultPort: 5178,
+  portEnvKey: 'PORT',
+  tokenSecretEnvKey: 'EDITOR_TOKEN_SECRET',
+});
+if (cliResult.shouldExit) {
+  process.exit(cliResult.exitCode);
 }
 
 const app = express();
