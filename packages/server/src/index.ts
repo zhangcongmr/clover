@@ -92,8 +92,18 @@ export type { EventSink, SessionEvent, AttachOptions } from './events/event-sink
 // Helpers
 export { loadSslConfig, isJson } from './helpers/index.js';
 export { TIME_ZONE, toIsoTimestamp, toPathTimestamp } from './helpers/time.js';
-export { logger, formatLogTimestamp, configureFileLogging, logDirectory, currentLogFile, flushLogs, closeLogs } from './helpers/logger.js';
-export type { Logger, LogArgs, LogLevel } from './helpers/logger.js';
+export {
+  logger,
+  formatLogTimestamp,
+  configureFileLogging,
+  logDirectory,
+  currentLogFile,
+  flushLogs,
+  closeLogs,
+  setLoggerConsoleTarget,
+  getLoggerConsoleTarget,
+} from './helpers/logger.js';
+export type { Logger, LogArgs, LogLevel, LoggerConsoleTarget } from './helpers/logger.js';
 export { RollingFileLogger, defaultLogDir } from './helpers/log-file.js';
 export type { FileLoggingOptions } from './helpers/log-file.js';
 export type { SslConfig } from './helpers/index.js';
@@ -103,8 +113,18 @@ export { createServer, setupServerMiddleware } from './server.js';
 export type { ServerConfig, ServerInstance, ServerMiddlewareOptions } from './server.js';
 
 // CLI
-export { processCliArgs } from './cli.js';
-export type { CliOptions, CliResult } from './cli.js';
+export { processCliArgs, runCliCommand, buildHelpText, isCliCommand, CLI_COMMANDS } from './cli.js';
+export type {
+  CliOptions,
+  CliResult,
+  CliCommandName,
+  CliCommandResult,
+  ParsedCommand,
+} from './cli.js';
+export { RUN_HELP, parseRunArgs, runCommand, pickPermissionOutcome } from './cli/commands/run.js';
+export type { RunCommandOptions } from './cli/commands/run.js';
+export { SERVE_HELP, parseServeArgs, applyServeOptions } from './cli/commands/serve.js';
+export type { ServeCommandOptions } from './cli/commands/serve.js';
 
 // ACP SSE + Redis
 export { SseManager, StreamConflictError } from './acp/sse-manager.js';
