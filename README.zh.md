@@ -71,7 +71,31 @@ pnpm --filter ./packages/assistant serve:ssr:clover  # 运行 SSR 服务
 # server 本地代理
 pnpm --filter ./packages/server build            # tsup 构建
 pnpm --filter ./packages/server dev              # 监听构建
+pnpm --filter ./packages/server test             # vitest run（CLI 测试）
 ```
+
+## 命令行 / CLI
+
+发布后的 `clover` 命令提供两个子命令：
+
+```bash
+clover run "summarise the open PRs"   # 用已安装的 agent 跑一次任务后退出
+clover run --agent codex "…"           # 指定 agent
+clover serve                           # 启动本地服务（与不带参数时一致）
+```
+
+`clover run` 在进程内直接驱动 ACP 会话，**不会启动 Web 服务**。agent 的输出走
+stdout（方便管道消费），库的日志走 stderr。agent 来自 `~/.clover/acp.json`
+（由 Web UI 维护），CLI 既不安装也不修改它们。
+
+| 选项 | 适用 | 说明 |
+|------|------|------|
+| `--agent <id>` | `run` | 指定 agent id（必须已安装） |
+| `--root <dir>` | `run` | workspace 根目录（默认当前目录） |
+| `--json` | `run` | 以 NDJSON 输出原始会话事件 |
+| `--approve` | `run` | 自动同意权限请求（默认拒绝） |
+| `-p, --port N` | `serve` | 设置服务端口 |
+| `--readonly` | `serve` | 只读模式（不写文件） |
 
 ## 根脚本 / Root Scripts
 

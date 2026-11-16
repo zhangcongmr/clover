@@ -23,6 +23,31 @@ export type LogArgs = unknown[];
 /** Uppercased level keyword printed in each log line. */
 export type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
 
+/**
+ * Console 输出通道。
+ *
+ * 'stdout'（默认）保持既有行为：log/info 走 stdout，warn/error 走 stderr。
+ * 'stderr' 把所有级别都挪到 stderr —— CLI 用 stdout 承载 agent 的输出
+ * （`clover run --json` 还要输出 NDJSON），库日志混进去会破坏可解析性。
+ */
+export type LoggerConsoleTarget = 'stdout' | 'stderr';
+
+let consoleTarget: LoggerConsoleTarget = 'stdout';
+
+/**
+ * 切换库日志的 console 通道。
+ *
+ * 服务端保持默认的 stdout；CLI 切成 stderr，让 stdout 只剩命令自己的输出。
+ */
+export function setLoggerConsoleTarget(target: LoggerConsoleTarget): void {
+  consoleTarget = target;
+}
+
+/** 当前库日志的 console 通道。 */
+export function getLoggerConsoleTarget(): LoggerConsoleTarget {
+  return consoleTarget;
+}
+
 export interface Logger {
   /** Informational message (maps to `console.log`). */
   log: (...args: LogArgs) => void;
@@ -90,11 +115,11 @@ function emit(sink: (...args: unknown[]) => void, level: LogLevel, args: LogArgs
 }
 
 export const logger: Logger = {
-  log: (...args) => emit((...a) => console.log(...a), 'INFO', args),
-  info: (...args) => emit((...a) => console.info(...a), 'INFO', args),
-  warn: (...args) => emit((...a) => console.warn(...a), 'WARN', args),
-  error: (...args) => emit((...a) => console.error(...a), 'ERROR', args),
-  debug: (...args) => emit((...a) => console.debug(...a), 'DEBUG', args),
+  log: (...args) => emit(consoleTarget === 'stderr' ? console.warn : console.log, 'INFO', args),
+  info: (...args) => emit(consoleTarget === 'stderr' ? console.warn : console.info, 'INFO', args),
+  warn: (...args) => emit(console.warn, 'WARN', args),
+  error: (...args) => emit(console.error, 'ERROR', args),
+  debug: (...args) => emit(consoleTarget === 'stderr' ? console.warn : console.debug, 'DEBUG', args),
 };
 
 export default logger;

@@ -69,7 +69,32 @@ pnpm --filter ./packages/assistant serve:ssr:clover  # Run SSR server
 # server local proxy
 pnpm --filter ./packages/server build            # tsup build
 pnpm --filter ./packages/server dev              # Watch build
+pnpm --filter ./packages/server test             # vitest run (CLI tests)
 ```
+
+## CLI
+
+The published `clover` binary exposes two commands:
+
+```bash
+clover run "summarise the open PRs"   # Run one task with an installed agent, then exit
+clover run --agent codex "…"           # Pick a specific agent
+clover serve                           # Start the local server (same as no arguments)
+```
+
+`clover run` drives the ACP session in-process — it never starts the web
+server. Agent output goes to stdout (so it can be piped), library logs go to
+stderr. Agents come from `~/.clover/acp.json`, which the web UI maintains; the
+CLI never installs or modifies them.
+
+| Option | Applies to | Description |
+|--------|------------|-------------|
+| `--agent <id>` | `run` | Run with this agent id (it must be installed) |
+| `--root <dir>` | `run` | Workspace directory (default: current directory) |
+| `--json` | `run` | Print raw session events as NDJSON |
+| `--approve` | `run` | Approve permission requests automatically (default: deny) |
+| `-p, --port N` | `serve` | Set the server port |
+| `--readonly` | `serve` | Serve in read-only mode (no file writes) |
 
 ## Root Scripts
 

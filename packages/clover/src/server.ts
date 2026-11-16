@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import express from 'express';
 import { existsSync, readFileSync } from 'node:fs';
-import { createServer, processCliArgs } from '@julyware/clover-server';
+import { createServer, processCliArgs, runCliCommand } from '@julyware/clover-server';
 import type { Connect } from 'vite';
 
 declare const isProdBuild: boolean | undefined;
@@ -31,6 +31,15 @@ const cliResult = processCliArgs(process.argv.slice(2), {
 });
 if (cliResult.shouldExit) {
   process.exit(cliResult.exitCode);
+}
+
+// 子命令在启动服务之前分流：`run` 跑完一次任务就退出，
+// `serve` 只把选项落到环境变量上，随后走下面与「无参数」完全相同的启动路径。
+if (cliResult.command) {
+  const outcome = await runCliCommand(cliResult.command);
+  if (outcome.action === 'exit') {
+    process.exit(outcome.exitCode);
+  }
 }
 
 const app = express();
