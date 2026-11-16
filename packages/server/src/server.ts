@@ -121,7 +121,6 @@ export function setupServerMiddleware(
   const eventSink = getSharedEventSink();
   const sseManager = new SseManager(eventSink);
   // AgentRegistry 仅管理 ~/.clover/acp.json 中用户已安装的 agent（registry / disk 来源）。
-  // AVAILABLE_AGENTS 是代码内置的 agent 识别模板，不写入 acp.json，也不参与此处合并。
   const persistedAgents = readAcpConfigFile().agents;
   const agentRegistry = new AgentRegistry(persistedAgents, eventSink);
   const sessionManager = new AcpSessionManager(agentRegistry, eventSink);

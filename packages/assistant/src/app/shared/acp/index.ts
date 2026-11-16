@@ -1,7 +1,6 @@
 export { AcpService } from './acp.service';
 export type { AcpMessage, AcpPlan, AcpSessionState } from './acp.service';
 
-export { AVAILABLE_AGENTS } from './acp-agent.types';
 export type { AgentConfig } from './acp-agent.types';
 
 export { AcpSseService } from './acp-sse.service';
