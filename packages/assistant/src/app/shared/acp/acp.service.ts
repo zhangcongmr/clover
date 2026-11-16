@@ -418,8 +418,6 @@ export class AcpService {
 
   /**
    * Loads the installed-agent list from the backend (~/.clover/acp.json).
-   * This replaces the static AVAILABLE_AGENTS template: only agents the user
-   * actually installed (via ACP Registry or Add Agent From Disk) are listed.
    */
   async loadInstalledAgents(): Promise<void> {
     try {

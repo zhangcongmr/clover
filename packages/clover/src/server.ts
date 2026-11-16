@@ -82,9 +82,6 @@ if (!isDev) {
   // resolve under /clover/ when served at that prefix. Serve static and
   // SPA fallback under /clover as well as at the root.
   app.use('/clover', express.static(distDir, { index: false, redirect: false, maxAge: '1y' }));
-  app.use('/clover', (_req, res) => {
-    res.sendFile(join(distDir, 'index.html'));
-  });
   app.use((_req, res) => {
     res.sendFile(join(distDir, 'index.html'));
   });
