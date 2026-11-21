@@ -5,6 +5,7 @@
     "description": "Tool for developers",
     "icons": {
         "16": "assets/lib/img/favicon-pack/favicon-16x16.png",
+        "32": "assets/lib/img/favicon-pack/favicon-32x32.png",
 		"48": "assets/lib/img/favicon-pack/favicon-48x48.png",
 		"128": "assets/lib/img/favicon-pack/favicon-128x128.png"
     },
