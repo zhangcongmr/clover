@@ -1,0 +1,15 @@
+# Rust / Cargo
+/target/
+/Cargo.lock
+
+# Editor / IDE
+.idea/
+.vscode/
+*.rs.bak
+
+# Tauri
+/gen/
+/src-tauri/target/
+
+# macOS
+.DS_Store
