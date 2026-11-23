@@ -1,35 +1,3 @@
-<!-- Overview|Workspace 分段控件：仅 agent-first 渲染（content-first 的 overview 从 agent 面板弹出） -->
-<ng-template #viewSegment>
-  @if (layoutService.dockMode() === 'agent-first') {
-    <div class="view-segment" role="group" aria-label="Content view">
-      <button type="button" class="view-segment-item" [class.active]="isOverviewView()"
-        (click)="showOverview()" title="Overview">
-        <span>Overview</span>
-      </button>
-      <button type="button" class="view-segment-item" [class.active]="!isOverviewView()"
-        (click)="showWorkspace()" title="Workspace">
-        <span>Workspace</span>
-      </button>
-    </div>
-  }
-</ng-template>
-
-<!-- Agent 面板 toggle：仅 content-first 渲染（agent-first 的收放入口在 Agent 面板右上角）。
-     只用于「无 tab」时的右上角（落点是 ast-content-tabs-wrapper 的右上角）；有 tab 时改由
-     ast-tab-group 的 rightMoreButtons 承载，两者互斥，同一时刻只会有一个实例 -->
-<ng-template #agentToggle>
-  @if (layoutService.dockMode() === 'content-first') {
-    <button class="btn-svg ast-content-agent-toggle"
-      [class.active]="!layoutService.agentPanelOpen()"
-      (click)="agentPanelToggle.emit()"
-      [title]="layoutService.agentPanelOpen() ? 'Hide Agent' : 'Show Agent'">
-      <svg class="icon" width="20" height="20">
-        <use href="#icon-panel-right"></use>
-      </svg>
-    </button>
-  }
-</ng-template>
-
 @if(layoutService.dockMode() === 'agent-first') {
   <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
   (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
@@ -213,11 +181,7 @@
           (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
           [(leftMoreButtons)]="leftMoreButtons" [rightMoreButtons]="rightMoreBtns()"
           (rightMoreButtonsChange)="onGroupBtns($event)">
-            <!-- 有 tab 时分段控件投影到 tab 头部左侧槽位（该槽位仅在 leftMoreButtons 非空即侧栏收起时渲染）；
-                Agent 面板 toggle 走 rightMoreButtons，恒在 tab 头部右上角 -->
-            <div tabHeaderSegment class="view-segment-slot">
-              <ng-container [ngTemplateOutlet]="viewSegment"></ng-container>
-            </div>
+            <!-- Agent 面板 toggle 走 rightMoreButtons，恒在 tab 头部右上角 -->
             @for (openedTab of openedList(); track openedTab.id) {
             <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
               [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
@@ -237,9 +201,16 @@
         } @else {
           <!--TODO-->
           <!-- 无 tab 时 Agent 面板 toggle 落在本父元素（ast-content-tabs-wrapper）的右上角，
-              与 tab header 同高；仅 content-first 由 #agentToggle 内部条件渲染 -->
+              与 tab header 同高 -->
           <div class="ast-content-corner-action">
-            <ng-container [ngTemplateOutlet]="agentToggle"></ng-container>
+            <button class="btn-svg ast-content-agent-toggle"
+              [class.active]="!layoutService.agentPanelOpen()"
+              (click)="agentPanelToggle.emit()"
+              [title]="layoutService.agentPanelOpen() ? 'Hide Agent' : 'Show Agent'">
+              <svg class="icon" width="20" height="20">
+                <use href="#icon-panel-right"></use>
+              </svg>
+            </button>
           </div>
           <div class="empty-state">
             @if (welcomeIconPath()) {
