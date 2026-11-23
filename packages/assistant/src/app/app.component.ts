@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { AfterViewInit, Component, ElementRef, Injector, OnDestroy, OnInit, WritableSignal, afterNextRender, inject, runInInjectionContext, signal, viewChild, ViewChild, computed } from '@angular/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Integer, Sequence, Utf8String } from 'asn1js';
 import { ConfigService, CoreService } from './core.service';
 import { AstTabComponent } from './shared/ast-tab/ast-tab.component';
@@ -32,6 +33,7 @@ import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
 import { KeepAliveDirective } from './shared/keep-alive.directive';
+import { TitlebarComponent } from './shared/titlebar/titlebar.component';
 import { DockMode, LayoutService } from './main/layout.service';
 import { OverviewComponent } from './main/overview/overview.component';
 import { APP_VERSION } from '../app-version';
@@ -75,7 +77,7 @@ interface DockItem {
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, OverviewComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
-        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, RagManagerComponent, AstModalComponent], // Add TerminalComponent to imports
+        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, RagManagerComponent, AstModalComponent, TitlebarComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
@@ -140,6 +142,8 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
   
   title = 'clover';
   readonly version = APP_VERSION;
+  /** 是否存在原生窗口装饰（原生标题栏）。默认 true，避免加载时闪烁。 */
+  protected readonly hasNativeTitleBar = signal<boolean>(true);
   cloverAppTabId: any;
   textArr: Array<String> = []
 
@@ -324,6 +328,23 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
       this.loadSavedFileIcons();
       // 从 dock 布局快照恢复面板状态与各 dockItem 参数集（无快照时保持默认值）
       this.restoreDockLayouts();
+    }
+
+    // 判断是否存在原生窗口装饰（原生标题栏），决定是否显示自定义标题栏
+    // 仅在浏览器环境下执行；Tauri 无边框窗口（decorations: false）时 isDecorated() 返回 false
+    if (typeof window !== 'undefined') {
+      void (async () => {
+        try {
+          const decorated = await getCurrentWindow().isDecorated();
+          this.hasNativeTitleBar.set(decorated);
+          // 无原生标题栏时标记 body，标题栏组件通过 :host-context 显示
+          document.body.classList.toggle('tauri-frameless', !decorated);
+        } catch {
+          // Tauri API 不可用（普通浏览器运行）或调用失败，默认认为有原生标题栏
+          this.hasNativeTitleBar.set(true);
+          document.body.classList.remove('tauri-frameless');
+        }
+      })();
     }
   }
 

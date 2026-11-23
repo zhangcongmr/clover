@@ -5,7 +5,7 @@
   "identifier": "com.julyware.clover-assistant",
   "build": {
     "beforeDevCommand": "pnpm start",
-    "devUrl": "https://localhost:4200",
+    "devUrl": "http://localhost:4200",
     "beforeBuildCommand": "pnpm run build",
     "frontendDist": "../dist/clover/browser"
   },
@@ -14,7 +14,9 @@
       {
         "title": "clover-assistant",
         "width": 800,
-        "height": 600
+        "height": 600,
+		 "decorations": false,
+		 "devtools": true
       }
     ],
     "security": {

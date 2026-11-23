@@ -139,6 +139,7 @@
   justify-content: flex-start;
   padding-bottom: 10px;
   padding-top: 10px;
+  border-right: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
   width: var(--left-side-area-width, 42px);
   color: var(--vscode-foreground);
 }
@@ -210,7 +211,7 @@
   background-color: var(--vscode-background);
   border-radius: 0;
   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1); */
-  border-left: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  /* border-left: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2)); */
   border-right: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
 }
 
@@ -219,6 +220,18 @@
   display: flex;
   position: relative;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 中间面板主体：复刻原 .ast-middle-panel 的列 flex 上下文，
+   使 ast-content / 终端的百分比高度按主体高度计算，不被标题栏高度破坏。 */
+.ast-middle-panel-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   overflow: hidden;

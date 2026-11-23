@@ -1,0 +1,12 @@
+<div class="custom-titlebar" data-tauri-drag-region>
+  @if (!showControls) {
+    <div class="titlebar-title"></div>
+  }
+  @if (showControls) {
+    <div class="window-controls">
+      <button class="win-btn" id="btn-minimize" type="button" (click)="onMinimize()">−</button>
+      <button class="win-btn" id="btn-maximize" type="button" (click)="onToggleMaximize()">□</button>
+      <button class="win-btn" id="btn-close" type="button" (click)="onClose()">×</button>
+    </div>
+  }
+</div>

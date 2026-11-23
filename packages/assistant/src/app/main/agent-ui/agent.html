@@ -177,6 +177,9 @@
 
   <!-- Right: ACP panel (always occupies the right panel) -->
   <div class="agent-main">
+    <!-- agent-first：Agent 在左侧，此段为标题栏的左段。正常情况下只显示标题；
+         当右侧的内容面板被收起时（它随面板 detach 消失），窗口按钮回退到此段显示。 -->
+    <app-titlebar [showControls]="!layoutService.astContentPanelOpen()"></app-titlebar>
     @if (isBrowser()) {
       @if (collabService.panelOpen()) {
         <app-collab-panel class="custom-scroll" (close)="closeCollab()"
@@ -268,6 +271,8 @@
        A selected session opens as an overlay on top of the list; the chat input
        and the Skills / MCP / RAG entries stay pinned below it at all times. -->
   <div class="agent-main">
+    <!-- content-first：Agent 在右侧，此段为标题栏的右段（窗口控制按钮） -->
+    <app-titlebar [showControls]="true"></app-titlebar>
     @if (isBrowser()) {
       @if (collabService.panelOpen()) {
         <app-collab-panel class="custom-scroll" (close)="closeCollab()" />

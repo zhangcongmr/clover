@@ -53,6 +53,15 @@
     width: 100%;
 }
 
+/* 文件树右侧的主列：顶部可放自定义标题栏（content-first 左段），下方是 tabs 区。 */
+.ast-content-right-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
 .ast-content-empty-state {
     text-align: center;
     color: var(--vscode-foreground);
