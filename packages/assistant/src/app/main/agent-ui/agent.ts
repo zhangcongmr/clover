@@ -11,6 +11,7 @@ import { AcpChatInputComponent } from "../../shared/acp/acp-chat-input.component
 import { AcpPermissionDialogComponent } from "../../shared/acp/acp-permission-dialog.component";
 import { FilePickerDialogComponent } from "../../shared/file-picker-dialog/file-picker-dialog.component";
 import { RemoteServerDialogComponent } from "../../shared/remote-server/remote-server-dialog.component";
+import { TitlebarComponent } from "../../shared/titlebar/titlebar.component";
 import { LocalServerService } from "../../shared/local-server/local-server.service";
 import type { SessionInfo } from "../../shared/acp/acp.model";
 import { AstMenuComponent } from "../../shared/ast-menu/ast-menu.component";
@@ -67,6 +68,7 @@ function readCollapsedProjects(): Set<string> {
     AstMenuComponent,
     RemoteServerDialogComponent,
     ProcessingIndicatorComponent,
+    TitlebarComponent,
   ],
 })
 export class AgentComponent {

@@ -29,6 +29,7 @@ import { SettingsService } from '../settings/settings.service';
 import { AcpService } from '../../shared/acp/acp.service';
 import { LayoutService } from '../layout.service';
 import { OverviewComponent } from '../overview/overview.component';
+import { TitlebarComponent } from '../../shared/titlebar/titlebar.component';
 
 interface WebSocketRequest {
   action: string;
@@ -57,7 +58,7 @@ interface WebSocketResponse {
     '(mouseleave)': 'onHostMouseLeave($event)'
   },
   imports: [FormsModule, NgTemplateOutlet, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
-    NoteBookComponent, FilePickerDialogComponent, OverviewComponent
+    NoteBookComponent, FilePickerDialogComponent, OverviewComponent, TitlebarComponent
   ]
 })
 export class ContentComponent extends AstDraggableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {

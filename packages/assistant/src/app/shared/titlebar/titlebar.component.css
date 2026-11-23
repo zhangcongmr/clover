@@ -1,0 +1,67 @@
+/* 默认隐藏；仅当处于无边框 Tauri 窗口（body 带 .tauri-frameless）时显示。 */
+:host {
+  display: none;
+}
+
+:host-context(.tauri-frameless) {
+  display: block;
+  flex-shrink: 0;
+  /* content 组件的 .ast-content-main 内有绝对定位的 .ast-content-drag-overlay
+     （覆盖整个内容区、拦截点击）。标题栏需抬到它之上，否则回退到 content 右列
+     的窗口按钮会点不到。z-index:1 > overlay 的 auto；弹窗(z-index:100)与分栏
+     拖拽线(z-index:100)仍在其上。 */
+  position: relative;
+  z-index: 1;
+}
+
+.custom-titlebar {
+  height: 32px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background: var(--vscode-toolbar-background, var(--vscode-background));
+  color: var(--vscode-foreground);
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.titlebar-title {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.win-btn {
+  width: 40px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn:hover {
+  background: var(--vscode-hover-background, rgba(255, 255, 255, 0.08));
+}
+
+.win-btn#btn-close:hover {
+  background: #e81123;
+  color: #ffffff;
+}
