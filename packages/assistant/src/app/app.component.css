@@ -215,6 +215,24 @@
   border-right: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
 }
 
+/* 无边框模式：消除两段标题栏接缝处的竖线。
+   把 1px 竖线改画进 border 区域（background-origin/clip: border-box，
+   透明 border 会透出背景），且从标题栏高度 32px 以下才开始，
+   于是标题栏那一截没有竖线、下方仍保留原分隔线。 */
+:host-context(.tauri-frameless) .card-base {
+  border-right-color: transparent;
+  background-image: linear-gradient(
+    to right,
+    transparent calc(100% - 1px),
+    var(--vscode-widget-border, rgba(128, 128, 128, 0.2)) calc(100% - 1px)
+  );
+  background-origin: border-box;
+  background-clip: border-box;
+  background-repeat: no-repeat;
+  background-size: 100% calc(100% - 32px);
+  background-position: right bottom;
+}
+
 .ast-middle-panel {
   flex: 1 1 0;
   display: flex;
@@ -534,6 +552,13 @@ form {
   position: absolute;
   z-index: 100;
   pointer-events: auto;
+}
+
+/* 无边框模式：竖向分栏拖拽条不要覆盖到顶部标题栏的那一截，
+   从标题栏高度 32px 以下才开始（悬停高亮线也随之只出现在下方）。 */
+:host-context(.tauri-frameless) .ast-split-handle-ew {
+  top: 32px;
+  height: calc(100% - 32px);
 }
 
 .ast-split-handle-ns {

@@ -32,6 +32,11 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   readonly fobiddenContextMenu = input(false)
   readonly leftMoreButtons = model<Array<{ label: string; id: string; action?: Function }>>([]); //左上角更多操作按钮
   readonly rightMoreButtons = model<Array<{ label: string; id: string; action?: Function }>>([]); //右上角更多操作按钮
+  /**
+   * tab 栏剩余区域里 “+” 按钮弹出的自定义菜单项，由调用方传入，结构与 rightMoreButtons 一致。
+   * 未传入菜单项时，“+” 按钮退化为直接新增 tab（仅在 addTabEnable 为 true 时生效）。
+   */
+  readonly addTabMenuItems = model<Array<{ label: string; id: string; action?: Function }>>([]);
 
   private resizeObserver?: ResizeObserver;
   ulStyle: string = "height: 2rem;"
@@ -39,6 +44,10 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   tabMap: Map<string, boolean> = new Map();
   
   previousTabCount = 0;
+  /** 是否已经做过一次溢出测量（首次渲染/恢复出来的 tab 也要测一次） */
+  private hasMeasuredTabs = false;
+  /** 上一次的 tab 实例列表，用于识别本次真正新增的 tab（合并渲染时新 tab 可能不在末尾） */
+  private previousTabs: AstTabComponent[] = [];
   private _layoutChangeSignal = 0;
   @Input()
   set layoutChangeSignal(value: any) {
@@ -60,6 +69,8 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
   }
 
   private recalculateScrollbarNow() {
+    // SSR/预渲染环境没有 window，跳过测量
+    if (typeof window === 'undefined') return;
     const tabList = this.tabUlRef();
     if (!tabList?.nativeElement) return;
     this.handleUlResize(tabList.nativeElement as HTMLElement);
@@ -67,27 +78,43 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
   constructor() {
     effect(() => {
-      this.topLevelTabs().forEach(tab => {
+      const tabs = this.topLevelTabs();
+      tabs.forEach(tab => {
         if (!tab.isOld) {
           tab.tabType.set(this.tabType())
           tab.isOld = true;
         }
       });
-      if(this.tabGroupResizeObservable() && this.previousTabCount > 0) {
-        if(this.previousTabCount < this.topLevelTabs().length) {
-          this.previousTabCount = this.topLevelTabs().length;
-          if (this.topLevelTabs().length > 0) {
-            const lastTab = this.topLevelTabs()[this.topLevelTabs().length - 1];
-            // 如果是新添加的（可通过某种标记判断），自动激活并滚动
-            queueMicrotask(() => {
-              this.activateAndScrollToTab(lastTab);
-            });
-            this.scheduleScrollbarRecalculation();
-          }
-        } else if(this.previousTabCount > this.topLevelTabs().length) {
-          this.previousTabCount = this.topLevelTabs().length;
-          this.scheduleScrollbarRecalculation();
-        }
+
+      if (!this.tabGroupResizeObservable()) {
+        return;
+      }
+
+      const tabCount = tabs.length;
+      const hadTabs = this.previousTabCount > 0;
+      const grew = tabCount > this.previousTabCount;
+      const countChanged = tabCount !== this.previousTabCount;
+      this.previousTabCount = tabCount;
+
+      // 找出本次真正新增的 tab。合并渲染时新 tab 不一定是最后一个
+      // （例如 Overview/Workspace 面板插在文件 tab 前面），不能直接用 tabs[length-1]。
+      const addedTabs = tabs.filter(tab => !this.previousTabs.includes(tab));
+      this.previousTabs = [...tabs];
+
+      // 增删 tab 不会改变 ul 自身的盒子尺寸（ul 由 flex 撑满），ResizeObserver 收不到回调，
+      // 所以必须在这里主动重新测量；否则 tab 溢出后 “show all opened” 更多按钮永远不会被插入。
+      // 首次运行也要测量一次，覆盖“启动时从 OPFS 恢复出已溢出的 tab”这种场景。
+      if (countChanged || !this.hasMeasuredTabs) {
+        this.hasMeasuredTabs = true;
+        this.scheduleScrollbarRecalculation();
+      }
+
+      if (grew && hadTabs && addedTabs.length > 0) {
+        const newTab = addedTabs[addedTabs.length - 1];
+        // 新添加的 tab 自动激活并滚动到可见
+        queueMicrotask(() => {
+          this.activateAndScrollToTab(newTab);
+        });
       }
     });
   }
@@ -119,7 +146,7 @@ export class AstTabGroupComponent implements OnInit, OnChanges, AfterViewInit, A
 
   showAllOpenedBtnAdded = false; // 标记是否已经添加了“show all opened”按钮，避免重复添加
   ngAfterViewInit(): void {
-    if (!this.tabGroupResizeObservable()) {
+    if (!this.tabGroupResizeObservable() || typeof ResizeObserver === 'undefined') {
       return;
     }
 
@@ -529,6 +556,50 @@ computedScrollBarLength = signal("0px");
       return;
     }
     this.addTab()
+  }
+
+  addMenuOpen = false;
+  addMenuInitiator: DOMRect | undefined;
+
+  /**
+   * “+” 按钮点击：有自定义菜单项时在按钮位置弹出菜单，否则（addTabEnable 为 true）直接新增 tab。
+   * 必须阻止冒泡，否则 ast-menu 挂在 document 上的点击监听会把刚打开的菜单立刻关掉。
+   */
+  onAddTabButtonClick(evt: MouseEvent) {
+    evt.stopPropagation();
+    const menuItems = this.addTabMenuItems();
+    if (menuItems.length === 0) {
+      if (this.addTabEnable()) {
+        this.addTab();
+      }
+      return;
+    }
+
+    const initiator = evt.currentTarget as HTMLElement;
+    if (initiator) {
+      // 退化成按钮左下角的一个点：菜单水平对齐按钮左边缘，垂直贴在按钮下方
+      const rect = initiator.getBoundingClientRect();
+      this.addMenuInitiator = {
+        x: rect.left,
+        y: rect.bottom,
+        left: rect.left,
+        top: rect.bottom,
+        right: rect.left,
+        bottom: rect.bottom,
+        width: 0,
+        height: 0,
+        toJSON: () => ({})
+      };
+    }
+    this.addMenuOpen = !this.addMenuOpen;
+  }
+
+  onAddTabMenuItemClick(item: { label: string; id: string; action?: Function }, evt: MouseEvent) {
+    evt.stopPropagation();
+    this.addMenuOpen = false;
+    if (item.action) {
+      item.action(evt);
+    }
   }
 
   blurSwitch = true;

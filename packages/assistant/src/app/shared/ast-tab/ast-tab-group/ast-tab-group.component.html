@@ -45,6 +45,15 @@
       }
       <div data-layer="remaining_space" class="RemainingSpace ast-remaining-space" (dblclick)="dblclickAddTab()" [style.cursor]="addTabEnable()?'pointer': ''"
         [style.border-bottom]="tabType() && (tabType()['type']=='bilateral')?'1px var(--vscode-background) solid':''">
+        @if (addTabEnable() || addTabMenuItems().length > 0) {
+          <div data-layer="add_tab_btn" class="btn-svg ast-add-tab-btn" title="New Tab"
+            (click)="onAddTabButtonClick($event)" (dblclick)="$event.stopPropagation()">
+            <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <line x1="8" y1="3" x2="8" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
+              <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
+            </svg>
+          </div>
+        }
       </div>
 
     </ul>
@@ -90,14 +99,24 @@
 }
 
 @if(downMenuOpen && hiddenTabs().length > 0) {
-  <div ast-menu [(isOpen)]="downMenuOpen" class="ast-tab-down-menu" [menuInitiator]="downMenuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)" 
-      class="more-btn-dropdown-content ast-right-menu">
+  <div ast-menu [(isOpen)]="downMenuOpen" [menuInitiator]="downMenuInitiator" (mouseentermenu)="mouseentermenu($event)" (mouseleavemenu)="mouseleavemenu($event)"
+      class="more-btn-dropdown-content ast-right-menu ast-tab-down-menu">
       @for (tab of hiddenTabs(); track tab.id) {
         <div data-layer="hiddenTab" class="hiddenTab ast-menu-every-item" (click)="clickOpenedTab(tab)">
           <span>{{tab.label()}}</span>
         </div>
       }
 
+  </div>
+}
+@if(addMenuOpen) {
+  <div ast-menu [(isOpen)]="addMenuOpen" [menuInitiator]="addMenuInitiator" [horizontalOffset]="0"
+    class="more-btn-dropdown-content ast-right-menu ast-add-tab-menu">
+    @for (item of addTabMenuItems(); track item.id) {
+      <div data-layer="addTabMenuItem" class="ast-menu-every-item" (click)="onAddTabMenuItemClick(item, $event)" title="{{item.label}}">
+        <span>{{item.label}}</span>
+      </div>
+    }
   </div>
 }
 @if(!headerOnly()) { <!-- 如果不是只显示tab栏模式，则显示内容区  采用angular非正规做法，angular官方其实不推荐这样使用 参见https://angular.cn/guide/components/content-projection -->

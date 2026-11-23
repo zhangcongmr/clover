@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 0 0 12px;
   box-sizing: border-box;
   background: var(--vscode-toolbar-background, var(--vscode-background));
   color: var(--vscode-foreground);

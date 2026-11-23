@@ -22,6 +22,9 @@ export class LayoutService {
   /** Overview 面板是否展开。仅 content-first 模式下可达（入口图标在 Agent 面板右上角） */
   readonly overviewOpen = signal(false);
 
+  /** Workspace 面板是否展开。仅 agent-first 模式下可达（入口图标在 Agent 面板右上角） */
+  readonly workspaceOpen = signal(false);
+
   toggleAstContentPanel(value?: boolean): void {
     // Toggle the state of the AST content panel. If a value is provided, set it to that value; otherwise, toggle the current state.
     this.astContentPanelOpen.update(v => value !== undefined ? value : !v);

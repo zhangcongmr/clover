@@ -17,6 +17,23 @@
   overflow: hidden;
 }
 
+/* 无边框模式：消除两段标题栏接缝处的竖线（agent-first 下 agent 在左侧，
+   其 border-right 即接缝）。把竖线改画进 border 区域且从标题栏高度 32px
+   以下才开始，使标题栏那一截无线、下方保留原分隔线。 */
+:host-context(.tauri-frameless) {
+  border-right-color: transparent;
+  background-image: linear-gradient(
+    to right,
+    transparent calc(100% - 1px),
+    var(--vscode-widget-border, rgba(128, 128, 128, 0.2)) calc(100% - 1px)
+  );
+  background-origin: border-box;
+  background-clip: border-box;
+  background-repeat: no-repeat;
+  background-size: 100% calc(100% - 32px);
+  background-position: right bottom;
+}
+
 /* ===== Sidebar ===== */
 .agent-sidebar {
   display: flex;
