@@ -4,7 +4,6 @@ import { AstApiComponent } from '../../shared/ast-api/ast-api.component';
 import { AstTabComponent } from '../../shared/ast-tab/ast-tab.component';
 
 import { FormsModule } from '@angular/forms';
-import { NgTemplateOutlet } from '@angular/common';
 import { AstTabGroupComponent } from '../../shared/ast-tab/ast-tab-group/ast-tab-group.component';
 
 import { file, write } from 'opfs-tools';
@@ -57,7 +56,7 @@ interface WebSocketResponse {
   host: {
     '(mouseleave)': 'onHostMouseLeave($event)'
   },
-  imports: [FormsModule, NgTemplateOutlet, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
+  imports: [FormsModule, ExplorerComponent, AstTabGroupComponent, AstTabComponent, AstApiComponent, AstTreeComponent, AddProjectComponent, AstModalComponent,
     NoteBookComponent, FilePickerDialogComponent, OverviewComponent, TitlebarComponent
   ]
 })
@@ -73,24 +72,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   private elementRef = inject(ElementRef);
   /** dock 模式/面板状态由 LayoutService 统一持有，content 只需读并向上抛 toggle 意图 */
   protected readonly layoutService = inject(LayoutService);
-
-  /**
-   * overview 是否由本组件渲染。
-   * 仅 agent-first 成立：分段控件切换的 overview 视图显示在这里；
-   * content-first 下 overview 从 agent 面板弹出，本组件恒为 workspace。
-   */
-  readonly isOverviewView = computed(() =>
-    this.layoutService.dockMode() === 'agent-first' && this.layoutService.overviewOpen());
-
-  showOverview(): void {
-    this.layoutService.overviewOpen.set(true);
-    this.layoutService.workspaceOpen.set(false);
-  }
-
-  showWorkspace(): void {
-    this.layoutService.workspaceOpen.set(true);
-    this.layoutService.overviewOpen.set(false);
-  }
 
   readonly isWorkspaceView = computed(() =>
     this.layoutService.dockMode() === 'agent-first' && this.layoutService.workspaceOpen());

@@ -12,6 +12,17 @@ import { isPlatformBrowser } from '@angular/common';
 /** Side of the trigger the menu is laid out on. */
 export type DropdownPlacement = 'top' | 'bottom';
 
+/** Horizontal edge of the trigger the menu is aligned to. */
+export type DropdownAlign = 'left' | 'right';
+
+/** Visible range a menu has to stay inside. */
+interface ClipRect {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
 /** Gap kept between the menu and the clipping edge. */
 const EDGE_GAP = 4;
 
@@ -35,18 +46,22 @@ const CLAMP_SLACK = 1;
  * short the menu overflowed the panel's top edge and lost its first rows.
  *
  * This directive measures, when the menu opens and whenever the layout changes,
- * how much vertical room is left above and below the menu's containing block,
- * then:
+ * how much room is left around the menu's containing block, then:
  *
  * - caps the menu height to that room, so the menu scrolls internally instead
  *   of being clipped, and
  * - flips the menu to `data-placement="bottom"` when the preferred side cannot
- *   fit it and the other side has more room.
+ *   fit it and the other side has more room, and
+ * - caps the menu width to the horizontal room on its anchor side and flips it
+ *   to `data-h-align="right"` when the default left-aligned side cannot hold it
+ *   (a wide menu on a trigger near the right edge of a narrow panel used to
+ *   widen the panel, i.e. add a horizontal scrollbar).
  *
  * The containing block is resolved through `offsetParent`, which for these
  * menus is the `.xxx-selector` (or `.acp-chat-input-box`) wrapper — exactly the
  * box the menu is anchored to. CSS only needs to provide the two placement
- * variants (see `.agent-dropdown[data-placement='bottom']` and friends).
+ * variants (see `.agent-dropdown[data-placement='bottom']`,
+ * `.agent-dropdown[data-h-align='right']` and friends).
  *
  * Because the directive writes the very size it measures around, it must never
  * let its own write feed back into the measurement:
@@ -54,8 +69,12 @@ const CLAMP_SLACK = 1;
  * - the natural height comes from `scrollHeight` plus the border widths from
  *   computed style, never from `offsetHeight`/`clientHeight` of the (already
  *   capped) box, so a cap can not change the number that produced it;
- * - a cap is always {@link CLAMP_SLACK} pixels away from the clipping edge, so
- *   the cap can not toggle the ancestor's overflow/scrollbar state;
+ * - the natural width is read once, before the first width write, and can only
+ *   grow from content that overflows the constrained box;
+ * - the horizontal room is derived from the trigger and the clip box alone,
+ *   so neither the cap nor the alignment can change it;
+ * - the height cap is always {@link CLAMP_SLACK} pixels away from the clipping
+ *   edge, so the cap can not toggle the ancestor's overflow/scrollbar state;
  * - re-measuring is coalesced into one `requestAnimationFrame`, so a burst of
  *   scroll or ResizeObserver events can not produce a burst of writes;
  * - as a last resort, an A → B → A cycle settles on the smaller height instead
@@ -75,8 +94,24 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
   readonly placementMinHeight = input<number>(160);
   /** Side to use when there is enough room for it. */
   readonly placementPreference = input<DropdownPlacement>('top');
+  /** Horizontal edge to align the menu to when both sides fit. */
+  readonly placementAlign = input<DropdownAlign>('left');
+  /**
+   * Horizontal clamping and flipping. Menus whose CSS already spans the trigger
+   * (`left: 0; right: 0`) opt out: their width is the trigger's, so pinning them
+   * to one edge would only fight the CSS.
+   */
+  readonly placementHorizontal = input<boolean>(true);
 
   private placement: DropdownPlacement = 'top';
+  private align: DropdownAlign = 'left';
+  /**
+   * Natural (unclamped) border-box width of the menu, measured before the
+   * directive writes any width itself. Widened when the content later turns
+   * out to be wider, never narrowed, so a capped menu can not re-measure the
+   * cap as its own natural width.
+   */
+  private naturalWidth: number | null = null;
   private resizeObserver?: ResizeObserver;
   private frame: number | null = null;
   /** Last applied cap, and the one before it, for cycle detection. */
@@ -143,6 +178,13 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     const clip = this.clipRect(el);
     if (clip.bottom - clip.top <= 0) return;
 
+    this.applyVertical(el, anchor, clip);
+    if (this.placementHorizontal() && clip.right - clip.left > 0) {
+      this.applyHorizontal(el, anchor, clip);
+    }
+  }
+
+  private applyVertical(el: HTMLElement, anchor: HTMLElement, clip: ClipRect): void {
     // Natural (unclamped) border-box height. `scrollHeight` reports the full
     // content height whatever cap is applied, and the border widths come from
     // computed style, so this number is independent of the height we wrote last
@@ -202,6 +244,75 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     this.appliedRoom = room;
   }
 
+  /**
+   * Horizontal counterpart of {@link applyVertical}.
+   *
+   * A menu anchored with `left: 0` grows to the right of its trigger, so a
+   * wide menu on a trigger that sits near the right edge of a narrow panel
+   * used to overflow the panel — and the panel is an `overflow: auto` box, so
+   * that showed up as a horizontal scrollbar. Here the menu is:
+   *
+   * - flipped to `data-h-align="right"` when the default left-aligned side
+   *   cannot hold it but the other side can, and
+   * - capped to the room actually left on the chosen side, so it can never be
+   *   wider than the visible area.
+   *
+   * Unlike the height, the room is derived from the trigger and the clip box
+   * only, never from the menu's own size, so the writes below cannot feed back
+   * into the numbers that produced them.
+   */
+  private applyHorizontal(el: HTMLElement, anchor: HTMLElement, clip: ClipRect): void {
+    // First measurement happens before any width write, so `offsetWidth` is the
+    // menu's own (CSS/min-width driven) border-box width. Later updates only
+    // grow it, and only when the content is wider than the box we constrained
+    // it to — a capped menu must not re-measure its cap as natural width.
+    if (this.naturalWidth === null) {
+      this.naturalWidth = el.offsetWidth;
+    } else {
+      const contentWidth = el.scrollWidth + this.borderWidth(el);
+      if (contentWidth > this.naturalWidth) {
+        this.naturalWidth = contentWidth;
+      }
+    }
+    const naturalWidth = this.naturalWidth;
+    if (naturalWidth <= 0) return;
+
+    const anchorRect = anchor.getBoundingClientRect();
+    // Room when the menu's left edge is pinned to the trigger's left edge.
+    const spaceRight = clip.right - anchorRect.left - EDGE_GAP;
+    // Room when its right edge is pinned to the trigger's right edge.
+    const spaceLeft = anchorRect.right - clip.left - EDGE_GAP;
+
+    const preferRight = this.placementAlign() === 'right';
+    const preferredSpace = preferRight ? spaceLeft : spaceRight;
+    const fallbackSpace = preferRight ? spaceRight : spaceLeft;
+    const flip = preferredSpace < naturalWidth && fallbackSpace > preferredSpace;
+
+    const align: DropdownAlign = flip
+      ? (preferRight ? 'left' : 'right')
+      : this.placementAlign();
+    const sideSpace = flip ? fallbackSpace : preferredSpace;
+    if (sideSpace < 1) return;
+
+    const width = Math.floor(Math.min(naturalWidth, sideSpace));
+    if (width < 1) return;
+
+    if (this.align !== align) {
+      this.align = align;
+      el.dataset['hAlign'] = align;
+    }
+    // An explicit width keeps the box identical on both alignments; the CSS
+    // `min-width` has to step aside when the room is smaller than it.
+    const nextWidth = `${width}px`;
+    if (el.style.width !== nextWidth) {
+      el.style.width = nextWidth;
+    }
+    const nextMinWidth = width < naturalWidth ? '0px' : '';
+    if (el.style.minWidth !== nextMinWidth) {
+      el.style.minWidth = nextMinWidth;
+    }
+  }
+
   /** Border-box vertical padding-inclusive chrome of the menu, height-agnostic. */
   private borderHeight(el: HTMLElement): number {
     const style = getComputedStyle(el);
@@ -210,23 +321,36 @@ export class DropdownPlacementDirective implements AfterViewInit, OnDestroy {
     return (Number.isFinite(top) ? top : 0) + (Number.isFinite(bottom) ? bottom : 0);
   }
 
+  /** Border-box horizontal chrome of the menu, width-agnostic. */
+  private borderWidth(el: HTMLElement): number {
+    const style = getComputedStyle(el);
+    const left = parseFloat(style.borderLeftWidth);
+    const right = parseFloat(style.borderRightWidth);
+    return (Number.isFinite(left) ? left : 0) + (Number.isFinite(right) ? right : 0);
+  }
+
   /**
-   * Vertical range the menu must stay inside: the viewport intersected with the
+   * Visible range the menu must stay inside: the viewport intersected with the
    * padding box of every scroll container above it (the ACP panel, the chat
    * column, …). Overflowing any of those means being clipped.
    */
-  private clipRect(el: HTMLElement): { top: number; bottom: number } {
+  private clipRect(el: HTMLElement): ClipRect {
     let top = 0;
     let bottom = document.documentElement.clientHeight || window.innerHeight;
+    let left = 0;
+    let right = document.documentElement.clientWidth || window.innerWidth;
 
     for (const node of this.clippingAncestors(el)) {
       const rect = node.getBoundingClientRect();
       const paddingTop = rect.top + node.clientTop;
+      const paddingLeft = rect.left + node.clientLeft;
       top = Math.max(top, paddingTop);
       bottom = Math.min(bottom, paddingTop + node.clientHeight);
+      left = Math.max(left, paddingLeft);
+      right = Math.min(right, paddingLeft + node.clientWidth);
     }
 
-    return { top, bottom };
+    return { top, bottom, left, right };
   }
 
   /** Positioned ancestor the menu is anchored to. */

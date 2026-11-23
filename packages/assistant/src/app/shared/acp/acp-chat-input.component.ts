@@ -443,10 +443,20 @@ interface McpServerOption {
       color: var(--vscode-foreground);
       opacity: 0.4;
     }
+    /*
+     * The toolbar is a single row that must never be wider than the composer:
+     * the left group (attach / link / agent / mode / model / mcp) is the only
+     * shrinkable part, the right group (settings / send) always stays intact.
+     * The left group deliberately keeps overflow visible so the popup menus
+     * anchored inside it are not clipped; each tag button truncates its label
+     * instead (see .toolbar-tag-btn).
+     */
     .acp-chat-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 6px;
+      min-width: 0;
       padding: 4px 6px 6px;
     }
     .acp-chat-toolbar-left,
@@ -454,11 +464,19 @@ interface McpServerOption {
       display: flex;
       align-items: center;
       gap: 2px;
+      min-width: 0;
+    }
+    .acp-chat-toolbar-left {
+      flex: 1 1 auto;
+    }
+    .acp-chat-toolbar-right {
+      flex: 0 0 auto;
     }
     .toolbar-icon-btn {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       width: 28px;
       height: 28px;
       border: none;
@@ -473,10 +491,16 @@ interface McpServerOption {
       opacity: 1;
       background-color: var(--vscode-hover-background);
     }
+    /*
+     * Shrinkable so a narrow composer truncates the label instead of pushing
+     * the toolbar (and the whole panel) wider. The title attribute on each
+     * trigger keeps the full value reachable on hover.
+     */
     .toolbar-tag-btn {
       display: flex;
       align-items: center;
       gap: 4px;
+      min-width: 0;
       height: 26px;
       padding: 0 8px;
       border: 1px solid var(--vscode-border-color);
@@ -487,8 +511,10 @@ interface McpServerOption {
       font-size: 12px;
       opacity: 0.7;
       white-space: nowrap;
-      flex-shrink: 0;
       transition: opacity 0.15s, background-color 0.15s;
+    }
+    .toolbar-tag-btn > svg {
+      flex-shrink: 0;
     }
     .toolbar-tag-btn > span {
       overflow: hidden;
@@ -503,6 +529,7 @@ interface McpServerOption {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       width: 28px;
       height: 28px;
       border: none;
@@ -521,11 +548,14 @@ interface McpServerOption {
     }
     .agent-selector {
       position: relative;
+      min-width: 0;
+      flex-shrink: 1;
     }
     .agent-label {
       display: flex;
       align-items: center;
       gap: 4px;
+      min-width: 0;
       height: 26px;
       padding: 0 8px;
       color: var(--vscode-foreground);
@@ -533,6 +563,14 @@ interface McpServerOption {
       opacity: 0.55;
       user-select: none;
       cursor: default;
+    }
+    .agent-label > svg {
+      flex-shrink: 0;
+    }
+    .agent-label > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .agent-dropdown {
       position: absolute;
@@ -591,6 +629,7 @@ interface McpServerOption {
     }
     .mode-selector {
       position: relative;
+      min-width: 0;
     }
     .mode-dropdown {
       position: absolute;
@@ -641,8 +680,11 @@ interface McpServerOption {
       margin-top: 1px;
       color: var(--vscode-descriptionForeground);
     }
+    /* Long "<vendor>/<model>" ids take the truncation first. */
     .model-selector {
       position: relative;
+      min-width: 0;
+      flex-shrink: 3;
     }
     .model-dropdown {
       position: absolute;
@@ -694,6 +736,8 @@ interface McpServerOption {
     }
     .mcp-selector {
       position: relative;
+      min-width: 0;
+      flex-shrink: 2;
     }
     .mcp-dropdown {
       position: absolute;
@@ -792,6 +836,7 @@ interface McpServerOption {
     }
     .project-selector {
       position: relative;
+      min-width: 0;
     }
     .project-dropdown {
       position: absolute;
@@ -972,6 +1017,19 @@ interface McpServerOption {
       bottom: auto;
       margin-top: 4px;
       margin-bottom: 0;
+    }
+    /*
+     * Horizontal counterpart: a menu whose trigger sits too close to the right
+     * edge to fit it grows leftwards instead, so opening it can never widen the
+     * panel. The directive also caps the width to the room left on that side.
+     */
+    .agent-dropdown[data-h-align='right'],
+    .mode-dropdown[data-h-align='right'],
+    .model-dropdown[data-h-align='right'],
+    .mcp-dropdown[data-h-align='right'],
+    .project-dropdown[data-h-align='right'] {
+      left: auto;
+      right: 0;
     }
   `]
 })

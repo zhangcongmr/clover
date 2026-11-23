@@ -62,6 +62,10 @@
 
 .sidebar-toggle-btn {
   transition: opacity 0.15s, background-color 0.15s, transform 0.15s;
+  /* Collapsed, the toggle is pinned to the host top-left and overlaps the frameless
+     window titlebar, which is a drag region. Drag regions swallow hover/click, so the
+     button would keep the default arrow cursor; punch a no-drag hole for it. */
+  -webkit-app-region: no-drag;
 }
 
 /* Expanded the arrow points left (collapse); collapsed it must point right (expand). */
