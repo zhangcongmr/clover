@@ -133,6 +133,18 @@
     position: relative;
     overflow: auto;
 }
+
+/* 无 tab 时的右上角操作槽位：绝对定位到 ast-content-tabs-wrapper 的右上角，
+   高度与 tab header 一致（2rem），让 Agent 面板 toggle 与有 tab 时处于同一视觉位置 */
+.ast-content-corner-action {
+    position: absolute;
+    z-index: 10;
+    top: 0;
+    right: 8px;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+}
 .ast-content-tabs-shrink-btn {
     position: absolute;
     z-index: 100;
@@ -495,7 +507,7 @@ textarea:focus {
 
 
 /* Content 右上角 Agent 面板 toggle：仅 content-first 渲染。
-   尺寸/对齐复用 .ast-actions-bar .btn-svg（与 tab header 的 MoreBtn 同为 20x20），
+   尺寸/对齐与 tab header 的 MoreBtn 保持一致（20x20），
    active 表示 Agent 面板当前已关闭，点击可拉起 */
 .ast-content-agent-toggle {
   appearance: none;

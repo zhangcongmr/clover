@@ -806,6 +806,16 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     // overviewOpen 是全局开关：agent-first 由 content 分段控件消费，content-first 由 agent 面板浮层消费，
     // 切模式时状态可沿用，无需强制关闭
     this.applyDockMode(next);
+
+    // content-first 的 tab 栏只渲染 openedList：从 agent-first 切过来时，原先激活的可能是
+    // Overview/Workspace 面板 tab，openedList 里没有激活项会导致内容区空白，兜底激活第一个 tab。
+    // 内容面板由 *appKeepAlive 懒创建，等这一轮渲染完成、viewChild 解析后再取实例。
+    if (next === 'content-first') {
+      afterNextRender(() => {
+        if (this.layoutService.dockMode() !== 'content-first') return;
+        this.contentComp()?.activateFirstTabIfNoneActive();
+      }, { injector: this.injector });
+    }
   }
 
   /**

@@ -84,11 +84,25 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   showOverview(): void {
     this.layoutService.overviewOpen.set(true);
+    this.layoutService.workspaceOpen.set(false);
   }
 
   showWorkspace(): void {
+    this.layoutService.workspaceOpen.set(true);
     this.layoutService.overviewOpen.set(false);
   }
+
+  readonly isWorkspaceView = computed(() =>
+    this.layoutService.dockMode() === 'agent-first' && this.layoutService.workspaceOpen());
+
+  /**
+   * tab 栏 “+” 按钮弹出的菜单项：打开/激活 agent 模式面板 tab（写入 agentModeOpenedList）。
+   * 仅 agent-first 的 ast-tab-group 使用。
+   */
+  readonly addTabMenuItems = [
+    { label: 'Overview', id: 'overview', action: () => this.openAgentPanelTab('overview', 'Overview') },
+    { label: 'Workspace', id: 'workspace', action: () => this.openAgentPanelTab('workspace', 'Workspace') },
+  ];
 
   /** 右上角 toggle：请求父组件打开/关闭 Agent 面板（仅 content-first 渲染） */
   readonly agentPanelToggle = output<void>();
@@ -221,6 +235,21 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   refreshIntervalMs = 10; // 后续如果有必要，从2秒改为10秒，减少性能影响
 
   openedList = signal<Array<any>>([]);
+
+  /**
+   * agent 模式（agent-first）tab 栏里的面板 tab：只存放通过 tab 栏 “+” 菜单打开的
+   * Overview / Workspace 面板。与文件/API 的 openedList 分开存放，渲染时合并成一条 tab 栏。
+   * 面板是会话内的视图入口，不写入 OPFS 持久化。
+   */
+  agentModeOpenedList = signal<Array<any>>([]);
+
+  /** agent-first tab 栏的数据源：面板 tab 在前，文件/API tab 在后 */
+  readonly agentModeTabs = computed(() => [...this.agentModeOpenedList(), ...this.openedList()]);
+
+  /** 当前模式实际渲染的 tab 顺序（agent-first 含面板，content-first 只有文件/API） */
+  private visibleTabs(): Array<any> {
+    return this.layoutService.dockMode() === 'agent-first' ? this.agentModeTabs() : this.openedList();
+  }
 
   welcomeTip = signal<string>('');
   welcomeIconPath = signal<string>('');
@@ -1320,7 +1349,7 @@ Always use the welcome_greeting tool.`;
   public async openTab(targetTab: any) {
     let oldTab = false;
     const openeds = this.openedList()
-    reset(openeds);
+    this.deactivateAllTabs();
 
     const findNode = findNodeById(this.openedList(), targetTab.id, false);
     const originNode = findNodeById(this.dataList(), targetTab.id);
@@ -1754,53 +1783,80 @@ Always use the welcome_greeting tool.`;
   }
 
   dragDrop(event: CdkDragDrop<string[]>) {
-    moveItemInArray(this.openedList(), event.previousIndex, event.currentIndex);
+    // 面板 tab 固定排在文件/API tab 之前，只允许在文件/API 区间内重排：
+    // 先把合并后的下标换算成 openedList 内的下标
+    const panelCount = this.layoutService.dockMode() === 'agent-first' ? this.agentModeOpenedList().length : 0;
+    const openedCount = this.openedList().length;
+    const previousIndex = event.previousIndex - panelCount;
+    if (previousIndex < 0 || previousIndex >= openedCount) {
+      return;
+    }
+    const targetIndex = Math.max(0, Math.min(event.currentIndex - panelCount, openedCount - 1));
+    if (targetIndex === previousIndex) {
+      return;
+    }
+    moveItemInArray(this.openedList(), previousIndex, targetIndex);
     this.storeOpenedList()
   }
 
   onCloseTab(evt: any) {
-    let currentIndex = 0;
-    let currentActived = evt.isActivated;
-    const datas = this.openedList()
+    const opened = this.openedList()
+    const panels = this.agentModeOpenedList()
 
     if(evt.closeAction && evt.closeAction == 'close-all') {
-      datas.splice(0, datas.length);
-    } else if(evt.closeAction && evt.closeAction == 'close-others') {
-      for (let index = datas.length -1; index >=0 ; index--) {
-        if (datas[index].id != evt.id) {
-          datas.splice(index, 1);
-        }
+      this.openedList.set([]);
+      this.agentModeOpenedList.set([]);
+      this.storeOpenedList()
+      return;
+    }
+
+    if(evt.closeAction && evt.closeAction == 'close-others') {
+      this.openedList.set(opened.filter(tab => tab.id == evt.id));
+      this.agentModeOpenedList.set(panels.filter(tab => tab.id == evt.id));
+      this.storeOpenedList()
+      return;
+    }
+
+    // 按当前实际渲染顺序定位（agent-first: 面板 + 文件/API；content-first: 只有文件/API），
+    // 关闭后要激活的“相邻 tab”也按这个顺序取
+    const merged = this.visibleTabs();
+    const currentIndex = merged.findIndex(tab => tab.id == evt.id);
+    const remaining = merged.filter(tab => tab.id != evt.id);
+
+    const closeOne = (tab: any) => {
+      tab["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
+      if (this.isLocalProject() && tab.nodeType === 'file') {
+        const filePath = getNodeAbsolutePath(this.dataList(), tab);
+        this.localServerService.stopFileWatch(filePath);
       }
-    } else {
-      for (let index = 0; index < datas.length; index++) {
-        if (datas[index].id == evt.id) {
-          currentIndex = index;
-          datas[currentIndex]["isActive"] = false;//先把要关闭的tab设为非激活状态，因为这个对象在关闭后还会被项目的树形列表使用到
-          
-          if (this.isLocalProject() && evt.nodeType === 'file') {
-            const filePath = getNodeAbsolutePath(this.dataList(), evt);
-            this.localServerService.stopFileWatch(filePath);
-          }
-          
-          datas.splice(index, 1);
-          break;
-        }
+    };
+
+    const openedIndex = opened.findIndex(tab => tab.id == evt.id);
+    const panelIndex = panels.findIndex(tab => tab.id == evt.id);
+    if (openedIndex >= 0) {
+      closeOne(opened[openedIndex]);
+      opened.splice(openedIndex, 1);
+    } else if (panelIndex >= 0) {
+      closeOne(panels[panelIndex]);
+      panels.splice(panelIndex, 1);
+    }
+
+    if(evt.isActivated) { //关闭的tab是激活状态，则需要激活其他tab
+      let nextTab: any;
+      if (evt.isFirst) {
+        nextTab = remaining[0];
+      } else if (evt.isLast) {
+        nextTab = remaining[remaining.length - 1];
+      } else {
+        nextTab = remaining[currentIndex];//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
       }
-      if(currentActived) { //关闭的tab是激活状态，则需要激活其他tab
-        if (evt.isFirst) {
-          if (datas.length >= 1) {
-            datas[0]["isActive"] = true;
-          }
-        } else if (evt.isLast) {
-          if (datas.length >= 1) {
-            datas[datas.length - 1]["isActive"] = true;
-          }
-        } else {
-          datas[currentIndex]["isActive"] = true;//close的不是第一个也不是最后一个，则激活后一个， 即中间的某一个
-        }
+      if (nextTab) {
+        nextTab["isActive"] = true;
       }
     }
 
+    this.openedList.set([...opened]);
+    this.agentModeOpenedList.set([...panels]);
     this.storeOpenedList()
   }
 
@@ -1844,6 +1900,8 @@ Always use the welcome_greeting tool.`;
         datas[index]["isActive"] = false
       }
     }
+    // agent 模式面板 tab 与文件/API tab 共用一条 tab 栏，激活态互斥
+    this.agentModeOpenedList().forEach(tab => tab['isActive'] = tab['id'] === evt.id);
     this.storeOpenedList()
 
     const filterNode = findNodeById(this.dataList(), evt.id)
@@ -1855,8 +1913,8 @@ Always use the welcome_greeting tool.`;
   }
 
   onAddNewTab(evt: any) {
+    this.deactivateAllTabs();
     const openedList = this.openedList()
-    openedList.forEach(ele => ele.isActive = false);
     const newNode: any = this.createNewFile("", "Untitled")
     newNode['saved'] = false
     newNode.isActive = true;
@@ -1864,6 +1922,59 @@ Always use the welcome_greeting tool.`;
     this.openedList.update(value => [...openedList]);
     this.markFirstTabOpened();
     this.storeOpenedList()
+  }
+
+  /**
+   * 打开（已打开则激活）一个 agent 模式面板 tab。
+   * 面板项只写入 agentModeOpenedList，与文件/API tab 在 tab 栏合并渲染。
+   */
+  openAgentPanelTab(nodeType: 'overview' | 'workspace', label: string): void {
+    this.deactivateAllTabs();
+
+    const panels = this.agentModeOpenedList();
+    const existing = panels.find(tab => tab['nodeType'] === nodeType);
+    if (existing) {
+      this.agentModeOpenedList.set(panels.map(tab => ({ ...tab, isActive: tab === existing })));
+      return;
+    }
+
+    this.agentModeOpenedList.set([...panels, {
+      id: `${nodeType}-panel`,
+      nodeType,
+      label,
+      isActive: true,
+      saved: true, // 面板没有未保存状态，始终显示关闭按钮
+    }]);
+    this.markFirstTabOpened();
+  }
+
+  /** 点击 Overview 卡片：关闭 overview 面板 tab，回到 Workspace 面板 tab */
+  onOverviewPanelClosed(): void {
+    this.agentModeOpenedList.set(this.agentModeOpenedList().filter(tab => tab['nodeType'] !== 'overview'));
+    this.openAgentPanelTab('workspace', 'Workspace');
+  }
+
+  /** 清除所有 tab 的激活态（文件/API tab + agent 模式面板 tab） */
+  private deactivateAllTabs(): void {
+    reset(this.openedList());
+    this.agentModeOpenedList().forEach(tab => tab['isActive'] = false);
+  }
+
+  /**
+   * content-first 的 tab 栏只渲染 openedList（面板 tab 只属于 agent-first）。
+   * 从 agent-first 切过来时，原本激活的可能是 Overview/Workspace 面板 tab，
+   * openedList 中没有激活项，内容区会空白 —— 此时激活第一个文件/API tab。
+   * 由 AppComponent.toggleDockMode() 在切到 content-first 后调用。
+   */
+  activateFirstTabIfNoneActive(): void {
+    const opened = this.openedList();
+    if (opened.length === 0 || opened.some(tab => tab['isActive'])) {
+      return;
+    }
+    this.deactivateAllTabs();
+    opened[0]['isActive'] = true;
+    this.openedList.set([...opened]);
+    this.storeOpenedList();
   }
 
   // 第一次真正打开tab页时记录latch,并让sidePanelOpenedByHover永久保持false
