@@ -60,8 +60,11 @@
     width: 100%;
 }
 
-/* 文件树右侧的主列：顶部可放自定义标题栏（content-first 左段），下方是 tabs 区。 */
+/* 文件树右侧的主列：顶部可放自定义标题栏（content-first 左段），下方是 tabs 区。
+   position: relative 让它成为定位元素并按文档顺序绘制在 .ast-content-drag-overlay 之后，
+   否则该绝对定位覆盖层会盖在本列上方，吞掉 tab 栏 / 编辑器工具栏的点击。 */
 .ast-content-right-col {
+    position: relative;
     display: flex;
     flex-direction: column;
     flex: 1;
