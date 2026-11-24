@@ -8,6 +8,13 @@
     color: var(--vscode-foreground);
 }
 
+/* agent-first：内容面板自带标题栏段，在 tab 栏之上纵向排布（与 content-first 的右列结构对称） */
+:host(.agent-first) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .split-line:hover {
     background-color: var(--vscode-hover-background);
     cursor: ew-resize;
@@ -61,7 +68,9 @@
     min-width: 0;
     min-height: 0;
 }
-
+.box-base-outflow {
+  border-top: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+}
 .ast-content-empty-state {
     text-align: center;
     color: var(--vscode-foreground);

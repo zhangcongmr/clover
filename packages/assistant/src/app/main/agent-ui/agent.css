@@ -52,6 +52,17 @@
   overflow: hidden;
 }
 
+/* 无边框窗口顶部有 32px 自定义标题栏；侧栏留同高占位，让搜索框与右侧面板内容对齐 */
+.sidebar-titlebar-spacer {
+  display: none;
+  height: 32px;
+  flex: 0 0 32px;
+}
+
+:host-context(.tauri-frameless) .sidebar-titlebar-spacer {
+  display: block;
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -388,7 +399,9 @@
   overflow: hidden;
   position: relative;
 }
-
+.box-base-outflow {
+  border-top: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+}
 .search-icon {
   width: 14px;
   height: 14px;

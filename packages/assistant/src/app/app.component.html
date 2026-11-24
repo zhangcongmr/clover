@@ -267,81 +267,79 @@
 
         <!-- Middle panel -->
         <div *appKeepAlive="astContentPanelOpen()" class="card-base ast-middle-panel" [style.width]="agentPanelOpen() ? 'calc(' + leftPct + ' * (100% - 15px))' : '100%'">
-            @if (dockMode() === 'agent-first') {
-              <app-titlebar [showControls]="true"></app-titlebar>
-            }
             <div class="ast-middle-panel-body">
-            <!-- 垂直拖动条 -->
-            <div class="ast-split-overlay" [style.display]="terminalPanelShow ? 'block' : 'none'">
-              <div class="split-line-ns ast-split-handle-ns"
-                [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
-            </div>
+              <!-- 垂直拖动条 -->
+              <div class="ast-split-overlay" [style.display]="terminalPanelShow ? 'block' : 'none'">
+                <div class="split-line-ns ast-split-handle-ns"
+                  [style.top]="topPct * 100 + '%'" (mousedown)="dragStart($event, 'ns')"></div>
+              </div>
 
-            <!-- workspace：overview 在 agent-first 下由 content 组件内的分段控件切换，在 content-first 下挂在 agent 面板上 -->
-            <div ast-content [leftOffset]="(dockMode() === 'content-first' || !agentPanelOpen()) ? 0 : agentPanelWidthPx()"
-              (dataListChangeOutput)="onHandleDataListChange($event)" (indicatorDetail)="toggleIndicatorDetailPanel($event)"
-              (agentPanelToggle)="toggleAgentPanel()"
-              (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
-            </div>
-            @if(terminalPanelShow || keepTerminalInstance.value) {
-              <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
-                [style.height]="(1 - topPct) * 100 + '%'" class="ast-terminal-tab-container"
-                [tabType]="{'type':'lightcolorselection', 'height':'42px', 'borderTop': true}" [addTabEnable]="true"
-                (addNewTab)="onAddNewTerminalTab($event)">
-                @if (terminalOpenedList.length>0) {
-                  @for (openedTab of terminalOpenedList; track openedTab.id) {
-                    <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
-                      [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
-                      aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
-                      (onClickTab)="onClickTerminalTab($event)">
-                      <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
-                    </div>
+              <!-- workspace：overview 在 agent-first 下由 content 组件内的分段控件切换，在 content-first 下挂在 agent 面板上 -->
+              <div ast-content [leftOffset]="(dockMode() === 'content-first' || !agentPanelOpen()) ? 0 : agentPanelWidthPx()"
+                [class.agent-first]="dockMode() === 'agent-first'"
+                (dataListChangeOutput)="onHandleDataListChange($event)" (indicatorDetail)="toggleIndicatorDetailPanel($event)"
+                (agentPanelToggle)="toggleAgentPanel()"
+                (disconnectTerminal)="disconnectAllTerminals()" [style.height]="topPct * 100 + '%'">
+              </div>
+              @if(terminalPanelShow || keepTerminalInstance.value) {
+                <div ast-tab-group [fobiddenContextMenu]="true" [style.display]="terminalPanelShow ? '' : 'none'"
+                  [style.height]="(1 - topPct) * 100 + '%'" class="ast-terminal-tab-container"
+                  [tabType]="{'type':'lightcolorselection', 'height':'42px', 'borderTop': true}" [addTabEnable]="true"
+                  (addNewTab)="onAddNewTerminalTab($event)">
+                  @if (terminalOpenedList.length>0) {
+                    @for (openedTab of terminalOpenedList; track openedTab.id) {
+                      <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.title)"
+                        [saved]="openedTab['saved']" [minWidth]="'10rem'" [(isActivated)]="openedTab.isActive" role="tabpanel"
+                        aria-hidden="false" [closable]="openedTab.isClosable" (onCloseTab)="onCloseTerminalTab($event)"
+                        (onClickTab)="onClickTerminalTab($event)">
+                        <app-terminal [dataList]="dataList" [theme]="themeService.getCurrentTheme()"></app-terminal>
+                      </div>
+                    }
                   }
-                }
-              </div>
-            }
-            <div data-layer="overview-longstrip" class="OverviewLongstrip ast-overview-longstrip">
-              <div data-svg-wrapper="" data-layer="terminal-btn" class="btn-svg terminalBtn" title="Terminal" (click)="toggleTerminal()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="4 17 10 11 4 5"></polyline>
-                  <line x1="12" y1="19" x2="20" y2="19"></line>
-                </svg>
-              </div>
-              <div data-layer="just-fill-cnr" class="JustFillCnr ast-justfill-place"></div>
-              @if (coreService.uploadTasks() && coreService.uploadTasks().length > 0) {
-                <div class="upload-progress-container" (click)="showUploadProgressDetails()">
-                  <div class="upload-progress-bar" [style.width.%]="coreService.totalProgress() * 100"
-                    [style.background]="coreService.totalProgress() === 1 ? '#4ade80' : '#3b82f6'">
-                    <span class="progress-text">{{ coreService.progressPercentage() }}%</span>
-                  </div>
-                  <span class="progress-icon">📁</span>
                 </div>
               }
-              @if (coreService.saving()) {
-                <div class="saving-indicator btn-svg" (click)="toggleIndicatorDetailPanel(2)">
-                  <svg t="1777112002782" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6599" width="24" height="24"><path d="M511.882596 287.998081h-0.361244a31.998984 31.998984 0 0 1-31.659415-31.977309v-0.361244c0-0.104761 0.115598-11.722364 0.115598-63.658399V96.000564a31.998984 31.998984 0 1 1 64.001581 0V192.001129c0 52.586273-0.111986 63.88237-0.119211 64.337537a32.002596 32.002596 0 0 1-31.977309 31.659415zM511.998194 959.99842a31.998984 31.998984 0 0 1-31.998984-31.998984v-96.379871c0-51.610915-0.111986-63.174332-0.115598-63.286318s0-0.242033 0-0.361243a31.998984 31.998984 0 0 1 63.997968-0.314283c0 0.455167 0.11921 11.711527 0.11921 64.034093v96.307622a31.998984 31.998984 0 0 1-32.002596 31.998984zM330.899406 363.021212a31.897836 31.897836 0 0 1-22.866739-9.612699c-0.075861-0.075861-8.207461-8.370021-44.931515-45.094076L195.198137 240.429485a31.998984 31.998984 0 0 1 45.256635-45.253022L308.336112 263.057803c37.182834 37.182834 45.090463 45.253022 45.41197 45.578141A31.998984 31.998984 0 0 1 330.899406 363.021212zM806.137421 838.11473a31.901448 31.901448 0 0 1-22.628318-9.374279L715.624151 760.859111c-36.724054-36.724054-45.018214-44.859267-45.097687-44.93874a31.998984 31.998984 0 0 1 44.77618-45.729864c0.32512 0.317895 8.395308 8.229136 45.578142 45.411969l67.88134 67.88134a31.998984 31.998984 0 0 1-22.624705 54.630914zM224.000113 838.11473a31.901448 31.901448 0 0 0 22.628317-9.374279l67.88134-67.88134c36.724054-36.724054 45.021826-44.859267 45.097688-44.93874a31.998984 31.998984 0 0 0-44.776181-45.729864c-0.32512 0.317895-8.395308 8.229136-45.578142 45.411969l-67.88134 67.884953a31.998984 31.998984 0 0 0 22.628318 54.627301zM255.948523 544.058589h-0.361244c-0.104761 0-11.722364-0.115598-63.658399-0.115598H95.942765a31.998984 31.998984 0 1 1 0-64.00158h95.996952c52.586273 0 63.88237 0.111986 64.337538 0.11921a31.998984 31.998984 0 0 1 31.659414 31.97731v0.361244a32.002596 32.002596 0 0 1-31.988146 31.659414zM767.939492 544.058589h-96.619431c-52.586273 0-63.88237-0.111986-64.337538-0.11921a31.998984 31.998984 0 0 1-31.659414-31.97731v-0.361244a32.002596 32.002596 0 0 1 31.988146-31.659414h0.361244c0.104761 0 11.722364 0.115598 63.658399 0.115598h96.282566a31.998984 31.998984 0 1 1 0 64.00158z" fill="#666666"></path></svg>
-                  <span>Saving...</span>
-                </div>
-              }
-              @if (coreService.forking()) {
-                <div class="forking-indicator btn-svg" (click)="toggleIndicatorDetailPanel(3)">
-                  <svg t="1777112002782" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6599" width="24" height="24"><path d="M511.882596 287.998081h-0.361244a31.998984 31.998984 0 0 1-31.659415-31.977309v-0.361244c0-0.104761 0.115598-11.722364 0.115598-63.658399V96.000564a31.998984 31.998984 0 1 1 64.001581 0V192.001129c0 52.586273-0.111986 63.88237-0.119211 64.337537a32.002596 32.002596 0 0 1-31.977309 31.659415zM511.998194 959.99842a31.998984 31.998984 0 0 1-31.998984-31.998984v-96.379871c0-51.610915-0.111986-63.174332-0.115598-63.286318s0-0.242033 0-0.361243a31.998984 31.998984 0 0 1 63.997968-0.314283c0 0.455167 0.11921 11.711527 0.11921 64.034093v96.307622a31.998984 31.998984 0 0 1-32.002596 31.998984zM330.899406 363.021212a31.897836 31.897836 0 0 1-22.866739-9.612699c-0.075861-0.075861-8.207461-8.370021-44.931515-45.094076L195.198137 240.429485a31.998984 31.998984 0 0 1 45.256635-45.253022L308.336112 263.057803c37.182834 37.182834 45.090463 45.253022 45.41197 45.578141A31.998984 31.998984 0 0 1 330.899406 363.021212zM806.137421 838.11473a31.901448 31.901448 0 0 1-22.628318-9.374279L715.624151 760.859111c-36.724054-36.724054-45.018214-44.859267-45.097687-44.93874a31.998984 31.998984 0 0 1 44.77618-45.729864c0.32512 0.317895 8.395308 8.229136 45.578142 45.411969l67.88134 67.88134a31.998984 31.998984 0 0 1-22.624705 54.630914zM224.000113 838.11473a31.901448 31.901448 0 0 0 22.628317-9.374279l67.88134-67.88134c36.724054-36.724054 45.021826-44.859267 45.097688-44.93874a31.998984 31.998984 0 0 0-44.776181-45.729864c-0.32512 0.317895-8.395308 8.229136-45.578142 45.411969l-67.88134 67.884953a31.998984 31.998984 0 0 0 22.628318 54.627301zM255.948523 544.058589h-0.361244c-0.104761 0-11.722364-0.115598-63.658399-0.115598H95.942765a31.998984 31.998984 0 1 1 0-64.00158h95.996952c52.586273 0 63.88237 0.111986 64.337538 0.11921a31.998984 31.998984 0 0 1 31.659414 31.97731v0.361244a32.002596 32.002596 0 0 1-31.988146 31.659414zM767.939492 544.058589h-96.619431c-52.586273 0-63.88237-0.111986-64.337538-0.11921a31.998984 31.998984 0 0 1-31.659414-31.97731v-0.361244a32.002596 32.002596 0 0 1 31.988146-31.659414h0.361244c0.104761 0 11.722364 0.115598 63.658399 0.115598h96.282566a31.998984 31.998984 0 1 1 0 64.00158z" fill="#666666"></path></svg>
-                  <span>Forking...</span>
-                </div>
-              }
-              <div data-layer="status-cnr" class="StatusCnr ast-methodtype">
-                <div data-layer="Status" class="Status ast-projectname">Status</div>
-              </div>
-              <div data-layer="notification-cnr" class="NotificationCnr ast-notification-cnr" (click)="toggleIndicatorDetailPanel(1)">
-                <div data-svg-wrapper="" data-layer="notification" class="Notification">
-                  <svg class="icon" width="20" height="21">
-                    <use href="#icon-notification"></use>
+              <div data-layer="overview-longstrip" class="OverviewLongstrip ast-overview-longstrip">
+                <div data-svg-wrapper="" data-layer="terminal-btn" class="btn-svg terminalBtn" title="Terminal" (click)="toggleTerminal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 17 10 11 4 5"></polyline>
+                    <line x1="12" y1="19" x2="20" y2="19"></line>
                   </svg>
                 </div>
-                <div data-layer="0" class="ast-projectname">{{ notificationService.notificationCount() }}</div>
+                <div data-layer="just-fill-cnr" class="JustFillCnr ast-justfill-place"></div>
+                @if (coreService.uploadTasks() && coreService.uploadTasks().length > 0) {
+                  <div class="upload-progress-container" (click)="showUploadProgressDetails()">
+                    <div class="upload-progress-bar" [style.width.%]="coreService.totalProgress() * 100"
+                      [style.background]="coreService.totalProgress() === 1 ? '#4ade80' : '#3b82f6'">
+                      <span class="progress-text">{{ coreService.progressPercentage() }}%</span>
+                    </div>
+                    <span class="progress-icon">📁</span>
+                  </div>
+                }
+                @if (coreService.saving()) {
+                  <div class="saving-indicator btn-svg" (click)="toggleIndicatorDetailPanel(2)">
+                    <svg t="1777112002782" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6599" width="24" height="24"><path d="M511.882596 287.998081h-0.361244a31.998984 31.998984 0 0 1-31.659415-31.977309v-0.361244c0-0.104761 0.115598-11.722364 0.115598-63.658399V96.000564a31.998984 31.998984 0 1 1 64.001581 0V192.001129c0 52.586273-0.111986 63.88237-0.119211 64.337537a32.002596 32.002596 0 0 1-31.977309 31.659415zM511.998194 959.99842a31.998984 31.998984 0 0 1-31.998984-31.998984v-96.379871c0-51.610915-0.111986-63.174332-0.115598-63.286318s0-0.242033 0-0.361243a31.998984 31.998984 0 0 1 63.997968-0.314283c0 0.455167 0.11921 11.711527 0.11921 64.034093v96.307622a31.998984 31.998984 0 0 1-32.002596 31.998984zM330.899406 363.021212a31.897836 31.897836 0 0 1-22.866739-9.612699c-0.075861-0.075861-8.207461-8.370021-44.931515-45.094076L195.198137 240.429485a31.998984 31.998984 0 0 1 45.256635-45.253022L308.336112 263.057803c37.182834 37.182834 45.090463 45.253022 45.41197 45.578141A31.998984 31.998984 0 0 1 330.899406 363.021212zM806.137421 838.11473a31.901448 31.901448 0 0 1-22.628318-9.374279L715.624151 760.859111c-36.724054-36.724054-45.018214-44.859267-45.097687-44.93874a31.998984 31.998984 0 0 1 44.77618-45.729864c0.32512 0.317895 8.395308 8.229136 45.578142 45.411969l67.88134 67.88134a31.998984 31.998984 0 0 1-22.624705 54.630914zM224.000113 838.11473a31.901448 31.901448 0 0 0 22.628317-9.374279l67.88134-67.88134c36.724054-36.724054 45.021826-44.859267 45.097688-44.93874a31.998984 31.998984 0 0 0-44.776181-45.729864c-0.32512 0.317895-8.395308 8.229136-45.578142 45.411969l-67.88134 67.884953a31.998984 31.998984 0 0 0 22.628318 54.627301zM255.948523 544.058589h-0.361244c-0.104761 0-11.722364-0.115598-63.658399-0.115598H95.942765a31.998984 31.998984 0 1 1 0-64.00158h95.996952c52.586273 0 63.88237 0.111986 64.337538 0.11921a31.998984 31.998984 0 0 1 31.659414 31.97731v0.361244a32.002596 32.002596 0 0 1-31.988146 31.659414zM767.939492 544.058589h-96.619431c-52.586273 0-63.88237-0.111986-64.337538-0.11921a31.998984 31.998984 0 0 1-31.659414-31.97731v-0.361244a32.002596 32.002596 0 0 1 31.988146-31.659414h0.361244c0.104761 0 11.722364 0.115598 63.658399 0.115598h96.282566a31.998984 31.998984 0 1 1 0 64.00158z" fill="#666666"></path></svg>
+                    <span>Saving...</span>
+                  </div>
+                }
+                @if (coreService.forking()) {
+                  <div class="forking-indicator btn-svg" (click)="toggleIndicatorDetailPanel(3)">
+                    <svg t="1777112002782" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6599" width="24" height="24"><path d="M511.882596 287.998081h-0.361244a31.998984 31.998984 0 0 1-31.659415-31.977309v-0.361244c0-0.104761 0.115598-11.722364 0.115598-63.658399V96.000564a31.998984 31.998984 0 1 1 64.001581 0V192.001129c0 52.586273-0.111986 63.88237-0.119211 64.337537a32.002596 32.002596 0 0 1-31.977309 31.659415zM511.998194 959.99842a31.998984 31.998984 0 0 1-31.998984-31.998984v-96.379871c0-51.610915-0.111986-63.174332-0.115598-63.286318s0-0.242033 0-0.361243a31.998984 31.998984 0 0 1 63.997968-0.314283c0 0.455167 0.11921 11.711527 0.11921 64.034093v96.307622a31.998984 31.998984 0 0 1-32.002596 31.998984zM330.899406 363.021212a31.897836 31.897836 0 0 1-22.866739-9.612699c-0.075861-0.075861-8.207461-8.370021-44.931515-45.094076L195.198137 240.429485a31.998984 31.998984 0 0 1 45.256635-45.253022L308.336112 263.057803c37.182834 37.182834 45.090463 45.253022 45.41197 45.578141A31.998984 31.998984 0 0 1 330.899406 363.021212zM806.137421 838.11473a31.901448 31.901448 0 0 1-22.628318-9.374279L715.624151 760.859111c-36.724054-36.724054-45.018214-44.859267-45.097687-44.93874a31.998984 31.998984 0 0 1 44.77618-45.729864c0.32512 0.317895 8.395308 8.229136 45.578142 45.411969l67.88134 67.88134a31.998984 31.998984 0 0 1-22.624705 54.630914zM224.000113 838.11473a31.901448 31.901448 0 0 0 22.628317-9.374279l67.88134-67.88134c36.724054-36.724054 45.021826-44.859267 45.097688-44.93874a31.998984 31.998984 0 0 0-44.776181-45.729864c-0.32512 0.317895-8.395308 8.229136-45.578142 45.411969l-67.88134 67.884953a31.998984 31.998984 0 0 0 22.628318 54.627301zM255.948523 544.058589h-0.361244c-0.104761 0-11.722364-0.115598-63.658399-0.115598H95.942765a31.998984 31.998984 0 1 1 0-64.00158h95.996952c52.586273 0 63.88237 0.111986 64.337538 0.11921a31.998984 31.998984 0 0 1 31.659414 31.97731v0.361244a32.002596 32.002596 0 0 1-31.988146 31.659414zM767.939492 544.058589h-96.619431c-52.586273 0-63.88237-0.111986-64.337538-0.11921a31.998984 31.998984 0 0 1-31.659414-31.97731v-0.361244a32.002596 32.002596 0 0 1 31.988146-31.659414h0.361244c0.104761 0 11.722364 0.115598 63.658399 0.115598h96.282566a31.998984 31.998984 0 1 1 0 64.00158z" fill="#666666"></path></svg>
+                    <span>Forking...</span>
+                  </div>
+                }
+                <div data-layer="status-cnr" class="StatusCnr ast-methodtype">
+                  <div data-layer="Status" class="Status ast-projectname">Status</div>
+                </div>
+                <div data-layer="notification-cnr" class="NotificationCnr ast-notification-cnr" (click)="toggleIndicatorDetailPanel(1)">
+                  <div data-svg-wrapper="" data-layer="notification" class="Notification">
+                    <svg class="icon" width="20" height="21">
+                      <use href="#icon-notification"></use>
+                    </svg>
+                  </div>
+                  <div data-layer="0" class="ast-projectname">{{ notificationService.notificationCount() }}</div>
+                </div>
               </div>
-            </div>
             </div><!-- /ast-middle-panel-body -->
           </div>
       </div>

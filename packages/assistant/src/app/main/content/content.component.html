@@ -1,8 +1,10 @@
 @if(layoutService.dockMode() === 'agent-first') {
+  <!-- agent-first：内容面板自己的标题栏段，位于 tab 栏之上（与 content-first 的右列结构对称） -->
+  <app-titlebar [showControls]="true"></app-titlebar>
   <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
   (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
   [rightMoreButtons]="rightMoreBtns()" [addTabMenuItems]="addTabMenuItems"
-  (rightMoreButtonsChange)="onGroupBtns($event)">
+  (rightMoreButtonsChange)="onGroupBtns($event)" class="box-base-outflow">
     @for (openedTab of agentModeTabs(); track openedTab.id) {
     <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
       [closable]="openedTab['closable'] !== false"
@@ -198,12 +200,11 @@
         <!-- 标题栏左段：正常情况下只显示标题；当右侧 Agent 面板被收起时，窗口按钮回退到此段显示。 -->
         <app-titlebar [showControls]="!layoutService.agentPanelOpen()"></app-titlebar>
       }
-      <div class="ast-content-tabs-wrapper">
-        @if (openedList().length>0) {
-          <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
+      @if (openedList().length>0) {
+        <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
           (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
           [rightMoreButtons]="rightMoreBtns()"
-          (rightMoreButtonsChange)="onGroupBtns($event)">
+          (rightMoreButtonsChange)="onGroupBtns($event)" class="box-base-outflow">
             <!-- Agent 面板 toggle 走 rightMoreButtons，恒在 tab 头部右上角 -->
             @for (openedTab of openedList(); track openedTab.id) {
             <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
@@ -225,34 +226,35 @@
           <!--TODO-->
           <!-- 无 tab 时 Agent 面板 toggle 落在本父元素（ast-content-tabs-wrapper）的右上角，
               与 tab header 同高 -->
-          <div class="ast-content-corner-action">
-            <button class="btn-svg ast-content-agent-toggle"
-              [class.active]="!layoutService.agentPanelOpen()"
-              (click)="agentPanelToggle.emit()"
-              [title]="layoutService.agentPanelOpen() ? 'Hide Agent' : 'Show Agent'">
-              <svg class="icon" width="20" height="20">
-                <use href="#icon-panel-right"></use>
-              </svg>
-            </button>
-          </div>
-          <div class="empty-state">
-            @if (welcomeIconPath()) {
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path [attr.d]="welcomeIconPath()"></path>
-              </svg>
-            } @else {
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
-            }
-            <p class="empty-state-text">{{ welcomeTip() || 'No tabs open' }}</p>
+          <div class="ast-content-tabs-wrapper box-base-outflow">
+            <div class="ast-content-corner-action">
+              <button class="btn-svg ast-content-agent-toggle"
+                [class.active]="!layoutService.agentPanelOpen()"
+                (click)="agentPanelToggle.emit()"
+                [title]="layoutService.agentPanelOpen() ? 'Hide Agent' : 'Show Agent'">
+                <svg class="icon" width="20" height="20">
+                  <use href="#icon-panel-right"></use>
+                </svg>
+              </button>
+            </div>
+            <div class="empty-state">
+              @if (welcomeIconPath()) {
+                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path [attr.d]="welcomeIconPath()"></path>
+                </svg>
+              } @else {
+                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              }
+              <p class="empty-state-text">{{ welcomeTip() || 'No tabs open' }}</p>
+            </div>
           </div>
         }
-      </div>
     </div><!-- /ast-content-right-col -->
   </div>
 }

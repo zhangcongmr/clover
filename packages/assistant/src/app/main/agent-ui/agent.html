@@ -1,5 +1,8 @@
 @if (layoutService.dockMode() === 'agent-first') {
   <div class="agent-sidebar" [class.collapsed]="layoutService.sidebarCollapsed()">
+    <!-- 无边框窗口顶部有 32px 自定义标题栏；侧栏留同高占位，和右侧面板内容对齐 -->
+    <div class="sidebar-titlebar-spacer"></div>
+
     <!-- Session search -->
     <div class="sidebar-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -168,9 +171,9 @@
     <app-titlebar [showControls]="!layoutService.astContentPanelOpen()"></app-titlebar>
     @if (isBrowser()) {
       @if (collabService.panelOpen()) {
-        <app-collab-panel class="custom-scroll" (close)="closeCollab()" />
+        <app-collab-panel class="custom-scroll box-base-outflow" (close)="closeCollab()" />
       } @else {
-        <app-acp-panel class="custom-scroll"
+        <app-acp-panel class="custom-scroll box-base-outflow"
           (editorToggle)="editorToggle.emit()"
           (overviewToggle)="overviewToggle.emit()"
           (themeApply)="themeApply.emit($event)"
@@ -259,9 +262,9 @@
     <app-titlebar [showControls]="true"></app-titlebar>
     @if (isBrowser()) {
       @if (collabService.panelOpen()) {
-        <app-collab-panel class="custom-scroll" (close)="closeCollab()" />
+        <app-collab-panel class="custom-scroll box-base-outflow" (close)="closeCollab()" />
       } @else {
-        <div class="cf-panel">
+        <div class="cf-panel box-base-outflow">
           <div class="cf-header">
             <div class="cf-header-title">
               @if (selectedProject(); as project) {

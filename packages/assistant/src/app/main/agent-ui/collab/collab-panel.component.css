@@ -5,7 +5,6 @@
   position: relative;
   z-index: 10;
   background-color: var(--vscode-background);
-  margin: 5px 5px 5px 0;
 }
 
 .card-base {

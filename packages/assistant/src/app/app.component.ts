@@ -33,7 +33,6 @@ import { AstModalComponent } from './shared/ast-modal/ast-modal.component';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { AgentComponent } from './main/agent-ui/agent';
 import { KeepAliveDirective } from './shared/keep-alive.directive';
-import { TitlebarComponent } from './shared/titlebar/titlebar.component';
 import { DockMode, LayoutService } from './main/layout.service';
 import { OverviewComponent } from './main/overview/overview.component';
 import { APP_VERSION } from '../app-version';
@@ -77,7 +76,7 @@ interface DockItem {
     standalone: true,
     imports: [UserCenterComponent, SettingsComponent, AstMenuComponent, AstSubmenuComponent, AstTabGroupComponent,
       AstTabComponent, ContentComponent, OverviewComponent, NotificationComponent, TerminalComponent, DatePipe, NgTemplateOutlet,
-        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, RagManagerComponent, AstModalComponent, TitlebarComponent], // Add TerminalComponent to imports
+        AgentComponent, KeepAliveDirective, McpManagerComponent, SkillManagerComponent, RagManagerComponent, AstModalComponent], // Add TerminalComponent to imports
 })
 export class AppComponent extends AstDraggableComponent implements OnInit, AfterViewInit, OnDestroy {
   protected coreService = inject(CoreService);
