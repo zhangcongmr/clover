@@ -5,13 +5,9 @@
   position: relative;
   z-index: 10;
   background-color: var(--vscode-background);
-  margin: 5px 5px 5px 0;
   /* 宿主即原来的 .card-base 包裹层，容器查询的容器必须建立在这里，
      否则下面的 @container 永远不会命中 */
   container-type: inline-size;
-}
-:host(.dock-left) {
-  margin: 5px 0 5px 5px;
 }
 .acp-chat-container {
   flex: 1;
