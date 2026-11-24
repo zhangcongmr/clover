@@ -159,6 +159,14 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
    */
   protected readonly agentOverlayOverviewOpen = computed(() =>
     this.layoutService.dockMode() === 'content-first' && this.layoutService.overviewOpen());
+  /**
+   * 左栏侧边栏开关的状态：两种布局下紧邻左栏的面板不同 ——
+   * agent-first 是 Agent 面板内的会话侧边栏，content-first 是 Content 面板内的文件树侧栏。
+   */
+  protected readonly leftSidebarCollapsed = computed(() =>
+    this.layoutService.dockMode() === 'agent-first'
+      ? this.layoutService.sidebarCollapsed()
+      : this.contentComp()?.sideOpen() === false);
   dockMode = this.layoutService.dockMode;
   /** Whether the Skills Manager dialog is open. */
   showSkillsManager = signal<boolean>(false);
@@ -779,6 +787,18 @@ export class AppComponent extends AstDraggableComponent implements OnInit, After
     // 同 toggleAstContentPanel：host 宽度不变，ResizeObserver 不会因开关面板而触发
     this.refreshAgentPanelWidth();
     this.onAgentLayoutChanged();
+  }
+
+  /**
+   * 左栏侧边栏开关：折叠/展开紧邻左栏的面板。
+   * agent-first 折叠 Agent 面板内的会话侧边栏；content-first 折叠 Content 面板内的文件树侧栏。
+   */
+  toggleLeftSidebar(): void {
+    if (this.layoutService.dockMode() === 'agent-first') {
+      this.layoutService.toggleSidebar();
+      return;
+    }
+    this.contentComp()?.shrinkExplorer();
   }
 
   /** Agent 面板右上角 overview 图标：翻转 overview 面板 */

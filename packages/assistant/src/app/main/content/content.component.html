@@ -1,7 +1,7 @@
 @if(layoutService.dockMode() === 'agent-first') {
-  <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
+  <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
   (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
-  [(leftMoreButtons)]="leftMoreButtons" [rightMoreButtons]="rightMoreBtns()" [addTabMenuItems]="addTabMenuItems"
+  [rightMoreButtons]="rightMoreBtns()" [addTabMenuItems]="addTabMenuItems"
   (rightMoreButtonsChange)="onGroupBtns($event)">
     @for (openedTab of agentModeTabs(); track openedTab.id) {
     <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
@@ -35,15 +35,15 @@
       <app-file-picker-dialog #filePicker (selected)="onFilePickerSelected($event)"></app-file-picker-dialog>
     </div>
 
-    @if (sideOpen) {
+    @if (sideOpen()) {
       <div class="ast-content-drag-overlay">
         <div class="split-line ast-content-split-handle"
-        [style.left]="sideOpen ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
+        [style.left]="sideOpen() ? 'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')' : '0'"
         (mousedown)="dragStart($event, 'ew')"></div>
       </div>
     }
 
-    @if (sideOpen) {
+    @if (sideOpen()) {
       <div class="left-side-section" [style.width]="'calc((100vw - var(--left-side-area-width, 42px)) * ' + leftPct + ')'">
       @if(currentDisplayViewId==1) {
         @if(showButtonPlaceholder()) {
@@ -66,11 +66,6 @@
           <div data-layer="collection-headers" class="CollectionHeaders ast-collection-headers">
             <div data-layer="ProjectName-cnr" class="ProjectnameCnr ast-projectname-cnr">
               <!-- <div data-layer="ProjectName" class="Projectname ast-projectname">ProjectName</div> -->
-              <div data-svg-wrapper="" data-layer="project-folder-btn" class="btn-svg ProjectFolderBtn" title="Project" (click)="shrinkExplorer()">
-                <svg class="icon" width="20" height="20">
-                  <use href="#icon-shrink-open"></use>
-                </svg>
-              </div>
             </div>
             <div data-layer="quickly-bars" class="QuicklyBars ast-quickly-bars">
               <!-- <div data-svg-wrapper="" data-layer="fileadd-btn" (click)="FileaddBtn($event)" title="Add File" class="btn-svg FileaddBtn">
@@ -177,9 +172,9 @@
       }
       <div class="ast-content-tabs-wrapper">
         @if (openedList().length>0) {
-          <div ast-tab-group [layoutChangeSignal]="sideOpen" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
+          <div ast-tab-group [layoutChangeSignal]="sideOpen()" [addTabEnable]="true" [tabGroupResizeObservable]="true" [tabType]="{'type':'filled'}"
           (addNewTab)="onAddNewTab($event)" [isDropListDisable]="false" (dragDrop)="dragDrop($event)"
-          [(leftMoreButtons)]="leftMoreButtons" [rightMoreButtons]="rightMoreBtns()"
+          [rightMoreButtons]="rightMoreBtns()"
           (rightMoreButtonsChange)="onGroupBtns($event)">
             <!-- Agent 面板 toggle 走 rightMoreButtons，恒在 tab 头部右上角 -->
             @for (openedTab of openedList(); track openedTab.id) {

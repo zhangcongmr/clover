@@ -203,7 +203,8 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   dataListChangeOutput = output<Array<AstTreeNode>>();
   disconnectTerminal = output<void>();
 
-  sideOpen = true
+  /** 文件树侧栏是否展开；content-first 下由左栏开关与左边缘 hover 共同控制 */
+  readonly sideOpen = signal(true);
   // 标记侧边栏是否由左边缘hover打开;仅该方式打开时,离开区域才自动关闭
   private sidePanelOpenedByHover = false;
   // 标记是否曾经打开过tab页;一旦打开过,sidePanelOpenedByHover永久保持false(即使之后清空openedList)
@@ -241,9 +242,6 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
   searchResults = ''
 
   // 内容视图分段控件已随 Overview 面板移出而移除，content 组件恒为 workspace。
-
-  // 左上角按钮：仅侧栏收起按钮（视图分段控件固定渲染在左侧，不放入 leftMoreButtons）
-  leftMoreButtons: Array<{ label: string; id: string; action?: Function }> = [];
 
   private savers: AutoSaver[] = [];
   
@@ -358,8 +356,6 @@ showButtonPlaceholder = computed(() => {
       void this.loadInitialAgentProject();
     }
 
-    this.refreshLeftMoreBtns();
-
     // 检测是否为本地项目
     this.checkIsLocalProject();
 
@@ -392,17 +388,8 @@ showButtonPlaceholder = computed(() => {
   }
 
   shrinkExplorer() {
-    this.sideOpen = !this.sideOpen;
+    this.sideOpen.update(v => !v);
     this.sidePanelOpenedByHover = false;
-    this.refreshLeftMoreBtns();
-  }
-
-  private refreshLeftMoreBtns() {
-    this.leftMoreButtons = this.sideOpen
-      ? []
-      : [
-          { label: 'Shrink the project explorer', id: 'shrink-close', action: () => this.shrinkExplorer() },
-        ];
   }
 
   // 检测是否为本地项目（根节点 isLocal = true）
@@ -1446,9 +1433,8 @@ Always use the welcome_greeting tool.`;
 
     this.storeApi();
     this.currentDisplayViewId = 1;
-    this.sideOpen = true;
+    this.sideOpen.set(true);
     this.sidePanelOpenedByHover = false;
-    this.refreshLeftMoreBtns();
 
     // 重置状态
     this.showLocationSelector.set(false);
@@ -2248,14 +2234,13 @@ Always use the welcome_greeting tool.`;
     const x = evt.clientX - hostLeft;
     const nearLeftEdge = x <= ContentComponent.SIDE_PANEL_HOVER_THRESHOLD && x > 0;
 
-    if (!this.sideOpen) {
+    if (!this.sideOpen()) {
       if (nearLeftEdge) {
-        this.sideOpen = true;
+        this.sideOpen.set(true);
         // 一旦曾经打开过tab页,即使之后清空openedList,也不再标记为hover打开(不参与自动关闭)
         if (!this.hasOpenedTabEver) {
           this.sidePanelOpenedByHover = true;
         }
-        this.refreshLeftMoreBtns();
       }
     } else {
       // 仅当侧边栏是由hover打开时,鼠标离开侧边栏区域(进入主内容区)才关闭
@@ -2264,9 +2249,8 @@ Always use the welcome_greeting tool.`;
       }
       const sidebarEl = this.elementRef.nativeElement.querySelector('.left-side-section') as HTMLElement | null;
       if (sidebarEl && evt.clientX > sidebarEl.getBoundingClientRect().right) {
-        this.sideOpen = false;
+        this.sideOpen.set(false);
         this.sidePanelOpenedByHover = false;
-        this.refreshLeftMoreBtns();
       }
     }
   }
@@ -2276,10 +2260,9 @@ Always use the welcome_greeting tool.`;
     if (this.openedList().length > 0) {
       return;
     }
-    if (this.sideOpen && this.sidePanelOpenedByHover) {
-      this.sideOpen = false;
+    if (this.sideOpen() && this.sidePanelOpenedByHover) {
+      this.sideOpen.set(false);
       this.sidePanelOpenedByHover = false;
-      this.refreshLeftMoreBtns();
     }
   }
 }

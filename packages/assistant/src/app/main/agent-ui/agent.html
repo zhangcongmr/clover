@@ -1,19 +1,5 @@
 @if (layoutService.dockMode() === 'agent-first') {
   <div class="agent-sidebar" [class.collapsed]="layoutService.sidebarCollapsed()">
-    <!-- Single collapse/expand entry point. The button stays rendered while collapsed and
-         is pinned to the host's top-left with inline styles; this only works because
-         `.agent-sidebar` itself is not positioned, so the absolute box resolves against
-         :host and is not clipped by `.agent-sidebar.collapsed { width: 0; overflow: hidden }`. -->
-    <div class="sidebar-brand">
-      <button class="icon-btn sidebar-toggle-btn" (click)="layoutService.toggleSidebar()"
-        [title]="layoutService.sidebarCollapsed() ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        [style]="layoutService.sidebarCollapsed() ? 'position: absolute; top: 10px; left: 10px; z-index: 100' : ''">
-        <svg class="icon" width="20" height="20">
-          <use href="#icon-shrink-close"></use>
-        </svg>
-      </button>
-    </div>
-
     <!-- Session search -->
     <div class="sidebar-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -182,15 +168,13 @@
     <app-titlebar [showControls]="!layoutService.astContentPanelOpen()"></app-titlebar>
     @if (isBrowser()) {
       @if (collabService.panelOpen()) {
-        <app-collab-panel class="custom-scroll" (close)="closeCollab()"
-          [sidebarCollapsed]="layoutService.sidebarCollapsed()" />
+        <app-collab-panel class="custom-scroll" (close)="closeCollab()" />
       } @else {
         <app-acp-panel class="custom-scroll"
           (editorToggle)="editorToggle.emit()"
           (overviewToggle)="overviewToggle.emit()"
           (themeApply)="themeApply.emit($event)"
           (recentSessionOpen)="openRecentSession($event)"
-          [sidebarCollapsed]="layoutService.sidebarCollapsed()"
         />
       }
     }
