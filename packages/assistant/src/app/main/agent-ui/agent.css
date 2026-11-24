@@ -45,32 +45,11 @@
   transition: width 0.2s, min-width 0.2s;
 }
 
-.sidebar-brand {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 10px 6px;
-}
-
 .agent-sidebar.collapsed {
   width: 0;
   min-width: 0;
   border-right: none;
   overflow: hidden;
-}
-
-.sidebar-toggle-btn {
-  transition: opacity 0.15s, background-color 0.15s, transform 0.15s;
-  /* Collapsed, the toggle is pinned to the host top-left and overlaps the frameless
-     window titlebar, which is a drag region. Drag regions swallow hover/click, so the
-     button would keep the default arrow cursor; punch a no-drag hole for it. */
-  -webkit-app-region: no-drag;
-}
-
-/* Expanded the arrow points left (collapse); collapsed it must point right (expand). */
-.agent-sidebar.collapsed .sidebar-toggle-btn {
-  transform: rotate(180deg);
 }
 
 .sidebar-header {
@@ -581,7 +560,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0px 10px;
+  margin: 10px 10px 0;
   padding: 6px 10px;
   background: var(--vscode-background);
   border: 1px solid var(--vscode-border-color);

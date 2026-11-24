@@ -1,4 +1,4 @@
-import { Component, computed, effect, ElementRef, inject, input, OnInit, OnDestroy, output, signal, untracked, ViewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, OnInit, OnDestroy, output, signal, untracked, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AcpService } from './acp.service';
 import { AcpChatComponent } from './acp-chat.component';
@@ -44,8 +44,6 @@ export class AcpPanelComponent implements OnInit, OnDestroy {
   editorToggle = output<void>();
   /** Emitted when the overview toggle button is clicked. Only in content-first mode. */
   overviewToggle = output<void>();
-  /** Whether the left sidebar is collapsed; keeps header space free for the floating toggle. */
-  sidebarCollapsed = input<boolean>(false);
   protected acpService = inject(AcpService);
   showSettings = signal<boolean>(false);
   /** Emitted when a recent task/session entry is clicked; the host opens it. */
