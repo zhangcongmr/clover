@@ -122,6 +122,81 @@
     color: var(--vscode-foreground);
 }
 
+/* ===== Empty tab area (agent-first, no open tabs) =====
+   快捷行风格：每条是一个整宽的圆角行（图标 + 名称 + 打开提示），
+   用于列出可打开的面板 tab。 */
+.ast-tab-empty {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 32px 24px;
+    overflow: auto;
+}
+
+.ast-tab-empty-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(520px, 100%);
+}
+
+.ast-tab-empty-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+    border-radius: 8px;
+    background: var(--vscode-surface-background, transparent);
+    color: var(--vscode-foreground);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.12s, border-color 0.12s;
+}
+
+.ast-tab-empty-row:hover {
+    background: var(--vscode-hover-background);
+}
+
+.ast-tab-empty-row:focus-visible {
+    outline: 1px solid var(--vscode-accent-color);
+    outline-offset: 1px;
+}
+
+.ast-tab-empty-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+
+.ast-tab-empty-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ast-tab-empty-plus {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.4;
+    transition: opacity 0.12s;
+}
+
+.ast-tab-empty-row:hover .ast-tab-empty-plus {
+    opacity: 0.8;
+}
+
 .ast-content-tree {
     flex: 1 1 0;
     overflow: auto;

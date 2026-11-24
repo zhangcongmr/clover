@@ -5,8 +5,36 @@
   (rightMoreButtonsChange)="onGroupBtns($event)">
     @for (openedTab of agentModeTabs(); track openedTab.id) {
     <div ast-tab [id]="openedTab.id" [label]="((openedTab.symbol || '') + ' ' + openedTab.label)" [saved]="openedTab['saved']"
+      [closable]="openedTab['closable'] !== false"
       [(isActivated)]="openedTab.isActive" role="tabpanel" aria-hidden="false" (onCloseTab)="onCloseTab($event)"
       (onClickTab)="onClickTab($event)">
+      @if (openedTab['nodeType']=='newTab') {
+        <!-- New Tab 占位页：没有其它面板 tab 时展示可打开的面板入口 -->
+        <div class="ast-tab-empty">
+          <div class="ast-tab-empty-list">
+            <button type="button" class="ast-tab-empty-row" (click)="openAgentPanelTab('workspace', 'Workspace')">
+              <svg class="ast-tab-empty-icon" width="18" height="18" viewBox="0 0 26 24">
+                <use href="#icon-folder"></use>
+              </svg>
+              <span class="ast-tab-empty-label">Workspace</span>
+              <svg class="ast-tab-empty-plus" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+            </button>
+            <button type="button" class="ast-tab-empty-row" (click)="openAgentPanelTab('overview', 'Overview')">
+              <svg class="ast-tab-empty-icon" width="18" height="18">
+                <use href="#icon-overview"></use>
+              </svg>
+              <span class="ast-tab-empty-label">Overview</span>
+              <svg class="ast-tab-empty-plus" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
       @if (openedTab['nodeType']=='overview') {
         <ast-overview (closed)="onOverviewPanelClosed()"></ast-overview>
       }

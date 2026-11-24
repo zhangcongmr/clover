@@ -218,6 +218,10 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
 
   openedList = signal<Array<any>>([]);
 
+  /** New Tab 占位页的 tab id / nodeType，与其它面板 tab 一样按 `${nodeType}-panel` 命名 */
+  private static readonly NEW_TAB_NODE_TYPE = 'newTab';
+  private static readonly NEW_TAB_PANEL_ID = 'newTab-panel';
+
   /**
    * agent 模式（agent-first）tab 栏里的面板 tab：只存放通过 tab 栏 “+” 菜单打开的
    * Overview / Workspace 面板。与文件/API 的 openedList 分开存放，渲染时合并成一条 tab 栏。
@@ -225,8 +229,30 @@ export class ContentComponent extends AstDraggableComponent implements OnInit, O
    */
   agentModeOpenedList = signal<Array<any>>([]);
 
-  /** agent-first tab 栏的数据源：面板 tab 在前，文件/API tab 在后 */
-  readonly agentModeTabs = computed(() => [...this.agentModeOpenedList(), ...this.openedList()]);
+  /**
+   * New Tab 占位页：一条 tab 都没有时由 agentModeTabs 注入，用来展示可打开的面板入口。
+   * 它不是真实 tab，不进入 agentModeOpenedList。
+   */
+  private readonly newTabPlaceholder = {
+    id: ContentComponent.NEW_TAB_PANEL_ID,
+    nodeType: ContentComponent.NEW_TAB_NODE_TYPE,
+    label: 'New Tab',
+    isActive: true,
+    saved: true,
+    closable: false, // 占位页不可关闭：关掉后 tab 栏与内容区都会空置
+  };
+
+  /**
+   * agent-first tab 栏的数据源：面板 tab 在前，文件/API tab 在后。
+   * 只要有任意 tab（面板或文件/API），占位页就消失；全部关闭后才重新出现。
+   */
+  readonly agentModeTabs = computed(() => {
+    const panels = this.agentModeOpenedList();
+    const opened = this.openedList();
+    return panels.length === 0 && opened.length === 0
+      ? [this.newTabPlaceholder]
+      : [...panels, ...opened];
+  });
 
   /** 当前模式实际渲染的 tab 顺序（agent-first 含面板，content-first 只有文件/API） */
   private visibleTabs(): Array<any> {
