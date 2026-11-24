@@ -15,18 +15,20 @@ A universal development solution combining a browser web app with a local proxy 
 ```
 clover-monorepo/
 ├── packages/
-│   ├── server/                 # Local proxy server (@julyware/clover-server)
-│   │                           # Express + WebSocket + ACP + node-pty + Redis
-│   │                           # Redis is optional, runs in memory mode by default
-│   ├── assistant/              # Main app (clover): Angular 21 + SSR
+│   ├── server-rust/            # Local proxy server (crate `clover-server`, Rust)
+│   │                           # axum + WebSocket + ACP + PTY + CLI `clover`
+│   ├── server-legacy/          # Legacy TypeScript server (@julyware/clover-server)
+│   │                           # Express + node-pty; kept for one release cycle
+│   ├── assistant/              # Main app (clover): Angular 21 + SSR + Tauri shell
 │   │                           # Editor / terminal / ACP client UI
 │   ├── common/                 # Shared TypeScript library (@julyware/common)
 │   ├── community-widget/       # Community widget
 │   ├── clover/                 # Clover
 ├── docs/                       # Design documents
 ├── .opencode/plans/            # Feature plan documents
-├── scripts/                    # Build scripts (build-with-timer.mjs)
+├── scripts/                    # Build scripts (build-with-timer.mjs, parity.mjs)
 ├── static/                     # Static assets
+├── Cargo.toml                  # Rust workspace (server-rust + assistant/src-tauri)
 ├── pnpm-workspace.yaml         # pnpm workspace config
 ├── package.json                # Root package.json
 └── README.md
@@ -34,13 +36,14 @@ clover-monorepo/
 
 ## Tech Stack
 
-- **Package Manager**: pnpm workspace
-- **Runtime**: Node.js >= 22
+- **Package Manager**: pnpm workspace + Cargo workspace
+- **Runtime**: Node.js >= 22 (frontend / legacy server) and Rust (local server + desktop shell)
 - **Frontend**: Angular 21 (SSR), TypeScript, Tailwind CSS
-- **Proxy Agent**: Express, WebSocket, ACP (Agent Client Protocol), node-pty, Redis
-- **Build Tools**: tsup, Angular CLI
+- **Proxy Agent**: Rust — axum, WebSocket, ACP (Agent Client Protocol), portable-pty
+- **Desktop shell**: Tauri v2 (`packages/assistant/src-tauri`, crate `clover-app`)
+- **Build Tools**: Cargo, tsup (legacy server), Angular CLI
 
-> **Redis Note**: Redis is an optional dependency that requires a separate Redis service deployment. By default, the application runs in memory mode without Redis subscriptions. To enable Redis, set the environment variable `REDIS_USE_MEMORY_FALLBACK=false`.
+> **Redis Note**: Redis is an optional dependency of the legacy TypeScript server that requires a separate Redis service deployment. By default, the application runs in memory mode without Redis subscriptions. To enable Redis, set the environment variable `REDIS_USE_MEMORY_FALLBACK=false`.
 
 ## Getting Started
 
@@ -51,8 +54,8 @@ pnpm install
 # Start dev servers for all packages
 pnpm dev
 
-# Build the local proxy agent
-pnpm build:agent
+# Build the local proxy server (Rust)
+cargo build -p clover-server
 
 # Build everything
 pnpm build
@@ -66,21 +69,29 @@ pnpm --filter ./packages/assistant start        # Dev server (HTTPS)
 pnpm --filter ./packages/assistant build        # Build + style inlining + type declarations
 pnpm --filter ./packages/assistant serve:ssr:clover  # Run SSR server
 
-# server local proxy
-pnpm --filter ./packages/server build            # tsup build
-pnpm --filter ./packages/server dev              # Watch build
-pnpm --filter ./packages/server test             # vitest run (CLI tests)
+# server-rust local proxy (crate `clover-server`)
+cargo run -p clover-server -- serve             # Headless server (127.0.0.1:4200)
+cargo test --workspace                          # Rust unit + integration tests
+node scripts/parity.mjs                         # Diff old TS server vs Rust server
+
+# legacy TS server (frozen, kept for one release cycle)
+pnpm --filter ./packages/server-legacy build    # tsup build
+pnpm --filter ./packages/server-legacy dev      # Watch build
+pnpm --filter ./packages/server-legacy test     # vitest run (CLI tests)
 ```
 
 ## CLI
 
-The published `clover` binary exposes two commands:
+The published `clover` binary (Rust) exposes two commands:
 
 ```bash
 clover run "summarise the open PRs"   # Run one task with an installed agent, then exit
 clover run --agent codex "…"           # Pick a specific agent
 clover serve                           # Start the local server (same as no arguments)
 ```
+
+Build it with `cargo build --release -p clover-server`; the GUI is packaged
+separately as `clover-app` by Tauri.
 
 `clover run` drives the ACP session in-process — it never starts the web
 server. Agent output goes to stdout (so it can be piped), library logs go to
@@ -101,6 +112,8 @@ CLI never installs or modifies them.
 | Command | Description |
 |---------|-------------|
 | `pnpm build` | Build all packages (with timer) |
-| `pnpm build:server` | Build @julyware/clover-server only |
+| `pnpm build:server` | Build the legacy @julyware/clover-server only |
+| `pnpm build:clover` | Build the Rust `clover` CLI (`cargo build --release -p clover-server`) |
+| `pnpm parity` | Diff the legacy TS server against the Rust server (all stages) |
 | `pnpm dev` | Start all packages' dev servers in parallel |
 | `pnpm test` | Run all packages' tests in parallel |

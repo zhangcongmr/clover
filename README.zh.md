@@ -17,18 +17,20 @@ A universal development solution combining a browser web app with a local proxy 
 ```
 clover-monorepo/
 ├── packages/
-│   ├── server/                 # 本地代理 Server（@julyware/clover-server）
-│   │                           # Local proxy agent: Express + WebSocket + ACP + node-pty + Redis
-│   │                           # Redis 需独立部署，默认走内存模式（不订阅 Redis）
-│   ├── assistant/              # 主应用（clover）: Angular 21 + SSR
+│   ├── server-rust/            # 本地代理 Server（crate `clover-server`，Rust）
+│   │                           # axum + WebSocket + ACP + PTY + CLI `clover`
+│   ├── server-legacy/          # 旧 TypeScript 实现（@julyware/clover-server）
+│   │                           # Express + node-pty；保留一个发布周期
+│   ├── assistant/              # 主应用（clover）: Angular 21 + SSR + Tauri 外壳
 │   │                           # Main app: editor / terminal / ACP client UI
 │   ├── common/                 # 共享 TypeScript 库（@julyware/common）
 │   ├── community-widget/       # 社区挂件
 │   ├── clover/                 # Clover
 ├── docs/                       # 设计文档
 ├── .opencode/plans/            # 功能方案文档
-├── scripts/                    # 构建脚本（build-with-timer.mjs）
+├── scripts/                    # 构建脚本（build-with-timer.mjs、parity.mjs）
 ├── static/                     # 静态资源
+├── Cargo.toml                  # Rust workspace（server-rust + assistant/src-tauri）
 ├── pnpm-workspace.yaml         # pnpm workspace 配置
 ├── package.json                # 根 package.json
 └── README.md
@@ -36,13 +38,14 @@ clover-monorepo/
 
 ## 技术栈 / Tech Stack
 
-- **包管理**: pnpm workspace
-- **运行时**: Node.js >= 22
+- **包管理**: pnpm workspace + Cargo workspace
+- **运行时**: Node.js >= 22（前端 / 旧版 server）与 Rust（本地 server + 桌面外壳）
 - **前端**: Angular 21（SSR）、TypeScript、Tailwind CSS
-- **代理 Agent**: Express、WebSocket、ACP（Agent Client Protocol）、node-pty、Redis
-- **构建**: tsup、Angular CLI
+- **代理 Agent**: Rust —— axum、WebSocket、ACP（Agent Client Protocol）、portable-pty
+- **桌面外壳**: Tauri v2（`packages/assistant/src-tauri`，crate `clover-app`）
+- **构建**: Cargo、tsup（旧版 server）、Angular CLI
 
-> **Redis 说明**: Redis 为可选依赖，需独立部署 Redis 服务组件。默认情况下应用运行在内存模式，不走 Redis 订阅；如需启用 Redis，请设置环境变量 `REDIS_USE_MEMORY_FALLBACK=false`。
+> **Redis 说明**: Redis 为旧版 TypeScript server 的可选依赖，需独立部署 Redis 服务组件。默认情况下应用运行在内存模式，不走 Redis 订阅；如需启用 Redis，请设置环境变量 `REDIS_USE_MEMORY_FALLBACK=false`。
 
 ## 快速开始 / Getting Started
 
@@ -53,8 +56,8 @@ pnpm install
 # 启动所有包的开发服务
 pnpm dev
 
-# 构建本地代理 Agent
-pnpm build:agent
+# 构建本地代理 Server（Rust）
+cargo build -p clover-server
 
 # 构建全部
 pnpm build
@@ -68,21 +71,29 @@ pnpm --filter ./packages/assistant start        # 开发服务器（HTTPS）
 pnpm --filter ./packages/assistant build        # 构建 + 样式内联 + 类型声明
 pnpm --filter ./packages/assistant serve:ssr:clover  # 运行 SSR 服务
 
-# server 本地代理
-pnpm --filter ./packages/server build            # tsup 构建
-pnpm --filter ./packages/server dev              # 监听构建
-pnpm --filter ./packages/server test             # vitest run（CLI 测试）
+# server-rust 本地代理（crate `clover-server`）
+cargo run -p clover-server -- serve             # 无 GUI 起服务（127.0.0.1:4200）
+cargo test --workspace                          # Rust 单元 + 集成测试
+node scripts/parity.mjs                         # 新旧 server 逐字段对比
+
+# 旧版 TS server（冻结，保留一个发布周期）
+pnpm --filter ./packages/server-legacy build    # tsup 构建
+pnpm --filter ./packages/server-legacy dev      # 监听构建
+pnpm --filter ./packages/server-legacy test     # vitest run（CLI 测试）
 ```
 
 ## 命令行 / CLI
 
-发布后的 `clover` 命令提供两个子命令：
+发布后的 `clover` 命令（Rust）提供两个子命令：
 
 ```bash
 clover run "summarise the open PRs"   # 用已安装的 agent 跑一次任务后退出
 clover run --agent codex "…"           # 指定 agent
 clover serve                           # 启动本地服务（与不带参数时一致）
 ```
+
+用 `cargo build --release -p clover-server` 构建；GUI 由 Tauri 单独打包为
+`clover-app`。
 
 `clover run` 在进程内直接驱动 ACP 会话，**不会启动 Web 服务**。agent 的输出走
 stdout（方便管道消费），库的日志走 stderr。agent 来自 `~/.clover/acp.json`
@@ -102,6 +113,8 @@ stdout（方便管道消费），库的日志走 stderr。agent 来自 `~/.clove
 | 命令 | 说明 |
 |------|------|
 | `pnpm build` | 构建全部（带计时） |
-| `pnpm build:server` | 仅构建 @julyware/clover-server |
+| `pnpm build:server` | 仅构建旧版 @julyware/clover-server |
+| `pnpm build:clover` | 构建 Rust `clover` CLI（`cargo build --release -p clover-server`） |
+| `pnpm parity` | 新旧 server 逐字段对比（全部阶段） |
 | `pnpm dev` | 并行启动所有包的开发服务 |
 | `pnpm test` | 并行运行所有包的测试 |

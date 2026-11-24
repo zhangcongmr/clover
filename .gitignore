@@ -48,3 +48,6 @@ Thumbs.db
 packages/assistant/src/inlined-styles.ts
 packages/assistant/src/app-version.ts
 packages/mcp-restaurant/dist
+
+# Rust (Cargo workspace root: target dir is shared by every crate)
+/target/

@@ -1,4 +1,4 @@
-import { importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
+import { importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection } from '@angular/core';
 
 import { AppComponent } from './app/app.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/c
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@julyware/community-widget';
+import { LocalServerService } from './app/shared/local-server/local-server.service';
 import { DocModelType } from './app/shared/model';
 import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog, provideMarkdownRenderer} from '@a2ui/angular/v0_9';
 import { IMAGE_CONFIG } from '@angular/common';
@@ -33,6 +34,8 @@ export function startAngularApp(doc?: DocModelType, fileName?: string) {
   return bootstrapApplication(AppComponent, {
     providers: [
       provideMyConfig(defaultConfig),
+      // Desktop shell: learn the API origin before any view issues a request.
+      provideAppInitializer(() => inject(LocalServerService).initFromHost()),
       provideZonelessChangeDetection(),
       importProvidersFrom(BrowserModule, FormsModule, ReactiveFormsModule),
       provideHttpClient(withFetch(), withInterceptorsFromDi()),

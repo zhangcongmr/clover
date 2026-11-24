@@ -1,5 +1,8 @@
 [package]
-name = "clover"
+# Renamed from `clover`: the CLI in `packages/server-rust` owns the `clover`
+# binary name, and two bins with the same name cannot coexist in one workspace.
+# The desktop bundle name still comes from `productName` in tauri.conf.json.
+name = "clover-app"
 version = "0.1.0"
 edition = "2024"
 
@@ -14,16 +17,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+clover-server = { workspace = true }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tracing = "0.1"
 
-
-# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = 3
-panic = "abort"
-strip = true
+# The release profile lives in the workspace root: Cargo ignores profiles in
+# non-root workspace members.
