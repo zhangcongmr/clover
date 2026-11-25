@@ -117,4 +117,5 @@ home + workspace，用同一组请求逐字段 diff（状态码、JSON、SSE 事
 
 - 路由、状态码、JSON 字段与旧实现（`packages/server-legacy`）保持一致；前端不需要为新后端改调用代码。
 - 令牌格式与旧实现字节兼容：`base64url_nopad("<expiresAtMs>:<nonceHex>:<hmacSha256Hex>")`。
+- Windows 上所有控制台子进程（agent 启动、探活、安装/解包、`taskkill`）都经 `HideConsole` 以 `CREATE_NO_WINDOW` 启动：桌面端是 GUI 子系统、自身没有控制台，否则每个子进程都会弹出独立窗口。
 - 库内不初始化全局 `tracing` 订阅者，也不使用任何 Tauri API。

@@ -71,7 +71,9 @@ export function createCORSMiddleware(
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader(
       'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, Last-Event-ID, X-Client-Id, X-Epoch, X-Takeover',
+      // `A2A-Version` / `A2A-Extensions` are sent by the A2A SDK on card and
+      // JSON-RPC requests; without them the browser rejects the preflight.
+      'Content-Type, Authorization, Last-Event-ID, X-Client-Id, X-Epoch, X-Takeover, A2A-Version, A2A-Extensions',
     );
     res.setHeader('Access-Control-Allow-Credentials', 'true');
 

@@ -306,7 +306,11 @@ fn build_router(state: AppState, cors: CorsPolicy, static_dir: Option<PathBuf>) 
     let protected = crate::routes::local::protected_router()
         .merge(crate::routes::a2a::router())
         .nest("/api/acp", crate::routes::acp::router())
-        .layer(middleware::from_fn_with_state(
+        // `route_layer` (not `layer`): auth must guard registered routes only.
+        // `layer` would also wrap this router's 404 fallback, so *unknown*
+        // paths would answer 401 — including `/`, which the static handler (or
+        // the browser) needs to see as 404.
+        .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth::require_auth,
         ));

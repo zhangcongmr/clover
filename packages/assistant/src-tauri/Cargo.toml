@@ -16,6 +16,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+# Production build: embed `frontendDist` and load it over the `tauri://`
+# protocol instead of `devUrl`. `tauri build` enables it; a plain
+# `cargo build --release --features custom-protocol -p clover-app` does too.
+custom-protocol = ["tauri/custom-protocol"]
+
 [dependencies]
 clover-server = { workspace = true }
 tauri = { version = "2", features = [] }

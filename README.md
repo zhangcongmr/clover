@@ -74,6 +74,10 @@ cargo run -p clover-server -- serve             # Headless server (127.0.0.1:420
 cargo test --workspace                          # Rust unit + integration tests
 node scripts/parity.mjs                         # Diff old TS server vs Rust server
 
+# desktop shell (crate `clover-app`)
+pnpm --filter ./packages/assistant tauri:dev    # Dev app (window loads ng serve on 4200)
+cargo build --release -p clover-app --features custom-protocol  # Standalone exe
+
 # legacy TS server (frozen, kept for one release cycle)
 pnpm --filter ./packages/server-legacy build    # tsup build
 pnpm --filter ./packages/server-legacy dev      # Watch build

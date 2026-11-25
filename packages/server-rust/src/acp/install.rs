@@ -36,6 +36,7 @@ use crate::acp::probe::{probe_path_command, resolve_for_spawn};
 use crate::acp::registry::AgentRegistry;
 use crate::acp::stores::{iso_now, read_acp_config, remove_acp_agent, upsert_acp_agent};
 use crate::acp::types::AgentConfig;
+use crate::subprocess::HideConsole;
 
 const MAX_OUTPUT_LINES: usize = 200;
 const MAX_JOBS: usize = 20;
@@ -1014,14 +1015,15 @@ fn extract_with_system_tar(archive: &[u8], name: &str, dest_dir: &Path) -> Resul
     std::fs::write(&temp, archive)
         .map_err(|error| format!("Failed to write {}: {error}", temp.display()))?;
 
-    let status = std::process::Command::new("tar")
+    let mut tar = std::process::Command::new("tar");
+    tar.hide_console()
         .arg("-xf")
         .arg(&temp)
         .arg("-C")
         .arg(dest_dir)
         .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
-        .status();
+        .stderr(std::process::Stdio::piped());
+    let status = tar.status();
     let _ = std::fs::remove_file(&temp);
 
     match status {
@@ -1100,6 +1102,7 @@ async fn kill_processes_under_dir(dir: &Path) {
     }
 
     command
+        .hide_console()
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -1125,6 +1128,7 @@ async fn run_install_command(
     let display = format!("{command} {}", args.join(" "));
 
     let mut child = Command::new(&target.program)
+        .hide_console()
         .args(&target.args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())

@@ -79,13 +79,13 @@ GUI 在 `setup` 中**先同步 bind 再启动**，因此端口在窗口加载前
 ### 2.2 端口策略
 
 - `clover serve`：显式 `--port` / `PORT` → `Strict`（占用即失败，与 Express 一致）；未显式指定 → `NextFree`。
-- 桌面端：`CLOVER_PORT` 或 4200 起，`NextFree` 探测（开发时 4200 被 `ng serve` 占用，会自动落到 4201）。
+- 桌面端：`CLOVER_PORT` 或 4200 起，`NextFree` 探测。开发构建会读取 `devUrl`（`http://localhost:4200`）并主动跳过该端口（落到 4201），保证 `ng serve` 与 API 各占一个固定端口——否则内嵌服务会抢先绑定 4200，窗口加载 `devUrl` 时看到的就是 API 自己的 404/401 JSON。
 
 ### 2.3 一致性红线
 
 - 路由路径、方法、状态码、JSON 字段、错误体（`{error}` 与 `{success:false,message}` 两种）逐条对齐。
 - 令牌字节兼容：`base64url_nopad("<expiresAtMs>:<nonceHex>:<hmacSha256Hex>")`。
-- CORS 语义对齐：无 `Origin` → `*`；`AllowAny` → 回显 + `Vary`；白名单 → host×port 前缀匹配；`OPTIONS` 直接 204；允许头包含 `Last-Event-ID`/`X-Client-Id`/`X-Epoch`/`X-Takeover`。
+- CORS 语义对齐：无 `Origin` → `*`；`AllowAny` → 回显 + `Vary`；白名单 → host×port 前缀匹配；`OPTIONS` 直接 204；允许头包含 `Last-Event-ID`/`X-Client-Id`/`X-Epoch`/`X-Takeover`/`A2A-Version`/`A2A-Extensions`。
 - 状态目录不变：`~/.clover/*.json`、`skills/`、`agents/`、`logs/`。
 
 ## 3. 分批计划
@@ -112,11 +112,14 @@ GUI 在 `setup` 中**先同步 bind 再启动**，因此端口在窗口加载前
 |---|---|---|
 | CLI | `cargo build --release -p clover-server` | `target/release/clover(.exe)` |
 | CLI 运行 | `cargo run -p clover-server -- serve` | 同一套 axum，可选静态目录 |
-| GUI 开发 | `pnpm --filter ./packages/assistant tauri:dev` | `clover-app` + 内嵌服务器 |
+| GUI 开发 | `pnpm --filter ./packages/assistant tauri:dev` | `clover-app` + 内嵌服务器（前端由 `ng serve` 提供） |
 | GUI 打包 | `pnpm --filter ./packages/assistant tauri:build` | 安装包（productName `Clover`） |
+| GUI 单文件 | `cargo build --release -p clover-app --features custom-protocol` | `target/release/clover-app.exe`（`frontendDist` 内嵌） |
 | 测试 | `cargo test --workspace` | — |
 
 注意：`src-tauri` 包名由 `clover` 改为 `clover-app`，因为 workspace 内不允许两个同名 bin；GUI 的安装包名仍由 `tauri.conf.json` 的 `productName` 决定。
+
+判定构建类型看 `tauri` crate 的 `custom-protocol` feature：不启用（普通 `cargo build`）即为**开发构建**，窗口加载 `devUrl`（`http://localhost:4200`），必须先跑 `ng serve`（`tauri:dev` 会代劳）；启用后才是自带前端资源的发布构建，单独双击 exe 就能显示界面。
 
 ## 5. 风险与对策
 
@@ -200,6 +203,14 @@ node scripts/parity.mjs --keep          # 保留沙箱与服务日志
 3. `/api/a2a/agents/{id}/update` 无 body 时返回 415（应返回 400 `command … is required`）。
 4. 文件系统错误文案为 Windows 本地化 OS 文本（旧实现是 Node 的 `ENOENT: …` 格式）。
 5. agent card 的 skill 描述多了一个 ` bridge`。
+
+2026-11-25 修复（GUI 联调发现）：
+
+6. 鉴权中间件用 `Router::layer` 挂载，连带包住了路由 fallback —— 匿名访问任意未注册路径（含 `/`）返回 `401 Unauthorized` 而不是 404，开发构建的窗口因此显示 API 的 401 JSON。改为 `route_layer`，只保护已注册路由；parity 的 `http.auth.guards` 增加 `/` 与 `/api/unknown` 的 404 断言。
+7. GUI 开发构建与 `ng serve` 抢 4200：内嵌服务会先绑定 `devUrl` 的端口。现在开发构建跳过 `devUrl` 端口（4200 → 4201），发布构建不受影响。
+8. Windows 发布版（`windows_subsystem = "windows"`，无控制台）在初始化 agent 列表时会为每个 ACP agent 弹出一个独立控制台窗口（`cmd.exe` shim 也算一个）。新增 `crate::subprocess::HideConsole`（`CREATE_NO_WINDOW`），应用于 agent 启动、探活（`where` / `run_capture`）、安装命令、`tar` 解包与 `taskkill`；子进程的子孙进程继承无控制台会话，`cmd.exe → node` 链路也保持隐藏。
+9. 跨域访问 A2A 失败（同源正常）：A2A SDK 的 card 与 JSON-RPC 请求都带 `A2A-Version` 头，而 CORS 的 `Access-Control-Allow-Headers` 没列它，浏览器预检直接拒绝。新旧实现的允许头统一补上 `A2A-Version` / `A2A-Extensions`；parity 增加 A2A card 的跨域预检用例。
+10. 改完 legacy 包后 `ng serve` 仍返回旧 CORS 头：dev server 把 `@julyware/clover-server` 预打包进 `.angular/cache/<ver>/<project>/vite/deps_ssr/`，Vite 只按 lockfile/config 做缓存键，不跟踪 linked workspace 包的 `dist/` 变化。需要 `ng cache clean` 后重启（见 `packages/server-legacy/README.md`）。
 
 ### 6.2 P9 收口清单
 

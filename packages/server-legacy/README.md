@@ -25,5 +25,17 @@ pnpm --filter ./packages/server-legacy dev     # watch build
 pnpm --filter ./packages/server-legacy test    # vitest (CLI tests)
 ```
 
+## Dev-server cache (important)
+
+`ng serve` pre-bundles this package for the SSR entry
+(`src/server.ts`) into `.angular/cache/<version>/<project>/vite/deps_ssr/`.
+Vite keys that cache by the lockfile/config, **not** by the contents of a linked
+workspace package, so after rebuilding `dist/` the dev server keeps serving the
+old code until the cache is dropped:
+
+```bash
+pnpm --filter ./packages/assistant exec ng cache clean   # then restart ng serve
+```
+
 The behavioural contract and every intentional divergence from the Rust port
 are recorded in [`docs/rust-server-migration-plan.md`](../../docs/rust-server-migration-plan.md).

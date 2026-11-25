@@ -632,6 +632,14 @@ define('http.auth.guards', 'http', async (ctx) => {
     out.push(ctx.step(`${method} ${path} (no token)`, await ctx.call(method, path, { body, token: false })));
   }
 
+  // Unknown paths are 404, never 401: the bearer middleware guards registered
+  // routes only, not the router fallback. Only the status is compared — Express
+  // sends its default HTML body, the Rust router an empty one.
+  for (const path of ['/', '/api/unknown']) {
+    const res = await ctx.call('GET', path, { token: false });
+    out.push({ label: `GET ${path} (no token)`, status: res.status });
+  }
+
   out.push(
     ctx.step(
       'OPTIONS /api/local/scan',
@@ -641,6 +649,23 @@ define('http.auth.guards', 'http', async (ctx) => {
           origin: 'http://localhost:3000',
           'access-control-request-method': 'POST',
           'access-control-request-headers': 'content-type,authorization',
+        },
+      }),
+      { headers: true },
+    ),
+  );
+  // The A2A SDK sends `A2A-Version` on the card and JSON-RPC requests. A
+  // preflight that does not allow it blocks every cross-origin A2A call while
+  // same-origin keeps working — compare the allow-headers list to catch drift.
+  out.push(
+    ctx.step(
+      'OPTIONS A2A agent card (cross-origin)',
+      await ctx.call('OPTIONS', '/api/a2a/orchestrator/.well-known/agent-card.json', {
+        token: false,
+        headers: {
+          origin: 'http://localhost:4200',
+          'access-control-request-method': 'GET',
+          'access-control-request-headers': 'a2a-version,authorization',
         },
       }),
       { headers: true },

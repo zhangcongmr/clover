@@ -12,6 +12,7 @@ use tokio::process::{Child, ChildStdin, ChildStdout, Command};
 use tokio::sync::Mutex;
 
 use crate::acp::probe::resolve_for_spawn;
+use crate::subprocess::HideConsole;
 
 pub struct SpawnedAgent {
     pub process: AgentProcess,
@@ -51,6 +52,7 @@ pub async fn spawn_agent(
 
     let mut process = Command::new(&target.program);
     process
+        .hide_console()
         .args(&target.args)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -128,6 +130,7 @@ impl AgentProcess {
             // child; agents spawn their own children which would survive and
             // keep the install directory locked.
             let _ = Command::new("taskkill")
+                .hide_console()
                 .args(["/pid", &self.pid.to_string(), "/T", "/F"])
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())

@@ -36,6 +36,30 @@ fn server_info(info: tauri::State<'_, ServerInfo>) -> ServerInfo {
     info.inner().clone()
 }
 
+/// First port the API server tries.
+///
+/// `CLOVER_PORT` (or `PORT`) wins. In a dev build the webview loads `devUrl`
+/// — in this project `http://localhost:4200`, the frontend dev server. The API
+/// must never bind that origin: if it does, the window shows the API's own
+/// 404/401 JSON instead of the Angular app (and `ng serve` cannot start).
+/// Moving one port up keeps both addresses fixed and predictable.
+fn preferred_port(dev_url_port: Option<u16>) -> u16 {
+    let requested = std::env::var("CLOVER_PORT")
+        .ok()
+        .and_then(|v| v.parse::<u16>().ok())
+        .unwrap_or_else(clover_server::server::default_port);
+    resolve_preferred_port(requested, dev_url_port)
+}
+
+/// `requested` unless it is the dev-server origin (then one port up).
+fn resolve_preferred_port(requested: u16, dev_url_port: Option<u16>) -> u16 {
+    if requested != 0 && dev_url_port == Some(requested) {
+        requested.saturating_add(1)
+    } else {
+        requested
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -46,10 +70,16 @@ pub fn run() {
 
             // Bind synchronously so the port is known before the window loads
             // (the frontend queries `server_info` on bootstrap).
-            let preferred = std::env::var("CLOVER_PORT")
-                .ok()
-                .and_then(|v| v.parse::<u16>().ok())
-                .unwrap_or_else(clover_server::server::default_port);
+            let dev_url_port = if cfg!(dev) {
+                app.config()
+                    .build
+                    .dev_url
+                    .as_ref()
+                    .and_then(tauri::Url::port_or_known_default)
+            } else {
+                None
+            };
+            let preferred = preferred_port(dev_url_port);
 
             let listener = clover_server::bind("127.0.0.1", preferred, PortPolicy::NextFree)?;
             let addr = listener.local_addr()?;
@@ -93,4 +123,24 @@ pub fn run() {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_preferred_port;
+
+    #[test]
+    fn skips_the_dev_server_port() {
+        // `devUrl` is http://localhost:4200: the API takes 4201 instead of
+        // shadowing the frontend dev server.
+        assert_eq!(resolve_preferred_port(4200, Some(4200)), 4201);
+    }
+
+    #[test]
+    fn keeps_other_ports() {
+        assert_eq!(resolve_preferred_port(4200, Some(5173)), 4200);
+        assert_eq!(resolve_preferred_port(4200, None), 4200);
+        // 0 asks the OS for a free port and must not be offset.
+        assert_eq!(resolve_preferred_port(0, Some(4200)), 0);
+    }
 }

@@ -76,6 +76,10 @@ cargo run -p clover-server -- serve             # 无 GUI 起服务（127.0.0.1:
 cargo test --workspace                          # Rust 单元 + 集成测试
 node scripts/parity.mjs                         # 新旧 server 逐字段对比
 
+# 桌面端（crate `clover-app`）
+pnpm --filter ./packages/assistant tauri:dev    # 开发模式（窗口加载 4200 的 ng serve）
+cargo build --release -p clover-app --features custom-protocol  # 单文件发布 exe
+
 # 旧版 TS server（冻结，保留一个发布周期）
 pnpm --filter ./packages/server-legacy build    # tsup 构建
 pnpm --filter ./packages/server-legacy dev      # 监听构建

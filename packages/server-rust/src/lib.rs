@@ -27,6 +27,7 @@ pub mod projects;
 pub mod routes;
 pub mod server;
 pub mod skills;
+mod subprocess;
 
 pub use server::{
     bind, run, start, start_with_listener, Config, CorsPolicy, Handle, PortPolicy, TokenManager,

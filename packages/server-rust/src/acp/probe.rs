@@ -15,6 +15,8 @@ use std::time::{Duration, Instant};
 use serde::Serialize;
 use tokio::process::Command;
 
+use crate::subprocess::HideConsole;
+
 const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
 const VERSION_TIMEOUT: Duration = Duration::from_secs(10);
 const PACKAGE_PROBE_TIMEOUT: Duration = Duration::from_secs(3 * 60);
@@ -209,6 +211,7 @@ async fn where_paths(command: &str) -> Vec<String> {
     };
 
     command_builder
+        .hide_console()
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
@@ -505,6 +508,7 @@ async fn run_capture(
 ) -> Result<CapturedOutput, String> {
     let mut command = Command::new(program);
     command
+        .hide_console()
         .args(args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())

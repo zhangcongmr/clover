@@ -98,6 +98,21 @@ async fn serves_then_stops_and_restarts_on_the_same_port() {
         assert_eq!(body["success"], false);
         assert_eq!(body["message"], "Unauthorized");
 
+        // Unknown paths stay 404 for anonymous clients: the bearer middleware
+        // guards registered routes only, never the fallback (`/` included).
+        for path in ["/", "/api/unknown", "/api/acp/unknown"] {
+            let response = client
+                .get(format!("http://127.0.0.1:{port}{path}"))
+                .send()
+                .await
+                .expect("unknown path request");
+            assert_eq!(
+                response.status(),
+                reqwest::StatusCode::NOT_FOUND,
+                "{path} must be 404, not an auth error"
+            );
+        }
+
         let authorized = client
             .post(format!("http://127.0.0.1:{port}/api/local/scan"))
             .bearer_auth(&token)

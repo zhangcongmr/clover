@@ -8,7 +8,9 @@
 //! - whitelist policy → echo only origins built from allowed host × port pairs.
 //!
 //! The header list must stay in sync with the frontend: `Last-Event-ID`,
-//! `X-Client-Id`, `X-Epoch` and `X-Takeover` are used by the ACP stream.
+//! `X-Client-Id`, `X-Epoch` and `X-Takeover` are used by the ACP stream, and
+//! `A2A-Version` / `A2A-Extensions` are sent by the A2A SDK on every card and
+//! JSON-RPC request (a missing entry makes the browser reject the preflight).
 
 use axum::extract::{Request, State};
 use axum::http::header::{self, HeaderValue};
@@ -18,7 +20,7 @@ use axum::response::{IntoResponse, Response};
 
 const ALLOW_METHODS: &str = "GET, POST, DELETE, OPTIONS";
 const ALLOW_HEADERS: &str =
-    "Content-Type, Authorization, Last-Event-ID, X-Client-Id, X-Epoch, X-Takeover";
+    "Content-Type, Authorization, Last-Event-ID, X-Client-Id, X-Epoch, X-Takeover, A2A-Version, A2A-Extensions";
 
 /// Which origins may read responses.
 #[derive(Clone, Debug, Default)]
@@ -137,5 +139,19 @@ mod tests {
     fn whitelist_allows_portless_origin() {
         let policy = CorsPolicy::whitelist(&[4200], &[]);
         assert!(policy.allows("https://localhost"));
+    }
+
+    #[test]
+    fn allows_the_a2a_sdk_request_headers() {
+        // The A2A client sends `A2A-Version` (and `A2A-Extensions`) on card and
+        // JSON-RPC requests; both must survive the browser preflight.
+        for header in ["a2a-version", "a2a-extensions", "authorization"] {
+            assert!(
+                ALLOW_HEADERS
+                    .split(',')
+                    .any(|allowed| allowed.trim().eq_ignore_ascii_case(header)),
+                "{header} must be allowed"
+            );
+        }
     }
 }
