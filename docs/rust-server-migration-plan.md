@@ -9,7 +9,7 @@
 |---|---|
 | 传输层 | Rust 内置 axum，**保持现有 HTTP/WS 契约**（不改 Tauri IPC） |
 | A2A | 放到最后（P8，可单独砍掉） |
-| CLI 产物 | 与 GUI 分离打包：`clover`（CLI）与 `Clover64`（GUI）两个二进制 |
+| CLI 产物 | 与 GUI 分离打包：`clover`（CLI）与 `Clover64`（GUI）两个二进制；CLI 另以 npm 包发布（`@julyware/clover-cli` + 按平台拆分的二进制子包，见 `packages/server-rust/README.md`） |
 | 旧实现 | `packages/server` 改名 `packages/server-legacy`，保留一个版本周期 |
 | Cargo 组织 | 仓库根单一 workspace，`target/` 与 `Cargo.lock` 上移到根 |
 | crate 数量 | **保持一个 crate**（lib + bin），不拆分 |

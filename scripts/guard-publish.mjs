@@ -5,18 +5,34 @@ import { execSync } from 'node:child_process';
 const ALLOWED_BRANCHES = ['main'];
 const SEP = /^[\r\n]+/;
 
-function getBranch() {
+function run(command) {
   try {
-    return execSync('git branch --show-current', { encoding: 'utf8' }).replace(SEP, '').trim();
+    return execSync(command, { encoding: 'utf8' }).replace(SEP, '').trim();
   } catch {
     return '';
   }
 }
 
+function getBranch() {
+  return run('git branch --show-current');
+}
+
+// CI publishes from a tag checkout, where there is no current branch. A
+// detached HEAD is only accepted when it sits exactly on a tag, so a stray
+// detached checkout elsewhere still cannot publish.
+function getTag() {
+  return run('git describe --exact-match --tags HEAD');
+}
+
 const branch = getBranch();
 
 if (!branch) {
-  console.error('[guard-publish] Not on a branch (detached HEAD or not a git repo). Refusing to publish.');
+  const tag = getTag();
+  if (tag) {
+    console.log(`[guard-publish] Detached HEAD on tag "${tag}" is allowed to publish.`);
+    process.exit(0);
+  }
+  console.error('[guard-publish] Not on a branch or release tag (detached HEAD). Refusing to publish.');
   process.exit(1);
 }
 

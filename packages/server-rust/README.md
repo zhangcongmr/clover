@@ -29,6 +29,81 @@ cargo build --release -p clover-server              # target/release/clover
 `clover` 无参数等价于 `clover serve`；`-h/--help`、`-v/--version`、`-p/--port` 与旧 CLI 一致。
 退出码：`0` 正常、`1` 用法/ACP 错误、`130` 中断。
 
+## npm 发布（二进制分发）
+
+同一份 Rust 构建产物会以 npm 包的形式发布，安装后不需要 Rust 工具链：
+
+```bash
+npm i -g @julyware/clover-cli
+clover serve -p 4321
+```
+
+| 包 | 内容 |
+|---|---|
+| `@julyware/clover-cli` | 主包：只有 `bin/clover.js` 启动器，按平台挑选下面的子包 |
+| `@julyware/clover-cli-win32-x64` | Windows x64 `clover.exe` |
+| `@julyware/clover-cli-darwin-x64` / `-darwin-arm64` | macOS Intel / Apple Silicon |
+| `@julyware/clover-cli-linux-x64-gnu` / `-linux-arm64-gnu` | Linux glibc |
+
+子包是主包的 `optionalDependencies`，npm 只会下载当前平台的那一个（与 esbuild / codex 的做法一致）。
+启动器也可以用 `CLOVER_CLI_BIN=/path/to/clover` 直接指向任意二进制（本地调试用）。
+
+### 构建
+
+```bash
+# 当前平台（release 编译，产物写入 packages/server-rust/npm/<platform>/）
+pnpm build:cli:npm
+
+# 指定目标（需要本机有对应 toolchain / 交叉链接器）
+node packages/server-rust/scripts/build-npm.mjs --target aarch64-apple-darwin
+
+# 复用已经编译好的二进制，跳过 cargo build
+node packages/server-rust/scripts/build-npm.mjs --binary target/release/clover.exe
+
+# 指定版本（默认取 packages/server-rust/package.json 的 version）
+node packages/server-rust/scripts/build-npm.mjs --version 0.1.6
+```
+
+支持的目标：`x86_64-pc-windows-msvc`、`aarch64-pc-windows-msvc`、`x86_64-apple-darwin`、
+`aarch64-apple-darwin`、`x86_64-unknown-linux-gnu`、`aarch64-unknown-linux-gnu`、
+`x86_64-unknown-linux-musl`、`aarch64-unknown-linux-musl`。
+`npm/` 是生成目录，已加入 `.gitignore`。
+
+`packages/server-rust` 是 pnpm workspace 的普通成员，但仓库里的 `package.json`
+**不写** `optionalDependencies`：平台子包只有构建后才存在，写进去会让 `pnpm install`
+去解析尚未发布的版本，并给开发和 `pnpm-lock.yaml` 带进约 5 MiB 的平台二进制。
+这些依赖在发布主包时由 `publish-npm.mjs` 临时注入清单，发布结束立即还原。
+
+### 版本与发布
+
+版本号只有 changesets 一个来源：
+
+1. `pnpm changeset` 记录改动（`@julyware/clover-cli` 会像其它包一样出现在列表里）；
+2. `pnpm release`（根脚本）执行 `changeset version`，`@julyware/*` 一起升版本；
+3. 同一条命令用 `pnpm -r publish` 发布 JS 包（CLI 不在这个列表里）；
+4. 提交版本变更后打 tag，CI 构建 5 个平台并发布 CLI。
+
+```bash
+pnpm release                          # changeset version + pnpm -r publish
+git tag clover-cli-v0.1.6             # tag 必须与 packages/server-rust/package.json 一致
+git push origin clover-cli-v0.1.6
+```
+
+`.github/workflows/publish-clover-cli.yml` 会先校验 tag 与 `package.json` 的版本，不一致直接失败，
+所以不存在“独立改版本号”的第二条路径。发布脚本本身只是把已构建好的包传上去：
+
+```bash
+pnpm publish:cli                      # 用 pnpm publish 发布当前版本（先子包、后主包）
+pnpm publish:cli -- --dry-run         # 只打包不推送
+pnpm publish:cli -- --tag next        # 发到 dist-tag
+pnpm publish:cli -- --allow-partial   # 只发布了部分平台时显式放行
+```
+
+主包发布时的 `optionalDependencies` 由脚本按**实际构建出的平台**生成（`--allow-partial`
+时只引用已发布的子包）。发布前会执行 `scripts/guard-publish.mjs`：只允许在 `main`
+分支或打了 tag 的提交上发布。`build-npm.mjs --version` 只影响本地生成的子包清单，
+发布时若与 `package.json` 不一致会报错，CI 因此不再传 `--version`。需要仓库 secret `NPM_TOKEN`。
+
 ## A2A
 
 | 端点 | 说明 |
