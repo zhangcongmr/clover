@@ -1,0 +1,26 @@
+{
+  "/api/auth/**": {
+    "target": "https://192.168.153.129:8080",
+    "secure": false
+  },
+  "/user/**": {
+    "target": "https://192.168.153.129:8980",
+    "secure": false
+  },
+  "/terminals?**": {
+    "target": "https://192.168.153.129",
+    "secure": false
+  },
+  "/terminals/*/size?**": {
+    "target": "https://192.168.153.129",
+    "secure": false
+  },
+  "/terminals/**": {
+    "target": "wss://192.168.153.129",
+    "secure": false
+  },
+  "/api/chat/**": {
+    "target": "http://localhost:3000/",
+    "secure": false
+  }
+}

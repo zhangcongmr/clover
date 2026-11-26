@@ -1,6 +1,6 @@
 {
   "name": "@julyware/clover-server",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "description": "[Legacy] TypeScript local proxy server for Clover, superseded by the Rust clover-server crate; kept for one release cycle",
   "type": "module",
   "main": "./dist/index.cjs",
