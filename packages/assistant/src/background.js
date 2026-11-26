@@ -68,6 +68,20 @@ if(chrome && chrome.webRequest) {
         // }
 
         const val = JSON.stringify({"name": "123", "value": "78e"});
+
+        // Extension pages are static files, so any path other than index.html (for
+        // example the extension root "/") fails to load. Re-enter through index.html.
+        // Only real main-frame requests are handled here: router pushState /
+        // replaceState never reaches webRequest, so in-app navigation is untouched.
+        if (data.type == chrome.webRequest.ResourceType.MAIN_FRAME && claimEntryFallback(data.tabId, data.url)) {
+            chrome.tabs.update(data.tabId, {
+                url: buildAppUrl()
+            }, () => {
+                void chrome.runtime.lastError;
+            });
+            return;
+        }
+
         if (data.url && (data.url.includes(":4200") || data.url.includes(":28001") || data.url.includes(":8980"))) {
             // const ipAndPort = data.initiator.replace(/https:\/\/|http:\/\//, "");
             let basePath = extractBasePath(data.url);
@@ -93,18 +107,31 @@ if(chrome && chrome.webRequest) {
     }, { urls: ["<all_urls>"] }, ["requestBody"]);
 
     chrome.webRequest.onErrorOccurred.addListener(data => {
+        if (data.type != chrome.webRequest.ResourceType.MAIN_FRAME) {
+            return;
+        }
+        if (!data.url || !data.url.startsWith(chrome.runtime.getURL(""))) {
+            return;
+        }
+        if (typeof data.tabId != "number" || data.tabId < 0) {
+            return;
+        }
         chrome.storage.local.get("cloverAppTabIdList", result => {
-            const cloverAppTabIdList = result["cloverAppTabIdList"];
-            if (cloverAppTabIdList && cloverAppTabIdList.length > 0) {
-                if (cloverAppTabIdList.includes(data.tabId)) {
-                    if (data.url.includes("chrome-extension") && data.type == chrome.webRequest.ResourceType.MAIN_FRAME) {
-                        chrome.tabs.update(Number(data.tabId), {
-                            url: data.initiator + "/index.html"
-                        }, (tab) => {
-                        });
-                    }
-                }
+            const cloverAppTabIdList = result["cloverAppTabIdList"] || [];
+            if (!cloverAppTabIdList.includes(data.tabId)) {
+                return;
             }
+            if (!claimEntryFallback(data.tabId, data.url)) {
+                return;
+            }
+            // Extension pages are static files, so a path such as
+            // chrome-extension://<id>/clover/123 fails to load. Re-enter through the
+            // real index.html; the panel does not restore routed urls.
+            chrome.tabs.update(Number(data.tabId), {
+                url: buildAppUrl()
+            }, () => {
+                void chrome.runtime.lastError;
+            });
         });
 
     }, { urls: ["<all_urls>"] });
@@ -140,13 +167,14 @@ if(chrome && chrome.storage) {
 if(chrome && chrome.tabs) {
 
     chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+        recentFallbacks.delete(tabId);
         chrome.storage.local.get("cloverAppTabIdList", (result) => {
             if (result) {
-                const cloverAppTabIdList = result["cloverAppTabIdList"];
+                const cloverAppTabIdList = result["cloverAppTabIdList"] || [];
                 if (cloverAppTabIdList.length == 1 && cloverAppTabIdList[0] == tabId) {
                     clearAllAuthorize();
                 }
-                if (cloverAppTabIdList.length >= 0 && cloverAppTabIdList.includes(tabId)) {
+                if (cloverAppTabIdList.length > 0 && cloverAppTabIdList.includes(tabId)) {
                     const results = cloverAppTabIdList.filter((id) => Number(id) !== Number(tabId));
                     chrome.storage.local.set({ "cloverAppTabIdList": results }, function () {
                         // let us know it worked
@@ -162,17 +190,8 @@ if(chrome && chrome.tabs) {
 if(chrome && chrome.contextMenus) {
     chrome.contextMenus.onClicked.addListener(event => {
         if (event.menuItemId == "clover_menus_id") {
-            chrome.storage.local.get("windowRect", result => {
-                const windowRect = result['windowRect'] || { x: 100, y: 100, width: 1200, height: 800 };
-                chrome.windows.create({
-                    url: chrome.runtime.getURL('index.html'),
-                    type: "panel",
-                    width: windowRect.width,
-                    height: windowRect.height,
-                    left: windowRect.x,
-                    top: windowRect.y
-                });
-            });
+            // Every click opens its own window on purpose: multiple panels are allowed.
+            openAppWindow().catch(err => console.error("Failed to open Clover window:", err));
         }
     });
 
@@ -249,4 +268,94 @@ function extractBasePath(url) {
     const firstSlashIndex = rs.indexOf("/");
     const ipAndPortResult = scheme + rs.substring(0, firstSlashIndex);
     return ipAndPortResult;
+}
+
+const APP_ENTRY = "index.html";
+
+// Extension paths that were redirected a moment ago, keyed by tab id. Prevents a
+// tab from bouncing between an invalid path and index.html forever when the app
+// (or the browser) keeps re-requesting the same failing address.
+const FALLBACK_WINDOW_MS = 5000;
+const recentFallbacks = new Map();
+
+/**
+ * App entry url, chrome-extension://<id>/index.html. The panel is a single page and
+ * does not use routed urls, so every other extension path is treated as invalid.
+ *
+ * @returns {string}
+ */
+function buildAppUrl() {
+    return chrome.runtime.getURL(APP_ENTRY);
+}
+
+/**
+ * True when `url` points into this extension but is neither the entry document nor
+ * a real static file (for example the extension root "/" or "/clover/123").
+ * Claims the url per tab so the same failing address is only retried once per
+ * FALLBACK_WINDOW_MS, which prevents redirect loops.
+ *
+ * @param {number} tabId
+ * @param {string} url
+ * @returns {boolean}
+ */
+function claimEntryFallback(tabId, url) {
+    if (!url || typeof tabId != "number" || tabId < 0) {
+        return false;
+    }
+    // Only own extension pages may be rewritten. Without this check every main
+    // frame request (http://localhost:4200/, https://example.com/...) would be
+    // treated as an app path and the tab would jump into the extension.
+    if (!url.startsWith(chrome.runtime.getURL(""))) {
+        return false;
+    }
+    try {
+        const parsed = new URL(url);
+        if (parsed.pathname == new URL(chrome.runtime.getURL(APP_ENTRY)).pathname) {
+            return false;
+        }
+        // Real files such as assets/*.js, chunk-*.js or favicon.svg need no fallback.
+        const lastSegment = parsed.pathname.substring(parsed.pathname.lastIndexOf("/") + 1);
+        if (/\.[a-z0-9]{1,5}$/i.test(lastSegment)) {
+            return false;
+        }
+    } catch (err) {
+        return false;
+    }
+    const now = Date.now();
+    const last = recentFallbacks.get(tabId);
+    if (last && last.url == url && now - last.at < FALLBACK_WINDOW_MS) {
+        return false;
+    }
+    recentFallbacks.set(tabId, { url: url, at: now });
+    return true;
+}
+
+/**
+ * Opens a new app window. Each call creates its own window on purpose:
+ * multiple panels are allowed to stay open side by side.
+ */
+async function openAppWindow() {
+    const result = await chrome.storage.local.get("windowRect");
+    const windowRect = result["windowRect"] || { x: 100, y: 100, width: 1200, height: 800 };
+    const url = buildAppUrl();
+    try {
+        return await chrome.windows.create({
+            url: url,
+            type: "panel",
+            width: windowRect.width,
+            height: windowRect.height,
+            left: windowRect.x,
+            top: windowRect.y
+        });
+    } catch (err) {
+        // The saved rect may come from a monitor that is no longer attached; Chrome
+        // rejects bounds that are not visible enough. Retry without a position.
+        console.warn("Failed to open Clover window with the saved rect, retrying:", err);
+        return chrome.windows.create({
+            url: url,
+            type: "panel",
+            width: windowRect.width,
+            height: windowRect.height
+        });
+    }
 }
