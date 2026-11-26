@@ -1,6 +1,6 @@
 {
   "name": "@julyware/clover-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Clover local server and agent CLI, shipped as native binaries",
   "license": "MIT",
   "repository": {

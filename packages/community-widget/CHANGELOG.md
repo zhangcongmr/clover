@@ -1,5 +1,11 @@
 # @julyware/community-widget
 
+## 1.1.0
+
+### Patch Changes
+
+- @julyware/common@1.1.0
+
 ## 1.0.0
 
 ### Major Changes
