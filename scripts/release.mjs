@@ -11,9 +11,11 @@
 // changesets bumps its version with the rest of `@julyware/*`. Its platform
 // binary packages only exist after a build, so they are injected into the
 // manifest at publish time and the CLI itself is published from CI (it needs
-// binaries for five platforms). Tagging is the last step of a release; see the
-// printed instructions or packages/server-rust/README.md.
-import { execSync } from 'node:child_process';
+// binaries for five platforms). The Cargo workspace version is synced to the
+// same version so `clover --version` matches the npm package. Tagging is the
+// last step of a release; see the printed instructions or
+// packages/server-rust/README.md.
+import { execFileSync, execSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -28,6 +30,12 @@ if (files.length > 0) {
 } else {
   console.log('[release] No pending changesets. Publishing current versions.');
 }
+
+// `clover --version` prints the Cargo version baked in at compile time; keep it
+// on the same version as the npm package before anything is published.
+execFileSync(process.execPath, [join(process.cwd(), 'scripts/sync-cargo-version.mjs')], {
+  stdio: 'inherit',
+});
 
 execSync(
   'pnpm -r publish --no-git-checks --filter @julyware/clover-server --filter @julyware/clover-ui --filter @julyware/clover',

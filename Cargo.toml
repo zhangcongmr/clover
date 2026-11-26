@@ -14,7 +14,7 @@ resolver = "3"
 members = ["packages/server-rust", "packages/assistant/src-tauri"]
 
 [workspace.package]
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/zhangcongmr/clover"
