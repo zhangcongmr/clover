@@ -1,0 +1,63 @@
+# Cargo workspace root.
+#
+# The pure-Rust server (HTTP/WS endpoints, ACP engine, CLI) lives in
+# `packages/server-rust` and is consumed by the Tauri desktop shell in
+# `packages/assistant/src-tauri`. The desktop shell is added as a member in
+# the P0.5 step, once its manifest depends on `clover-server`.
+#
+# Build layout note: the target directory is the workspace root (`target/`),
+# not `packages/assistant/src-tauri/target`. The Tauri CLI resolves it through
+# `cargo metadata`, so `pnpm tauri:dev` / `pnpm tauri:build` need no change.
+
+[workspace]
+resolver = "3"
+members = ["packages/server-rust", "packages/assistant/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/zhangcongmr/clover"
+
+[workspace.dependencies]
+clover-server = { path = "packages/server-rust" }
+
+anyhow = "1"
+async-trait = "0.1"
+axum = { version = "0.8", features = ["ws"] }
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+clap = { version = "4", features = ["derive", "env"] }
+dirs = "6"
+flate2 = "1"
+futures-util = "0.3"
+hex = "0.4"
+hmac = "0.12"
+indexmap = { version = "2", features = ["serde"] }
+notify = "8"
+portable-pty = "0.9"
+# Archive downloads for binary agent installs. TLS backend is chosen per
+# platform: the OS stack on Windows/macOS (no C toolchain needed) and rustls on
+# Linux (no OpenSSL headers needed).
+reqwest = { version = "0.12", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+subtle = "2"
+tar = "0.4"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["fs", "trace"] }
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# Release profile moved here from `packages/assistant/src-tauri/Cargo.toml`:
+# Cargo ignores profiles declared in non-root workspace members.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

@@ -1,5 +1,9 @@
 [package]
-name = "clover"
+# Renamed from `clover` (then `clover-app`, now `Clover64`): the CLI in
+# `packages/server-rust` owns the `clover` binary name, and two bins that differ
+# only by case would collide on case-insensitive filesystems.
+# The desktop bundle name still comes from `productName` in tauri.conf.json.
+name = "Clover64"
 version = "0.1.0"
 edition = "2024"
 
@@ -13,17 +17,19 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+# Production build: embed `frontendDist` and load it over the `tauri://`
+# protocol instead of `devUrl`. `tauri build` enables it; a plain
+# `cargo build --release --features custom-protocol -p Clover64` does too.
+custom-protocol = ["tauri/custom-protocol"]
+
 [dependencies]
+clover-server = { workspace = true }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tracing = "0.1"
 
-
-# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = 3
-panic = "abort"
-strip = true
+# The release profile lives in the workspace root: Cargo ignores profiles in
+# non-root workspace members.

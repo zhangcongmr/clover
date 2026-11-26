@@ -1,6 +1,7 @@
 # Rust / Cargo
+# The lockfile and the build artifacts now live at the workspace root
+# (`/Cargo.lock`, `/target/`); see the root .gitignore.
 /target/
-/Cargo.lock
 
 # Editor / IDE
 .idea/
@@ -9,7 +10,6 @@
 
 # Tauri
 /gen/
-/src-tauri/target/
 
 # macOS
 .DS_Store

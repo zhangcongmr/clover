@@ -1,4 +1,4 @@
-import { importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
+import { importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection } from '@angular/core';
 
 import { AppComponent } from './app/app.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -7,10 +7,35 @@ import { withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/c
 import { provideMyConfig } from './app/my-config.providers';
 import { injectSvgSprite } from './svg-sprite.const';
 import { loadCommunityWidget } from '@julyware/community-widget';
+import { LocalServerService } from './app/shared/local-server/local-server.service';
 import { DocModelType } from './app/shared/model';
 import {A2UI_RENDERER_CONFIG, A2uiRendererService, BasicCatalog, provideMarkdownRenderer} from '@a2ui/angular/v0_9';
-import { IMAGE_CONFIG } from '@angular/common';
+import { IMAGE_CONFIG, LocationStrategy, PathLocationStrategy, PlatformLocation } from '@angular/common';
 import {renderMarkdown} from '@a2ui/markdown-it';
+import { routes } from './app/app.routes';
+import { provideRouter } from '@angular/router';
+import { Injectable } from '@angular/core';
+
+// The extension panel is a single page: it never uses routed urls, and any url other
+// than index.html fails to load (extension pages have no server-side fallback). Let
+// the router keep its state in memory and never touch the address bar, so reloading
+// the panel always hits index.html. Web/SSR keeps the default path strategy.
+@Injectable()
+class PanelLocationStrategy extends PathLocationStrategy {
+  constructor(platformLocation: PlatformLocation) {
+    super(platformLocation);
+  }
+
+  override pushState(): void {
+    // Intentionally does not write the address bar.
+  }
+
+  override replaceState(): void {
+    // Intentionally does not write the address bar.
+  }
+}
+
+const isExtensionPage = typeof location !== 'undefined' && location.protocol === 'chrome-extension:';
 
 // SVG sprite 注入到 DOM（浏览器端）。服务端在 main.server.ts 的 app initializer 中
 // 用 DOCUMENT 注入同一份 sprite，这样 SSR/预渲染的首屏 HTML 里就带有 symbol，
@@ -33,7 +58,11 @@ export function startAngularApp(doc?: DocModelType, fileName?: string) {
   return bootstrapApplication(AppComponent, {
     providers: [
       provideMyConfig(defaultConfig),
+      // Desktop shell: learn the API origin before any view issues a request.
+      provideAppInitializer(() => inject(LocalServerService).initFromHost()),
       provideZonelessChangeDetection(),
+      provideRouter(routes),
+      ...(isExtensionPage ? [{ provide: LocationStrategy, useClass: PanelLocationStrategy }] : []),
       importProvidersFrom(BrowserModule, FormsModule, ReactiveFormsModule),
       provideHttpClient(withFetch(), withInterceptorsFromDi()),
       provideClientHydration(withEventReplay()),

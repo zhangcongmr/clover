@@ -18,7 +18,11 @@ const server = {
 }
 
 export default defineConfig(({ command }) => ({
-  base: command === 'serve' ? '/clover/' : './',
+  // Dev keeps the /clover/ base so the shared dev proxy can mount this app.
+  // The production build is served from the root (see src/server.ts), so assets
+  // use absolute urls: a relative "./" would resolve against the deep link's own
+  // directory (e.g. /clover/assets/... for /clover/123) and 404.
+  base: command === 'serve' ? '/clover/' : '/',
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them

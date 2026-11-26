@@ -38,6 +38,11 @@ export interface LocalFileResponse {
 export class LocalServerService {
   /** The configured server address (Settings → Server URL). Persisted. */
   public serverUrl = '';
+  /**
+   * API origin reported by the desktop shell (`server_info` command).
+   * Empty in the browser / SSR build, where `window.location.origin` applies.
+   */
+  private hostBaseUrl = '';
   private cachedToken: string | null = null;
   private tokenExpiry: number = 0;
   /** Base URL the cached token was issued for; another base needs its own token. */
@@ -121,9 +126,29 @@ export class LocalServerService {
     this.writeHistory(next);
   }
 
-  /** Get base URL for API requests (same-origin or serverUrl) */
+  /** Get base URL for API requests (same-origin, the Tauri host server, or serverUrl) */
   public getBaseUrl(): string {
-    return this.serverUrl || window.location.origin;
+    return this.serverUrl || this.hostBaseUrl || window.location.origin;
+  }
+
+  /**
+   * Resolve the API origin when running inside the desktop shell.
+   *
+   * The Tauri webview loads the bundled assets from `tauri://localhost`, so
+   * relative `/api` calls would hit the asset protocol. The Rust server binds
+   * a local port at startup and reports it through the `server_info` command.
+   * A user-configured remote `serverUrl` still wins over this value.
+   */
+  async initFromHost(): Promise<void> {
+    if (typeof window === 'undefined' || !(window as any).__TAURI_INTERNALS__) return;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const info = await invoke<{ baseUrl: string; port: number }>('server_info');
+      const trimmed = info?.baseUrl?.trim();
+      if (trimmed) this.hostBaseUrl = trimmed;
+    } catch (error) {
+      console.error('Failed to resolve the host server address:', error);
+    }
   }
 
   /** Update serverUrl at runtime and persist it (Settings → Server URL) */

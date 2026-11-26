@@ -1,0 +1,61 @@
+[package]
+name = "clover-server"
+description = "Clover local server: HTTP/WS endpoints, ACP session engine and CLI (no GUI)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "clover_server"
+path = "src/lib.rs"
+
+# The CLI is packaged separately from the desktop app, so this is the only
+# binary named `clover` in the workspace.
+[[bin]]
+name = "clover"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+base64.workspace = true
+chrono.workspace = true
+clap.workspace = true
+dirs.workspace = true
+flate2.workspace = true
+futures-util.workspace = true
+hex.workspace = true
+hmac.workspace = true
+indexmap.workspace = true
+notify.workspace = true
+portable-pty.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+tar.workspace = true
+thiserror = "2"
+tokio.workspace = true
+tokio-stream = { version = "0.1", features = ["sync"] }
+tower-http.workspace = true
+tracing.workspace = true
+tracing-appender.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+reqwest = { workspace = true, features = ["json", "stream"] }
+tokio-tungstenite = "0.29"
+
+# Per-platform TLS for archive downloads. Windows (schannel) and macOS
+# (Security.framework) go through the OS stack, so neither needs a C toolchain;
+# Linux uses rustls, avoiding an OpenSSL development dependency.
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
+reqwest = { workspace = true, features = ["native-tls", "json", "stream"] }
+
+[target.'cfg(not(any(target_os = "windows", target_os = "macos")))'.dependencies]
+reqwest = { workspace = true, features = ["rustls-tls", "json", "stream"] }
