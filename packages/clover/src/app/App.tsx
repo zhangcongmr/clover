@@ -135,19 +135,25 @@ function ViewPage() {
   );
 }
 
+// export default function App() {
+//   return (
+//     <BrowserRouter>
+//       <Routes>
+//         {/* 首页 */}
+//         <Route path="clover" element={<ViewPage />} />
+
+//         {/* 动态路由：匹配 /view/任意ID */}
+//         <Route path="clover/:id" element={<ViewPage />} />
+
+//         {/* 可选：404 页面 */}
+//         {/* <Route path="*" element={<ViewPage />} /> */}
+//       </Routes>
+//     </BrowserRouter>
+//   );
+// }
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 首页 */}
-        <Route path="clover" element={<ViewPage />} />
-
-        {/* 动态路由：匹配 /view/任意ID */}
-        <Route path="clover/:id" element={<ViewPage />} />
-
-        {/* 可选：404 页面 */}
-        {/* <Route path="*" element={<ViewPage />} /> */}
-      </Routes>
-    </BrowserRouter>
+    <ViewPage />
   );
 }

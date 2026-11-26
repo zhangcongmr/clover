@@ -75,7 +75,6 @@ createServer({
   corsPorts: [5178, 5179, 5173, 4200, 4000],
   rootDir,
   logPrefix: '[Clover Server]',
-  logUrlPath: '/clover',
   staticDir: isDev ? undefined : distDir,
   app,
 });
@@ -87,10 +86,9 @@ if (isDev && viteMiddlewares) {
 }
 
 if (!isDev) {
-  // The built SPA uses base-relative asset URLs (./assets/...), which
-  // resolve under /clover/ when served at that prefix. Serve static and
-  // SPA fallback under /clover as well as at the root.
-  app.use('/clover', express.static(distDir, { index: false, redirect: false, maxAge: '1y' }));
+  // The shell is a single page: @julyware/clover-ui owns routing internally, so
+  // every request that is not a real file in dist falls back to index.html.
+  // Real files are served by the `staticDir` middleware in createServer.
   app.use((_req, res) => {
     res.sendFile(join(distDir, 'index.html'));
   });
