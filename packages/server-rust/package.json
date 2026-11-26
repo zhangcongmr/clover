@@ -1,0 +1,40 @@
+{
+  "name": "@julyware/clover-cli",
+  "version": "0.1.5",
+  "description": "Clover local server and agent CLI, shipped as native binaries",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangcongmr/clover.git",
+    "directory": "packages/server-rust"
+  },
+  "homepage": "https://github.com/zhangcongmr/clover/tree/main/packages/server-rust",
+  "bugs": {
+    "url": "https://github.com/zhangcongmr/clover/issues"
+  },
+  "bin": {
+    "clover": "bin/clover.js"
+  },
+  "files": [
+    "bin/clover.js",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "clover",
+    "agent",
+    "acp",
+    "cli",
+    "local-server"
+  ],
+  "scripts": {
+    "build:npm": "node scripts/build-npm.mjs",
+    "publish:npm": "node scripts/publish-npm.mjs",
+    "prepublishOnly": "node ../../scripts/guard-publish.mjs"
+  }
+}
