@@ -61,6 +61,26 @@ pnpm release
 
 等价于先执行 `pnpm version-packages`，再对三个发布包执行 publish（publish 时会先跑各包的 `prepublishOnly` 构建）。
 
+### 4. 发布二进制（tag）
+
+npm 包发布完成后，在同一个版本提交上按需打 tag：
+
+```bash
+# CLI：5 个平台的 npm 二进制
+git tag clover-cli-vX.Y.Z
+git push origin clover-cli-vX.Y.Z
+
+# 桌面端：GitHub Releases 安装包
+git tag clover-desktop-vX.Y.Z
+git push origin clover-desktop-vX.Y.Z
+```
+
+- CLI tag 由 `.github/workflows/publish-clover-cli.yml` 构建并发布 npm；
+- 桌面端 tag 由 `.github/workflows/release-desktop.yml` 构建 4 个平台并创建
+  **draft** GitHub Release，确认后手动 Publish；
+- 两个 tag 都必须指向包含版本 bump 的提交，且 tag 里的版本要与对应
+  `package.json` 一致。
+
 ## 配置说明（.changeset/config.json）
 
 | 配置项 | 值 | 说明 |
@@ -74,5 +94,5 @@ pnpm release
 ## 其他说明
 
 - 所有子包（含私有包）统一版本号同步升级；发布时仅发布 `@julyware/clover-server`、`@julyware/clover-ui`、`@julyware/clover` 三个包。
-- 发版后如需 tag 可手动执行：`git tag vX.Y.Z && git push --tags`。
+- 二进制产物走 tag：`clover-cli-vX.Y.Z`（npm）与 `clover-desktop-vX.Y.Z`（GitHub Releases），见上一节。
 - 若某个改动不需要发版，可运行 `pnpm changeset add --empty` 生成空 changeset 跳过该包。

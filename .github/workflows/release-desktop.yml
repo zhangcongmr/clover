@@ -1,0 +1,160 @@
+name: Release Desktop
+
+# Builds the Tauri desktop shell on every supported platform and uploads the
+# installers to a draft GitHub Release.
+#
+#   git tag clover-desktop-v1.1.0
+#   git push origin clover-desktop-v1.1.0
+#
+# The tag must match packages/desktop/package.json. The workflow opens a draft
+# release so a broken platform can be rebuilt before users see it. Desktop
+# releases are independent from the CLI tag (`clover-cli-v*`), although both
+# use the same changesets version.
+#
+# Optional signing secrets (see packages/desktop/README.md):
+#   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+#   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
+#   TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD (updater)
+
+on:
+  push:
+    tags:
+      - 'clover-desktop-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-desktop-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.id }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: win32-x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ''
+          - id: darwin-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin
+          - id: darwin-x64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+          - id: linux-x64-gnu
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            args: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Tauri v2 needs WebKitGTK 4.1 and the Ayatana appindicator headers on Linux.
+      - name: Install Linux dependencies
+        if: matrix.runner == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: '. -> target'
+          key: ${{ matrix.id }}
+
+      # The repository does not track pnpm-lock.yaml, so the lockfile has to be
+      # resolved here. tauri-action uses the `tauri` script from
+      # packages/desktop/package.json (see tauriScript below).
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/desktop/package.json').version")"
+          node scripts/sync-cargo-version.mjs --check
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            tag="$GITHUB_REF_NAME"
+            if [[ "$tag" != "clover-desktop-v$version" ]]; then
+              echo "::error::tag $tag does not match packages/desktop/package.json ($version)."
+              echo "::error::Run 'pnpm release', commit the version bump, then tag clover-desktop-v$version."
+              exit 1
+            fi
+          else
+            # Manual dispatch: build the current branch as a draft release for
+            # the version in packages/desktop/package.json.
+            tag="clover-desktop-v$version"
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $tag"
+
+      - name: Build and upload installers
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS code signing + notarization. Empty secrets mean an unsigned
+          # build, which Gatekeeper blocks by default.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Only used once tauri-plugin-updater and
+          # bundle.createUpdaterArtifacts are enabled.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: packages/desktop
+          # The repo has no tracked pnpm lockfile, so the action cannot detect
+          # pnpm on its own.
+          tauriScript: pnpm tauri
+          tagName: ${{ steps.release.outputs.tag }}
+          releaseName: 'Clover ${{ steps.release.outputs.version }}'
+          releaseBody: |
+            Clover desktop installers.
+
+            Download the package for your platform below:
+            - Windows: `.msi` or `-setup.exe`
+            - macOS: `.dmg` (Apple Silicon / Intel)
+            - Linux: `.AppImage` or `.deb`
+          releaseDraft: true
+          prerelease: false
+          # Flip to true after enabling tauri-plugin-updater.
+          includeUpdaterJson: false
+          args: ${{ matrix.args }}

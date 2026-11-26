@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "pnpm --filter @julyware/clover-ui run start",
     "devUrl": "http://localhost:4200",
-    "beforeBuildCommand": "pnpm --filter @julyware/clover-ui run build",
+    "beforeBuildCommand": "pnpm --filter @julyware/clover-ui run build:web",
     "frontendDist": "../../assistant/dist/clover/browser"
   },
   "app": {
