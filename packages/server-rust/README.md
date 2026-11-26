@@ -1,7 +1,7 @@
 # clover-server (Rust)
 
 纯 Rust 实现的 Clover 本地服务，替代 `packages/server-legacy`（旧 TypeScript 实现，保留一个发布周期）。
-**不依赖 Tauri**，因此既能被桌面端（`packages/assistant/src-tauri`）以进程内方式启动，
+**不依赖 Tauri**，因此既能被桌面端（`packages/desktop/src-tauri`）以进程内方式启动，
 也能作为独立 CLI 打包分发。
 
 ## 产物
@@ -11,19 +11,35 @@
 | `libclover_server` | 全部服务逻辑（HTTP/WS、ACP 引擎、文件/PTY/MCP/Skills） |
 | `clover` (bin) | 独立 CLI：`clover serve` / `clover run` |
 
-桌面端是另一个二进制（`Clover64`，见 `packages/assistant/src-tauri`），两者分开打包。
+桌面端是另一个二进制（`Clover64`，见 `packages/desktop/src-tauri`），两者分开打包。
+
+### 内嵌 Web UI
+
+`clover` 可以在同一个端口同时提供 API 和 Angular 界面，不需要 Node 或额外的静态目录：
+
+```bash
+pnpm build:web                    # 构建前端（production，无 source map）
+pnpm stage:web                    # 复制到 packages/server-rust/web/
+cargo build --release -p clover-server --features web-ui
+target/release/clover serve       # 浏览器打开 http://127.0.0.1:4200
+```
+
+- `web-ui` 是可选 feature，默认关闭：桌面端以库方式依赖本 crate，不会因此多带一份前端。
+- 资源由 `rust-embed` 在编译期嵌入；`scripts/build-npm.mjs` 会自动执行 `stage-web.mjs`。
+- `clover serve --static-dir <dir>` 仍然优先使用外部目录，便于调试前端。
+- `clover run` 不启动 HTTP 服务，行为完全不变。
 
 ## 命令
 
 ```bash
 # 从仓库根执行（Cargo workspace）
-cargo run -p clover-server -- serve                 # 默认 127.0.0.1:4200
+cargo run -p clover-server --features web-ui -- serve   # API + 内嵌 Web UI
 cargo run -p clover-server -- serve -p 4321
 cargo run -p clover-server -- serve --readonly
 cargo run -p clover-server -- serve --static-dir dist/clover/browser
 cargo run -p clover-server -- run "summarise this repo" --agent codex
 cargo test -p clover-server
-cargo build --release -p clover-server              # target/release/clover
+cargo build --release -p clover-server --features web-ui   # target/release/clover
 ```
 
 `clover` 无参数等价于 `clover serve`；`-h/--help`、`-v/--version`、`-p/--port` 与旧 CLI 一致。
@@ -52,13 +68,21 @@ clover serve -p 4321
 
 ```bash
 # 当前平台（release 编译，产物写入 packages/server-rust/npm/<platform>/）
+# 会先构建前端并 staging 到 packages/server-rust/web/，再用 --features web-ui 编译
 pnpm build:cli:npm
+
+# 只构建前端 / 只 staging
+pnpm build:web
+pnpm stage:web
 
 # 指定目标（需要本机有对应 toolchain / 交叉链接器）
 node packages/server-rust/scripts/build-npm.mjs --target aarch64-apple-darwin
 
 # 复用已经编译好的二进制，跳过 cargo build
 node packages/server-rust/scripts/build-npm.mjs --binary target/release/clover.exe
+
+# web/ 已经由别的任务 staging 好（CI 用），跳过重复复制
+node packages/server-rust/scripts/build-npm.mjs --web-prebuilt
 
 # 指定版本（默认取 packages/server-rust/package.json 的 version）
 node packages/server-rust/scripts/build-npm.mjs --version 0.1.6
@@ -91,7 +115,9 @@ git push origin clover-cli-v0.1.6
 ```
 
 `.github/workflows/publish-clover-cli.yml` 会先校验 tag 与 `package.json` 的版本，不一致直接失败，
-所以不存在“独立改版本号”的第二条路径。发布脚本本身只是把已构建好的包传上去：
+所以不存在“独立改版本号”的第二条路径。前端只在独立的 `web` job 里构建一次并作为 artifact
+传给 5 个平台，二进制通过 `--features web-ui` 内嵌这些资源（约增加 6 MiB）。
+发布脚本本身只是把已构建好的包传上去：
 
 ```bash
 pnpm publish:cli                      # 用 pnpm publish 发布当前版本（先子包、后主包）

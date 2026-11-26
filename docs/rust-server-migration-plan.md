@@ -1,6 +1,6 @@
 # packages/server → packages/server-rust 迁移方案（已确认）
 
-> 目标：把 `packages/server`（TypeScript）的 66 个 HTTP 端点、2 个 WebSocket 端点、3 个 SSE 流与 `clover` CLI，用 Rust 重写进独立 crate `packages/server-rust`，并让桌面端 `packages/assistant/src-tauri` 依赖它。
+> 目标：把 `packages/server`（TypeScript）的 66 个 HTTP 端点、2 个 WebSocket 端点、3 个 SSE 流与 `clover` CLI，用 Rust 重写进独立 crate `packages/server-rust`，并让桌面端 `packages/desktop/src-tauri` 依赖它。
 > 状态：P0–P9 全部落地（P9 收口：parity 脚本 + 旧实现改名 `packages/server-legacy`）。整理日期：2026-11-24。
 
 ## 0. 已确认的决策
@@ -57,7 +57,7 @@ packages/
 │  ├─ src/{mcp,skills,events}/…
 │  └─ src/cli/{mod,run,serve}.rs
 ├─ server-legacy/          # 旧 TS 实现（由 server 改名，包名不变）
-└─ assistant/src-tauri/    # crate `Clover64`：仅 GUI 胶水
+└─ desktop/src-tauri/      # crate `Clover64`：仅 GUI 胶水
 ```
 
 依赖方向单向：`Clover64` → `clover-server`。库内禁止出现 tauri API，`openInFileExplorer` 由库直接调系统命令，保证 `clover serve` 可无 GUI 运行。
@@ -112,14 +112,14 @@ GUI 在 `setup` 中**先同步 bind 再启动**，因此端口在窗口加载前
 |---|---|---|
 | CLI | `cargo build --release -p clover-server` | `target/release/clover(.exe)` |
 | CLI 运行 | `cargo run -p clover-server -- serve` | 同一套 axum，可选静态目录 |
-| GUI 开发 | `pnpm --filter ./packages/assistant tauri:dev` | `Clover64` + 内嵌服务器（前端由 `ng serve` 提供） |
-| GUI 打包 | `pnpm --filter ./packages/assistant tauri:build` | 安装包（productName `Clover`） |
+| GUI 开发 | `pnpm --filter @julyware/clover-desktop dev` | `Clover64` + 内嵌服务器（前端由 `ng serve` 提供） |
+| GUI 打包 | `pnpm --filter @julyware/clover-desktop build` | 安装包（productName `Clover`） |
 | GUI 单文件 | `cargo build --release -p Clover64 --features custom-protocol` | `target/release/Clover64.exe`（`frontendDist` 内嵌） |
 | 测试 | `cargo test --workspace` | — |
 
 注意：`src-tauri` 包名由 `clover` 改为 `clover-app`，后因 `Clover` 与 `clover` bin 在大小写不敏感的文件系统上会冲突，最终定为 `Clover64`；GUI 的安装包名仍由 `tauri.conf.json` 的 `productName` 决定。
 
-判定构建类型看 `tauri` crate 的 `custom-protocol` feature：不启用（普通 `cargo build`）即为**开发构建**，窗口加载 `devUrl`（`http://localhost:4200`），必须先跑 `ng serve`（`tauri:dev` 会代劳）；启用后才是自带前端资源的发布构建，单独双击 exe 就能显示界面。
+判定构建类型看 `tauri` crate 的 `custom-protocol` feature：不启用（普通 `cargo build`）即为**开发构建**，窗口加载 `devUrl`（`http://localhost:4200`），必须先跑 `ng serve`（`pnpm --filter @julyware/clover-desktop dev` 会代劳）；启用后才是自带前端资源的发布构建，单独双击 exe 就能显示界面。
 
 ## 5. 风险与对策
 
@@ -221,4 +221,4 @@ node scripts/parity.mjs --keep          # 保留沙箱与服务日志
 | 文档 | 根 README / README.zh / `packages/server-rust/README.md` / 本方案同步（结构、命令、env、批次状态） |
 | 测试 | `cargo test --workspace` 181 通过；`cargo clippy --workspace --all-targets -D warnings` 干净；`pnpm parity` 23/23 |
 
-回退路径：把 `packages/assistant/src-tauri` 的依赖换回 TS server、`pnpm install` 后即回到旧实现；旧包与旧构建在改名后一个周期内保持原样。
+回退路径：把 `packages/desktop/src-tauri` 的依赖换回 TS server、`pnpm install` 后即回到旧实现；旧包与旧构建在改名后一个周期内保持原样。

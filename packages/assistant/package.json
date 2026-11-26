@@ -20,15 +20,13 @@
     "ng": "ng",
     "start": "ng serve --host=0.0.0.0",
     "build:app": "ng build",
+    "build:web": "node scripts/version.mjs && ng build",
     "build:common": "node scripts/version.mjs && ng build --configuration=common && node scripts/inline-styles.mjs && tsc -p tsconfig.declaration.json",
     "build": "pnpm run build:common && pnpm run build:app && node scripts/copy-node-pty.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:clover": "node dist/clover/server/server.mjs",
-    "prepublishOnly": "node ../../scripts/guard-publish.mjs && pnpm run build:common",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "prepublishOnly": "node ../../scripts/guard-publish.mjs && pnpm run build:common"
   },
   "keywords": [
   ],
@@ -90,7 +88,6 @@
     "@angular/build": "^21.2.2",
     "@angular/cli": "^21.2.2",
     "@angular/compiler-cli": "^21.2.4",
-    "@tauri-apps/cli": "^2",
     "@julyware/clover-server": "workspace:*",
     "@julyware/common": "workspace:*",
     "@julyware/community-widget": "workspace:*",

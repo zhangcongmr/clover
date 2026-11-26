@@ -18,7 +18,8 @@ pub struct ServeArgs {
     pub readonly: bool,
 
     /// Directory with the built web assets to serve on `/`
-    /// (default: `./dist/clover/browser` when it exists)
+    /// (default: `./dist/clover/browser` when it exists; otherwise the UI
+    /// embedded in the binary, if it was built with `--features web-ui`)
     #[arg(long, value_name = "DIR")]
     pub static_dir: Option<PathBuf>,
 }
@@ -48,6 +49,9 @@ pub async fn execute(args: ServeArgs, global_port: Option<u16>) -> ExitCode {
 
     if let Some(dir) = &config.static_dir {
         tracing::info!("serving static assets from {}", dir.display());
+    } else {
+        #[cfg(feature = "web-ui")]
+        tracing::info!("serving the web UI embedded in this binary");
     }
 
     match server::run(config).await {
@@ -60,7 +64,8 @@ pub async fn execute(args: ServeArgs, global_port: Option<u16>) -> ExitCode {
 }
 
 /// `./dist/clover/browser` when present — the layout produced by
-/// `pnpm --filter ./packages/assistant build`.
+/// `pnpm --filter ./packages/assistant build`. When it is absent `clover serve`
+/// falls back to the assets embedded in the binary (`web-ui` feature).
 fn default_static_dir() -> Option<PathBuf> {
     let candidate = Path::new("dist/clover/browser");
     candidate.is_dir().then(|| candidate.to_path_buf())

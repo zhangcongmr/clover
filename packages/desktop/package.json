@@ -1,0 +1,14 @@
+{
+  "name": "@julyware/clover-desktop",
+  "version": "1.0.0",
+  "description": "Clover desktop shell (Tauri v2) — bundles the Angular UI built from packages/assistant",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

@@ -4,6 +4,8 @@ mod auth;
 mod cors;
 mod error;
 mod state;
+#[cfg(feature = "web-ui")]
+mod web;
 
 pub use auth::{now_ms, TokenManager};
 pub use cors::CorsPolicy;
@@ -325,6 +327,13 @@ fn build_router(state: AppState, cors: CorsPolicy, static_dir: Option<PathBuf>) 
     if let Some(dir) = static_dir {
         let index = dir.join("index.html");
         app = app.fallback_service(ServeDir::new(dir).not_found_service(ServeFile::new(index)));
+    } else {
+        // No `--static-dir`: use the assets baked into the binary by the
+        // `web-ui` feature. Without the feature unknown paths stay 404s.
+        #[cfg(feature = "web-ui")]
+        {
+            app = app.fallback(web::serve_embedded);
+        }
     }
 
     app

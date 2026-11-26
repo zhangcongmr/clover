@@ -5,8 +5,10 @@
   "scripts": {
     "build": "node scripts/build-with-timer.mjs",
     "build:server": "pnpm --filter @julyware/clover-server build",
-    "build:clover": "cargo build --release -p clover-server",
-    "build:cli:npm": "node packages/server-rust/scripts/build-npm.mjs",
+    "build:clover": "cargo build --release -p clover-server --features web-ui",
+    "build:web": "pnpm --filter @julyware/clover-ui run build:web",
+    "stage:web": "node packages/server-rust/scripts/stage-web.mjs",
+    "build:cli:npm": "pnpm run build:web && node packages/server-rust/scripts/build-npm.mjs",
     "publish:cli": "node packages/server-rust/scripts/publish-npm.mjs",
     "parity": "node scripts/parity.mjs",
     "build:mcp:restaurant": "pnpm --filter @clover/mcp-restaurant build",

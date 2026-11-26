@@ -11,11 +11,18 @@
 // optionalDependencies, so npm installs just the binary for the current
 // platform. Publish everything with `scripts/publish-npm.mjs`.
 //
+// The binary is built with `--features web-ui`, so `clover serve` hosts the
+// Angular UI without any extra files. `scripts/stage-web.mjs` copies the
+// production build into `packages/server-rust/web` first; pass
+// `--web-prebuilt` in CI to reuse an artifact that was staged in another job.
+//
 // Usage:
 //   node scripts/build-npm.mjs                       # host target, release build
 //   node scripts/build-npm.mjs --target <triple>     # cross/native target
 //   node scripts/build-npm.mjs --binary <path>       # reuse an existing binary
 //   node scripts/build-npm.mjs --version 0.1.6       # override package version
+//   node scripts/build-npm.mjs --web-prebuilt        # web/ already staged
+//   node scripts/build-npm.mjs --web <dir>           # stage from another dist
 //
 // Flags can also be passed as `--flag=value`.
 
@@ -133,10 +140,24 @@ function buildBinary(target) {
     ? resolve(REPO_ROOT, process.env.CARGO_TARGET_DIR)
     : join(REPO_ROOT, 'target');
 
-  process.stdout.write(`[build-npm] cargo build --release -p clover-server --bin clover --target ${target}\n`);
+  process.stdout.write(
+    `[build-npm] cargo build --release -p clover-server --bin clover ` +
+      `--features web-ui --target ${target}\n`,
+  );
   execFileSync(
     'cargo',
-    ['build', '--release', '-p', 'clover-server', '--bin', 'clover', '--target', target],
+    [
+      'build',
+      '--release',
+      '-p',
+      'clover-server',
+      '--bin',
+      'clover',
+      '--features',
+      'web-ui',
+      '--target',
+      target,
+    ],
     { cwd: REPO_ROOT, stdio: 'inherit' },
   );
 
@@ -145,6 +166,25 @@ function buildBinary(target) {
     fail(`build succeeded but the binary is missing: ${binary}`);
   }
   return binary;
+}
+
+/// Copies the Angular build into `web/` unless the caller already staged it.
+function stageWeb(args) {
+  if (args['web-prebuilt']) {
+    const index = join(PACKAGE_DIR, 'web', 'index.html');
+    if (!existsSync(index)) {
+      fail(`--web-prebuilt was passed but ${index} is missing; run scripts/stage-web.mjs first`);
+    }
+    process.stdout.write('[build-npm] using pre-staged web assets from packages/server-rust/web\n');
+    return;
+  }
+
+  const script = join(PACKAGE_DIR, 'scripts', 'stage-web.mjs');
+  const stageArgs = [script];
+  if (args.web) {
+    stageArgs.push('--src', String(args.web));
+  }
+  execFileSync(process.execPath, stageArgs, { cwd: REPO_ROOT, stdio: 'inherit' });
 }
 
 function platformManifest(version, spec) {
@@ -172,7 +212,8 @@ function main() {
 
   if (args.help) {
     process.stdout.write(
-      'Usage: node scripts/build-npm.mjs [--target <triple>] [--binary <path>] [--version <semver>] [--out <dir>]\n' +
+      'Usage: node scripts/build-npm.mjs [--target <triple>] [--binary <path>] [--version <semver>] [--out <dir>]' +
+        ' [--web <dir>] [--web-prebuilt]\n' +
         `Known targets: ${Object.keys(TARGETS).join(', ')}\n`,
     );
     return;
@@ -196,6 +237,7 @@ function main() {
       fail(`--binary points at a missing file: ${binary}`);
     }
   } else {
+    stageWeb(args);
     binary = buildBinary(target);
   }
 

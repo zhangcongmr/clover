@@ -51,3 +51,6 @@ packages/mcp-restaurant/dist
 
 # Rust (Cargo workspace root: target dir is shared by every crate)
 /target/
+
+# Staged Angular build embedded into the `clover` binary (`web-ui` feature)
+/packages/server-rust/web/

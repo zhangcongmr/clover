@@ -19,8 +19,10 @@ clover-monorepo/
 │   │                           # axum + WebSocket + ACP + PTY + CLI `clover`
 │   ├── server-legacy/          # Legacy TypeScript server (@julyware/clover-server)
 │   │                           # Express + node-pty; kept for one release cycle
-│   ├── assistant/              # Main app (clover): Angular 21 + SSR + Tauri shell
+│   ├── assistant/              # Main app UI: Angular 21 + SSR (@julyware/clover-ui)
 │   │                           # Editor / terminal / ACP client UI
+│   ├── desktop/                # Tauri v2 desktop shell (crate `Clover64`)
+│   │                           # Bundles the Angular build from assistant/
 │   ├── common/                 # Shared TypeScript library (@julyware/common)
 │   ├── community-widget/       # Community widget
 │   ├── clover/                 # Clover
@@ -28,7 +30,7 @@ clover-monorepo/
 ├── .opencode/plans/            # Feature plan documents
 ├── scripts/                    # Build scripts (build-with-timer.mjs, parity.mjs)
 ├── static/                     # Static assets
-├── Cargo.toml                  # Rust workspace (server-rust + assistant/src-tauri)
+├── Cargo.toml                  # Rust workspace (server-rust + desktop/src-tauri)
 ├── pnpm-workspace.yaml         # pnpm workspace config
 ├── package.json                # Root package.json
 └── README.md
@@ -40,7 +42,7 @@ clover-monorepo/
 - **Runtime**: Node.js >= 22 (frontend / legacy server) and Rust (local server + desktop shell)
 - **Frontend**: Angular 21 (SSR), TypeScript, Tailwind CSS
 - **Proxy Agent**: Rust — axum, WebSocket, ACP (Agent Client Protocol), portable-pty
-- **Desktop shell**: Tauri v2 (`packages/assistant/src-tauri`, crate `Clover64`)
+- **Desktop shell**: Tauri v2 (`packages/desktop/src-tauri`, crate `Clover64`)
 - **Build Tools**: Cargo, tsup (legacy server), Angular CLI
 
 > **Redis Note**: Redis is an optional dependency of the legacy TypeScript server that requires a separate Redis service deployment. By default, the application runs in memory mode without Redis subscriptions. To enable Redis, set the environment variable `REDIS_USE_MEMORY_FALLBACK=false`.
@@ -70,12 +72,15 @@ pnpm --filter ./packages/assistant build        # Build + style inlining + type 
 pnpm --filter ./packages/assistant serve:ssr:clover  # Run SSR server
 
 # server-rust local proxy (crate `clover-server`)
-cargo run -p clover-server -- serve             # Headless server (127.0.0.1:4200)
+pnpm build:web && pnpm stage:web                # Stage the Angular UI for embedding
+cargo run -p clover-server --features web-ui -- serve   # API + web UI at 127.0.0.1:4200
+cargo run -p clover-server -- run "summarise this repo" --agent codex
 cargo test --workspace                          # Rust unit + integration tests
 node scripts/parity.mjs                         # Diff old TS server vs Rust server
 
 # desktop shell (crate `Clover64`)
-pnpm --filter ./packages/assistant tauri:dev    # Dev app (window loads ng serve on 4200)
+pnpm --filter @julyware/clover-desktop dev       # Dev app (window loads ng serve on 4200)
+pnpm --filter @julyware/clover-desktop build     # Installers (.msi / .dmg / .AppImage …)
 cargo build --release -p Clover64 --features custom-protocol  # Standalone exe
 
 # legacy TS server (frozen, kept for one release cycle)
