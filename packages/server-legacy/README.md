@@ -4,7 +4,7 @@
 > server (Express + `ws` + `node-pty` + `@a2a-js/sdk`). The production server now
 > lives in [`packages/server-rust`](../server-rust) as the `clover-server` crate
 > (axum + `portable-pty` + in-crate A2A), and ships as the `clover` (CLI) and
-> `clover-app` (desktop) binaries.
+> `Clover64` (desktop) binaries.
 >
 > The package stays in the workspace — and on npm — for one release cycle so
 > existing consumers can roll back. It receives no new features. After that

@@ -42,7 +42,7 @@ clover-monorepo/
 - **运行时**: Node.js >= 22（前端 / 旧版 server）与 Rust（本地 server + 桌面外壳）
 - **前端**: Angular 21（SSR）、TypeScript、Tailwind CSS
 - **代理 Agent**: Rust —— axum、WebSocket、ACP（Agent Client Protocol）、portable-pty
-- **桌面外壳**: Tauri v2（`packages/assistant/src-tauri`，crate `clover-app`）
+- **桌面外壳**: Tauri v2（`packages/assistant/src-tauri`，crate `Clover64`）
 - **构建**: Cargo、tsup（旧版 server）、Angular CLI
 
 > **Redis 说明**: Redis 为旧版 TypeScript server 的可选依赖，需独立部署 Redis 服务组件。默认情况下应用运行在内存模式，不走 Redis 订阅；如需启用 Redis，请设置环境变量 `REDIS_USE_MEMORY_FALLBACK=false`。
@@ -76,9 +76,9 @@ cargo run -p clover-server -- serve             # 无 GUI 起服务（127.0.0.1:
 cargo test --workspace                          # Rust 单元 + 集成测试
 node scripts/parity.mjs                         # 新旧 server 逐字段对比
 
-# 桌面端（crate `clover-app`）
+# 桌面端（crate `Clover64`）
 pnpm --filter ./packages/assistant tauri:dev    # 开发模式（窗口加载 4200 的 ng serve）
-cargo build --release -p clover-app --features custom-protocol  # 单文件发布 exe
+cargo build --release -p Clover64 --features custom-protocol  # 单文件发布 exe
 
 # 旧版 TS server（冻结，保留一个发布周期）
 pnpm --filter ./packages/server-legacy build    # tsup 构建
@@ -96,8 +96,8 @@ clover run --agent codex "…"           # 指定 agent
 clover serve                           # 启动本地服务（与不带参数时一致）
 ```
 
-用 `cargo build --release -p clover-server` 构建；GUI 由 Tauri 单独打包为
-`clover-app`。
+用 `cargo build --release -p clover-server` 构建；GUI 则以 crate `Clover64`
+由 Tauri 单独打包。
 
 `clover run` 在进程内直接驱动 ACP 会话，**不会启动 Web 服务**。agent 的输出走
 stdout（方便管道消费），库的日志走 stderr。agent 来自 `~/.clover/acp.json`

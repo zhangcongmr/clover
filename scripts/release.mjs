@@ -4,7 +4,7 @@
 // `@julyware/clover-server` is the frozen TypeScript implementation that now
 // lives in `packages/server-legacy` (same package name, so `workspace:*` links
 // keep resolving). It stays published for one release cycle; the Rust server
-// ships as the `clover` / `clover-app` binaries instead.
+// ships as the `clover` / `Clover64` binaries instead.
 import { execSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';

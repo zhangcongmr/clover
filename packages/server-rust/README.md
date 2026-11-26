@@ -11,7 +11,7 @@
 | `libclover_server` | 全部服务逻辑（HTTP/WS、ACP 引擎、文件/PTY/MCP/Skills） |
 | `clover` (bin) | 独立 CLI：`clover serve` / `clover run` |
 
-桌面端是另一个二进制（`clover-app`，见 `packages/assistant/src-tauri`），两者分开打包。
+桌面端是另一个二进制（`Clover64`，见 `packages/assistant/src-tauri`），两者分开打包。
 
 ## 命令
 

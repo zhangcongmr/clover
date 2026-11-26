@@ -3,6 +3,19 @@
 version = 4
 
 [[package]]
+name = "Clover64"
+version = "0.1.0"
+dependencies = [
+ "clover-server",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tracing",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -672,19 +685,6 @@ name = "clap_lex"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0921b3876b3a1df8a1c9f912e7f94342458022c2e84288015893d83c4d62a79"
-
-[[package]]
-name = "clover-app"
-version = "0.1.0"
-dependencies = [
- "clover-server",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tracing",
-]
 
 [[package]]
 name = "clover-server"

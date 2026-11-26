@@ -1,8 +1,9 @@
 [package]
-# Renamed from `clover`: the CLI in `packages/server-rust` owns the `clover`
-# binary name, and two bins with the same name cannot coexist in one workspace.
+# Renamed from `clover` (then `clover-app`, now `Clover64`): the CLI in
+# `packages/server-rust` owns the `clover` binary name, and two bins that differ
+# only by case would collide on case-insensitive filesystems.
 # The desktop bundle name still comes from `productName` in tauri.conf.json.
-name = "clover-app"
+name = "Clover64"
 version = "0.1.0"
 edition = "2024"
 
@@ -19,7 +20,7 @@ tauri-build = { version = "2", features = [] }
 [features]
 # Production build: embed `frontendDist` and load it over the `tauri://`
 # protocol instead of `devUrl`. `tauri build` enables it; a plain
-# `cargo build --release --features custom-protocol -p clover-app` does too.
+# `cargo build --release --features custom-protocol -p Clover64` does too.
 custom-protocol = ["tauri/custom-protocol"]
 
 [dependencies]

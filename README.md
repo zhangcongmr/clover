@@ -40,7 +40,7 @@ clover-monorepo/
 - **Runtime**: Node.js >= 22 (frontend / legacy server) and Rust (local server + desktop shell)
 - **Frontend**: Angular 21 (SSR), TypeScript, Tailwind CSS
 - **Proxy Agent**: Rust — axum, WebSocket, ACP (Agent Client Protocol), portable-pty
-- **Desktop shell**: Tauri v2 (`packages/assistant/src-tauri`, crate `clover-app`)
+- **Desktop shell**: Tauri v2 (`packages/assistant/src-tauri`, crate `Clover64`)
 - **Build Tools**: Cargo, tsup (legacy server), Angular CLI
 
 > **Redis Note**: Redis is an optional dependency of the legacy TypeScript server that requires a separate Redis service deployment. By default, the application runs in memory mode without Redis subscriptions. To enable Redis, set the environment variable `REDIS_USE_MEMORY_FALLBACK=false`.
@@ -74,9 +74,9 @@ cargo run -p clover-server -- serve             # Headless server (127.0.0.1:420
 cargo test --workspace                          # Rust unit + integration tests
 node scripts/parity.mjs                         # Diff old TS server vs Rust server
 
-# desktop shell (crate `clover-app`)
+# desktop shell (crate `Clover64`)
 pnpm --filter ./packages/assistant tauri:dev    # Dev app (window loads ng serve on 4200)
-cargo build --release -p clover-app --features custom-protocol  # Standalone exe
+cargo build --release -p Clover64 --features custom-protocol  # Standalone exe
 
 # legacy TS server (frozen, kept for one release cycle)
 pnpm --filter ./packages/server-legacy build    # tsup build
@@ -95,7 +95,7 @@ clover serve                           # Start the local server (same as no argu
 ```
 
 Build it with `cargo build --release -p clover-server`; the GUI is packaged
-separately as `clover-app` by Tauri.
+separately as the `Clover64` crate by Tauri.
 
 `clover run` drives the ACP session in-process — it never starts the web
 server. Agent output goes to stdout (so it can be piped), library logs go to

@@ -9,7 +9,7 @@
 |---|---|
 | 传输层 | Rust 内置 axum，**保持现有 HTTP/WS 契约**（不改 Tauri IPC） |
 | A2A | 放到最后（P8，可单独砍掉） |
-| CLI 产物 | 与 GUI 分离打包：`clover`（CLI）与 `clover-app`（GUI）两个二进制 |
+| CLI 产物 | 与 GUI 分离打包：`clover`（CLI）与 `Clover64`（GUI）两个二进制 |
 | 旧实现 | `packages/server` 改名 `packages/server-legacy`，保留一个版本周期 |
 | Cargo 组织 | 仓库根单一 workspace，`target/` 与 `Cargo.lock` 上移到根 |
 | crate 数量 | **保持一个 crate**（lib + bin），不拆分 |
@@ -57,10 +57,10 @@ packages/
 │  ├─ src/{mcp,skills,events}/…
 │  └─ src/cli/{mod,run,serve}.rs
 ├─ server-legacy/          # 旧 TS 实现（由 server 改名，包名不变）
-└─ assistant/src-tauri/    # crate `clover-app`：仅 GUI 胶水
+└─ assistant/src-tauri/    # crate `Clover64`：仅 GUI 胶水
 ```
 
-依赖方向单向：`clover-app` → `clover-server`。库内禁止出现 tauri API，`openInFileExplorer` 由库直接调系统命令，保证 `clover serve` 可无 GUI 运行。
+依赖方向单向：`Clover64` → `clover-server`。库内禁止出现 tauri API，`openInFileExplorer` 由库直接调系统命令，保证 `clover serve` 可无 GUI 运行。
 
 ### 2.1 关键 API
 
@@ -93,7 +93,7 @@ GUI 在 `setup` 中**先同步 bind 再启动**，因此端口在窗口加载前
 | 批次 | 内容 | 状态 |
 |---|---|---|
 | P0 | workspace、crate 骨架、CORS、HMAC 鉴权、`/api/local/health`、`/api/local/auth/token`、CLI `serve`、静态文件 | ✅ |
-| P0.5 | `clover-app` 改名与路径依赖、`setup` 进程内启服、`server_info`、前端 base URL 注入、退出时优雅停机 | ✅ |
+| P0.5 | `Clover64` 改名与路径依赖、`setup` 进程内启服、`server_info`、前端 base URL 注入、退出时优雅停机 | ✅ |
 | P1 | 14 个 `/api/local/*`（12 个文件操作 + roots + token/health 已先行）、`FileService`、`notify` 监听、`portable-pty` 终端、2 个 WS | ✅ |
 | P2 | MCP 5 个端点 + `~/.clover/mcp-servers.json`（含 `${VAR}` 展开、ACP 解析） | ✅ |
 | P3 | Skills 7 个端点 + 多来源发现（JSONC 解析、只读判定、前端 matter、附属文件） | ✅ |
@@ -112,12 +112,12 @@ GUI 在 `setup` 中**先同步 bind 再启动**，因此端口在窗口加载前
 |---|---|---|
 | CLI | `cargo build --release -p clover-server` | `target/release/clover(.exe)` |
 | CLI 运行 | `cargo run -p clover-server -- serve` | 同一套 axum，可选静态目录 |
-| GUI 开发 | `pnpm --filter ./packages/assistant tauri:dev` | `clover-app` + 内嵌服务器（前端由 `ng serve` 提供） |
+| GUI 开发 | `pnpm --filter ./packages/assistant tauri:dev` | `Clover64` + 内嵌服务器（前端由 `ng serve` 提供） |
 | GUI 打包 | `pnpm --filter ./packages/assistant tauri:build` | 安装包（productName `Clover`） |
-| GUI 单文件 | `cargo build --release -p clover-app --features custom-protocol` | `target/release/clover-app.exe`（`frontendDist` 内嵌） |
+| GUI 单文件 | `cargo build --release -p Clover64 --features custom-protocol` | `target/release/Clover64.exe`（`frontendDist` 内嵌） |
 | 测试 | `cargo test --workspace` | — |
 
-注意：`src-tauri` 包名由 `clover` 改为 `clover-app`，因为 workspace 内不允许两个同名 bin；GUI 的安装包名仍由 `tauri.conf.json` 的 `productName` 决定。
+注意：`src-tauri` 包名由 `clover` 改为 `clover-app`，后因 `Clover` 与 `clover` bin 在大小写不敏感的文件系统上会冲突，最终定为 `Clover64`；GUI 的安装包名仍由 `tauri.conf.json` 的 `productName` 决定。
 
 判定构建类型看 `tauri` crate 的 `custom-protocol` feature：不启用（普通 `cargo build`）即为**开发构建**，窗口加载 `devUrl`（`http://localhost:4200`），必须先跑 `ng serve`（`tauri:dev` 会代劳）；启用后才是自带前端资源的发布构建，单独双击 exe 就能显示界面。
 
@@ -171,7 +171,7 @@ GUI 在 `setup` 中**先同步 bind 再启动**，因此端口在窗口加载前
 
 ### 5.2 环境注意
 
-桌面端 `clover-app.exe` 在本机需要**管理员账户**启动（WebView2 用户数据目录权限），否则创建 webview 时报 `0x800700AA`。这是环境约束，不是代码缺陷；构建与服务器逻辑不受影响。
+桌面端 `Clover64.exe` 在本机需要**管理员账户**启动（WebView2 用户数据目录权限），否则创建 webview 时报 `0x800700AA`。这是环境约束，不是代码缺陷；构建与服务器逻辑不受影响。
 
 ## 6. 验证手法
 
