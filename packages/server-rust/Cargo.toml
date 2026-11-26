@@ -16,6 +16,14 @@ path = "src/lib.rs"
 name = "clover"
 path = "src/main.rs"
 
+[features]
+default = []
+# Embeds the built Angular UI (`web/`, staged by scripts/stage-web.mjs) so
+# `clover serve` can host the app from a single binary. Off by default so the
+# desktop shell (which embeds the same assets through Tauri) does not carry a
+# second copy.
+web-ui = ["dep:rust-embed", "dep:mime_guess", "dep:percent-encoding"]
+
 [dependencies]
 anyhow.workspace = true
 async-trait.workspace = true
@@ -29,8 +37,11 @@ futures-util.workspace = true
 hex.workspace = true
 hmac.workspace = true
 indexmap.workspace = true
+mime_guess = { version = "2", optional = true }
 notify.workspace = true
+percent-encoding = { version = "2", optional = true }
 portable-pty.workspace = true
+rust-embed = { version = "8", optional = true }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

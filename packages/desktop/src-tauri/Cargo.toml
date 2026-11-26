@@ -4,7 +4,7 @@
 # only by case would collide on case-insensitive filesystems.
 # The desktop bundle name still comes from `productName` in tauri.conf.json.
 name = "Clover64"
-version = "0.1.0"
+version.workspace = true
 edition = "2024"
 
 [lib]

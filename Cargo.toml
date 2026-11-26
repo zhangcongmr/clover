@@ -2,16 +2,17 @@
 #
 # The pure-Rust server (HTTP/WS endpoints, ACP engine, CLI) lives in
 # `packages/server-rust` and is consumed by the Tauri desktop shell in
-# `packages/assistant/src-tauri`. The desktop shell is added as a member in
-# the P0.5 step, once its manifest depends on `clover-server`.
+# `packages/desktop/src-tauri`. The desktop shell is a workspace member because
+# its manifest depends on `clover-server`.
 #
 # Build layout note: the target directory is the workspace root (`target/`),
-# not `packages/assistant/src-tauri/target`. The Tauri CLI resolves it through
-# `cargo metadata`, so `pnpm tauri:dev` / `pnpm tauri:build` need no change.
+# not `packages/desktop/src-tauri/target`. The Tauri CLI resolves it through
+# `cargo metadata`, so `pnpm --filter @julyware/clover-desktop dev` / `build`
+# need no change.
 
 [workspace]
 resolver = "3"
-members = ["packages/server-rust", "packages/assistant/src-tauri"]
+members = ["packages/server-rust", "packages/desktop/src-tauri"]
 
 [workspace.package]
 version = "1.0.0"
@@ -53,7 +54,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["v4"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 
-# Release profile moved here from `packages/assistant/src-tauri/Cargo.toml`:
+# Release profile moved here from `packages/desktop/src-tauri/Cargo.toml`:
 # Cargo ignores profiles declared in non-root workspace members.
 [profile.release]
 codegen-units = 1

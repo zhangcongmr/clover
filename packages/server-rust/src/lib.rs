@@ -5,10 +5,11 @@
 //! engine and the `clover` CLI. It deliberately has **no `tauri` dependency**
 //! so it can run headless:
 //!
-//! - `clover serve` starts the full server (optionally serving the built
-//!   Angular assets);
+//! - `clover serve` starts the full server and hosts the built Angular UI
+//!   (embedded when compiled with the `web-ui` feature, or from
+//!   `--static-dir`);
 //! - `clover run` drives a single ACP task without an HTTP server;
-//! - the desktop shell (`packages/assistant/src-tauri`) starts the same
+//! - the desktop shell (`packages/desktop/src-tauri`) starts the same
 //!   server in-process through [`start`] / [`start_with_listener`].
 //!
 //! Batch layout (see `docs/rust-server-migration-plan.md`):

@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Clover",
-  "version": "0.1.0",
+  "version": "../package.json",
   "identifier": "Clover",
   "build": {
-    "beforeDevCommand": "pnpm start",
+    "beforeDevCommand": "pnpm --filter @julyware/clover-ui run start",
     "devUrl": "http://localhost:4200",
-    "beforeBuildCommand": "pnpm run build",
-    "frontendDist": "../dist/clover/browser"
+    "beforeBuildCommand": "pnpm --filter @julyware/clover-ui run build",
+    "frontendDist": "../../assistant/dist/clover/browser"
   },
   "app": {
     "windows": [

@@ -21,8 +21,10 @@ clover-monorepo/
 │   │                           # axum + WebSocket + ACP + PTY + CLI `clover`
 │   ├── server-legacy/          # 旧 TypeScript 实现（@julyware/clover-server）
 │   │                           # Express + node-pty；保留一个发布周期
-│   ├── assistant/              # 主应用（clover）: Angular 21 + SSR + Tauri 外壳
+│   ├── assistant/              # 主应用 UI：Angular 21 + SSR（@julyware/clover-ui）
 │   │                           # Main app: editor / terminal / ACP client UI
+│   ├── desktop/                # Tauri v2 桌面外壳（crate `Clover64`）
+│   │                           # 打包 assistant/ 的 Angular 构建产物
 │   ├── common/                 # 共享 TypeScript 库（@julyware/common）
 │   ├── community-widget/       # 社区挂件
 │   ├── clover/                 # Clover
@@ -30,7 +32,7 @@ clover-monorepo/
 ├── .opencode/plans/            # 功能方案文档
 ├── scripts/                    # 构建脚本（build-with-timer.mjs、parity.mjs）
 ├── static/                     # 静态资源
-├── Cargo.toml                  # Rust workspace（server-rust + assistant/src-tauri）
+├── Cargo.toml                  # Rust workspace（server-rust + desktop/src-tauri）
 ├── pnpm-workspace.yaml         # pnpm workspace 配置
 ├── package.json                # 根 package.json
 └── README.md
@@ -42,7 +44,7 @@ clover-monorepo/
 - **运行时**: Node.js >= 22（前端 / 旧版 server）与 Rust（本地 server + 桌面外壳）
 - **前端**: Angular 21（SSR）、TypeScript、Tailwind CSS
 - **代理 Agent**: Rust —— axum、WebSocket、ACP（Agent Client Protocol）、portable-pty
-- **桌面外壳**: Tauri v2（`packages/assistant/src-tauri`，crate `Clover64`）
+- **桌面外壳**: Tauri v2（`packages/desktop/src-tauri`，crate `Clover64`）
 - **构建**: Cargo、tsup（旧版 server）、Angular CLI
 
 > **Redis 说明**: Redis 为旧版 TypeScript server 的可选依赖，需独立部署 Redis 服务组件。默认情况下应用运行在内存模式，不走 Redis 订阅；如需启用 Redis，请设置环境变量 `REDIS_USE_MEMORY_FALLBACK=false`。
@@ -72,12 +74,15 @@ pnpm --filter ./packages/assistant build        # 构建 + 样式内联 + 类型
 pnpm --filter ./packages/assistant serve:ssr:clover  # 运行 SSR 服务
 
 # server-rust 本地代理（crate `clover-server`）
-cargo run -p clover-server -- serve             # 无 GUI 起服务（127.0.0.1:4200）
+pnpm build:web && pnpm stage:web                # 构建并 staging 前端资源（内嵌用）
+cargo run -p clover-server --features web-ui -- serve   # API + Web UI（127.0.0.1:4200）
+cargo run -p clover-server -- run "summarise this repo" --agent codex
 cargo test --workspace                          # Rust 单元 + 集成测试
 node scripts/parity.mjs                         # 新旧 server 逐字段对比
 
 # 桌面端（crate `Clover64`）
-pnpm --filter ./packages/assistant tauri:dev    # 开发模式（窗口加载 4200 的 ng serve）
+pnpm --filter @julyware/clover-desktop dev       # 开发模式（窗口加载 4200 的 ng serve）
+pnpm --filter @julyware/clover-desktop build     # 安装包（.msi / .dmg / .AppImage …）
 cargo build --release -p Clover64 --features custom-protocol  # 单文件发布 exe
 
 # 旧版 TS server（冻结，保留一个发布周期）
