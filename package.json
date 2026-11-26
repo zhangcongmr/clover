@@ -16,7 +16,7 @@
     "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && node scripts/sync-cargo-version.mjs",
     "release": "node scripts/guard-publish.mjs && node scripts/release.mjs"
   },
   "engines": {

@@ -35,6 +35,7 @@ pnpm version-packages
 - 所有子包统一升级到同一版本号
 - 生成/更新各包的 `CHANGELOG.md`
 - 同步包间 `workspace:*` 内部依赖版本
+- 同步 `Cargo.toml` 的 `[workspace.package] version`，保证 `clover -v` 与 npm 包版本一致
 
 然后手动提交（一次 git commit）：
 

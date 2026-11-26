@@ -74,6 +74,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node -p "require('./packages/server-rust/package.json').version")"
+          node scripts/sync-cargo-version.mjs --check
           if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "clover-cli-v$version" ]]; then
             echo "::error::tag $GITHUB_REF_NAME does not match packages/server-rust/package.json ($version)."
             echo "::error::Run 'pnpm release', commit the version bump, then tag clover-cli-v$version."

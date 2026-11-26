@@ -79,7 +79,8 @@ node packages/server-rust/scripts/build-npm.mjs --version 0.1.6
 版本号只有 changesets 一个来源：
 
 1. `pnpm changeset` 记录改动（`@julyware/clover-cli` 会像其它包一样出现在列表里）；
-2. `pnpm release`（根脚本）执行 `changeset version`，`@julyware/*` 一起升版本；
+2. `pnpm release`（根脚本）执行 `changeset version`，`@julyware/*` 一起升版本，并把
+   `Cargo.toml` 的 `[workspace.package] version` 同步为同一版本（`clover -v` 打印的就是它）；
 3. 同一条命令用 `pnpm -r publish` 发布 JS 包（CLI 不在这个列表里）；
 4. 提交版本变更后打 tag，CI 构建 5 个平台并发布 CLI。
 
