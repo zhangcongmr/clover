@@ -1,39 +1,40 @@
 # clover-server (Rust)
 
-纯 Rust 实现的 Clover 本地服务，替代 `packages/server-legacy`（旧 TypeScript 实现，保留一个发布周期）。
-**不依赖 Tauri**，因此既能被桌面端（`packages/desktop/src-tauri`）以进程内方式启动，
-也能作为独立 CLI 打包分发。
+A pure-Rust implementation of the Clover local server, replacing `packages/server-legacy` (the old
+TypeScript implementation, kept for one release cycle).
+It **does not depend on Tauri**, so it can either be started in-process by the desktop app
+(`packages/desktop/src-tauri`) or packaged and shipped as a standalone CLI.
 
-## 产物
+## Artifacts
 
-| 产物 | 说明 |
+| Artifact | Description |
 |---|---|
-| `libclover_server` | 全部服务逻辑（HTTP/WS、ACP 引擎、文件/PTY/MCP/Skills） |
-| `clover` (bin) | 独立 CLI：`clover serve` / `clover run` |
+| `libclover_server` | All server logic (HTTP/WS, ACP engine, files/PTY/MCP/Skills) |
+| `clover` (bin) | Standalone CLI: `clover serve` / `clover run` |
 
-桌面端是另一个二进制（`Clover64`，见 `packages/desktop/src-tauri`），两者分开打包。
+The desktop app is a separate binary (`Clover64`, see `packages/desktop/src-tauri`); the two are packaged separately.
 
-### 内嵌 Web UI
+### Embedded Web UI
 
-`clover` 可以在同一个端口同时提供 API 和 Angular 界面，不需要 Node 或额外的静态目录：
+`clover` can serve both the API and the Angular UI on the same port, with no Node and no extra static directory:
 
 ```bash
-pnpm build:web                    # 构建前端（production，无 source map）
-pnpm stage:web                    # 复制到 packages/server-rust/web/
+pnpm build:web                    # build the frontend (production, no source maps)
+pnpm stage:web                    # copy it to packages/server-rust/web/
 cargo build --release -p clover-server --features web-ui
-target/release/clover serve       # 浏览器打开 http://127.0.0.1:4200
+target/release/clover serve       # open http://127.0.0.1:4200 in a browser
 ```
 
-- `web-ui` 是可选 feature，默认关闭：桌面端以库方式依赖本 crate，不会因此多带一份前端。
-- 资源由 `rust-embed` 在编译期嵌入；`scripts/build-npm.mjs` 会自动执行 `stage-web.mjs`。
-- `clover serve --static-dir <dir>` 仍然优先使用外部目录，便于调试前端。
-- `clover run` 不启动 HTTP 服务，行为完全不变。
+- `web-ui` is an optional feature, off by default: the desktop app depends on this crate as a library, so it does not carry an extra copy of the frontend.
+- Assets are embedded at compile time via `rust-embed`; `scripts/build-npm.mjs` runs `stage-web.mjs` automatically.
+- `clover serve --static-dir <dir>` still prefers an external directory, which is convenient for frontend debugging.
+- `clover run` does not start an HTTP server; its behavior is unchanged.
 
-## 命令
+## Commands
 
 ```bash
-# 从仓库根执行（Cargo workspace）
-cargo run -p clover-server --features web-ui -- serve   # API + 内嵌 Web UI
+# Run from the repo root (Cargo workspace)
+cargo run -p clover-server --features web-ui -- serve   # API + embedded Web UI
 cargo run -p clover-server -- serve -p 4321
 cargo run -p clover-server -- serve --readonly
 cargo run -p clover-server -- serve --static-dir dist/clover/browser
@@ -42,182 +43,187 @@ cargo test -p clover-server
 cargo build --release -p clover-server --features web-ui   # target/release/clover
 ```
 
-`clover` 无参数等价于 `clover serve`；`-h/--help`、`-v/--version`、`-p/--port` 与旧 CLI 一致。
-退出码：`0` 正常、`1` 用法/ACP 错误、`130` 中断。
+Running `clover` with no arguments is equivalent to `clover serve`; `-h/--help`, `-v/--version` and `-p/--port` behave as in the old CLI.
+Exit codes: `0` success, `1` usage/ACP error, `130` interrupted.
 
-## npm 发布（二进制分发）
+## npm release (binary distribution)
 
-同一份 Rust 构建产物会以 npm 包的形式发布，安装后不需要 Rust 工具链：
+The same Rust build output is published as npm packages, so no Rust toolchain is needed after installation:
 
 ```bash
 npm i -g @julyware/clover-cli
 clover serve -p 4321
 ```
 
-| 包 | 内容 |
+| Package | Contents |
 |---|---|
-| `@julyware/clover-cli` | 主包：只有 `bin/clover.js` 启动器，按平台挑选下面的子包 |
+| `@julyware/clover-cli` | Main package: only the `bin/clover.js` launcher, which picks the sub-package for the platform |
 | `@julyware/clover-cli-win32-x64` | Windows x64 `clover.exe` |
 | `@julyware/clover-cli-darwin-x64` / `-darwin-arm64` | macOS Intel / Apple Silicon |
 | `@julyware/clover-cli-linux-x64-gnu` / `-linux-arm64-gnu` | Linux glibc |
 
-子包是主包的 `optionalDependencies`，npm 只会下载当前平台的那一个（与 esbuild / codex 的做法一致）。
-启动器也可以用 `CLOVER_CLI_BIN=/path/to/clover` 直接指向任意二进制（本地调试用）。
+The sub-packages are `optionalDependencies` of the main package, so npm downloads only the one for the current platform (the same approach as esbuild / codex).
+The launcher can also point directly at any binary via `CLOVER_CLI_BIN=/path/to/clover` (for local debugging).
 
-### 构建
+### Build
 
 ```bash
-# 当前平台（release 编译，产物写入 packages/server-rust/npm/<platform>/）
-# 会先构建前端并 staging 到 packages/server-rust/web/，再用 --features web-ui 编译
+# Current platform (release build, output written to packages/server-rust/npm/<platform>/)
+# Builds the frontend and stages it to packages/server-rust/web/ first, then compiles with --features web-ui
 pnpm build:cli:npm
 
-# 只构建前端 / 只 staging
+# Frontend only / staging only
 pnpm build:web
 pnpm stage:web
 
-# 指定目标（需要本机有对应 toolchain / 交叉链接器）
+# Specific target (requires the matching toolchain / cross linker locally)
 node packages/server-rust/scripts/build-npm.mjs --target aarch64-apple-darwin
 
-# 复用已经编译好的二进制，跳过 cargo build
+# Reuse an already-built binary and skip cargo build
 node packages/server-rust/scripts/build-npm.mjs --binary target/release/clover.exe
 
-# web/ 已经由别的任务 staging 好（CI 用），跳过重复复制
+# web/ was already staged by another job (used by CI), skip copying again
 node packages/server-rust/scripts/build-npm.mjs --web-prebuilt
 
-# 指定版本（默认取 packages/server-rust/package.json 的 version）
+# Specific version (defaults to the version in packages/server-rust/package.json)
 node packages/server-rust/scripts/build-npm.mjs --version 0.1.6
 ```
 
-支持的目标：`x86_64-pc-windows-msvc`、`aarch64-pc-windows-msvc`、`x86_64-apple-darwin`、
-`aarch64-apple-darwin`、`x86_64-unknown-linux-gnu`、`aarch64-unknown-linux-gnu`、
-`x86_64-unknown-linux-musl`、`aarch64-unknown-linux-musl`。
-`npm/` 是生成目录，已加入 `.gitignore`。
+Supported targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-apple-darwin`,
+`aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`,
+`x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`.
+`npm/` is a generated directory and is listed in `.gitignore`.
 
-`packages/server-rust` 是 pnpm workspace 的普通成员，但仓库里的 `package.json`
-**不写** `optionalDependencies`：平台子包只有构建后才存在，写进去会让 `pnpm install`
-去解析尚未发布的版本，并给开发和 `pnpm-lock.yaml` 带进约 5 MiB 的平台二进制。
-这些依赖在发布主包时由 `publish-npm.mjs` 临时注入清单，发布结束立即还原。
+`packages/server-rust` is a regular pnpm workspace member, but its `package.json` in the repo
+**does not** declare `optionalDependencies`: the platform sub-packages only exist after a build, and
+declaring them would make `pnpm install` resolve unpublished versions and pull roughly 5 MiB of
+platform binaries into development and into `pnpm-lock.yaml`.
+`publish-npm.mjs` injects these dependencies into the manifest temporarily when publishing the main
+package and restores it right after publishing finishes.
 
-### 版本与发布
+### Versions and releases
 
-版本号只有 changesets 一个来源：
+The version number has exactly one source of truth: changesets.
 
-1. `pnpm changeset` 记录改动（`@julyware/clover-cli` 会像其它包一样出现在列表里）；
-2. `pnpm release`（根脚本）执行 `changeset version`，`@julyware/*` 一起升版本，并把
-   `Cargo.toml` 的 `[workspace.package] version` 同步为同一版本（`clover -v` 打印的就是它）；
-3. 同一条命令用 `pnpm -r publish` 发布 JS 包（CLI 不在这个列表里）；
-4. 提交版本变更后打 tag，CI 构建 5 个平台并发布 CLI。
+1. `pnpm changeset` records the change (`@julyware/clover-cli` appears in the list like any other package);
+2. `pnpm release` (root script) runs `changeset version`, bumping all `@julyware/*` packages together and
+   syncing `[workspace.package] version` in `Cargo.toml` to the same version (this is what `clover -v` prints);
+3. The same command publishes the JS packages with `pnpm -r publish` (the CLI is not in that list);
+4. After committing the version change, tag the commit; CI builds 5 platforms and publishes the CLI.
 
 ```bash
 pnpm release                          # changeset version + pnpm -r publish
-git tag clover-cli-v0.1.6             # tag 必须与 packages/server-rust/package.json 一致
+git tag clover-cli-v0.1.6             # the tag must match packages/server-rust/package.json
 git push origin clover-cli-v0.1.6
 ```
 
-`.github/workflows/publish-clover-cli.yml` 会先校验 tag 与 `package.json` 的版本，不一致直接失败，
-所以不存在“独立改版本号”的第二条路径。前端只在独立的 `web` job 里构建一次并作为 artifact
-传给 5 个平台，二进制通过 `--features web-ui` 内嵌这些资源（约增加 6 MiB）。
-发布脚本本身只是把已构建好的包传上去：
+`.github/workflows/publish-clover-cli.yml` first checks that the tag matches the version in `package.json`
+and fails immediately otherwise, so there is no second path that "bumps the version independently".
+The frontend is built only once, in a separate `web` job, and passed to the 5 platforms as an artifact;
+the binaries embed those assets via `--features web-ui` (about 6 MiB more).
+The publish script itself only uploads already-built packages:
 
 ```bash
-pnpm publish:cli                      # 用 pnpm publish 发布当前版本（先子包、后主包）
-pnpm publish:cli -- --dry-run         # 只打包不推送
-pnpm publish:cli -- --tag next        # 发到 dist-tag
-pnpm publish:cli -- --allow-partial   # 只发布了部分平台时显式放行
+pnpm publish:cli                      # publish the current version with pnpm publish (sub-packages first, then the main package)
+pnpm publish:cli -- --dry-run         # pack only, do not push
+pnpm publish:cli -- --tag next        # publish to a dist-tag
+pnpm publish:cli -- --allow-partial   # explicitly allow publishing when only some platforms were built
 ```
 
-主包发布时的 `optionalDependencies` 由脚本按**实际构建出的平台**生成（`--allow-partial`
-时只引用已发布的子包）。发布前会执行 `scripts/guard-publish.mjs`：只允许在 `main`
-分支或打了 tag 的提交上发布。`build-npm.mjs --version` 只影响本地生成的子包清单，
-发布时若与 `package.json` 不一致会报错，CI 因此不再传 `--version`。需要仓库 secret `NPM_TOKEN`。
+When the main package is published, its `optionalDependencies` are generated by the script from the
+platforms **actually built** (with `--allow-partial`, only the already-published sub-packages are referenced).
+Before publishing, `scripts/guard-publish.mjs` runs: publishing is only allowed from the `main`
+branch or from a tagged commit. `build-npm.mjs --version` only affects the locally generated sub-package
+manifests; publishing fails if it does not match `package.json`, so CI no longer passes `--version`.
+The repository secret `NPM_TOKEN` is required.
 
 ## A2A
 
-| 端点 | 说明 |
+| Endpoint | Description |
 |---|---|
-| `POST /api/a2a/collab/spaces` | 创建协作空间（每个 participant 一个 ACP 会话） |
-| `DELETE /api/a2a/collab/spaces/{spaceId}` | 关闭空间并释放会话 |
-| `GET /api/a2a/orchestrator/.well-known/agent-card.json` | 编排器 agent card |
-| `POST /api/a2a/orchestrator/` | 编排器 JSON-RPC（`SendMessage` / `SendStreamingMessage` / `GetTask` / `CancelTask`） |
-| `GET /api/a2a/agents/{agentId}/.well-known/agent-card.json` | 单 agent bridge card |
-| `POST /api/a2a/agents/{agentId}/` | 单 agent JSON-RPC（强制路由到该 agent） |
-| `POST /a2a` | 免鉴权代理：转发到外部 A2A agent（A2UI 演示客户端） |
+| `POST /api/a2a/collab/spaces` | Create a collaboration space (one ACP session per participant) |
+| `DELETE /api/a2a/collab/spaces/{spaceId}` | Close the space and release its sessions |
+| `GET /api/a2a/orchestrator/.well-known/agent-card.json` | Orchestrator agent card |
+| `POST /api/a2a/orchestrator/` | Orchestrator JSON-RPC (`SendMessage` / `SendStreamingMessage` / `GetTask` / `CancelTask`) |
+| `GET /api/a2a/agents/{agentId}/.well-known/agent-card.json` | Single-agent bridge card |
+| `POST /api/a2a/agents/{agentId}/` | Single-agent JSON-RPC (routing forced to that agent) |
+| `POST /a2a` | Unauthenticated proxy: forwards to an external A2A agent (A2UI demo client) |
 
-- 四种协作模式由 `message.metadata.collab` 驱动：`single`（显式/角色/编排器/关键词路由）、`pipeline`（静态顺序或编排器决定）、`parallel`（子任务 + 可选汇总）、`voluntary`（广播认领 + 冲突策略）。
-- 流式响应沿用 SDK 线格式：SSE 帧的 `data:` 是 `{"jsonrpc":"2.0","id":…,"result":{"task"|"statusUpdate"|"artifactUpdate"}}`。
-- 成员的 `agent_message_chunk` 会作为 `append` 的 artifact 增量推送，结束时补一条 `lastChunk`。
+- Four collaboration modes are driven by `message.metadata.collab`: `single` (explicit/role/orchestrator/keyword routing), `pipeline` (fixed order or decided by the orchestrator), `parallel` (subtasks + optional aggregation), `voluntary` (broadcast and claim + conflict policy).
+- Streaming responses follow the SDK wire format: the `data:` of each SSE frame is `{"jsonrpc":"2.0","id":…,"result":{"task"|"statusUpdate"|"artifactUpdate"}}`.
+- A member's `agent_message_chunk` is pushed as an `append` artifact delta, with a `lastChunk` sent when it finishes.
 
 ## `clover run`
 
-- agent 只从 `~/.clover/acp.json` 读取；CLI 不安装、不注册、不写任何配置。
-- stdout 只放 agent 的文本输出（`--json` 时是 NDJSON 事件流），提示/权限/错误一律走 stderr。
-- 选项可以写在提示词前或后；`--` 之后的参数一律当提示词。
-- 权限请求由 CLI 代答：默认选中 `reject_once`，`--approve` 时选中 `allow_once`（没有对应选项时回 `cancelled`）。
-- Ctrl-C 会取消当前回合，最多等 5s 收尾，退出码 `130`。
+- The agent is read only from `~/.clover/acp.json`; the CLI does not install, register, or write any configuration.
+- stdout carries only the agent's text output (an NDJSON event stream with `--json`); prompts/permissions/errors all go to stderr.
+- Options may be written before or after the prompt; anything after `--` is always treated as the prompt.
+- Permission requests are answered by the CLI: `reject_once` is selected by default, `allow_once` with `--approve` (if the corresponding option is missing, it answers `cancelled`).
+- Ctrl-C cancels the current turn, waits up to 5s for cleanup, and exits with code `130`.
 
-## 环境变量
+## Environment variables
 
-| 变量 | 作用 |
+| Variable | Purpose |
 |---|---|
-| `PORT` | 监听端口（默认 4200） |
-| `CLOVER_READONLY` | `true` 时拒绝写文件 |
-| `CLOVER_STATE_DIR` | 状态根目录（默认 `~/.clover`；测试/便携安装用） |
-| `CLOVER_HOME_DIR` | 覆盖用户主目录（`~` 展开、全局 skill 来源；parity 沙箱用） |
-| `CLOVER_TOKEN_SECRET` | 鉴权令牌密钥（缺省随机，仅本进程有效） |
-| `CLOVER_LOG_DIR` | 日志目录（默认 `~/.clover/logs`） |
-| `CLOVER_LOG_TO_FILE` | `false` 关闭文件日志 |
-| `CLOVER_LOG_PREFIX` | 日志文件名前缀（默认 `agent`） |
-| `CLOVER_LOG_MAX_FILES` | 保留日志文件数（默认 10） |
-| `A2A_BASE_URL` | 写进 agent card 的绝对地址（默认按请求 Host 推导） |
-| `A2A_AGENT_CARD_URL` | `/a2a` 代理的上游 agent card（默认 `http://localhost:10002/.well-known/agent-card.json`） |
-| `A2A_BRIDGE_TIMEOUT_MS` | 单次成员 prompt 超时（默认 600000） |
-| `A2A_ROUTE_TIMEOUT_MS` | 编排/认领判定的内部 prompt 超时（默认 30000） |
-| `RUST_LOG` | 控制台日志级别（默认 `info`） |
+| `PORT` | Listen port (default 4200) |
+| `CLOVER_READONLY` | When `true`, refuse to write files |
+| `CLOVER_STATE_DIR` | State root directory (default `~/.clover`; used by tests/portable installs) |
+| `CLOVER_HOME_DIR` | Overrides the user home directory (`~` expansion, global skill source; used by the parity sandbox) |
+| `CLOVER_TOKEN_SECRET` | Auth token secret (random if unset, valid only for this process) |
+| `CLOVER_LOG_DIR` | Log directory (default `~/.clover/logs`) |
+| `CLOVER_LOG_TO_FILE` | `false` disables file logging |
+| `CLOVER_LOG_PREFIX` | Log file name prefix (default `agent`) |
+| `CLOVER_LOG_MAX_FILES` | Number of log files to keep (default 10) |
+| `A2A_BASE_URL` | Absolute URL written into agent cards (default: derived from the request Host) |
+| `A2A_AGENT_CARD_URL` | Upstream agent card for the `/a2a` proxy (default `http://localhost:10002/.well-known/agent-card.json`) |
+| `A2A_BRIDGE_TIMEOUT_MS` | Timeout for a single member prompt (default 600000) |
+| `A2A_ROUTE_TIMEOUT_MS` | Timeout for internal prompts used by orchestration/claim decisions (default 30000) |
+| `RUST_LOG` | Console log level (default `info`) |
 
-## 状态目录
+## State directory
 
-全部沿用旧布局，旧安装不需要迁移：`~/.clover/{acp.json,agent-config.json,projects.json,tasks.json,selected-project.json,mcp-servers.json,skills.json,skills/,agents/,logs/}`。
+Everything keeps the old layout, so existing installs need no migration: `~/.clover/{acp.json,agent-config.json,projects.json,tasks.json,selected-project.json,mcp-servers.json,skills.json,skills/,agents/,logs/}`.
 
-## 二进制 agent 安装
+## Binary agent installation
 
-`binary` 分发包在进程内解包（`zip` / `tar.gz`；`tar.bz2` 借用系统 `tar`），不依赖 PowerShell 或 `unzip`。
-下载走 `reqwest`，TLS 后端按平台选择：Windows/macOS 用系统栈（不需要 C 工具链），Linux 用 rustls（不需要 OpenSSL 头文件）。
-安装目录为 `<state_dir>/agents/<agentId>/`，默认即 `~/.clover/agents/<agentId>/`。
+`binary` distributions are unpacked in-process (`zip` / `tar.gz`; `tar.bz2` uses the system `tar`), with no dependency on PowerShell or `unzip`.
+Downloads go through `reqwest`, with the TLS backend chosen per platform: the system stack on Windows/macOS (no C toolchain needed), rustls on Linux (no OpenSSL headers needed).
+The install directory is `<state_dir>/agents/<agentId>/`, i.e. `~/.clover/agents/<agentId>/` by default.
 
-## 已实现 / 待实现
+## Implemented / Planned
 
-| 批次 | 内容 | 状态 |
+| Phase | Scope | Status |
 |---|---|---|
-| P0 | workspace、服务骨架、CORS、HMAC 令牌、`/api/local/health`、`/api/local/auth/token`、CLI `serve` | ✅ |
-| P0.5 | Tauri 进程内启动 + `server_info` + 前端 base URL 注入 | ✅ |
-| P1 | `/api/local/*` 文件操作 12 个 + `roots`、`notify` 文件监听、`portable-pty`、`/ws/terminal`、`/ws/file-watch` | ✅ |
-| P2 | `/api/mcp/servers` 5 个 + `~/.clover/mcp-servers.json`（含 `${VAR}` 展开） | ✅ |
-| P3 | `/api/skills*` 7 个 + 多来源发现（front matter / JSONC / 只读判定 / 附属文件） | ✅ |
-| P4 | ACP 基础：JSON-RPC、子进程、探活、`acp.json`、AgentRegistry + 状态 SSE | ✅ |
-| P5 | ACP 会话：会话管理、会话 SSE（续传/所有权）、prompt/cancel/permission、activity 流 | ✅ |
-| P6 | agent 安装/卸载/更新（npx/uvx/binary + sha256 + 解包）、install job 轮询、projects/tasks 8 个 | ✅ |
-| P7 | `clover run` 完整实现（stdout 只留 agent 输出、权限自动应答、退出码） | ✅ |
-| P8 | A2A：协作空间、编排/流水线/并行/认领四种模式、agent card、`/a2a` 代理 | ✅ |
-| P9 | parity 对比（23 用例，含 SSE/WS）、旧实现改名 `packages/server-legacy`、文档收口 | ✅ |
+| P0 | Workspace, server skeleton, CORS, HMAC tokens, `/api/local/health`, `/api/local/auth/token`, CLI `serve` | ✅ |
+| P0.5 | In-process Tauri startup + `server_info` + frontend base URL injection | ✅ |
+| P1 | 12 `/api/local/*` file operations + `roots`, `notify` file watching, `portable-pty`, `/ws/terminal`, `/ws/file-watch` | ✅ |
+| P2 | 5 `/api/mcp/servers` endpoints + `~/.clover/mcp-servers.json` (including `${VAR}` expansion) | ✅ |
+| P3 | 7 `/api/skills*` endpoints + multi-source discovery (front matter / JSONC / readonly detection / companion files) | ✅ |
+| P4 | ACP basics: JSON-RPC, subprocess, liveness probing, `acp.json`, AgentRegistry + status SSE | ✅ |
+| P5 | ACP sessions: session management, session SSE (resume/ownership), prompt/cancel/permission, activity stream | ✅ |
+| P6 | Agent install/uninstall/update (npx/uvx/binary + sha256 + unpacking), install job polling, 8 projects/tasks endpoints | ✅ |
+| P7 | Full `clover run` implementation (stdout keeps only agent output, automatic permission answers, exit codes) | ✅ |
+| P8 | A2A: collaboration spaces, orchestrator/pipeline/parallel/claim modes, agent cards, `/a2a` proxy | ✅ |
+| P9 | Parity comparison (23 cases, including SSE/WS), old implementation renamed to `packages/server-legacy`, docs finalized | ✅ |
 
-完整方案见 `docs/rust-server-migration-plan.md`。
+See `docs/rust-server-migration-plan.md` for the full plan.
 
-## 与旧实现对比
+## Comparison with the old implementation
 
 ```bash
-node scripts/parity.mjs                 # 全部阶段（http + ws + acp）
-node scripts/parity.mjs --stage http    # 只跑 HTTP（快）
-node scripts/parity.mjs --only local    # 只跑名字含 local 的用例
-node scripts/parity.mjs --list          # 列出用例
+node scripts/parity.mjs                 # all stages (http + ws + acp)
+node scripts/parity.mjs --stage http    # HTTP only (fast)
+node scripts/parity.mjs --only local    # only cases whose name contains local
+node scripts/parity.mjs --list          # list cases
 ```
 
-脚本会自己构建旧版 `packages/server-legacy/dist` 与 `target/debug/clover`，为两边各准备一份
-home + workspace，用同一组请求逐字段 diff（状态码、JSON、SSE 事件、WS 帧）。有差异退出码为 1；
-`--keep` 保留沙箱与服务日志。沙箱默认放在 `target/parity/`（`PARITY_TMPDIR` 可覆盖）。
+The script builds the old `packages/server-legacy/dist` and `target/debug/clover` itself, prepares one
+home + workspace for each side, and diffs field by field using the same set of requests (status codes, JSON, SSE events, WS frames). Any difference yields exit code 1;
+`--keep` preserves the sandboxes and server logs. Sandboxes go to `target/parity/` by default (`PARITY_TMPDIR` overrides it).
 
-## 约定
+## Conventions
 
-- 路由、状态码、JSON 字段与旧实现（`packages/server-legacy`）保持一致；前端不需要为新后端改调用代码。
-- 令牌格式与旧实现字节兼容：`base64url_nopad("<expiresAtMs>:<nonceHex>:<hmacSha256Hex>")`。
-- Windows 上所有控制台子进程（agent 启动、探活、安装/解包、`taskkill`）都经 `HideConsole` 以 `CREATE_NO_WINDOW` 启动：桌面端是 GUI 子系统、自身没有控制台，否则每个子进程都会弹出独立窗口。
-- 库内不初始化全局 `tracing` 订阅者，也不使用任何 Tauri API。
+- Routes, status codes, and JSON fields match the old implementation (`packages/server-legacy`); the frontend does not need to change any call sites for the new backend.
+- The token format is byte-compatible with the old implementation: `base64url_nopad("<expiresAtMs>:<nonceHex>:<hmacSha256Hex>")`.
+- On Windows, every console subprocess (agent launch, liveness probing, install/unpack, `taskkill`) is started through `HideConsole` with `CREATE_NO_WINDOW`: the desktop app is a GUI subsystem process with no console of its own, so otherwise every subprocess would pop up its own window.
+- The library does not initialize a global `tracing` subscriber and does not use any Tauri API.

@@ -1,91 +1,91 @@
 # @julyware/clover-desktop
 
-Tauri v2 桌面外壳（Rust crate `Clover64`）。这是一个 **私有包**，不发布到 npm；
-安装包通过 GitHub Releases 分发。
+Tauri v2 desktop shell (Rust crate `Clover64`). This is a **private package**, not published to npm;
+installers are distributed through GitHub Releases.
 
-## 结构
+## Structure
 
 ```
 packages/desktop/
-├── package.json          # 私有包，提供 dev/build/tauri 脚本
+├── package.json          # private package, provides dev/build/tauri scripts
 └── src-tauri/
-    ├── tauri.conf.json   # frontendDist 指向 ../../assistant/dist/clover/browser
-    ├── Cargo.toml        # 版本继承 workspace（changesets 统一升级）
+    ├── tauri.conf.json   # frontendDist points to ../../assistant/dist/clover/browser
+    ├── Cargo.toml        # version inherited from the workspace (bumped together by changesets)
     ├── capabilities/
     ├── icons/
-    └── src/              # 启动内嵌的 clover-server、server_info 命令
+    └── src/              # starts the embedded clover-server, server_info command
 ```
 
-前端源码仍然只属于 `packages/assistant`；桌面端只消费它的构建产物。
+The frontend source still belongs only to `packages/assistant`; the desktop app just consumes its build output.
 
-## 启动时的窗口显示
+## Window visibility at startup
 
-`tauri.conf.json` 里的主窗口声明为 `"visible": false`、`"create": false`，由
-`src/lib.rs` 的 `create_main_window` 在 `setup` 中显式创建：
+The main window in `tauri.conf.json` is declared with `"visible": false` and `"create": false`, and is
+created explicitly by `create_main_window` in `src/lib.rs` during `setup`:
 
-- 窗口先隐藏创建，WebView 与 API 服务并行启动；
-- 监听 `PageLoadEvent::Finished`（文档与 CSS 就绪、前端首帧已画）后再 `show()`；
-- 兜底：5 秒内一直没有 `Finished`（dev server 挂了、产物损坏等）也会显示窗口，
-  避免应用“启动但看不见”。
+- The window is created hidden first, and the WebView and API server start in parallel;
+- It is shown with `show()` only after `PageLoadEvent::Finished` fires (document and CSS ready, first frame painted);
+- Fallback: if `Finished` never arrives within 5 seconds (dev server down, broken build output, etc.) the window is still shown,
+  so the app never "starts but stays invisible".
 
-这样做的原因：Tauri 窗口如果在 WebView 有内容之前就显示，会闪出一帧空窗口 ——
-Windows 上是窗口默认背景（黑）围着尚未铺满的 WebView 子窗口，肉眼就是“启动阶段
-一个黑框一闪而过”。`backgroundColor` 设为界面默认底色（`#ffffff`，与
-`styles.css` 的 `--vscode-background` 默认值一致）作为第二层保险。
+The reason: if a Tauri window is shown before the WebView has content, it flashes an empty frame — on
+Windows that means the window's default background (black) around a WebView child window that has not
+filled it yet, which looks like "a black frame flashing by during startup". `backgroundColor` is set to the
+UI's default background (`#ffffff`, matching the default of `--vscode-background` in `styles.css`) as a second layer of insurance.
 
-## 开发与本地构建
+## Development and local builds
 
 ```bash
 pnpm install
 
-# 开发模式：启动 ng serve（4200），窗口加载 devUrl
+# Dev mode: starts ng serve (4200), the window loads devUrl
 pnpm --filter @julyware/clover-desktop dev
 
-# 生产构建：编译前端 + Rust，并打安装包
+# Production build: compiles the frontend + Rust and packages installers
 pnpm --filter @julyware/clover-desktop build
 ```
 
-`beforeBuildCommand` 执行：
+`beforeBuildCommand` runs:
 
 ```bash
 pnpm --filter @julyware/clover-ui run build:web
 ```
 
-它会先构建 workspace 依赖（`@julyware/common`、`@julyware/clover-server`、
-`@julyware/community-widget`），再用 production 配置构建 Angular（无 source map、
-开启 optimization），产物写入 `packages/assistant/dist/clover/browser`，由 Tauri
-在编译期嵌入二进制。
+It first builds the workspace dependencies (`@julyware/common`, `@julyware/clover-server`,
+`@julyware/community-widget`), then builds Angular with the production configuration (no source maps,
+optimization enabled). The output goes to `packages/assistant/dist/clover/browser`, and Tauri embeds it
+into the binary at compile time.
 
-## 发布
+## Release
 
-版本由 changesets 管理，与其它 `@julyware/*` 包一致。发版流程：
+Versions are managed by changesets, like the other `@julyware/*` packages. Release flow:
 
 ```bash
-# 1. 在 main 上完成版本 bump 并提交、推送
+# 1. Bump versions on main, commit and push
 pnpm release
 git add ...
 git commit -m "chore: release X.Y.Z"
 git push origin main
 
-# 2. 打桌面端 tag（tag 必须与 packages/desktop/package.json 一致）
+# 2. Tag the desktop app (the tag must match packages/desktop/package.json)
 git tag clover-desktop-vX.Y.Z
 git push origin clover-desktop-vX.Y.Z
 ```
 
-`.github/workflows/release-desktop.yml` 会：
+`.github/workflows/release-desktop.yml` will:
 
-1. 校验 tag 与 `packages/desktop/package.json`、`Cargo.toml` 版本一致；
-2. 在 4 个平台构建：
-   - Windows x64：`.msi` + NSIS `-setup.exe`
-   - macOS Apple Silicon：`.dmg`
-   - macOS Intel：`.dmg`
-   - Linux x64：`.AppImage` + `.deb` + `.rpm`
-3. 创建 **draft** GitHub Release 并上传安装包；检查无误后在网页上手动 Publish。
+1. Verify that the tag matches the versions in `packages/desktop/package.json` and `Cargo.toml`;
+2. Build on 4 platforms:
+   - Windows x64: `.msi` + NSIS `-setup.exe`
+   - macOS Apple Silicon: `.dmg`
+   - macOS Intel: `.dmg`
+   - Linux x64: `.AppImage` + `.deb` + `.rpm`
+3. Create a **draft** GitHub Release and upload the installers; publish it manually on the web once verified.
 
-### 重新构建某个平台
+### Rebuilding a single platform
 
-某个平台失败时不用重打 tag。在包含修复的分支上手动触发即可，产物会继续上传到
-已存在的 draft Release：
+When one platform fails, there is no need to re-tag. Trigger the workflow manually on a branch that
+contains the fix, and the artifacts will continue uploading to the existing draft Release:
 
 ```bash
 gh workflow run release-desktop.yml --ref main
@@ -93,43 +93,44 @@ gh run list -L 1
 gh run watch
 ```
 
-手动触发会用当前引用的代码构建，但 Release 仍使用 `packages/desktop/package.json`
-对应版本拼出的 `clover-desktop-vX.Y.Z` tag。
+A manual trigger builds the code at the current ref, but the Release still uses the
+`clover-desktop-vX.Y.Z` tag derived from the version in `packages/desktop/package.json`.
 
-桌面端和 CLI 的 tag 相互独立：
+The desktop and CLI tags are independent of each other:
 
 ```
-clover-cli-vX.Y.Z        # npm 二进制（5 平台）
-clover-desktop-vX.Y.Z    # GitHub Release 安装包（4 平台）
+clover-cli-vX.Y.Z        # npm binaries (5 platforms)
+clover-desktop-vX.Y.Z    # GitHub Release installers (4 platforms)
 ```
 
-两个 tag 都可以指向同一个版本提交。
+Both tags may point to the same version commit.
 
-## 签名与自动更新
+## Signing and auto-update
 
-当前 workflow 已接好 macOS 签名/公证的 env 变量，但需要你配置仓库 secrets 才会生效：
+The workflow already wires up the env variables for macOS signing/notarization, but they only take
+effect once you configure the repository secrets:
 
-| secret | 用途 |
+| Secret | Purpose |
 |---|---|
-| `APPLE_CERTIFICATE` | Developer ID `.p12` 的 base64 |
-| `APPLE_CERTIFICATE_PASSWORD` | `.p12` 密码 |
-| `APPLE_SIGNING_IDENTITY` | 例如 `Developer ID Application: ...` |
-| `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` | 公证账号（app-specific password） |
+| `APPLE_CERTIFICATE` | base64 of the Developer ID `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | `.p12` password |
+| `APPLE_SIGNING_IDENTITY` | e.g. `Developer ID Application: ...` |
+| `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` | Notarization account (app-specific password) |
 
-未配置时 workflow 会自动跳过签名步骤并产出未签名包（构建不会失败）：macOS 会被
-Gatekeeper 拦截，Windows 未做 Authenticode 签名，会出现 SmartScreen 提示。
+When they are not configured, the workflow skips the signing step and produces unsigned packages (the
+build does not fail): macOS will be blocked by Gatekeeper, and Windows has no Authenticode signature, so SmartScreen will warn.
 
-> 注意：不要把 `${{ secrets.APPLE_CERTIFICATE }}` 直接塞进 env。未配置的 secret 会
-> 变成空字符串，而 tauri-bundler 看到该变量存在就会尝试导入证书，报
-> `SecKeychainItemImport: Unable to decode the provided data`。
-> workflow 现在只在 secret 非空时才导出这些变量。
+> Note: do not put `${{ secrets.APPLE_CERTIFICATE }}` directly into env. An unset secret becomes an
+> empty string, and when tauri-bundler sees the variable present it tries to import the certificate and
+> fails with `SecKeychainItemImport: Unable to decode the provided data`.
+> The workflow now exports these variables only when the secret is non-empty.
 
-自动更新尚未启用。要开启需要：
+Auto-update is not enabled yet. To enable it you need to:
 
-1. 引入 `tauri-plugin-updater`；
-2. `bundle.createUpdaterArtifacts: true`；
-3. 配置 `plugins.updater.endpoints` 与公钥；
-4. 把 workflow 的 `includeUpdaterJson` 改为 `true`，并配置
-   `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+1. Add `tauri-plugin-updater`;
+2. Set `bundle.createUpdaterArtifacts: true`;
+3. Configure `plugins.updater.endpoints` and the public key;
+4. Change `includeUpdaterJson` in the workflow to `true`, and configure
+   `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
-在此之前 `TAURI_SIGNING_PRIVATE_KEY` 不会产生任何效果。
+Until then, `TAURI_SIGNING_PRIVATE_KEY` has no effect.
