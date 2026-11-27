@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, OnDestroy, signal, Input, output, WritableSignal, input, HostListener, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Component, inject, ViewChild, ElementRef, computed, afterNextRender, effect, untracked, OnDestroy, signal, Input, output, WritableSignal, input, HostListener, TemplateRef, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
@@ -9,8 +9,8 @@ import { EditDiffPipe, ReadInfoPipe, ParseDiffPipe, FormatMessagePipe, ResourceN
 import { RagResultComponent } from './rag-result.component';
 import { CopyCodeButtonDirective } from './copy-code-button.directive';
 import { A2uiJsonRendererComponent } from './a2ui-json-renderer.component';
-import { ScrollingModule } from '@angular/cdk/scrolling';
-import { DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER } from './dynamic-virtual-scroll.strategy';
+import { ScrollingModule, VIRTUAL_SCROLL_STRATEGY } from '@angular/cdk/scrolling';
+import { DynamicVirtualScrollStrategy, DYNAMIC_VIRTUAL_SCROLL_STRATEGY_PROVIDER } from './dynamic-virtual-scroll.strategy';
 import type { ContentBlock, ImageContent, AudioContent, EmbeddedResource } from './acp.model';
 
 export interface MessageGroup {
@@ -18,6 +18,18 @@ export interface MessageGroup {
   messages: AcpMessage[];
   isNew?: boolean;
 }
+
+/** Distance (px) from the bottom under which the overflow button is hidden. */
+const NEAR_BOTTOM_PX = 100;
+
+/** Distance (px) under which the viewport re-engages "follow the bottom". */
+const PIN_ENGAGE_PX = 8;
+
+/** How long a scroll gesture keeps counting as "the user is scrolling". */
+const USER_SCROLL_WINDOW_MS = 250;
+
+/** Reveal the transcript even if the strategy never reports a stable pass. */
+const SETTLE_FALLBACK_MS = 400;
 
 @Component({
   selector: 'app-acp-chat',
@@ -52,8 +64,31 @@ export class AcpChatComponent implements OnDestroy {
 
   protected acpService = inject(AcpService);
 
+  /**
+   * The virtual scroll strategy owns the viewport position: this component only
+   * expresses intent ("follow the bottom" / "let the user scroll"), never
+   * computes a scroll target itself. Two writers on `scrollTop` (a smooth
+   * `scrollTo` here and an instant correction inside the strategy) is what made
+   * streaming and history loads shake.
+   */
+  private readonly scrollStrategy = inject(VIRTUAL_SCROLL_STRATEGY) as unknown as DynamicVirtualScrollStrategy;
+
   isNearBottom = signal(true);
-  private rafId: number | null = null;
+
+  /**
+   * True while a freshly loaded transcript is measured behind the loading
+   * layer. The list is revealed only once the strategy has parked it on the
+   * real bottom, so no intermediate scroll position is ever painted.
+   */
+  readonly settling = signal(false);
+
+  private lastUserScrollAt = 0;
+  /**
+   * Window during which scroll events produced by our own "jump to bottom"
+   * animation must not be mistaken for the user scrolling away.
+   */
+  private ignoreUserScrollUntil = 0;
+  private settleTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Tool detail panels (edit diff / read info) the user expanded, keyed by tool
@@ -125,56 +160,49 @@ export class AcpChatComponent implements OnDestroy {
   readonly groupedMessages = computed<MessageGroup[]>(() => {
     if (this.acpService.isReplayingHistory()) return [];
     const messages = this.acpService.messages();
-    const processingStartTime = this.acpService.processingStartTime();
+    const processing = this.acpService.isCurrentSessionProcessing();
 
-    if (this.acpService.isCurrentSessionProcessing() && processingStartTime !== null) {
-      const preMessages: AcpMessage[] = [];
-      const postMessages: AcpMessage[] = [];
+    // The grouping itself must not depend on the processing flag: splitting the
+    // live round into one group per message (the old behaviour) made the row
+    // count collapse when the round ended, which invalidated every measured
+    // height and threw the viewport to the top of the conversation.
+    // A round is always grouped the same way; `isNew` only marks the rows that
+    // belong to the round currently streaming so they render expanded.
+    const turnOpen = processing || this.acpService.loadingSessionId() !== null;
+    const groups = this.groupMessages(messages, { openTail: turnOpen });
 
-      for (const msg of messages) {
-        if (msg.timestamp.getTime() < processingStartTime) {
-          preMessages.push(msg);
-        } else {
-          postMessages.push(msg);
+    if (processing) {
+      let tailStart = 0;
+      for (let i = groups.length - 1; i >= 0; i--) {
+        if (groups[i].type === 'user') {
+          tailStart = i + 1;
+          break;
         }
       }
-
-      const groups = this.groupMessages(preMessages, { openTail: true });
-
-      for (const msg of postMessages) {
-        const groupType: MessageGroup['type'] = (msg.role === 'tool_call' || msg.role === 'tool_call_update' || msg.role === 'thought')
-          ? 'intermediate'
-          : msg.role;
-        groups.push({ type: groupType, messages: [msg], isNew: true });
+      for (let i = tailStart; i < groups.length; i++) {
+        groups[i].isNew = true;
       }
-
-      return groups;
     }
 
-    // 没有 processingStartTime 可用（加载中、或处理中标记刚落地）：整个列表就是
-    // 当前会话，末尾那一轮同样可能正在生成。
-    const turnOpen = this.acpService.isCurrentSessionProcessing() || this.acpService.loadingSessionId() !== null;
-    return this.groupMessages(messages, { openTail: turnOpen });
+    return groups;
   });
 
   constructor() {
     afterNextRender(() => {
-      this.scrollToBottom();
-    });
-
-    effect(() => {
-      const msgs = this.acpService.messages();
-      if (msgs.length > 0 && this.isNearBottom() && !this.acpService.isReplayingHistory()) {
-        this.scheduleScrollToBottom();
+      // A restored view that is already interactive (no replay in flight).
+      if (this.acpService.messages().length > 0 && !this.acpService.isReplayingHistory()) {
+        this.scrollStrategy.setPinned(true);
+        this.scrollStrategy.scrollToBottomNow('auto');
       }
     });
 
-    // After replay ends, scroll to bottom once (ensures DOM is painted)
+    // History replay ends: the whole transcript is published at once, so every
+    // row is unmeasured. Stay behind the loading layer until the tail has been
+    // measured and the viewport is parked on the real bottom.
     effect(() => {
-      const replaying = this.acpService.isReplayingHistory();
-      if (!replaying && this.acpService.messages().length > 0) {
-        setTimeout(() => this.scrollToBottom(), 50);
-      }
+      if (this.acpService.isReplayingHistory()) return;
+      if (untracked(() => this.acpService.messages().length) === 0) return;
+      this.settleAfterLoad();
     });
 
     // 加载/切换会话后，所有展开状态回到默认（收起）。
@@ -185,6 +213,9 @@ export class AcpChatComponent implements OnDestroy {
       this.expandedSections.set(new Set());
       this.expandedToolDetails.set(new Set());
       this.expandedShells.set(new Set());
+      // Rows of the previous conversation must not be reused as measurements.
+      this.scrollStrategy.reset();
+      this.scrollStrategy.setPinned(true);
     });
 
     // 正在流式输出的这一轮保持展开；结束后这些 key 留在集合里，步骤不会突然收起。
@@ -215,8 +246,9 @@ export class AcpChatComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId);
+    if (this.settleTimer !== null) {
+      clearTimeout(this.settleTimer);
+      this.settleTimer = null;
     }
     this.imageLightboxRef?.dispose();
     this.imageLightboxRef = null;
@@ -412,33 +444,78 @@ export class AcpChatComponent implements OnDestroy {
     const element = this.messagesContainer?.nativeElement;
     if (!element) return;
 
-    const threshold = 100;
-    this.isNearBottom.set(
-      element.scrollHeight - element.scrollTop - element.clientHeight < threshold
-    );
+    const distance = element.scrollHeight - element.scrollTop - element.clientHeight;
+    this.isNearBottom.set(distance < NEAR_BOTTOM_PX);
+
+    if (distance <= PIN_ENGAGE_PX) {
+      // Back on the bottom (by any means): follow it again.
+      this.scrollStrategy.setPinned(true);
+      return;
+    }
+
+    // Only an explicit user gesture releases the pin. Programmatic corrections
+    // (measurement passes, structural changes) must never stop the follow —
+    // they used to flip `isNearBottom`, after which streaming silently stopped
+    // scrolling for the rest of the turn.
+    if (this.userScrolledRecently() && Date.now() >= this.ignoreUserScrollUntil) {
+      this.scrollStrategy.setPinned(false);
+    }
   }
 
-  private scheduleScrollToBottom(): void {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId);
+  @HostListener('wheel')
+  @HostListener('touchmove')
+  onUserScrollGesture(): void {
+    this.lastUserScrollAt = Date.now();
+    // A real gesture always wins over the "jump to bottom" animation.
+    this.ignoreUserScrollUntil = 0;
+  }
+
+  @HostListener('pointerdown')
+  onPointerGesture(): void {
+    this.lastUserScrollAt = Date.now();
+  }
+
+  @HostListener('keydown', ['$event'])
+  onUserKeyScroll(event: KeyboardEvent): void {
+    if (['PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End', ' '].includes(event.key)) {
+      this.lastUserScrollAt = Date.now();
     }
-    this.rafId = requestAnimationFrame(() => {
-      this.rafId = requestAnimationFrame(() => {
-        this.scrollToBottom();
-        this.rafId = null;
-      });
+  }
+
+  private userScrolledRecently(): boolean {
+    return Date.now() - this.lastUserScrollAt < USER_SCROLL_WINDOW_MS;
+  }
+
+  /**
+   * Cold-start alignment after a history replay: park on the real bottom and
+   * keep the transcript behind the loading layer until measurement converged.
+   */
+  private settleAfterLoad(): void {
+    this.settling.set(true);
+    if (this.settleTimer !== null) {
+      clearTimeout(this.settleTimer);
+    }
+    // Safety net: never leave the transcript covered if the strategy stalls.
+    this.settleTimer = setTimeout(() => {
+      this.settleTimer = null;
+      this.settling.set(false);
+    }, SETTLE_FALLBACK_MS);
+
+    this.scrollStrategy.setPinned(true);
+    this.scrollStrategy.beginSettle(() => {
+      if (this.settleTimer !== null) {
+        clearTimeout(this.settleTimer);
+        this.settleTimer = null;
+      }
+      this.settling.set(false);
+      this.isNearBottom.set(true);
     });
   }
 
+  /** Explicit "jump to the newest message" (button and parent panels). */
   scrollToBottom(smooth = true): void {
-    const element = this.messagesContainer?.nativeElement;
-    if (!element) return;
-    const top = element.scrollHeight - element.clientHeight;
-    if (smooth) {
-      element.scrollTo({ top, behavior: 'smooth' });
-    } else {
-      element.scrollTop = top;
-    }
+    this.ignoreUserScrollUntil = Date.now() + (smooth ? 700 : 100);
+    this.scrollStrategy.scrollToBottomNow(smooth ? 'smooth' : 'auto');
     this.isNearBottom.set(true);
   }
 
@@ -449,6 +526,12 @@ export class AcpChatComponent implements OnDestroy {
   scrollByDelta(deltaY: number): void {
     const element = this.messagesContainer?.nativeElement;
     if (!element) return;
+    // Wheel events handled by the parent panel never reach this component's
+    // host listeners, so record the intent here.
+    this.lastUserScrollAt = Date.now();
+    if (deltaY < 0) {
+      this.scrollStrategy.setPinned(false);
+    }
     element.scrollTop += deltaY;
   }
 

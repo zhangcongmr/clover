@@ -1,20 +1,9 @@
 <div class="acp-chat-container">
-  @if (acpService.messages().length === 0) {
-    @if (acpService.isLoading()) {
-      <div class="acp-loading-screen">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">{{ acpService.loadingText() || 'Loading...' }}</p>
-      </div>
-    } @else {
-      <div class="acp-chat-empty"></div>
-    }
-  } @else {
-    <cdk-virtual-scroll-viewport
-      #messagesContainer
-      class="acp-chat-messages custom-scroll"
-      [class.replaying]="acpService.isReplayingHistory()"
-      (scroll)="onScroll()"
-      appCopyCodeButton>
+  <cdk-virtual-scroll-viewport
+    #messagesContainer
+    class="acp-chat-messages custom-scroll"
+    (scroll)="onScroll()"
+    appCopyCodeButton>
       <ng-container *cdkVirtualFor="let group of groupedMessages(); trackBy: trackByGroupIndex">
         @if (group.type === 'intermediate') {
           <div class="intermediate-section" [class.collapsed]="isIntermediateSectionCollapsed(group)">
@@ -157,7 +146,17 @@
           }
         }
       </ng-container>
-    </cdk-virtual-scroll-viewport>
+  </cdk-virtual-scroll-viewport>
+
+  @if (acpService.messages().length === 0 || settling()) {
+    @if (acpService.isLoading() || settling() || acpService.messages().length > 0) {
+      <div class="acp-loading-screen" aria-live="polite">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">{{ acpService.loadingText() || 'Loading...' }}</p>
+      </div>
+    } @else {
+      <div class="acp-chat-empty"></div>
+    }
   }
 
   @if (!isNearBottom() && acpService.messages().length > 0) {

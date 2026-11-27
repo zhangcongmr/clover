@@ -114,18 +114,21 @@
   contain: none;
 }
 
-.acp-chat-messages.replaying {
-  overflow-y: hidden !important;
-}
-
+/*
+ * The transcript viewport is mounted at all times (including while a session
+ * loads) so the virtual scroll strategy keeps its measurements; the loading and
+ * empty states are opaque overlays on top of it instead of replacing it.
+ */
 .acp-chat-empty {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
   color: var(--vscode-foreground);
   opacity: 0.5;
+  pointer-events: none;
 }
 
 .empty-icon {
@@ -1087,7 +1090,12 @@
 
 /* Loading Screen */
 .acp-loading-screen {
-  flex: 1;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* Opaque: the transcript below is being measured and aligned, and none of
+     those intermediate positions may be painted. */
+  background-color: var(--vscode-background);
   display: flex;
   flex-direction: column;
   align-items: center;
