@@ -18,6 +18,21 @@ packages/desktop/
 
 前端源码仍然只属于 `packages/assistant`；桌面端只消费它的构建产物。
 
+## 启动时的窗口显示
+
+`tauri.conf.json` 里的主窗口声明为 `"visible": false`、`"create": false`，由
+`src/lib.rs` 的 `create_main_window` 在 `setup` 中显式创建：
+
+- 窗口先隐藏创建，WebView 与 API 服务并行启动；
+- 监听 `PageLoadEvent::Finished`（文档与 CSS 就绪、前端首帧已画）后再 `show()`；
+- 兜底：5 秒内一直没有 `Finished`（dev server 挂了、产物损坏等）也会显示窗口，
+  避免应用“启动但看不见”。
+
+这样做的原因：Tauri 窗口如果在 WebView 有内容之前就显示，会闪出一帧空窗口 ——
+Windows 上是窗口默认背景（黑）围着尚未铺满的 WebView 子窗口，肉眼就是“启动阶段
+一个黑框一闪而过”。`backgroundColor` 设为界面默认底色（`#ffffff`，与
+`styles.css` 的 `--vscode-background` 默认值一致）作为第二层保险。
+
 ## 开发与本地构建
 
 ```bash

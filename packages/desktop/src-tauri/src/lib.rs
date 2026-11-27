@@ -1,11 +1,23 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 use std::sync::Mutex;
+use std::time::Duration;
 
 use clover_server::logging::{self, ConsoleTarget, LogGuard};
 use clover_server::{Config, CorsPolicy, Handle, PortPolicy};
 use serde::Serialize;
+use tauri::webview::{PageLoadEvent, WebviewWindowBuilder};
 use tauri::Manager;
+
+/// Label of the main window declared in `tauri.conf.json`.
+const MAIN_WINDOW_LABEL: &str = "main";
+
+/// Upper bound on how long the shell waits for the webview's first page load
+/// before showing the window anyway.
+///
+/// A slow (or unreachable) dev server must not leave the app invisible; if the
+/// page never reports `Finished`, the user still gets a window and devtools.
+const FIRST_PAINT_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// The local server handle, owned by the desktop shell.
 struct ServerState(Mutex<Option<Handle>>);
@@ -60,6 +72,51 @@ fn resolve_preferred_port(requested: u16, dev_url_port: Option<u16>) -> u16 {
     }
 }
 
+/// Creates the main window hidden and shows it once the webview has painted.
+///
+/// The window ships with `visible: false` / `create: false` in
+/// `tauri.conf.json` so the shell controls when it becomes visible. Showing a
+/// Tauri window before the webview has any content flashes an empty frame —
+/// on Windows that frame is the bare window background (black) around the
+/// half-sized webview, i.e. the "black box" users see during startup.
+///
+/// `PageLoadEvent::Finished` is the first moment the document and its CSS are
+/// in place, so showing there reveals the real UI instead of a blank frame.
+fn create_main_window<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> tauri::Result<tauri::WebviewWindow<R>> {
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|window| window.label == MAIN_WINDOW_LABEL)
+        .cloned()
+        .ok_or(tauri::Error::WindowNotFound)?;
+
+    let window = WebviewWindowBuilder::from_config(app, &config)?
+        .on_page_load(|window, payload| {
+            // `show` is idempotent: reloads and in-app navigation fire this
+            // event again, and the window is already visible by then.
+            if matches!(payload.event(), PageLoadEvent::Finished) {
+                let _ = window.show();
+            }
+        })
+        .build()?;
+
+    // Safety net: reveal the window even when the page never finishes loading
+    // (dev server down, broken bundle, ...), otherwise the app stays invisible.
+    let handle = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(FIRST_PAINT_TIMEOUT);
+        if let Some(window) = handle.get_webview_window(MAIN_WINDOW_LABEL) {
+            let _ = window.show();
+        }
+    });
+
+    Ok(window)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -67,6 +124,11 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![greet, server_info])
         .setup(|app| {
             app.manage(LoggerState(logging::init(ConsoleTarget::Stdout)));
+
+            // Build the hidden main window first so the webview starts loading
+            // while the API server binds; `create_main_window` shows it as soon
+            // as the first frame is ready.
+            create_main_window(app.handle())?;
 
             // Bind synchronously so the port is known before the window loads
             // (the frontend queries `server_info` on bootstrap).

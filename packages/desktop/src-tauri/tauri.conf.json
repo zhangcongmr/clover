@@ -12,11 +12,15 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Clover",
         "center": true,
         "maximized": true,
-		"decorations": false,
-		"devtools": true
+        "decorations": false,
+        "devtools": true,
+        "visible": false,
+        "create": false,
+        "backgroundColor": "#ffffff"
       }
     ],
     "security": {
