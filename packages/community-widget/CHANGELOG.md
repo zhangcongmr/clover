@@ -1,5 +1,16 @@
 # @julyware/community-widget
 
+## 2.0.0
+
+### Major Changes
+
+- stabilize chat auto-scroll with bottom pinning and show the main window only after the webview paints
+
+### Patch Changes
+
+- Updated dependencies
+  - @julyware/common@2.0.0
+
 ## 1.1.0
 
 ### Patch Changes
