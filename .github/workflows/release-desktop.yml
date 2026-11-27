@@ -123,22 +123,81 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Releasing $tag"
 
+      # GitHub turns an unset secret into an empty environment variable, and
+      # tauri-bundler imports APPLE_CERTIFICATE whenever the variable exists.
+      # An empty value therefore fails with
+      #   SecKeychainItemImport: Unable to decode the provided data.
+      # Export the signing variables only when they actually hold a value, so
+      # a repository without signing secrets still produces an unsigned app.
+      - name: Configure macOS signing
+        if: matrix.runner == 'macos-latest'
+        shell: bash
+        env:
+          SECRET_APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          SECRET_APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          SECRET_APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          SECRET_APPLE_ID: ${{ secrets.APPLE_ID }}
+          SECRET_APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          SECRET_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+
+          # Writes a multi-line-safe value to $GITHUB_ENV.
+          export_env() {
+            local name="$1"
+            local value="$2"
+            if [[ -z "$value" ]]; then
+              return 0
+            fi
+            {
+              echo "${name}<<__GITHUB_ENV_VALUE__"
+              printf '%s\n' "$value"
+              echo "__GITHUB_ENV_VALUE__"
+            } >> "$GITHUB_ENV"
+          }
+
+          if [[ -z "${SECRET_APPLE_CERTIFICATE}" ]]; then
+            echo "No APPLE_CERTIFICATE secret: building an unsigned app."
+            echo "Gatekeeper blocks unsigned apps until the user allows them."
+            exit 0
+          fi
+
+          export_env APPLE_CERTIFICATE "${SECRET_APPLE_CERTIFICATE}"
+          export_env APPLE_CERTIFICATE_PASSWORD "${SECRET_APPLE_CERTIFICATE_PASSWORD}"
+          export_env APPLE_SIGNING_IDENTITY "${SECRET_APPLE_SIGNING_IDENTITY}"
+          export_env APPLE_ID "${SECRET_APPLE_ID}"
+          export_env APPLE_PASSWORD "${SECRET_APPLE_PASSWORD}"
+          export_env APPLE_TEAM_ID "${SECRET_APPLE_TEAM_ID}"
+          echo "Signing configured with APPLE_SIGNING_IDENTITY=${SECRET_APPLE_SIGNING_IDENTITY:-<auto>}"
+
+      # Only used once tauri-plugin-updater and bundle.createUpdaterArtifacts
+      # are enabled. Applies to every platform, so it is separate from the
+      # macOS step above.
+      - name: Configure updater signing
+        shell: bash
+        env:
+          SECRET_TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          SECRET_TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SECRET_TAURI_SIGNING_PRIVATE_KEY}" ]]; then
+            exit 0
+          fi
+
+          {
+            echo "TAURI_SIGNING_PRIVATE_KEY<<__GITHUB_ENV_VALUE__"
+            printf '%s\n' "${SECRET_TAURI_SIGNING_PRIVATE_KEY}"
+            echo "__GITHUB_ENV_VALUE__"
+            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD<<__GITHUB_ENV_VALUE__"
+            printf '%s\n' "${SECRET_TAURI_SIGNING_PRIVATE_KEY_PASSWORD}"
+            echo "__GITHUB_ENV_VALUE__"
+          } >> "$GITHUB_ENV"
+
       - name: Build and upload installers
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing + notarization. Empty secrets mean an unsigned
-          # build, which Gatekeeper blocks by default.
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Only used once tauri-plugin-updater and
-          # bundle.createUpdaterArtifacts are enabled.
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: packages/desktop
           # The repo has no tracked pnpm lockfile, so the action cannot detect
@@ -152,7 +211,7 @@ jobs:
             Download the package for your platform below:
             - Windows: `.msi` or `-setup.exe`
             - macOS: `.dmg` (Apple Silicon / Intel)
-            - Linux: `.AppImage` or `.deb`
+            - Linux: `.AppImage`, `.deb` or `.rpm`
           releaseDraft: true
           prerelease: false
           # Flip to true after enabling tauri-plugin-updater.

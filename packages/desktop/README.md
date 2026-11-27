@@ -64,8 +64,22 @@ git push origin clover-desktop-vX.Y.Z
    - Windows x64：`.msi` + NSIS `-setup.exe`
    - macOS Apple Silicon：`.dmg`
    - macOS Intel：`.dmg`
-   - Linux x64：`.AppImage` + `.deb`
+   - Linux x64：`.AppImage` + `.deb` + `.rpm`
 3. 创建 **draft** GitHub Release 并上传安装包；检查无误后在网页上手动 Publish。
+
+### 重新构建某个平台
+
+某个平台失败时不用重打 tag。在包含修复的分支上手动触发即可，产物会继续上传到
+已存在的 draft Release：
+
+```bash
+gh workflow run release-desktop.yml --ref main
+gh run list -L 1
+gh run watch
+```
+
+手动触发会用当前引用的代码构建，但 Release 仍使用 `packages/desktop/package.json`
+对应版本拼出的 `clover-desktop-vX.Y.Z` tag。
 
 桌面端和 CLI 的 tag 相互独立：
 
@@ -87,8 +101,13 @@ clover-desktop-vX.Y.Z    # GitHub Release 安装包（4 平台）
 | `APPLE_SIGNING_IDENTITY` | 例如 `Developer ID Application: ...` |
 | `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` | 公证账号（app-specific password） |
 
-未配置时 macOS 产物未签名，Gatekeeper 会拦截；Windows 产物也未做 Authenticode
-签名，会出现 SmartScreen 提示。
+未配置时 workflow 会自动跳过签名步骤并产出未签名包（构建不会失败）：macOS 会被
+Gatekeeper 拦截，Windows 未做 Authenticode 签名，会出现 SmartScreen 提示。
+
+> 注意：不要把 `${{ secrets.APPLE_CERTIFICATE }}` 直接塞进 env。未配置的 secret 会
+> 变成空字符串，而 tauri-bundler 看到该变量存在就会尝试导入证书，报
+> `SecKeychainItemImport: Unable to decode the provided data`。
+> workflow 现在只在 secret 非空时才导出这些变量。
 
 自动更新尚未启用。要开启需要：
 
