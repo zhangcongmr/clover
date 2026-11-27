@@ -33,6 +33,24 @@ Windows that means the window's default background (black) around a WebView chil
 filled it yet, which looks like "a black frame flashing by during startup". `backgroundColor` is set to the
 UI's default background (`#ffffff`, matching the default of `--vscode-background` in `styles.css`) as a second layer of insurance.
 
+## Window size and position
+
+- **Default size**: `width` / `height` in `tauri.conf.json` (`1280 × 800`, logical pixels) are also the
+  size the window returns to when the user unmaximizes it. `preventOverflow` shrinks that default on
+  displays whose work area is smaller, so the window never opens larger than the screen.
+- **Remembered geometry**: after the first session the size, position and maximized state come from
+  `~/.clover/desktop-window.json` (physical pixels) instead of the config defaults. The file is written
+  when the main window closes and, as a fallback, on `RunEvent::Exit`.
+- Only the geometry seen in the *normal* state is stored: a maximized window reports the screen size and
+  a minimized one `0×0`, neither of which is the size the user gets back on unmaximize. The maximized flag
+  is stored separately and re-applied after the size.
+- A remembered rectangle that no longer overlaps a monitor (undocked laptop, removed display, changed
+  resolution) is ignored in favor of the config defaults, and one that is larger than the current work area
+  is shrunk to fit.
+
+`WindowMemory` in `src/lib.rs` keeps the value in memory during the session, so dragging and resizing do
+not touch the disk; only closing the window does.
+
 ## Development and local builds
 
 ```bash
